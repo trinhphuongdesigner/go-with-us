@@ -8,16 +8,21 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { CareerPassportService } from './career-passport.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/jwt.strategy';
 import {
   CreateEmploymentDto,
   CreatePassportShareDto,
   GenerateCareerSummaryDto,
+  RequestOffboardingSummaryDto,
   SaveCareerSummaryDto,
   UpdateEmploymentDto,
+  UpdateOffboardingSummaryDto,
 } from './dto/career-passport.dto';
 
 /**
@@ -29,7 +34,7 @@ import {
  * the explicit save step.
  */
 @Controller('career-passport')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class CareerPassportController {
   constructor(private readonly service: CareerPassportService) {}
 
@@ -89,6 +94,53 @@ export class CareerPassportController {
     @CurrentUser() caller: AuthenticatedUser,
   ) {
     return this.service.saveSummary(dto, caller);
+  }
+
+  // --- Offboarding summary (org-verified, request -> trigger -> approve) ---
+
+  @Post('summaries/request')
+  requestOffboardingSummary(
+    @Body() dto: RequestOffboardingSummaryDto,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
+    return this.service.requestOffboardingSummary(dto, caller);
+  }
+
+  @Get('summaries/pending')
+  @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  listPendingOffboardingSummaries(
+    @CurrentUser() caller: AuthenticatedUser,
+    @Query('companyId') companyId?: string,
+  ) {
+    return this.service.listPendingOffboardingSummaries(caller, companyId);
+  }
+
+  @Post('summaries/:id/trigger')
+  @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  triggerOffboardingSummary(
+    @Param('id') id: string,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
+    return this.service.triggerOffboardingSummary(id, caller);
+  }
+
+  @Patch('summaries/:id')
+  @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  updateOffboardingSummary(
+    @Param('id') id: string,
+    @Body() dto: UpdateOffboardingSummaryDto,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
+    return this.service.updateOffboardingSummary(id, dto, caller);
+  }
+
+  @Post('summaries/:id/approve')
+  @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  approveOffboardingSummary(
+    @Param('id') id: string,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
+    return this.service.approveOffboardingSummary(id, caller);
   }
 
   // --- Share links ---------------------------------------------------------

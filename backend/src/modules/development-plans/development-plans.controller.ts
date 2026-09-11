@@ -7,8 +7,10 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
+import { LifeCategory } from '@prisma/client';
 import { DevelopmentPlansService } from './development-plans.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -17,13 +19,24 @@ import { CreateGoalDto } from './dto/create-goal.dto';
 import { UpdateGoalDto } from './dto/update-goal.dto';
 import { GeneratePlanDto } from './dto/generate-plan.dto';
 import { SavePlanDto } from './dto/save-plan.dto';
+import {
+  CreateMilestoneDto,
+  CreateTaskDto,
+  SaveRoadmapDto,
+  UpdateMilestoneDto,
+  UpdateTaskDto,
+} from './dto/milestone.dto';
 
 /**
  * "Development Plan & Goals" — every route scoped to the caller's own data
  * only (an employee's own roadmap; no admin cross-user access in this
  * slice). /generate is the AI skill (proposal only, no persistence); /me
  * (PUT) is the separate explicit-save endpoint — see
- * DevelopmentPlansService's class doc for why these stay two calls.
+ * DevelopmentPlansService's class doc for why these stay two calls. The
+ * milestone/task routes below are the measurable, checkable part of the
+ * same roadmap (M6/M7 in docs/careermate-scope.md); /me/roadmap is the
+ * bulk explicit-save counterpart for an AI-proposed milestone tree (see
+ * the assistant module's ROADMAP focus for how the proposal is produced).
  */
 @Controller('development-plans')
 @UseGuards(JwtAuthGuard)
@@ -33,8 +46,11 @@ export class DevelopmentPlansController {
   ) {}
 
   @Get('goals')
-  listGoals(@CurrentUser() caller: AuthenticatedUser) {
-    return this.developmentPlansService.listGoals(caller);
+  listGoals(
+    @CurrentUser() caller: AuthenticatedUser,
+    @Query('category') category?: LifeCategory,
+  ) {
+    return this.developmentPlansService.listGoals(caller, category);
   }
 
   @Post('goals')
@@ -81,5 +97,77 @@ export class DevelopmentPlansController {
   @Get('me')
   getMyPlan(@CurrentUser() caller: AuthenticatedUser) {
     return this.developmentPlansService.getMyPlan(caller);
+  }
+
+  // ---- Milestones & tasks --------------------------------------------
+
+  @Get('me/milestones')
+  listMilestones(@CurrentUser() caller: AuthenticatedUser) {
+    return this.developmentPlansService.listMilestones(caller);
+  }
+
+  @Post('me/milestones')
+  createMilestone(
+    @Body() dto: CreateMilestoneDto,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
+    return this.developmentPlansService.createMilestone(dto, caller);
+  }
+
+  @Patch('milestones/:id')
+  updateMilestone(
+    @Param('id') id: string,
+    @Body() dto: UpdateMilestoneDto,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
+    return this.developmentPlansService.updateMilestone(id, dto, caller);
+  }
+
+  @Delete('milestones/:id')
+  removeMilestone(
+    @Param('id') id: string,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
+    return this.developmentPlansService.removeMilestone(id, caller);
+  }
+
+  @Post('milestones/:id/tasks')
+  createTask(
+    @Param('id') milestoneId: string,
+    @Body() dto: CreateTaskDto,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
+    return this.developmentPlansService.createTask(
+      milestoneId,
+      dto.title,
+      dto.metric,
+      caller,
+    );
+  }
+
+  @Patch('tasks/:id')
+  updateTask(
+    @Param('id') id: string,
+    @Body() dto: UpdateTaskDto,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
+    return this.developmentPlansService.updateTask(id, dto, caller);
+  }
+
+  @Delete('tasks/:id')
+  removeTask(
+    @Param('id') id: string,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
+    return this.developmentPlansService.removeTask(id, caller);
+  }
+
+  /** Explicit save of a reviewed AI roadmap proposal — replaces the tree. */
+  @Post('me/roadmap')
+  saveRoadmap(
+    @Body() dto: SaveRoadmapDto,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
+    return this.developmentPlansService.saveRoadmap(dto, caller);
   }
 }

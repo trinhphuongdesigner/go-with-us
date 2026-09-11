@@ -2,6 +2,8 @@
 
 import * as React from 'react';
 import NextLink from 'next/link';
+import { Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
@@ -14,7 +16,6 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined';
-import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined';
 import AppShell from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
@@ -27,11 +28,24 @@ import {
 } from '@/lib/api/competencyProfileApi';
 import { colorTokens } from '@/theme/theme';
 import ProfileTimeline from './ProfileTimeline';
+import SkillsTab from './SkillsTab';
 import CertificationsTab from './CertificationsTab';
 import ProjectsTab from './ProjectsTab';
 import AwardsTab from './AwardsTab';
+import CareerPassportTab from './CareerPassportTab';
 
-const TABS = ['Timeline', 'Projects', 'Certifications', 'Awards'] as const;
+// 'passport' is a stable slug other pages deep-link to (e.g.
+// /profile?tab=passport) since Career Passport and My Skills moved in here
+// from their own nav entries — index-based routing would break if the tab
+// order ever changes.
+const TABS = [
+  { key: 'timeline', label: 'Timeline' },
+  { key: 'skills', label: 'Skills' },
+  { key: 'projects', label: 'Projects' },
+  { key: 'certifications', label: 'Certifications' },
+  { key: 'awards', label: 'Awards' },
+  { key: 'passport', label: 'Career Passport' },
+] as const;
 
 /**
  * M1 — the competency profile screen. Everything the idea doc calls "hồ sơ
@@ -39,12 +53,25 @@ const TABS = ['Timeline', 'Projects', 'Certifications', 'Awards'] as const;
  * sections, over a merged timeline.
  */
 export default function ProfilePage() {
+  return (
+    <Suspense fallback={null}>
+      <ProfilePageContent />
+    </Suspense>
+  );
+}
+
+/** Split out so useSearchParams (deep-linking ?tab=passport) has the
+ * Suspense boundary Next.js requires for a statically prerendered page. */
+function ProfilePageContent() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
 
   const [profile, setProfile] = React.useState<CompetencyProfile | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [tab, setTab] = React.useState(0);
+
+  const initialTab = TABS.findIndex((t) => t.key === searchParams.get('tab'));
+  const [tab, setTab] = React.useState(initialTab >= 0 ? initialTab : 0);
 
   const loadProfile = React.useCallback(async () => {
     setLoading(true);
@@ -78,24 +105,14 @@ export default function ProfilePage() {
           title="My Profile"
           subtitle="Your full competency record — skills, projects, certifications and achievements."
           actions={
-            <>
-              <Button
-                component={NextLink}
-                href="/career-passport"
-                variant="outlined"
-                startIcon={<BadgeOutlinedIcon />}
-              >
-                Career passport
-              </Button>
-              <Button
-                component={NextLink}
-                href="/profile/import"
-                variant="contained"
-                startIcon={<UploadFileOutlinedIcon />}
-              >
-                Import CV
-              </Button>
-            </>
+            <Button
+              component={NextLink}
+              href="/profile/import"
+              variant="contained"
+              startIcon={<UploadFileOutlinedIcon />}
+            >
+              Import CV
+            </Button>
           }
         />
 
@@ -173,30 +190,32 @@ export default function ProfilePage() {
                 onChange={(_, next: number) => setTab(next)}
                 sx={{ mb: 2.5, borderBottom: `1px solid ${colorTokens.divider}` }}
               >
-                {TABS.map((label) => (
-                  <Tab key={label} label={label} />
+                {TABS.map((t) => (
+                  <Tab key={t.key} label={t.label} />
                 ))}
               </Tabs>
 
               {tab === 0 ? (
                 <ProfileTimeline entries={profile.timeline} />
               ) : null}
-              {tab === 1 ? (
+              {tab === 1 ? <SkillsTab onChanged={loadProfile} /> : null}
+              {tab === 2 ? (
                 <ProjectsTab
                   projects={profile.projects}
                   employments={profile.employments}
                   onChanged={loadProfile}
                 />
               ) : null}
-              {tab === 2 ? (
+              {tab === 3 ? (
                 <CertificationsTab
                   certifications={profile.certifications}
                   onChanged={loadProfile}
                 />
               ) : null}
-              {tab === 3 ? (
+              {tab === 4 ? (
                 <AwardsTab awards={profile.awards} onChanged={loadProfile} />
               ) : null}
+              {tab === 5 ? <CareerPassportTab /> : null}
             </Card>
           </>
         ) : null}

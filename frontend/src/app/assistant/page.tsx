@@ -112,6 +112,7 @@ export default function AssistantPage() {
       role: 'user',
       content: value,
       referencedUserIds: [],
+      proposalData: null,
       createdAt: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, pending]);

@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'go with us',
-  description: 'Competency & HR profile management',
+  title: 'CareerMate',
+  description: 'CareerMate — competency & HR profile management',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

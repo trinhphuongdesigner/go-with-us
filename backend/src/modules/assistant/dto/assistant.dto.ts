@@ -1,4 +1,5 @@
-import { IsOptional, IsString, MinLength } from 'class-validator';
+import { AssistantFocus } from '@prisma/client';
+import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class AssistantQueryDto {
   @IsString()
@@ -9,4 +10,13 @@ export class AssistantQueryDto {
   @IsOptional()
   @IsString()
   conversationId?: string;
+
+  /**
+   * Topic for a NEW conversation — ignored when continuing one via
+   * conversationId (focus is fixed at creation). Omit for the general
+   * chat (today's roster-search / personal-companion behaviour).
+   */
+  @IsOptional()
+  @IsEnum(AssistantFocus)
+  focus?: AssistantFocus;
 }

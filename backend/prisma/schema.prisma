@@ -1,4 +1,4 @@
-// Prisma schema for "go with us" — competency/HR profile management platform.
+// Prisma schema for CareerMate — competency/HR profile management platform.
 // See D:\Coding\AI_Tool\docs\new-project-prompt-template.md (section A/B) for
 // the architecture this was scaffolded from.
 
@@ -103,6 +103,30 @@ enum ImportStatus {
   FAILED
 }
 
+/// Who asked for a CareerSummary to be written.
+enum CareerSummarySource {
+  /// The owner generates and saves their own recap, any time.
+  SELF_REQUESTED
+  /// The owner requests it, but the ORG (admin) triggers generation and
+  /// approves it — this is what makes it a credible, portable record.
+  ORGANIZATION_OFFBOARDING
+}
+
+enum CareerSummaryStatus {
+  /// SELF_REQUESTED rows default straight to APPROVED (self-authored, no
+  /// review step needed). ORGANIZATION_OFFBOARDING rows start here and stay
+  /// DRAFT through request -> trigger -> admin review.
+  DRAFT
+  APPROVED
+}
+
+/// Focus/topic of an assistant conversation — each screen gets a context
+/// builder tailored to it instead of one generic chat.
+enum AssistantFocus {
+  GENERAL
+  ROADMAP
+}
+
 model Company {
   id        String   @id @default(cuid())
   name      String
@@ -161,6 +185,8 @@ model User {
   awards                     Award[]
   profileImports             ProfileImport[]
   careerSummaries            CareerSummary[]
+  careerSummaryRequests      CareerSummary[]         @relation("careerSummaryRequestedBy")
+  careerSummaryApprovals     CareerSummary[]         @relation("careerSummaryApprovedBy")
   passportShares             CareerPassportShare[]
   assistantConversations     AssistantConversation[]
   assessmentsReceived        Assessment[]            @relation("assessmentReviewee")
@@ -304,21 +330,49 @@ model Employment {
 /// AI-written recap of one employment period (attitude, competency at that
 /// position, growth over time). Generated as a proposal, saved explicitly —
 /// same convention as DevelopmentPlan.
+///
+/// Two very different lifecycles share this table:
+///  - SELF_REQUESTED: owner generates + saves in one sitting, `content` is
+///    the whole thing, status is APPROVED immediately.
+///  - ORGANIZATION_OFFBOARDING: owner requests (empty DRAFT row) -> admin
+///    triggers AI (`generatedAt` set, `content` = redacted narrative,
+///    `evaluation`/`dimensionScores` = locked org judgement) -> admin may
+///    edit ONLY `content` -> admin approves (`status` -> APPROVED). The API
+///    layer is what enforces "narrative editable, evaluation locked" — see
+///    CareerPassportService.
 model CareerSummary {
-  id           String      @id @default(cuid())
-  userId       String
-  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  employmentId String?
-  employment   Employment? @relation(fields: [employmentId], references: [id], onDelete: SetNull)
-  content      String // markdown
-  strengths    String[]
-  growthAreas  String[]
-  aiGenerated  Boolean     @default(true)
-  periodStart  DateTime?
-  periodEnd    DateTime?
-  createdAt    DateTime    @default(now())
+  id              String              @id @default(cuid())
+  userId          String
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employmentId    String?
+  employment      Employment?         @relation(fields: [employmentId], references: [id], onDelete: SetNull)
+  content         String // markdown narrative — the only field an admin may edit post-generation
+  /// Org-sourced judgement (attitude/competency prose), from approved
+  /// Assessments only. Never exposed on an update DTO — locked once written.
+  evaluation      String?
+  /// Fixed 5-axis scores (0-10) so passports compare across companies with
+  /// different AssessmentTemplates: { attendance, proactiveness, knowledge,
+  /// skill, activityParticipation }. Locked, same as `evaluation`.
+  dimensionScores Json?
+  strengths       String[]
+  growthAreas     String[]
+  aiGenerated     Boolean             @default(true)
+  source          CareerSummarySource @default(SELF_REQUESTED)
+  status          CareerSummaryStatus @default(APPROVED)
+  requestedById   String?
+  requestedBy     User?               @relation("careerSummaryRequestedBy", fields: [requestedById], references: [id], onDelete: SetNull)
+  requestedAt     DateTime?
+  /// Null = requested but AI hasn't run yet ("waiting for admin to trigger").
+  generatedAt     DateTime?
+  approvedById    String?
+  approvedBy      User?               @relation("careerSummaryApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvedAt      DateTime?
+  periodStart     DateTime?
+  periodEnd       DateTime?
+  createdAt       DateTime            @default(now())
 
   @@index([userId])
+  @@index([employmentId])
 }
 
 /// Owner-created read-only link so a prospective employer can review the
@@ -599,12 +653,16 @@ model DevelopmentTask {
 // ---------------------------------------------------------------------------
 
 model AssistantConversation {
-  id        String   @id @default(cuid())
+  id        String         @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  /// Set once at creation from the first message's focus — a conversation
+  /// doesn't change topic mid-thread. GENERAL keeps today's behaviour
+  /// (roster search for admins / personal companion for employees).
+  focus     AssistantFocus @default(GENERAL)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
 
   messages AssistantMessage[]
 
@@ -620,6 +678,11 @@ model AssistantMessage {
   content           String
   /// Employee ids the assistant surfaced, so the UI can link to profiles.
   referencedUserIds String[]
+  /// Structured roadmap proposal (ROADMAP focus only) — set when the model
+  /// decided it has enough context to propose milestones/tasks instead of
+  /// asking a clarifying question. Shape: { milestones: [{ title,
+  /// description?, dueDate?, category, tasks: [{ title, metric? }] }] }.
+  proposalData      Json?
   createdAt         DateTime              @default(now())
 
   @@index([conversationId])

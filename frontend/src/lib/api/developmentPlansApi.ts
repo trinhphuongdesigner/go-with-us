@@ -1,34 +1,50 @@
 import { apiRequest } from './client';
 
-// Mirrors backend/prisma/schema.prisma's GoalStatus enum.
+// Mirrors backend/prisma/schema.prisma's GoalStatus/LifeCategory/MilestoneStatus enums.
 export type GoalStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'ACHIEVED';
+export type LifeCategory = 'WORK' | 'PERSONAL';
+export type MilestoneStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'DONE';
 
 export interface DevelopmentGoal {
   id: string;
   userId: string;
   title: string;
+  description: string | null;
+  category: LifeCategory;
   metric: string | null;
   targetValue: number | null;
   currentValue: number | null;
+  progress: number;
+  dueDate: string | null;
   status: GoalStatus;
   aiScore: number | null;
+  aiSuggested: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreateGoalPayload {
   title: string;
+  description?: string;
+  category?: LifeCategory;
   metric?: string;
   targetValue?: number;
   currentValue?: number;
+  progress?: number;
+  dueDate?: string;
   status?: GoalStatus;
+  aiSuggested?: boolean;
 }
 
 export interface UpdateGoalPayload {
   title?: string;
+  description?: string;
+  category?: LifeCategory;
   metric?: string;
   targetValue?: number;
   currentValue?: number;
+  progress?: number;
+  dueDate?: string;
   status?: GoalStatus;
 }
 
@@ -57,10 +73,67 @@ export interface SavePlanPayload {
   aiGenerated?: boolean;
 }
 
+export interface DevelopmentTask {
+  id: string;
+  milestoneId: string;
+  title: string;
+  metric: string | null;
+  done: boolean;
+  order: number;
+}
+
+export interface DevelopmentMilestone {
+  id: string;
+  planId: string;
+  title: string;
+  description: string | null;
+  dueDate: string | null;
+  status: MilestoneStatus;
+  order: number;
+  tasks: DevelopmentTask[];
+}
+
+export interface CreateTaskPayload {
+  title: string;
+  metric?: string;
+}
+
+export interface CreateMilestonePayload {
+  title: string;
+  description?: string;
+  dueDate?: string;
+  tasks?: CreateTaskPayload[];
+}
+
+export interface UpdateMilestonePayload {
+  title?: string;
+  description?: string;
+  dueDate?: string;
+  status?: MilestoneStatus;
+}
+
+export interface UpdateTaskPayload {
+  title?: string;
+  metric?: string;
+  done?: boolean;
+}
+
+export interface RoadmapMilestonePayload {
+  title: string;
+  description?: string;
+  dueDate?: string;
+  tasks: CreateTaskPayload[];
+}
+
+export interface SaveRoadmapPayload {
+  milestones: RoadmapMilestonePayload[];
+}
+
 // ---- Goals ----
 
-export function listGoals() {
-  return apiRequest<DevelopmentGoal[]>('/development-plans/goals');
+export function listGoals(category?: LifeCategory) {
+  const query = category ? `?category=${category}` : '';
+  return apiRequest<DevelopmentGoal[]>(`/development-plans/goals${query}`);
 }
 
 export function createGoal(payload: CreateGoalPayload) {
@@ -101,4 +174,58 @@ export function saveMyPlan(payload: SavePlanPayload) {
 
 export function getMyPlan() {
   return apiRequest<DevelopmentPlan | null>('/development-plans/me');
+}
+
+// ---- Milestones & tasks ----
+
+export function listMilestones() {
+  return apiRequest<DevelopmentMilestone[]>('/development-plans/me/milestones');
+}
+
+export function createMilestone(payload: CreateMilestonePayload) {
+  return apiRequest<DevelopmentMilestone>('/development-plans/me/milestones', {
+    method: 'POST',
+    body: payload,
+  });
+}
+
+export function updateMilestone(id: string, payload: UpdateMilestonePayload) {
+  return apiRequest<DevelopmentMilestone>(`/development-plans/milestones/${id}`, {
+    method: 'PATCH',
+    body: payload,
+  });
+}
+
+export function deleteMilestone(id: string) {
+  return apiRequest<{ id: string }>(`/development-plans/milestones/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export function createTask(milestoneId: string, payload: CreateTaskPayload) {
+  return apiRequest<DevelopmentTask>(
+    `/development-plans/milestones/${milestoneId}/tasks`,
+    { method: 'POST', body: payload },
+  );
+}
+
+export function updateTask(id: string, payload: UpdateTaskPayload) {
+  return apiRequest<DevelopmentTask>(`/development-plans/tasks/${id}`, {
+    method: 'PATCH',
+    body: payload,
+  });
+}
+
+export function deleteTask(id: string) {
+  return apiRequest<{ id: string }>(`/development-plans/tasks/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+/** Explicit save of a reviewed AI roadmap proposal — replaces the tree. */
+export function saveRoadmap(payload: SaveRoadmapPayload) {
+  return apiRequest<DevelopmentMilestone[]>('/development-plans/me/roadmap', {
+    method: 'POST',
+    body: payload,
+  });
 }

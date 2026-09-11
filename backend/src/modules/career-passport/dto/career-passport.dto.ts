@@ -98,6 +98,21 @@ export class GenerateCareerSummaryDto {
   userId?: string;
 }
 
+/** Employee-initiated request for an org-verified offboarding summary. */
+export class RequestOffboardingSummaryDto {
+  @IsString()
+  employmentId!: string;
+}
+
+/** Admin edit of an org-offboarding summary — narrative only, never the
+ * locked evaluation/dimensionScores (enforced by only accepting `content`
+ * here, not by trusting the caller to omit other fields). */
+export class UpdateOffboardingSummaryDto {
+  @IsString()
+  @MinLength(1)
+  content!: string;
+}
+
 export class CreatePassportShareDto {
   @IsOptional()
   @IsString()

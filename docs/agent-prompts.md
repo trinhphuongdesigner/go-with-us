@@ -1,7 +1,7 @@
 # CareerMate — Agent Delegation Prompts
 
 > **Mục đích:** Prompt sẵn để giao việc cho các AI agents (PI Desktop, ChatGPT/Codex, Antigravity IDE)
-> **Dự án:** go-with-us (CareerMate)
+> **Dự án:** CareerMate
 > **Repo:** https://github.com/trinhphuongdesigner/go-with-us
 > **Ngày:** 11/09/2026
 
@@ -24,7 +24,7 @@ Bạn đang làm việc trên dự án CareerMate — nền tảng đánh giá n
 4. Không thêm Object Storage (S3/Spaces) — lưu text vào PostgreSQL
 5. Giữ Prisma ở 6.19.3, không upgrade
 6. Style theo docs/style-concept.md (token màu, Google Sans, bo góc 8px/14px/22px)
-7. Tài khoản demo: superadmin@gowithus.dev / Password123!
+7. Tài khoản demo: superadmin@careermate.dev / Password123!
 
 **Cấu trúc project:**
 - backend/src/modules/ — mỗi feature 1 module (controller + service + dto)
@@ -77,7 +77,7 @@ Xây dựng Dashboard hiển thị khác nhau theo role:
 - Không tạo component mới nếu không cần — dùng lại Card, StatusChip
 
 ### Test:
-- Login superadmin@gowithus.dev → thấy dashboard Super Admin
+- Login superadmin@careermate.dev → thấy dashboard Super Admin
 - Login admin@acme.dev → thấy dashboard Company Admin  
 - Login alice@acme.dev → thấy dashboard Employee
 ```

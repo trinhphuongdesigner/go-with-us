@@ -4,15 +4,27 @@ import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
 const DEMO_PASSWORD = 'Password123!';
+const SUPER_ADMIN_EMAIL = 'superadmin@careermate.dev';
+const LEGACY_SUPER_ADMIN_EMAIL = 'superadmin@gowithus.dev';
 
 async function main() {
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, SALT_ROUNDS);
 
+  const legacySuperAdmin = await prisma.user.findUnique({
+    where: { email: LEGACY_SUPER_ADMIN_EMAIL },
+  });
+  if (legacySuperAdmin) {
+    await prisma.user.update({
+      where: { email: LEGACY_SUPER_ADMIN_EMAIL },
+      data: { email: SUPER_ADMIN_EMAIL },
+    });
+  }
+
   const superAdmin = await prisma.user.upsert({
-    where: { email: 'superadmin@gowithus.dev' },
+    where: { email: SUPER_ADMIN_EMAIL },
     update: {},
     create: {
-      email: 'superadmin@gowithus.dev',
+      email: SUPER_ADMIN_EMAIL,
       passwordHash,
       name: 'Super Admin',
       role: Role.SUPER_ADMIN,

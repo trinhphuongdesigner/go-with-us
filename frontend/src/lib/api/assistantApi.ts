@@ -1,11 +1,30 @@
 import { apiRequest } from './client';
 
+export type AssistantFocus = 'GENERAL' | 'ROADMAP';
+
 export interface AssistantConversation {
   id: string;
   userId: string;
   title: string;
+  focus: AssistantFocus;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface RoadmapProposalTask {
+  title: string;
+  metric?: string;
+}
+
+export interface RoadmapProposalMilestone {
+  title: string;
+  description?: string;
+  dueDate?: string;
+  tasks: RoadmapProposalTask[];
+}
+
+export interface RoadmapProposal {
+  milestones: RoadmapProposalMilestone[];
 }
 
 export interface AssistantMessage {
@@ -14,6 +33,8 @@ export interface AssistantMessage {
   role: string;
   content: string;
   referencedUserIds: string[];
+  /** ROADMAP focus only — present once the model has enough to propose. */
+  proposalData: RoadmapProposal | null;
   createdAt: string;
 }
 
@@ -52,6 +73,8 @@ export function deleteConversation(id: string) {
 export function askAssistant(payload: {
   question: string;
   conversationId?: string;
+  /** Only used when starting a new conversation. */
+  focus?: AssistantFocus;
 }) {
   return apiRequest<AssistantQueryResult>('/assistant/query', {
     method: 'POST',

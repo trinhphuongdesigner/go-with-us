@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { AssessmentStatus, Role } from '@prisma/client';
+import { AssessmentStatus, AssistantFocus, Prisma, Role } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AiChatService } from '../ai-chat/ai-chat.service';
 import type { ChatMessage } from '../ai-chat/ai-chat.types';
@@ -16,9 +16,26 @@ const HISTORY_LIMIT = 10;
 /** Cap on employees sent as context, to keep the prompt bounded. */
 const ROSTER_LIMIT = 80;
 
+export interface RoadmapProposalTask {
+  title: string;
+  metric?: string;
+}
+
+export interface RoadmapProposalMilestone {
+  title: string;
+  description?: string;
+  dueDate?: string;
+  tasks: RoadmapProposalTask[];
+}
+
+export interface RoadmapProposal {
+  milestones: RoadmapProposalMilestone[];
+}
+
 interface AssistantReply {
   answer: string;
   referencedUserIds: string[];
+  proposal?: RoadmapProposal;
 }
 
 @Injectable()
@@ -55,14 +72,19 @@ export class AssistantService {
   }
 
   /**
-   * One assistant turn. Two different assistants behind one endpoint:
-   *  - admin/sales/BOM ask staffing questions, and get answers grounded in
-   *    the company roster ("ai có kinh nghiệm React trên 2 năm...")
-   *  - an employee asks about their own growth, and only ever sees their
-   *    own data.
+   * One assistant turn. Three "focuses" behind one endpoint:
+   *  - GENERAL, admin/sales/BOM: staffing questions grounded in the
+   *    company roster ("ai có kinh nghiệm React trên 2 năm...")
+   *  - GENERAL, employee: a companion limited to their own record.
+   *  - ROADMAP: a focused coach for building a development roadmap — it
+   *    auto-collects the caller's own profile/skills/goals as context and
+   *    either asks a clarifying question or, once it has enough to work
+   *    with, emits a structured `proposal` the UI turns into an editable
+   *    milestone/task tree (see development-plans' saveRoadmap).
    *
    * The chat transcript is persisted (it IS the feature's own data); no
-   * profile or assessment record is ever written from here.
+   * profile, goal or assessment record is ever written from here — only
+   * saveRoadmap() (a separate explicit call) commits a proposal.
    */
   async query(dto: AssistantQueryDto, caller: AuthenticatedUser) {
     const conversation = dto.conversationId
@@ -71,6 +93,7 @@ export class AssistantService {
           data: {
             userId: caller.id,
             title: dto.question.slice(0, 60),
+            focus: dto.focus ?? AssistantFocus.GENERAL,
           },
           include: { messages: true },
         });
@@ -78,9 +101,12 @@ export class AssistantService {
     const canSearchRoster =
       caller.role === Role.COMPANY_ADMIN || caller.role === Role.SUPER_ADMIN;
 
-    const { systemPrompt, knownUserIds } = canSearchRoster
-      ? await this.buildRosterContext(caller)
-      : await this.buildPersonalContext(caller);
+    const { systemPrompt, knownUserIds } =
+      conversation.focus === AssistantFocus.ROADMAP
+        ? await this.buildRoadmapContext(caller)
+        : canSearchRoster
+          ? await this.buildRosterContext(caller)
+          : await this.buildPersonalContext(caller);
 
     const history: ChatMessage[] = conversation.messages
       .slice(-HISTORY_LIMIT)
@@ -95,7 +121,11 @@ export class AssistantService {
       messages: [...history, { role: 'user', content: dto.question }],
     });
 
-    const reply = this.parseReply(content, knownUserIds);
+    const reply = this.parseReply(
+      content,
+      knownUserIds,
+      conversation.focus === AssistantFocus.ROADMAP,
+    );
 
     await this.prisma.assistantMessage.create({
       data: {
@@ -110,6 +140,9 @@ export class AssistantService {
         role: 'assistant',
         content: reply.answer,
         referencedUserIds: reply.referencedUserIds,
+        proposalData: reply.proposal
+          ? (reply.proposal as unknown as Prisma.InputJsonValue)
+          : undefined,
       },
     });
     await this.prisma.assistantConversation.update({
@@ -229,6 +262,75 @@ Rules:
 
   /** The employee's own record — a personal growth companion. */
   private async buildPersonalContext(caller: AuthenticatedUser) {
+    const me = await this.loadOwnProfile(caller);
+
+    const systemPrompt = `You are CareerMate's personal career companion for ${me.name}. Use ONLY their own record below — you cannot see anyone else's data.
+
+Current title: ${me.jobTitle ?? 'n/a'}
+Skills: ${me.skills.map((s) => `${s.skill.name} (lvl ${s.level}/5)`).join(', ') || 'none recorded'}
+Certifications: ${me.certifications.map((c) => `${c.name}${c.score ? ` ${c.score}` : ''}`).join(', ') || 'none'}
+Projects: ${me.projectExperiences.map((p) => `${p.name} as ${p.role}${p.domain ? ` [${p.domain}]` : ''}${p.techStack.length ? ` (${p.techStack.join('/')})` : ''}`).join('; ') || 'none recorded'}
+Goals: ${me.goals.map((g) => `${g.title} [${g.category}, ${g.status}, ${g.progress}%]`).join('; ') || 'none set'}
+Recent approved assessments: ${me.assessmentsReceived.map((a) => `${a.cycle?.period ?? 'n/a'}: ${a.totalScore ?? 'n/a'}/10${a.highlights ? ` — ${a.highlights}` : ''}`).join('; ') || 'none yet'}
+
+Reply with ONLY a JSON object, no prose, no markdown code fences:
+{"answer": "<supportive, concrete advice in the language the user asked in>", "referencedUserIds": []}
+
+Rules:
+- Ground advice in the record above; never invent achievements or scores.
+- Be specific and actionable — suggest next steps tied to their actual gaps and goals.
+- You may suggest goals, but you cannot save anything: tell them to add it on the Goals screen.`;
+
+    return { systemPrompt, knownUserIds: new Set<string>() };
+  }
+
+  /**
+   * ROADMAP focus — a coach that builds a milestone/task roadmap with the
+   * user. Context (skills/goals/existing roadmap) is collected automatically
+   * so the user never has to repeat what's already on their profile; the
+   * model is instructed to ask a clarifying question rather than guess when
+   * that context isn't enough to propose something concrete.
+   */
+  private async buildRoadmapContext(caller: AuthenticatedUser) {
+    const me = await this.loadOwnProfile(caller);
+    const existingMilestones = await this.prisma.developmentMilestone.findMany({
+      where: { plan: { userId: caller.id } },
+      select: { title: true, status: true },
+      orderBy: { order: 'asc' },
+    });
+
+    const systemPrompt = `You are CareerMate's roadmap-building coach for ${me.name}. Help them turn a growth goal into a concrete roadmap of milestones and measurable tasks.
+
+Their profile (use this automatically — never ask them to repeat it):
+Current title: ${me.jobTitle ?? 'n/a'}
+Skills: ${me.skills.map((s) => `${s.skill.name} (lvl ${s.level}/5)`).join(', ') || 'none recorded'}
+Existing goals: ${me.goals.map((g) => `${g.title} [${g.category}, ${g.status}]`).join('; ') || 'none set'}
+Existing roadmap milestones: ${existingMilestones.map((m) => `${m.title} [${m.status}]`).join('; ') || 'none yet'}
+Recent approved assessment highlights: ${
+      me.assessmentsReceived
+        .map((a) => a.highlights)
+        .filter(Boolean)
+        .join('; ') || 'none yet'
+    }
+
+Reply with ONLY a JSON object, no prose, no markdown code fences, one of these two shapes:
+
+1) Not enough context yet to propose a concrete roadmap (don't know their target role/timeframe/what they actually want to grow into):
+{"answer": "<one specific clarifying question, in the language they used>", "proposal": null}
+
+2) You have enough to propose something concrete:
+{"answer": "<one short friendly sentence introducing the proposal>", "proposal": {"milestones": [{"title": "<milestone>", "description": "<1 sentence>", "dueDate": "<YYYY-MM-DD or omit>", "tasks": [{"title": "<measurable task>", "metric": "<how completion is measured, or omit>"}]}]}}
+
+Rules:
+- Never invent skills/goals/scores not shown above.
+- Prefer asking ONE focused question over guessing — but don't stall forever: once you know the target and a rough timeframe, propose.
+- 2-5 milestones, 1-4 tasks each. Tasks must be concrete and measurable, not vague ("learn X" is bad, "ship 2 features using X" is good).
+- Keep "answer" short — the milestones/tasks carry the detail, not the prose.`;
+
+    return { systemPrompt, knownUserIds: new Set<string>() };
+  }
+
+  private async loadOwnProfile(caller: AuthenticatedUser) {
     const me = await this.prisma.user.findUnique({
       where: { id: caller.id },
       select: {
@@ -268,28 +370,14 @@ Rules:
     if (!me) {
       throw new NotFoundException('Your profile could not be loaded');
     }
-
-    const systemPrompt = `You are CareerMate's personal career companion for ${me.name}. Use ONLY their own record below — you cannot see anyone else's data.
-
-Current title: ${me.jobTitle ?? 'n/a'}
-Skills: ${me.skills.map((s) => `${s.skill.name} (lvl ${s.level}/5)`).join(', ') || 'none recorded'}
-Certifications: ${me.certifications.map((c) => `${c.name}${c.score ? ` ${c.score}` : ''}`).join(', ') || 'none'}
-Projects: ${me.projectExperiences.map((p) => `${p.name} as ${p.role}${p.domain ? ` [${p.domain}]` : ''}${p.techStack.length ? ` (${p.techStack.join('/')})` : ''}`).join('; ') || 'none recorded'}
-Goals: ${me.goals.map((g) => `${g.title} [${g.category}, ${g.status}, ${g.progress}%]`).join('; ') || 'none set'}
-Recent approved assessments: ${me.assessmentsReceived.map((a) => `${a.cycle?.period ?? 'n/a'}: ${a.totalScore ?? 'n/a'}/10${a.highlights ? ` — ${a.highlights}` : ''}`).join('; ') || 'none yet'}
-
-Reply with ONLY a JSON object, no prose, no markdown code fences:
-{"answer": "<supportive, concrete advice in the language the user asked in>", "referencedUserIds": []}
-
-Rules:
-- Ground advice in the record above; never invent achievements or scores.
-- Be specific and actionable — suggest next steps tied to their actual gaps and goals.
-- You may suggest goals, but you cannot save anything: tell them to add it on the Goals screen.`;
-
-    return { systemPrompt, knownUserIds: new Set<string>() };
+    return me;
   }
 
-  private parseReply(raw: string, knownUserIds: Set<string>): AssistantReply {
+  private parseReply(
+    raw: string,
+    knownUserIds: Set<string>,
+    expectProposal: boolean,
+  ): AssistantReply {
     let text = raw.trim();
     const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
     if (fenceMatch) {
@@ -323,6 +411,49 @@ Rules:
         )
       : [];
 
-    return { answer, referencedUserIds };
+    if (!expectProposal) {
+      return { answer, referencedUserIds };
+    }
+
+    const proposal = this.parseRoadmapProposal(parsed.proposal);
+    return { answer, referencedUserIds, proposal };
+  }
+
+  /** Defensive parse — a malformed proposal just falls back to "no proposal yet" rather than failing the whole turn. */
+  private parseRoadmapProposal(raw: unknown): RoadmapProposal | undefined {
+    if (!raw || typeof raw !== 'object') return undefined;
+    const milestonesRaw = (raw as Record<string, unknown>).milestones;
+    if (!Array.isArray(milestonesRaw)) return undefined;
+
+    const milestones: RoadmapProposalMilestone[] = [];
+    for (const item of milestonesRaw) {
+      if (!item || typeof item !== 'object') continue;
+      const m = item as Record<string, unknown>;
+      if (typeof m.title !== 'string' || m.title.trim().length === 0) continue;
+
+      const tasksRaw = Array.isArray(m.tasks) ? m.tasks : [];
+      const tasks: RoadmapProposalTask[] = [];
+      for (const t of tasksRaw) {
+        if (!t || typeof t !== 'object') continue;
+        const task = t as Record<string, unknown>;
+        if (typeof task.title !== 'string' || task.title.trim().length === 0) {
+          continue;
+        }
+        tasks.push({
+          title: task.title,
+          metric: typeof task.metric === 'string' ? task.metric : undefined,
+        });
+      }
+
+      milestones.push({
+        title: m.title,
+        description:
+          typeof m.description === 'string' ? m.description : undefined,
+        dueDate: typeof m.dueDate === 'string' ? m.dueDate : undefined,
+        tasks,
+      });
+    }
+
+    return milestones.length > 0 ? { milestones } : undefined;
   }
 }

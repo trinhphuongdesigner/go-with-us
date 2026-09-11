@@ -1,4 +1,4 @@
-# go with us
+# CareerMate
 
 A competency / HR profile management platform, two sides:
 

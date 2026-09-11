@@ -6,17 +6,29 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { AssessmentStatus, EmploymentStatus, Role } from '@prisma/client';
+import {
+  AssessmentStatus,
+  CareerSummarySource,
+  CareerSummaryStatus,
+  EmploymentStatus,
+  Prisma,
+  Role,
+} from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AiChatService } from '../ai-chat/ai-chat.service';
-import { assertCanViewUser } from '../../common/access/user-scope';
+import {
+  assertCanViewUser,
+  resolveCompanyScope,
+} from '../../common/access/user-scope';
 import type { AuthenticatedUser } from '../auth/jwt.strategy';
 import {
   CreateEmploymentDto,
   CreatePassportShareDto,
   GenerateCareerSummaryDto,
+  RequestOffboardingSummaryDto,
   SaveCareerSummaryDto,
   UpdateEmploymentDto,
+  UpdateOffboardingSummaryDto,
 } from './dto/career-passport.dto';
 
 export interface CareerSummaryProposal {
@@ -24,6 +36,24 @@ export interface CareerSummaryProposal {
   strengths: string[];
   growthAreas: string[];
   summary: string;
+}
+
+/** Fixed 5-axis scores so passports compare across companies even though
+ * each one's AssessmentTemplate is bespoke (docs/careermate-scope.md 7.2). */
+export interface DimensionScores {
+  attendance: number;
+  proactiveness: number;
+  knowledge: number;
+  skill: number;
+  activityParticipation: number;
+}
+
+interface OffboardingProposal {
+  narrative: string;
+  evaluation: string;
+  dimensionScores: DimensionScores;
+  strengths: string[];
+  growthAreas: string[];
 }
 
 @Injectable()
@@ -235,7 +265,10 @@ export class CareerPassportService {
           orderBy: { startDate: 'desc' },
         }),
         this.prisma.careerSummary.findMany({
-          where: { userId },
+          // Only APPROVED summaries travel with the passport — a DRAFT
+          // ORGANIZATION_OFFBOARDING row (requested, maybe generated, not
+          // yet reviewed) stays internal until an admin approves it.
+          where: { userId, status: CareerSummaryStatus.APPROVED },
           orderBy: { createdAt: 'desc' },
         }),
         this.prisma.employeeSkill.findMany({
@@ -418,6 +451,320 @@ export class CareerPassportService {
         growthAreas: dto.growthAreas ?? [],
       },
     });
+  }
+
+  // --- Offboarding summary (ORGANIZATION_OFFBOARDING) -----------------------
+  // Request -> trigger -> (admin edits narrative only) -> approve. See the
+  // CareerSummary model doc for why this shares a table with the self-serve
+  // flow above instead of being a separate model.
+
+  /**
+   * Owner requests a summary for one of their own employments — this just
+   * creates the empty DRAFT row; no AI runs yet. Only an admin can trigger
+   * generation (assertAdminForEmployment below), which is what makes the
+   * eventual result an org judgement rather than something the employee
+   * wrote about themselves.
+   */
+  async requestOffboardingSummary(
+    dto: RequestOffboardingSummaryDto,
+    caller: AuthenticatedUser,
+  ) {
+    const employment = await this.prisma.employment.findUnique({
+      where: { id: dto.employmentId },
+    });
+    if (!employment || employment.userId !== caller.id) {
+      throw new NotFoundException(`Employment ${dto.employmentId} not found`);
+    }
+
+    const existing = await this.prisma.careerSummary.findFirst({
+      where: {
+        employmentId: employment.id,
+        source: CareerSummarySource.ORGANIZATION_OFFBOARDING,
+        status: CareerSummaryStatus.DRAFT,
+      },
+    });
+    if (existing) return existing;
+
+    return this.prisma.careerSummary.create({
+      data: {
+        userId: caller.id,
+        employmentId: employment.id,
+        content: '',
+        source: CareerSummarySource.ORGANIZATION_OFFBOARDING,
+        status: CareerSummaryStatus.DRAFT,
+        requestedById: caller.id,
+        requestedAt: new Date(),
+        periodStart: employment.startDate,
+        periodEnd: employment.endDate,
+      },
+    });
+  }
+
+  /** Everything waiting on this admin — requested-not-generated and
+   * generated-not-approved both show up here; the FE tells them apart by
+   * `generatedAt`. */
+  listPendingOffboardingSummaries(
+    caller: AuthenticatedUser,
+    companyId?: string,
+  ) {
+    const scope =
+      caller.role === Role.SUPER_ADMIN
+        ? companyId
+        : resolveCompanyScope(caller);
+    return this.prisma.careerSummary.findMany({
+      where: {
+        source: CareerSummarySource.ORGANIZATION_OFFBOARDING,
+        status: CareerSummaryStatus.DRAFT,
+        ...(scope ? { employment: { companyId: scope } } : {}),
+      },
+      include: {
+        user: { select: { id: true, name: true, jobTitle: true } },
+        employment: {
+          select: {
+            id: true,
+            jobTitle: true,
+            startDate: true,
+            endDate: true,
+            company: { select: { id: true, name: true } },
+          },
+        },
+      },
+      orderBy: { requestedAt: 'asc' },
+    });
+  }
+
+  /**
+   * Admin-triggered AI generation — the only place `evaluation` and
+   * `dimensionScores` are ever written, straight from approved Assessment
+   * data. The narrative is written redacted (no exact project/client
+   * names) so what an admin might still need to fix by hand is minimal.
+   */
+  async triggerOffboardingSummary(id: string, caller: AuthenticatedUser) {
+    const summary = await this.loadOffboardingDraft(id, caller);
+
+    const [assessments, projects, skills, goals] = await Promise.all([
+      this.prisma.assessment.findMany({
+        where: {
+          revieweeId: summary.userId,
+          status: AssessmentStatus.APPROVED,
+          employmentId: summary.employmentId ?? undefined,
+        },
+        include: {
+          cycle: { select: { period: true } },
+          answers: { include: { question: { select: { text: true } } } },
+        },
+        orderBy: { approvedAt: 'asc' },
+      }),
+      this.prisma.projectExperience.findMany({
+        where: {
+          userId: summary.userId,
+          employmentId: summary.employmentId ?? undefined,
+        },
+        orderBy: { startDate: 'asc' },
+      }),
+      this.prisma.employeeSkill.findMany({
+        where: { userId: summary.userId },
+        include: { skill: true },
+        orderBy: { level: 'desc' },
+        take: 20,
+      }),
+      this.prisma.developmentGoal.findMany({
+        where: { userId: summary.userId },
+        orderBy: { updatedAt: 'desc' },
+        take: 20,
+      }),
+    ]);
+
+    if (assessments.length === 0 && projects.length === 0) {
+      throw new BadRequestException(
+        'Not enough organization data yet — no approved assessments or projects for this period',
+      );
+    }
+
+    const { content } = await this.aiChatService.send({
+      systemPrompt: this.buildOffboardingPrompt(),
+      messages: [
+        {
+          role: 'user',
+          content: this.buildSummaryContext(
+            { name: summary.user.name, jobTitle: summary.user.jobTitle },
+            summary.employment,
+            assessments,
+            projects,
+            skills,
+            goals,
+          ),
+        },
+      ],
+    });
+
+    const proposal = this.parseOffboardingReply(content);
+
+    return this.prisma.careerSummary.update({
+      where: { id: summary.id },
+      data: {
+        content: proposal.narrative,
+        evaluation: proposal.evaluation,
+        dimensionScores:
+          proposal.dimensionScores as unknown as Prisma.InputJsonValue,
+        strengths: proposal.strengths,
+        growthAreas: proposal.growthAreas,
+        aiGenerated: true,
+        generatedAt: new Date(),
+      },
+    });
+  }
+
+  /** Admin edits the narrative only — `evaluation`/`dimensionScores` have
+   * no path to mutation here, by construction (DTO only carries `content`). */
+  async updateOffboardingSummary(
+    id: string,
+    dto: UpdateOffboardingSummaryDto,
+    caller: AuthenticatedUser,
+  ) {
+    const summary = await this.loadOffboardingDraft(id, caller);
+    if (!summary.generatedAt) {
+      throw new BadRequestException('Trigger the AI summary before editing it');
+    }
+    return this.prisma.careerSummary.update({
+      where: { id: summary.id },
+      data: { content: dto.content },
+    });
+  }
+
+  async approveOffboardingSummary(id: string, caller: AuthenticatedUser) {
+    const summary = await this.loadOffboardingDraft(id, caller);
+    if (!summary.generatedAt) {
+      throw new BadRequestException(
+        'Trigger the AI summary before approving it',
+      );
+    }
+    return this.prisma.careerSummary.update({
+      where: { id: summary.id },
+      data: {
+        status: CareerSummaryStatus.APPROVED,
+        approvedById: caller.id,
+        approvedAt: new Date(),
+      },
+    });
+  }
+
+  private async loadOffboardingDraft(id: string, caller: AuthenticatedUser) {
+    const summary = await this.prisma.careerSummary.findUnique({
+      where: { id },
+      include: {
+        user: { select: { id: true, name: true, jobTitle: true } },
+        employment: {
+          include: { company: { select: { id: true, name: true } } },
+        },
+      },
+    });
+    if (
+      !summary ||
+      summary.source !== CareerSummarySource.ORGANIZATION_OFFBOARDING
+    ) {
+      throw new NotFoundException(`Offboarding summary ${id} not found`);
+    }
+    if (summary.status !== CareerSummaryStatus.DRAFT) {
+      throw new BadRequestException('This summary has already been approved');
+    }
+
+    const companyId = summary.employment?.companyId;
+    if (caller.role === Role.SUPER_ADMIN) {
+      // allowed
+    } else if (caller.role === Role.COMPANY_ADMIN) {
+      if (!companyId || caller.companyId !== companyId) {
+        throw new ForbiddenException(
+          'Not allowed to manage this offboarding summary',
+        );
+      }
+    } else {
+      throw new ForbiddenException(
+        'Not allowed to manage this offboarding summary',
+      );
+    }
+
+    return summary;
+  }
+
+  private buildOffboardingPrompt(): string {
+    return `You write the ORGANIZATION-VERIFIED career recap that follows a person after they leave — this is not self-reported, it is the company's own judgement of their time there, grounded strictly in approved assessment data.
+
+Reply with ONLY a JSON object of this exact shape, no prose, no markdown code fences:
+{
+  "narrative": "<markdown, 2-4 short paragraphs: what they worked on and how they grew, written for a FUTURE employer>",
+  "evaluation": "<markdown, 1-3 short paragraphs: attitude, competency and growth, grounded only in the assessment data given>",
+  "dimensionScores": {"attendance": <0-10>, "proactiveness": <0-10>, "knowledge": <0-10>, "skill": <0-10>, "activityParticipation": <0-10>},
+  "strengths": ["<short phrase>"],
+  "growthAreas": ["<short phrase>"]
+}
+
+CRITICAL redaction rule for "narrative" only: NEVER mention an exact project name or client/customer name. Describe them generically instead — e.g. "a retail client's inventory platform" instead of the actual project name, "a fintech client" instead of the actual company name. This rule does not apply to "evaluation" (it has no project/client names to redact anyway — it's about the person, not the work).
+
+Other rules:
+- Ground every claim in the data provided. Never invent a project, score or achievement.
+- dimensionScores are your best-grounded estimate from the assessment scores/comments given — if a dimension truly isn't covered by the data, use 5 (neutral), never leave it out.
+- Be factual and balanced — this record follows the person for life, so no marketing language and no unearned praise.
+- Write in the same language as the input data.`;
+  }
+
+  private parseOffboardingReply(raw: string): OffboardingProposal {
+    let text = raw.trim();
+    const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (fenceMatch) {
+      text = fenceMatch[1].trim();
+    }
+
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = JSON.parse(text) as Record<string, unknown>;
+    } catch {
+      throw new BadGatewayException(
+        'AI provider returned an unparseable offboarding summary',
+      );
+    }
+
+    const narrative =
+      typeof parsed.narrative === 'string' && parsed.narrative.trim().length > 0
+        ? parsed.narrative.trim()
+        : '';
+    const evaluation =
+      typeof parsed.evaluation === 'string' &&
+      parsed.evaluation.trim().length > 0
+        ? parsed.evaluation.trim()
+        : '';
+    if (!narrative || !evaluation) {
+      throw new BadGatewayException(
+        'AI provider returned an empty offboarding summary',
+      );
+    }
+
+    const rawScores = (parsed.dimensionScores ?? {}) as Record<string, unknown>;
+    const clampScore = (value: unknown): number => {
+      const num = typeof value === 'number' ? value : Number(value);
+      if (!Number.isFinite(num)) return 5;
+      return Math.max(0, Math.min(10, Math.round(num * 10) / 10));
+    };
+    const dimensionScores: DimensionScores = {
+      attendance: clampScore(rawScores.attendance),
+      proactiveness: clampScore(rawScores.proactiveness),
+      knowledge: clampScore(rawScores.knowledge),
+      skill: clampScore(rawScores.skill),
+      activityParticipation: clampScore(rawScores.activityParticipation),
+    };
+
+    const asStringArray = (value: unknown): string[] =>
+      Array.isArray(value)
+        ? value.filter((v): v is string => typeof v === 'string')
+        : [];
+
+    return {
+      narrative,
+      evaluation,
+      dimensionScores,
+      strengths: asStringArray(parsed.strengths),
+      growthAreas: asStringArray(parsed.growthAreas),
+    };
   }
 
   // --- Share links ---------------------------------------------------------

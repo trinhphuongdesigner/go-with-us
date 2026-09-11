@@ -2,7 +2,7 @@
 
 Tài liệu này hệ thống hóa ý tưởng trong
 `docs/y-tuong-phan-mem-danh-gia-nang-luc-nhan-vien 1.docx` thành scope triển
-khai cho codebase `go-with-us`, kèm 4 điểm làm rõ đã chốt. Đây là file để
+khai cho codebase CareerMate, kèm 4 điểm làm rõ đã chốt. Đây là file để
 **sửa trực tiếp khi scope thay đổi** — code bám theo file này.
 
 ---

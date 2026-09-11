@@ -1,4 +1,4 @@
-# go with us — Competency / HR Profile Management Platform
+# CareerMate — Competency / HR Profile Management Platform
 
 Two-sided platform: **Super Admin** (platform level, no `companyId`) manages
 Companies; **Company Admin** (scoped to one `companyId`) manages employee
@@ -44,7 +44,7 @@ cd frontend && npm install && npm run dev         # http://localhost:3001
 ```
 
 First-time setup (env files, DB migrate + seed) is in the root `README.md`.
-Seeded demo logins (password `Password123!` for all): `superadmin@gowithus.dev`
+Seeded demo logins (password `Password123!` for all): `superadmin@careermate.dev`
 (SUPER_ADMIN), `admin@acme.dev` (COMPANY_ADMIN), `alice@acme.dev` /
 `bob@acme.dev` / `carol@acme.dev` (EMPLOYEE).
 

@@ -3,12 +3,19 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { LifeCategory, MilestoneStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AiChatService } from '../ai-chat/ai-chat.service';
 import type { AuthenticatedUser } from '../auth/jwt.strategy';
 import { CreateGoalDto } from './dto/create-goal.dto';
 import { UpdateGoalDto } from './dto/update-goal.dto';
 import { GeneratePlanDto } from './dto/generate-plan.dto';
+import {
+  CreateMilestoneDto,
+  SaveRoadmapDto,
+  UpdateMilestoneDto,
+  UpdateTaskDto,
+} from './dto/milestone.dto';
 
 export interface GeneratePlanResult {
   planMd: string;
@@ -34,9 +41,10 @@ export class DevelopmentPlansService {
 
   // ---- Goals ----
 
-  listGoals(caller: AuthenticatedUser) {
+  /** Optional `category` filter powers the Work/Personal split on the UI. */
+  listGoals(caller: AuthenticatedUser, category?: LifeCategory) {
     return this.prisma.developmentGoal.findMany({
-      where: { userId: caller.id },
+      where: { userId: caller.id, ...(category ? { category } : {}) },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -46,10 +54,15 @@ export class DevelopmentPlansService {
       data: {
         userId: caller.id,
         title: dto.title,
+        description: dto.description,
+        category: dto.category,
         metric: dto.metric,
         targetValue: dto.targetValue,
         currentValue: dto.currentValue,
+        progress: dto.progress,
+        dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
         status: dto.status,
+        aiSuggested: dto.aiSuggested,
       },
     });
   }
@@ -58,7 +71,17 @@ export class DevelopmentPlansService {
     await this.assertOwnGoal(id, caller);
     return this.prisma.developmentGoal.update({
       where: { id },
-      data: dto,
+      data: {
+        title: dto.title,
+        description: dto.description,
+        category: dto.category,
+        metric: dto.metric,
+        targetValue: dto.targetValue,
+        currentValue: dto.currentValue,
+        progress: dto.progress,
+        dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
+        status: dto.status,
+      },
     });
   }
 
@@ -267,6 +290,195 @@ Reply with ONLY a JSON object of the exact shape {"planMd": string, "summary": s
   getMyPlan(caller: AuthenticatedUser) {
     return this.prisma.developmentPlan.findFirst({
       where: { userId: caller.id },
+    });
+  }
+
+  // ---- Milestones & tasks ----------------------------------------------
+  // These hang off the user's single DevelopmentPlan (find-or-create, same
+  // as saveMyPlan) — the plan's markdown stays the narrative, milestones
+  // are the "đo lường được" (measurable) part of it.
+
+  async listMilestones(caller: AuthenticatedUser) {
+    const plan = await this.prisma.developmentPlan.findFirst({
+      where: { userId: caller.id },
+    });
+    if (!plan) return [];
+    return this.prisma.developmentMilestone.findMany({
+      where: { planId: plan.id },
+      include: { tasks: { orderBy: { order: 'asc' } } },
+      orderBy: { order: 'asc' },
+    });
+  }
+
+  async createMilestone(dto: CreateMilestoneDto, caller: AuthenticatedUser) {
+    const plan = await this.getOrCreatePlan(caller);
+    const count = await this.prisma.developmentMilestone.count({
+      where: { planId: plan.id },
+    });
+    return this.prisma.developmentMilestone.create({
+      data: {
+        planId: plan.id,
+        title: dto.title,
+        description: dto.description,
+        dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
+        order: count,
+        tasks: dto.tasks?.length
+          ? {
+              create: dto.tasks.map((t, i) => ({
+                title: t.title,
+                metric: t.metric,
+                order: i,
+              })),
+            }
+          : undefined,
+      },
+      include: { tasks: true },
+    });
+  }
+
+  async updateMilestone(
+    id: string,
+    dto: UpdateMilestoneDto,
+    caller: AuthenticatedUser,
+  ) {
+    await this.assertOwnMilestone(id, caller);
+    return this.prisma.developmentMilestone.update({
+      where: { id },
+      data: {
+        title: dto.title,
+        description: dto.description,
+        dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
+        status: dto.status,
+      },
+      include: { tasks: true },
+    });
+  }
+
+  async removeMilestone(id: string, caller: AuthenticatedUser) {
+    await this.assertOwnMilestone(id, caller);
+    await this.prisma.developmentMilestone.delete({ where: { id } });
+    return { id };
+  }
+
+  async createTask(
+    milestoneId: string,
+    title: string,
+    metric: string | undefined,
+    caller: AuthenticatedUser,
+  ) {
+    await this.assertOwnMilestone(milestoneId, caller);
+    const count = await this.prisma.developmentTask.count({
+      where: { milestoneId },
+    });
+    return this.prisma.developmentTask.create({
+      data: { milestoneId, title, metric, order: count },
+    });
+  }
+
+  async updateTask(id: string, dto: UpdateTaskDto, caller: AuthenticatedUser) {
+    await this.assertOwnTask(id, caller);
+    const task = await this.prisma.developmentTask.update({
+      where: { id },
+      data: { title: dto.title, metric: dto.metric, done: dto.done },
+    });
+    await this.syncMilestoneStatus(task.milestoneId);
+    return task;
+  }
+
+  async removeTask(id: string, caller: AuthenticatedUser) {
+    const task = await this.assertOwnTask(id, caller);
+    await this.prisma.developmentTask.delete({ where: { id } });
+    await this.syncMilestoneStatus(task.milestoneId);
+    return { id };
+  }
+
+  /**
+   * Explicit save of a roadmap the user has reviewed/edited — same
+   * "proposal until confirmed" convention as the markdown plan. Replaces
+   * the whole milestone/task tree rather than merging, since this is a
+   * one-shot "here's my roadmap" commit, not an incremental edit.
+   */
+  async saveRoadmap(dto: SaveRoadmapDto, caller: AuthenticatedUser) {
+    const plan = await this.getOrCreatePlan(caller);
+
+    await this.prisma.developmentMilestone.deleteMany({
+      where: { planId: plan.id },
+    });
+
+    for (const [index, milestone] of dto.milestones.entries()) {
+      await this.prisma.developmentMilestone.create({
+        data: {
+          planId: plan.id,
+          title: milestone.title,
+          description: milestone.description,
+          dueDate: milestone.dueDate ? new Date(milestone.dueDate) : undefined,
+          order: index,
+          tasks: {
+            create: milestone.tasks.map((t, i) => ({
+              title: t.title,
+              metric: t.metric,
+              order: i,
+            })),
+          },
+        },
+      });
+    }
+
+    return this.listMilestones(caller);
+  }
+
+  private async getOrCreatePlan(caller: AuthenticatedUser) {
+    const existing = await this.prisma.developmentPlan.findFirst({
+      where: { userId: caller.id },
+    });
+    if (existing) return existing;
+    return this.prisma.developmentPlan.create({
+      data: { userId: caller.id, content: '' },
+    });
+  }
+
+  private async assertOwnMilestone(id: string, caller: AuthenticatedUser) {
+    const milestone = await this.prisma.developmentMilestone.findUnique({
+      where: { id },
+      include: { plan: { select: { userId: true } } },
+    });
+    if (!milestone || milestone.plan.userId !== caller.id) {
+      throw new NotFoundException(`Milestone ${id} not found`);
+    }
+    return milestone;
+  }
+
+  private async assertOwnTask(id: string, caller: AuthenticatedUser) {
+    const task = await this.prisma.developmentTask.findUnique({
+      where: { id },
+      include: {
+        milestone: { include: { plan: { select: { userId: true } } } },
+      },
+    });
+    if (!task || task.milestone.plan.userId !== caller.id) {
+      throw new NotFoundException(`Task ${id} not found`);
+    }
+    return task;
+  }
+
+  /** Auto-flips a milestone to DONE/IN_PROGRESS as its tasks get ticked. */
+  private async syncMilestoneStatus(milestoneId: string) {
+    const tasks = await this.prisma.developmentTask.findMany({
+      where: { milestoneId },
+    });
+    if (tasks.length === 0) return;
+
+    const allDone = tasks.every((t) => t.done);
+    const anyDone = tasks.some((t) => t.done);
+    const status = allDone
+      ? MilestoneStatus.DONE
+      : anyDone
+        ? MilestoneStatus.IN_PROGRESS
+        : MilestoneStatus.NOT_STARTED;
+
+    await this.prisma.developmentMilestone.update({
+      where: { id: milestoneId },
+      data: { status },
     });
   }
 }

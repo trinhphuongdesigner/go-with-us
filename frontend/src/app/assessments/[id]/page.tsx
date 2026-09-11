@@ -421,7 +421,7 @@ export default function AssessmentDetailPage() {
                     router.push(
                       isAdmin && !isAuthor
                         ? `/employees/${assessment.revieweeId}/passport`
-                        : '/career-passport',
+                        : '/profile?tab=passport',
                     )
                   }
                 >

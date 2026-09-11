@@ -21,17 +21,50 @@ export interface Employment {
   company: { id: string; name: string };
 }
 
+export type CareerSummarySource = 'SELF_REQUESTED' | 'ORGANIZATION_OFFBOARDING';
+export type CareerSummaryStatus = 'DRAFT' | 'APPROVED';
+
+export interface DimensionScores {
+  attendance: number;
+  proactiveness: number;
+  knowledge: number;
+  skill: number;
+  activityParticipation: number;
+}
+
 export interface CareerSummary {
   id: string;
   userId: string;
   employmentId: string | null;
   content: string;
+  /** Org-sourced judgement — locked, ORGANIZATION_OFFBOARDING only. */
+  evaluation: string | null;
+  /** Fixed 5-axis scores — locked, ORGANIZATION_OFFBOARDING only. */
+  dimensionScores: DimensionScores | null;
   strengths: string[];
   growthAreas: string[];
   aiGenerated: boolean;
+  source: CareerSummarySource;
+  status: CareerSummaryStatus;
+  requestedById: string | null;
+  requestedAt: string | null;
+  generatedAt: string | null;
+  approvedById: string | null;
+  approvedAt: string | null;
   periodStart: string | null;
   periodEnd: string | null;
   createdAt: string;
+}
+
+export interface PendingOffboardingSummary extends CareerSummary {
+  user: { id: string; name: string; jobTitle: string | null };
+  employment: {
+    id: string;
+    jobTitle: string;
+    startDate: string;
+    endDate: string | null;
+    company: { id: string; name: string };
+  } | null;
 }
 
 export interface PassportAssessment {
@@ -173,6 +206,46 @@ export function saveCareerSummary(payload: {
     method: 'POST',
     body: payload,
   });
+}
+
+// --- Offboarding summary (org-verified: request -> trigger -> approve) -----
+
+/** Employee requests an org-verified summary for one of their own employments. */
+export function requestOffboardingSummary(employmentId: string) {
+  return apiRequest<CareerSummary>('/career-passport/summaries/request', {
+    method: 'POST',
+    body: { employmentId },
+  });
+}
+
+/** Admin queue — requested-not-generated and generated-not-approved alike. */
+export function listPendingOffboardingSummaries() {
+  return apiRequest<PendingOffboardingSummary[]>(
+    '/career-passport/summaries/pending',
+  );
+}
+
+/** Admin-only: runs the AI (redacted narrative + locked evaluation/scores). */
+export function triggerOffboardingSummary(id: string) {
+  return apiRequest<CareerSummary>(
+    `/career-passport/summaries/${id}/trigger`,
+    { method: 'POST' },
+  );
+}
+
+/** Admin-only: edits the narrative ONLY — evaluation/scores can't be sent. */
+export function updateOffboardingSummary(id: string, content: string) {
+  return apiRequest<CareerSummary>(`/career-passport/summaries/${id}`, {
+    method: 'PATCH',
+    body: { content },
+  });
+}
+
+export function approveOffboardingSummary(id: string) {
+  return apiRequest<CareerSummary>(
+    `/career-passport/summaries/${id}/approve`,
+    { method: 'POST' },
+  );
 }
 
 // --- Share links ------------------------------------------------------------

@@ -6,46 +6,40 @@ import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
 import MarkdownSplitEditor from '@/components/ui/MarkdownSplitEditor';
-import StatusChip from '@/components/ui/StatusChip';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
-import MenuItem from '@mui/material/MenuItem';
 import CircularProgress from '@mui/material/CircularProgress';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import { colorTokens } from '@/theme/theme';
-import { toneForStatus } from '@/lib/statusColors';
 import * as developmentPlansApi from '@/lib/api/developmentPlansApi';
-import type { DevelopmentGoal, GoalStatus } from '@/lib/api/developmentPlansApi';
+import type {
+  DevelopmentGoal,
+  DevelopmentMilestone,
+} from '@/lib/api/developmentPlansApi';
 import { ApiError } from '@/lib/api/client';
-
-const STATUS_OPTIONS: GoalStatus[] = ['NOT_STARTED', 'IN_PROGRESS', 'ACHIEVED'];
-const STATUS_LABEL: Record<GoalStatus, string> = {
-  NOT_STARTED: 'Not started',
-  IN_PROGRESS: 'In progress',
-  ACHIEVED: 'Achieved',
-};
+import GoalsPanel from './GoalsPanel';
+import MilestonesPanel from './MilestonesPanel';
+import RoadmapAssistant from './RoadmapAssistant';
 
 /**
- * Goals tracking + AI-assisted roadmap generation, following the same
- * proposal-then-explicit-save skill shape used throughout Workflow Pro
- * (see D:\Coding\AI_Tool\docs\skills.md's intro): "Generate"/"Regenerate"
- * calls the backend AI skill and shows the result as an in-memory draft in
- * MarkdownSplitEditor — nothing is persisted until "Save" is clicked.
+ * Goals (Work/Personal), the measurable milestone/task roadmap, the
+ * AI roadmap-building assistant, and the free-form markdown plan — same
+ * proposal-then-explicit-save shape used throughout Workflow Pro (see
+ * D:\Coding\AI_Tool\docs\skills.md's intro) for both the markdown plan and
+ * the roadmap assistant's milestone proposals.
  */
 export default function DevelopmentPlanPage() {
   const [goals, setGoals] = React.useState<DevelopmentGoal[] | null>(null);
   const [goalsError, setGoalsError] = React.useState<string | null>(null);
 
-  // Add-goal form state
-  const [title, setTitle] = React.useState('');
-  const [metric, setMetric] = React.useState('');
-  const [targetValue, setTargetValue] = React.useState('');
-  const [currentValue, setCurrentValue] = React.useState('');
-  const [addingGoal, setAddingGoal] = React.useState(false);
+  const [milestones, setMilestones] = React.useState<DevelopmentMilestone[] | null>(
+    null,
+  );
+  const [milestonesError, setMilestonesError] = React.useState<string | null>(
+    null,
+  );
 
   // Plan state
   const [planMd, setPlanMd] = React.useState('');
@@ -67,9 +61,21 @@ export default function DevelopmentPlanPage() {
       .catch((err) => setGoalsError(err instanceof ApiError ? err.message : 'Failed to load goals'));
   }, []);
 
+  const loadMilestones = React.useCallback(() => {
+    developmentPlansApi
+      .listMilestones()
+      .then(setMilestones)
+      .catch((err) =>
+        setMilestonesError(
+          err instanceof ApiError ? err.message : 'Failed to load roadmap',
+        ),
+      );
+  }, []);
+
   React.useEffect(() => {
     loadGoals();
-  }, [loadGoals]);
+    loadMilestones();
+  }, [loadGoals, loadMilestones]);
 
   React.useEffect(() => {
     developmentPlansApi
@@ -83,63 +89,6 @@ export default function DevelopmentPlanPage() {
       .catch((err) => setPlanError(err instanceof ApiError ? err.message : 'Failed to load current plan'))
       .finally(() => setPlanLoading(false));
   }, []);
-
-  const handleAddGoal = async () => {
-    if (!title.trim()) return;
-    setAddingGoal(true);
-    setGoalsError(null);
-    try {
-      await developmentPlansApi.createGoal({
-        title: title.trim(),
-        metric: metric.trim() || undefined,
-        targetValue: targetValue.trim() ? Number(targetValue) : undefined,
-        currentValue: currentValue.trim() ? Number(currentValue) : undefined,
-      });
-      setTitle('');
-      setMetric('');
-      setTargetValue('');
-      setCurrentValue('');
-      loadGoals();
-    } catch (err) {
-      setGoalsError(err instanceof ApiError ? err.message : 'Failed to add goal');
-    } finally {
-      setAddingGoal(false);
-    }
-  };
-
-  const handleStatusChange = async (goal: DevelopmentGoal, status: GoalStatus) => {
-    setGoalsError(null);
-    try {
-      const updated = await developmentPlansApi.updateGoal(goal.id, { status });
-      setGoals((prev) => prev?.map((g) => (g.id === updated.id ? updated : g)) ?? prev);
-    } catch (err) {
-      setGoalsError(err instanceof ApiError ? err.message : 'Failed to update goal');
-    }
-  };
-
-  const handleCurrentValueBlur = async (goal: DevelopmentGoal, value: string) => {
-    const trimmed = value.trim();
-    const nextValue = trimmed === '' ? undefined : Number(trimmed);
-    if (nextValue === goal.currentValue || (nextValue === undefined && goal.currentValue === null)) return;
-    if (nextValue === undefined) return;
-    setGoalsError(null);
-    try {
-      const updated = await developmentPlansApi.updateGoal(goal.id, { currentValue: nextValue });
-      setGoals((prev) => prev?.map((g) => (g.id === updated.id ? updated : g)) ?? prev);
-    } catch (err) {
-      setGoalsError(err instanceof ApiError ? err.message : 'Failed to update goal');
-    }
-  };
-
-  const handleDeleteGoal = async (id: string) => {
-    setGoalsError(null);
-    try {
-      await developmentPlansApi.deleteGoal(id);
-      setGoals((prev) => prev?.filter((g) => g.id !== id) ?? prev);
-    } catch (err) {
-      setGoalsError(err instanceof ApiError ? err.message : 'Failed to delete goal');
-    }
-  };
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -186,112 +135,32 @@ export default function DevelopmentPlanPage() {
               {goalsError}
             </Typography>
           ) : null}
-
           {!goals ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
               <CircularProgress size={24} />
             </Box>
-          ) : goals.length === 0 ? (
-            <Typography variant="body2" sx={{ color: colorTokens.neutral400, mb: 2 }}>
-              No goals yet — add your first one below.
-            </Typography>
           ) : (
-            <Stack spacing={1.5} sx={{ mb: 2 }}>
-              {goals.map((goal) => (
-                <Box
-                  key={goal.id}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1.5,
-                    p: 1.5,
-                    border: `1px solid ${colorTokens.divider}`,
-                    borderRadius: 2,
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  <Box sx={{ flex: '1 1 200px' }}>
-                    <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                      {goal.title}
-                    </Typography>
-                    {goal.metric ? (
-                      <Typography variant="body2" sx={{ color: colorTokens.neutral400 }}>
-                        {goal.metric}
-                      </Typography>
-                    ) : null}
-                  </Box>
-
-                  <TextField
-                    label="Current"
-                    type="number"
-                    size="small"
-                    defaultValue={goal.currentValue ?? ''}
-                    onBlur={(e) => handleCurrentValueBlur(goal, e.target.value)}
-                    sx={{ width: 100 }}
-                  />
-                  <Typography variant="body2" sx={{ color: colorTokens.neutral400 }}>
-                    / {goal.targetValue ?? '—'}
-                  </Typography>
-
-                  <TextField
-                    select
-                    size="small"
-                    value={goal.status}
-                    onChange={(e) => handleStatusChange(goal, e.target.value as GoalStatus)}
-                    sx={{ width: 150 }}
-                  >
-                    {STATUS_OPTIONS.map((s) => (
-                      <MenuItem key={s} value={s}>
-                        {STATUS_LABEL[s]}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-
-                  <StatusChip label={STATUS_LABEL[goal.status]} tone={toneForStatus(goal.status)} />
-
-                  <IconButton size="small" onClick={() => handleDeleteGoal(goal.id)} aria-label="Delete goal">
-                    <DeleteOutlineIcon fontSize="small" />
-                  </IconButton>
-                </Box>
-              ))}
-            </Stack>
+            <GoalsPanel goals={goals} onChanged={loadGoals} />
           )}
+        </Card>
 
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} sx={{ mt: 2 }}>
-            <TextField
-              label="Goal title"
-              size="small"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              fullWidth
-            />
-            <TextField
-              label="Metric (optional)"
-              size="small"
-              value={metric}
-              onChange={(e) => setMetric(e.target.value)}
-              fullWidth
-            />
-            <TextField
-              label="Target value (optional)"
-              type="number"
-              size="small"
-              value={targetValue}
-              onChange={(e) => setTargetValue(e.target.value)}
-              sx={{ width: { xs: '100%', md: 160 } }}
-            />
-            <TextField
-              label="Current value (optional)"
-              type="number"
-              size="small"
-              value={currentValue}
-              onChange={(e) => setCurrentValue(e.target.value)}
-              sx={{ width: { xs: '100%', md: 160 } }}
-            />
-            <Button variant="contained" onClick={handleAddGoal} disabled={addingGoal || !title.trim()}>
-              Add goal
-            </Button>
-          </Stack>
+        <Card title="Roadmap milestones" sx={{ mb: 3 }}>
+          {milestonesError ? (
+            <Typography variant="body2" sx={{ color: colorTokens.danger, mb: 2 }}>
+              {milestonesError}
+            </Typography>
+          ) : null}
+          {!milestones ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : (
+            <MilestonesPanel milestones={milestones} onChanged={loadMilestones} />
+          )}
+        </Card>
+
+        <Card title="Build a roadmap with AI" sx={{ mb: 3 }}>
+          <RoadmapAssistant onSaved={loadMilestones} />
         </Card>
 
         <Card title="Development Plan">
