@@ -142,8 +142,8 @@ export default function InlineRoadmapField({
         borderRadius: 1,
         textAlign: 'left',
         alignItems: 'flex-start',
-        '&:hover': { bgcolor: colorTokens.accent900 },
-        '&.Mui-focusVisible': { outline: `2px solid ${colorTokens.accent}`, outlineOffset: 2 },
+        '&:hover': { bgcolor: colorTokens.primarySubtle },
+        '&.Mui-focusVisible': { outline: `2px solid ${colorTokens.primary}`, outlineOffset: 2 },
       }}
     >
       <Typography
@@ -152,13 +152,13 @@ export default function InlineRoadmapField({
           fontSize: strong ? 17 : 13,
           fontWeight: strong ? 600 : 400,
           overflowWrap: 'anywhere',
-          color: value ? colorTokens.text : colorTokens.neutral400,
+          color: value ? colorTokens.heading : colorTokens.secondary,
         }}
       >
         {value || placeholder || label}
       </Typography>
       <EditOutlinedIcon
-        sx={{ fontSize: 14, mt: 0.4, color: colorTokens.neutral400, flexShrink: 0 }}
+        sx={{ fontSize: 14, mt: 0.4, color: colorTokens.secondary, flexShrink: 0 }}
       />
     </ButtonBase>
   );

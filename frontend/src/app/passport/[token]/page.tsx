@@ -52,7 +52,7 @@ export default function SharedPassportPage() {
   }, [params.token]);
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: colorTokens.bg }}>
+    <Box sx={{ minHeight: '100vh', backgroundColor: colorTokens.canvas }}>
       <PageContainer>
         <PageHeader
           title="Hộ chiếu nghề nghiệp"

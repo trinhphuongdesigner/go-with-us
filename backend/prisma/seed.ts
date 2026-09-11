@@ -59,6 +59,67 @@ async function main() {
     },
   });
 
+  // Auto-provision RoleDefinitions for demo company
+  await prisma.roleDefinition.upsert({
+    where: { companyId_role: { companyId: company.id, role: Role.COMPANY_ADMIN } },
+    update: { permissions: [AdminPermission.FULL], isHidden: true },
+    create: {
+      companyId: company.id,
+      role: Role.COMPANY_ADMIN,
+      permissions: [AdminPermission.FULL],
+      isHidden: true,
+    },
+  });
+
+  await prisma.roleDefinition.upsert({
+    where: { companyId_role: { companyId: company.id, role: Role.HR } },
+    update: { permissions: [AdminPermission.VIEW, AdminPermission.COLLECT, AdminPermission.CROSS_ASSESS, AdminPermission.EDIT], isHidden: false },
+    create: {
+      companyId: company.id,
+      role: Role.HR,
+      permissions: [AdminPermission.VIEW, AdminPermission.COLLECT, AdminPermission.CROSS_ASSESS, AdminPermission.EDIT],
+      isHidden: false,
+    },
+  });
+
+  await prisma.roleDefinition.upsert({
+    where: { companyId_role: { companyId: company.id, role: Role.BOD } },
+    update: { permissions: [AdminPermission.VIEW, AdminPermission.APPROVE], isHidden: false },
+    create: {
+      companyId: company.id,
+      role: Role.BOD,
+      permissions: [AdminPermission.VIEW, AdminPermission.APPROVE],
+      isHidden: false,
+    },
+  });
+
+  // Create HR and BOD demo users
+  const hrUser = await prisma.user.upsert({
+    where: { email: 'hr@acme.dev' },
+    update: { role: Role.HR, companyId: company.id },
+    create: {
+      email: 'hr@acme.dev',
+      passwordHash,
+      name: 'HR Manager',
+      role: Role.HR,
+      companyId: company.id,
+      jobTitle: 'HR Specialist',
+    },
+  });
+
+  const bodUser = await prisma.user.upsert({
+    where: { email: 'bod@acme.dev' },
+    update: { role: Role.BOD, companyId: company.id },
+    create: {
+      email: 'bod@acme.dev',
+      passwordHash,
+      name: 'BOD Executive',
+      role: Role.BOD,
+      companyId: company.id,
+      jobTitle: 'Board Director',
+    },
+  });
+
   const limitedAdmins = await Promise.all(
     [
       {
@@ -296,6 +357,27 @@ async function main() {
     },
   });
 
+  // Global SUPER_ADMIN RoleDefinition (no company scope)
+  // Use findFirst + create since unique constraint with null requires special handling
+  const existingSuperDef = await prisma.roleDefinition.findFirst({
+    where: { companyId: null, role: Role.SUPER_ADMIN },
+  });
+  if (existingSuperDef) {
+    await prisma.roleDefinition.update({
+      where: { id: existingSuperDef.id },
+      data: { permissions: [AdminPermission.FULL], isHidden: true },
+    });
+  } else {
+    await prisma.roleDefinition.create({
+      data: {
+        companyId: null,
+        role: Role.SUPER_ADMIN,
+        permissions: [AdminPermission.FULL],
+        isHidden: true,
+      },
+    });
+  }
+
   console.log(
     '\nSeed complete. Demo login credentials (all use the same password):\n',
   );
@@ -309,6 +391,8 @@ async function main() {
       `  COMPANY_ADMIN -> ${admin.email} (${admin.adminPermissions.join(' + ')})`,
     );
   }
+  console.log(`  HR            -> ${hrUser.email}`);
+  console.log(`  BOD           -> ${bodUser.email}`);
   for (const emp of employees) {
     console.log(`  EMPLOYEE      -> ${emp.email}`);
   }

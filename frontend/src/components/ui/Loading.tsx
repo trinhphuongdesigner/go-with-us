@@ -70,7 +70,7 @@ function BookIcon({ size }: { size: number }) {
           top: pageTop,
           width: pageWidth,
           height: pageHeight,
-          bgcolor: colorTokens.neutral400,
+          bgcolor: colorTokens.secondary,
           borderRadius: '2px',
         },
         '&::before': {
@@ -178,7 +178,7 @@ export default function Loading({
     >
       <BookIcon size={px} />
       {label ? (
-        <Typography variant="body2" sx={{ color: colorTokens.neutral400 }}>
+        <Typography variant="body2" sx={{ color: colorTokens.secondary }}>
           {label}
         </Typography>
       ) : null}
@@ -211,7 +211,7 @@ export default function Loading({
               position: 'fixed',
               inset: 0,
               zIndex: 1300,
-              bgcolor: colorTokens.bg,
+              bgcolor: colorTokens.canvas,
             }
           : null),
       }}

@@ -175,7 +175,7 @@ export default function GoalsPanel({
                       <Typography
                         component="span"
                         variant="body2"
-                        sx={{ ml: 1, fontSize: 11, color: colorTokens.accentInk }}
+                        sx={{ ml: 1, fontSize: 11, color: colorTokens.primary }}
                       >
                         AI gợi ý
                       </Typography>

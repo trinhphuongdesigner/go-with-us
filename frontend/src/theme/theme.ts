@@ -8,31 +8,22 @@ import { buttonSizes, iconSizes, loadingSizes } from './tokens';
  * GATHER_TOWN — only ANIME/FILM/GATHER_TOWN reskin the Employee UI).
  *
  * Radius/shadow scale and component shape still follow
- * docs/style-concept.md; the color tokens below are CareerMate's steel-blue
- * / seafoam / cream palette. `#3368A0` is dark enough for text on white
- * (~5.9:1), so `accentInk` aliases it — still prefer `accentInk` over
- * `accent` whenever the color is a `color:`/icon foreground, not a fill.
+ * docs/style-concept.md. Color tokens follow the Milo × Sage palette.
  */
 
 export const colorTokens = {
-  bg: '#F2EFE7',
-  canvas: '#F2EFE7',
-  surface: '#ffffff',
-  text: '#1c2836',
-  neutral400: '#5a6f80',
-  neutral500: '#6d8190',
-  divider: '#C8DFDB',
-  accent: '#3368A0',
-  accent300: '#285480',
-  accent700: '#66A3BF',
-  accent900: '#C8DFDB',
-  accentInk: '#3368A0',
-  // White (or near-white) sitting on an `accent` fill — avatars, logo mark.
-  accentContrast: '#ffffff',
-  warning: '#c47d1a',
-  success: '#2d8a6e',
-  danger: '#c44b4b',
-  tint: '#66A3BF',
+  canvas: '#F7F8F5',
+  surface: '#FFFFFF',
+  primary: '#3E7868',
+  primarySubtle: '#E4EFE7',
+  selectedBorder: '#91B3A1',
+  sand: '#F3E9D7',
+  heading: '#243F36',
+  body: '#303B36',
+  secondary: '#626C65',
+  border: '#E2E8E4',
+  muted: '#EFF2EF',
+  danger: '#AD442E',
 } as const;
 
 export const radiusTokens = {
@@ -56,22 +47,22 @@ export const theme = createTheme({
   palette: {
     mode: 'light',
     background: {
-      default: colorTokens.bg,
+      default: colorTokens.canvas,
       paper: colorTokens.surface,
     },
     text: {
-      primary: colorTokens.text,
-      secondary: colorTokens.neutral400,
+      primary: colorTokens.heading,
+      secondary: colorTokens.secondary,
     },
-    divider: colorTokens.divider,
+    divider: colorTokens.border,
     primary: {
-      main: colorTokens.accent,
-      dark: colorTokens.accent300,
-      light: colorTokens.accent700,
+      main: colorTokens.primary,
+      dark: colorTokens.primary,
+      light: colorTokens.selectedBorder,
       contrastText: '#ffffff',
     },
     success: {
-      main: colorTokens.success,
+      main: colorTokens.primary,
     },
     error: {
       main: colorTokens.danger,
@@ -106,12 +97,12 @@ export const theme = createTheme({
     body2: {
       fontFamily,
       fontSize: 14,
-      color: colorTokens.neutral400,
+      color: colorTokens.secondary,
     },
     caption: {
       fontFamily,
       fontSize: 12,
-      color: colorTokens.neutral400,
+      color: colorTokens.secondary,
     },
     button: {
       fontFamily,
@@ -134,7 +125,7 @@ export const theme = createTheme({
           background: 'transparent',
         },
         '*::-webkit-scrollbar-thumb': {
-          background: colorTokens.accent700,
+          background: colorTokens.primary,
           borderRadius: 8,
         },
       },
@@ -221,7 +212,7 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: radiusTokens.md,
-          border: `1px solid ${colorTokens.divider}`,
+          border: `1px solid ${colorTokens.border}`,
           boxShadow: shadowTokens.card,
         },
       },
@@ -240,14 +231,14 @@ export const theme = createTheme({
           backgroundColor: colorTokens.surface,
           boxShadow: 'none',
           '& .MuiOutlinedInput-notchedOutline': {
-            borderColor: colorTokens.divider,
+            borderColor: colorTokens.border,
           },
           '&:hover .MuiOutlinedInput-notchedOutline': {
-            borderColor: colorTokens.accent700,
+            borderColor: colorTokens.selectedBorder,
           },
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-            borderColor: colorTokens.accent,
-            boxShadow: '0 0 0 3px rgba(51,104,160,.18)',
+            borderColor: colorTokens.primary,
+            boxShadow: `0 0 0 3px ${colorTokens.primary}2E`,
           },
         },
         input: {
@@ -286,7 +277,7 @@ export const theme = createTheme({
           textTransform: 'uppercase',
           letterSpacing: '0.08em',
           fontWeight: 600,
-          color: colorTokens.neutral500,
+          color: colorTokens.secondary,
           borderTop: 'none',
         },
       },
@@ -295,7 +286,7 @@ export const theme = createTheme({
       styleOverrides: {
         paper: {
           borderRadius: 10,
-          border: `1px solid ${colorTokens.divider}`,
+          border: `1px solid ${colorTokens.border}`,
           boxShadow: shadowTokens.md,
         },
       },
@@ -318,13 +309,13 @@ export const theme = createTheme({
       },
       styleOverrides: {
         tooltip: {
-          backgroundColor: colorTokens.text,
+          backgroundColor: colorTokens.heading,
           color: '#ffffff',
           borderRadius: 8,
           fontFamily,
         },
         arrow: {
-          color: colorTokens.text,
+          color: colorTokens.heading,
         },
       },
     },

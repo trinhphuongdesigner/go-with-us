@@ -336,7 +336,7 @@ export default function AssessmentTemplatesPage() {
                 sx={{
                   p: 2,
                   borderRadius: 2,
-                  border: `1px solid ${colorTokens.divider}`,
+                  border: `1px solid ${colorTokens.border}`,
                 }}
               >
                 <Stack
@@ -392,7 +392,7 @@ export default function AssessmentTemplatesPage() {
                       key={questionIndex}
                       sx={{
                         pl: 2,
-                        borderLeft: `2px solid ${colorTokens.accent900}`,
+                        borderLeft: `2px solid ${colorTokens.primarySubtle}`,
                       }}
                     >
                       <Stack direction="row" spacing={1.5} sx={{ mb: 1 }}>

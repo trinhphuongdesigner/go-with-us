@@ -62,7 +62,7 @@ export default function MarkdownSplitEditor({
       sx={{
         display: 'flex',
         height,
-        border: `1px solid ${colorTokens.divider}`,
+        border: `1px solid ${colorTokens.border}`,
         borderRadius: 2,
         overflow: 'hidden',
       }}
@@ -82,7 +82,7 @@ export default function MarkdownSplitEditor({
           fontSize: 13,
           lineHeight: 1.6,
           backgroundColor: colorTokens.surface,
-          color: colorTokens.text,
+          color: colorTokens.heading,
         }}
       />
       <Box
@@ -90,7 +90,7 @@ export default function MarkdownSplitEditor({
         sx={{
           width: 6,
           cursor: 'col-resize',
-          backgroundColor: colorTokens.divider,
+          backgroundColor: colorTokens.border,
           flexShrink: 0,
         }}
       />
@@ -105,7 +105,7 @@ export default function MarkdownSplitEditor({
           </Box>
         ) : null}
         <Box
-          sx={{ flex: 1, overflow: 'auto', p: 2, backgroundColor: colorTokens.bg }}
+          sx={{ flex: 1, overflow: 'auto', p: 2, backgroundColor: colorTokens.canvas }}
           dangerouslySetInnerHTML={{ __html: mdToHtml(value) }}
         />
       </Box>

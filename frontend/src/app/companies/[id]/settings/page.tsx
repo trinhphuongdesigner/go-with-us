@@ -88,7 +88,7 @@ export default function CompanySettingsPage() {
             }
           >
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2.5} sx={{ alignItems: { sm: 'center' }, mb: 3 }}>
-              <Avatar sx={{ width: 56, height: 56, bgcolor: colorTokens.accent, color: colorTokens.accentContrast }}>
+              <Avatar sx={{ width: 56, height: 56, bgcolor: colorTokens.primary, color: '#ffffff' }}>
                 <ApartmentOutlinedIcon />
               </Avatar>
               <Box sx={{ flex: 1, minWidth: 0 }}>

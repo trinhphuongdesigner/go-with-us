@@ -79,7 +79,7 @@ function AccountRow({ account, dense }: { account: DemoAccount; dense?: boolean 
           sx={{
             fontSize: 14,
             fontWeight: 500,
-            color: colorTokens.text,
+            color: colorTokens.heading,
             lineHeight: 1.3,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -179,7 +179,7 @@ export default function LoginPage() {
           borderRadius: `${radiusTokens.lg}px`,
           overflow: 'hidden',
           backgroundColor: colorTokens.surface,
-          border: `1px solid ${colorTokens.divider}`,
+          border: `1px solid ${colorTokens.border}`,
           boxShadow: shadowTokens.lg,
         }}
       >
@@ -187,14 +187,14 @@ export default function LoginPage() {
           sx={{
             position: 'relative',
             overflow: 'hidden',
-            backgroundColor: colorTokens.accent900,
+            backgroundColor: colorTokens.primarySubtle,
             px: { xs: 3, md: 5 },
             py: { xs: 3.5, md: 5.5 },
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
             gap: 4,
-            borderRight: { md: `1px solid ${colorTokens.divider}` },
+            borderRight: { md: `1px solid ${colorTokens.border}` },
           }}
         >
           <Box
@@ -204,7 +204,7 @@ export default function LoginPage() {
               width: 280,
               height: 280,
               borderRadius: '50%',
-              border: `1px solid ${colorTokens.accent700}`,
+              border: `1px solid ${colorTokens.selectedBorder}`,
               opacity: 0.35,
               right: -80,
               top: -90,
@@ -217,7 +217,7 @@ export default function LoginPage() {
               width: 180,
               height: 180,
               borderRadius: '50%',
-              backgroundColor: colorTokens.accent700,
+              backgroundColor: colorTokens.selectedBorder,
               opacity: 0.12,
               right: 24,
               bottom: -40,
@@ -230,8 +230,8 @@ export default function LoginPage() {
                 width: 48,
                 height: 48,
                 borderRadius: `${radiusTokens.md}px`,
-                backgroundColor: colorTokens.accent,
-                color: colorTokens.accentContrast,
+                backgroundColor: colorTokens.primary,
+                color: '#ffffff',
                 display: 'grid',
                 placeItems: 'center',
                 fontSize: 15,
@@ -248,7 +248,7 @@ export default function LoginPage() {
                 fontWeight: 600,
                 letterSpacing: '0.08em',
                 textTransform: 'uppercase',
-                color: colorTokens.accentInk,
+                color: colorTokens.primary,
                 mb: 1,
               }}
             >
@@ -265,7 +265,7 @@ export default function LoginPage() {
             >
               Hồ sơ còn lại khi người đã chuyển đi.
             </Typography>
-            <Typography variant="body2" sx={{ maxWidth: 400, color: colorTokens.text }}>
+            <Typography variant="body2" sx={{ maxWidth: 400, color: colorTokens.heading }}>
               HR sees the whole journey. Employees keep their own history. Staffing a project takes
               a sentence, not a chain of pings.
             </Typography>
@@ -286,13 +286,13 @@ export default function LoginPage() {
                     width: 7,
                     height: 7,
                     borderRadius: '50%',
-                    backgroundColor: colorTokens.accent,
+                    backgroundColor: colorTokens.primary,
                     mt: 0.7,
                     flexShrink: 0,
                   }}
                 />
                 <Box>
-                  <Typography sx={{ fontSize: 14, fontWeight: 500, color: colorTokens.text }}>
+                  <Typography sx={{ fontSize: 14, fontWeight: 500, color: colorTokens.heading }}>
                     {point.title}
                   </Typography>
                   <Typography variant="body2" sx={{ mt: 0.25 }}>
@@ -389,10 +389,10 @@ export default function LoginPage() {
                       fontWeight: 600,
                       letterSpacing: '0.08em',
                       textTransform: 'uppercase',
-                      color: colorTokens.neutral500,
+                      color: colorTokens.secondary,
                       minHeight: 32,
                       mt: groupIndex === 0 ? 0 : 0.5,
-                      borderTop: groupIndex === 0 ? 'none' : `1px solid ${colorTokens.divider}`,
+                      borderTop: groupIndex === 0 ? 'none' : `1px solid ${colorTokens.border}`,
                     }}
                   >
                     {group.label}

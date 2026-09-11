@@ -13,7 +13,7 @@ export default function MarkdownBlock({ source }: { source: string }) {
   return (
     <Box
       sx={{
-        color: colorTokens.text,
+        color: colorTokens.heading,
         fontSize: 14.5,
         lineHeight: 1.65,
         '& h1, & h2, & h3': { fontSize: 16, fontWeight: 600, mt: 2, mb: 1 },
@@ -21,11 +21,11 @@ export default function MarkdownBlock({ source }: { source: string }) {
         '& ul, & ol': { pl: 3, my: 1 },
         '& li': { mb: 0.5 },
         '& code': {
-          backgroundColor: colorTokens.accent900,
+          backgroundColor: colorTokens.primarySubtle,
           px: 0.5,
           borderRadius: 1,
         },
-        '& a': { color: colorTokens.accentInk },
+        '& a': { color: colorTokens.primary },
         '& :first-of-type': { mt: 0 },
       }}
       dangerouslySetInnerHTML={{ __html: mdToHtml(source) }}

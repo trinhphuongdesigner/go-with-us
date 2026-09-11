@@ -3,11 +3,11 @@ import { colorTokens } from '@/theme/theme';
 export type StatusTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
 
 export const TONE_COLORS: Record<StatusTone, { bg: string; fg: string }> = {
-  neutral: { bg: colorTokens.bg, fg: colorTokens.neutral400 },
-  info: { bg: colorTokens.accent900, fg: colorTokens.accentInk },
-  success: { bg: '#dceee6', fg: colorTokens.success },
-  warning: { bg: '#f7ecd6', fg: colorTokens.warning },
-  danger: { bg: '#f6e4e4', fg: colorTokens.danger },
+  neutral: { bg: colorTokens.muted, fg: colorTokens.secondary },
+  info: { bg: colorTokens.primarySubtle, fg: colorTokens.primary },
+  success: { bg: colorTokens.primarySubtle, fg: colorTokens.primary },
+  warning: { bg: colorTokens.sand, fg: colorTokens.body },
+  danger: { bg: '#F5E6E2', fg: colorTokens.danger },
 };
 
 /**

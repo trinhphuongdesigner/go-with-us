@@ -22,6 +22,8 @@ export function formatDateTime(iso: string): string {
 export const ROLE_LABEL: Record<Role, string> = {
   SUPER_ADMIN: 'Quản trị nền tảng',
   COMPANY_ADMIN: 'Quản trị công ty',
+  BOD: 'Ban giám đốc',
+  HR: 'Nhân sự',
   EMPLOYEE: 'Nhân sự',
 };
 

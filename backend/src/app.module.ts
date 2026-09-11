@@ -18,6 +18,7 @@ import { ProfileImportsModule } from './modules/profile-imports/profile-imports.
 import { AssessmentsModule } from './modules/assessments/assessments.module';
 import { CareerPassportModule } from './modules/career-passport/career-passport.module';
 import { AssistantModule } from './modules/assistant/assistant.module';
+import { RolesModule } from './modules/roles/roles.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { AssistantModule } from './modules/assistant/assistant.module';
     AssessmentsModule,
     CareerPassportModule,
     AssistantModule,
+    RolesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

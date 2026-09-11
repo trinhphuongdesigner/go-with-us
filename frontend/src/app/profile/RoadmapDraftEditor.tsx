@@ -120,9 +120,9 @@ export default function RoadmapDraftEditor({
                 width: { xs: '100%', sm: 340 },
                 flexShrink: 0,
                 boxSizing: 'border-box',
-                border: `1px solid ${milestone.selected ? colorTokens.accent700 : colorTokens.divider}`,
+                border: `1px solid ${milestone.selected ? colorTokens.selectedBorder : colorTokens.border}`,
                 borderRadius: 2,
-                bgcolor: milestone.selected ? colorTokens.bg : colorTokens.surface,
+                bgcolor: milestone.selected ? colorTokens.canvas : colorTokens.surface,
               }}
             >
               <Stack
@@ -210,7 +210,7 @@ export default function RoadmapDraftEditor({
                   return (
                     <Box
                       key={task.key}
-                      sx={{ pt: 1, borderTop: `1px solid ${colorTokens.divider}` }}
+                      sx={{ pt: 1, borderTop: `1px solid ${colorTokens.border}` }}
                     >
                       <Stack
                         direction="row"

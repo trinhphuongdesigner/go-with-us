@@ -159,6 +159,23 @@ model Company {
   assessmentCycles    AssessmentCycle[]
   projectExperiences  ProjectExperience[]
   passportShares      CareerPassportShare[]
+  roleDefinitions     RoleDefinition[]
+}
+
+/// Dynamic role definitions per company (or global for SUPER_ADMIN).
+/// SUPER_ADMIN and COMPANY_ADMIN are hidden system roles with fixed permissions.
+/// HR and BOD are editable via the role management UI.
+model RoleDefinition {
+  id          String            @id @default(cuid())
+  companyId   String?
+  company     Company?          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role        Role
+  permissions AdminPermission[]
+  isHidden    Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@unique([companyId, role])
 }
 
 model User {

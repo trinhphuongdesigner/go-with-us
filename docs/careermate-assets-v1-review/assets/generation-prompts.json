@@ -1,0 +1,25 @@
+{
+  "mode": "Built-in image_gen tool; original generations preserved separately from web assets.",
+  "prompts": [
+    {
+      "name": "milo-wave",
+      "prompt": "Use case: identity-preserve. Asset: one isolated full-body Milo character for a professional CareerMate website. Input image is the identity and rendering-style reference. Preserve the same adorable apricot and cream fox, exact face, large brown eyes and ears, friendly proportions, fine soft 3D fur, sage cardigan, ivory T-shirt, charcoal shorts and brown shoes. High-resolution crisp detail, ideally 2048 square. Center the whole character with 8% safe space, ears, hands, feet and tail fully inside the image. Plain pure WHITE #FFFFFF studio background as an intermediate for later alpha extraction. Absolutely no checkerboard, no outline or sticker stroke, no glow, no floor, no cast shadow, no text, no watermark, no UI panels. Change the pose only: Milo smiles warmly and waves hello with his right paw held comfortably beside his face, his other paw relaxed, no tablet. Modest welcoming energy, feet grounded, camera front three-quarter at character eye height."
+    },
+    {
+      "name": "milo-celebrate",
+      "prompt": "Use case: identity-preserve. Asset: one isolated full-body Milo character for a professional CareerMate website. Input image is the identity and rendering-style reference. Preserve the same adorable apricot and cream fox, exact face, large brown eyes and ears, friendly proportions, fine soft 3D fur, sage cardigan, ivory T-shirt, charcoal shorts and brown shoes. High-resolution crisp detail, ideally 2048 square. Center the whole character with 8% safe space, ears, hands, feet and tail fully inside the image. Plain pure WHITE #FFFFFF studio background as an intermediate for later alpha extraction. Absolutely no checkerboard, no outline or sticker stroke, no glow, no floor, no cast shadow, no text, no watermark, no UI panels. Change the pose only: Milo has a proud happy smile and makes a small celebratory fist pump at shoulder height with one paw, the other paw gives a thumbs-up. No props and no floating confetti. Feet stay grounded. Keep it restrained and charming, suitable for finishing a workplace learning milestone."
+    },
+    {
+      "name": "milo-guide",
+      "prompt": "Use case: identity-preserve. Asset: one isolated full-body Milo character for a professional CareerMate website. Input image is the identity and rendering-style reference. Preserve the same adorable apricot and cream fox, exact face, large brown eyes and ears, friendly proportions, fine soft 3D fur, sage cardigan, ivory T-shirt, charcoal shorts and brown shoes. High-resolution crisp detail, ideally 2048 square. Center the whole character with 8% safe space, ears, hands, feet and tail fully inside the image. Plain pure WHITE #FFFFFF studio background as an intermediate for later alpha extraction. Absolutely no checkerboard, no outline or sticker stroke, no glow, no floor, no cast shadow, no text, no watermark, no UI panels. Change the pose only: Milo holds a slim dark tablet in his left paw and gestures invitingly toward the right side of the image with his open right paw, as if explaining the next step. Gentle confident smile. Both hands anatomically clear, not pointing one sharp finger."
+    },
+    {
+      "name": "an-welcome",
+      "prompt": "Use case: stylized-concept. Asset: one isolated full-body fictional human companion named An for the CareerMate enterprise learning web app. Reference 1: the small human portrait defines An's face, dark side-parted hair and calm approachable expression only; disregard all surrounding UI and text. Reference 2: Milo defines the soft premium 3D rendering, fine material detail and overall friendly visual family, NOT species or animal anatomy. Create An as a clearly adult East Asian male mentor with warm brown eyes, tidy side-parted dark hair, a restrained sage-green casual blazer over an ivory shirt, charcoal trousers and clean brown casual shoes. Human proportions with gently stylized slightly larger head, mature and professional, friendly subtle smile. Full body standing front three-quarter, one hand holding a thin closed charcoal notebook at his side, other hand open in a welcoming gesture. Center on a pure solid WHITE #FFFFFF background as an intermediate for later alpha extraction; no floor, no ground shadow, no border, no sticker outline, no halo, no checkerboard, no text, no logo or UI. Ears, hair, hands, feet fully inside image with 8% white safety margin. Sharp detailed render, ideally 2048x2048."
+    }
+  ],
+  "standing": {
+    "reference": "milo-sage-white.png",
+    "note": "Original approved Milo from the Figma mockup; preserved character identity."
+  }
+}

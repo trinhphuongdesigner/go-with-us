@@ -1,3 +1,5 @@
+import { colorTokens } from '@/theme/theme';
+
 interface HtmlPreviewProps {
   html: string;
   height?: number | string;
@@ -21,7 +23,7 @@ export default function HtmlPreview({ html, height = 480 }: HtmlPreviewProps) {
         height,
         border: 'none',
         borderRadius: 8,
-        backgroundColor: '#ffffff',
+        backgroundColor: colorTokens.surface,
       }}
     />
   );

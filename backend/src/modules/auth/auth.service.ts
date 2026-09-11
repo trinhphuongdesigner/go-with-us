@@ -113,6 +113,11 @@ export class AuthService {
     themeConcept: string;
     company?: { name: string } | null;
   }) {
+    // SUPER_ADMIN always gets FULL; others use the resolved permissions list
+    // (populated from RoleDefinition in JwtStrategy, or legacy user.adminPermissions)
+    const adminPermissions =
+      user.role === Role.SUPER_ADMIN ? [AdminPermission.FULL] : user.adminPermissions ?? [];
+
     return {
       id: user.id,
       email: user.email,
@@ -123,12 +128,7 @@ export class AuthService {
       avatarUrl: user.avatarUrl,
       jobTitle: user.jobTitle,
       themeConcept: user.themeConcept,
-      adminPermissions:
-        user.role === Role.SUPER_ADMIN
-          ? [AdminPermission.FULL]
-          : user.role === Role.COMPANY_ADMIN
-            ? user.adminPermissions
-            : [],
+      adminPermissions,
     };
   }
 }

@@ -91,7 +91,7 @@ export default function ProviderConnectionRow({
         alignItems: { xs: 'stretch', md: 'flex-start' },
         gap: { xs: 1.5, md: 2.5 },
         py: 2.5,
-        borderTop: `1px solid ${colorTokens.divider}`,
+        borderTop: `1px solid ${colorTokens.border}`,
         '&:first-of-type': { borderTop: 'none' },
       }}
     >

@@ -8,11 +8,11 @@ export function hasAdminPermission(
   permission: AdminPermission,
 ): boolean {
   if (caller.role === Role.SUPER_ADMIN) return true;
+  // Check permissions list for any role that has it populated (COMPANY_ADMIN, HR, BOD)
   return (
-    caller.role === Role.COMPANY_ADMIN &&
-    (caller.adminPermissions?.includes(AdminPermission.FULL) ||
-      caller.adminPermissions?.includes(permission)) === true
-  );
+    caller.adminPermissions?.includes(AdminPermission.FULL) ||
+    caller.adminPermissions?.includes(permission)
+  ) === true;
 }
 
 export function assertAdminPermission(

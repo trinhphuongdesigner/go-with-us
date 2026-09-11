@@ -20,7 +20,7 @@ const KIND_META: Record<
   EMPLOYMENT: {
     label: 'Làm việc',
     icon: <WorkOutlineOutlinedIcon fontSize="small" />,
-    color: colorTokens.accentInk,
+    color: colorTokens.primary,
   },
   PROJECT: {
     label: 'Dự án',
@@ -83,7 +83,7 @@ export default function ProfileTimeline({
           top: 8,
           bottom: 8,
           width: '2px',
-          backgroundColor: colorTokens.divider,
+          backgroundColor: colorTokens.border,
         }}
       />
       <Stack spacing={2.5}>

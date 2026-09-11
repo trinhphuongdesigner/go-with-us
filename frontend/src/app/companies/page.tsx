@@ -155,7 +155,7 @@ export default function CompaniesPage() {
                   key={company.id}
                   onClick={() => router.push(`/companies/${company.id}`)}
                   sx={{
-                    border: `1px solid ${colorTokens.divider}`,
+                    border: `1px solid ${colorTokens.border}`,
                     borderRadius: `${radiusTokens.md}px`,
                     p: 2,
                     display: 'flex',
@@ -163,7 +163,7 @@ export default function CompaniesPage() {
                     gap: 1,
                     cursor: 'pointer',
                     transition: 'border-color 0.15s ease',
-                    '&:hover': { borderColor: colorTokens.accent },
+                    '&:hover': { borderColor: colorTokens.primary },
                   }}
                 >
                   <Box
@@ -174,8 +174,8 @@ export default function CompaniesPage() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      bgcolor: colorTokens.accent900,
-                      color: colorTokens.accentInk,
+                      bgcolor: colorTokens.primarySubtle,
+                      color: colorTokens.primary,
                       flexShrink: 0,
                     }}
                   >
