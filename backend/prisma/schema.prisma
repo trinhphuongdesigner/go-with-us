@@ -1,0 +1,182 @@
+// Prisma schema for "go with us" — competency/HR profile management platform.
+// See D:\Coding\AI_Tool\docs\new-project-prompt-template.md (section A/B) for
+// the architecture this was scaffolded from.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  COMPANY_ADMIN
+  EMPLOYEE
+}
+
+enum ThemeConcept {
+  DEFAULT
+  ANIME
+  FILM
+  GATHER_TOWN
+}
+
+enum AiProvider {
+  ANTHROPIC
+  OPENAI
+  GEMINI
+}
+
+enum GoalStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  ACHIEVED
+}
+
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  industry  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users           User[]
+  jobRequirements JobRequirement[]
+}
+
+model User {
+  id       String  @id @default(cuid())
+  email    String  @unique
+  passwordHash String
+  name     String
+  role     Role
+  companyId String?
+  company  Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  avatarUrl String?
+  jobTitle  String?
+
+  // Only meaningful for EMPLOYEE role — Admin side always stays DEFAULT.
+  themeConcept ThemeConcept @default(DEFAULT)
+
+  // Admin-collected metrics about an employee.
+  contributionScore Float?
+  attitudeScore     Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  skills                 EmployeeSkill[]
+  activityLogs           ActivityLog[]
+  goals                  DevelopmentGoal[]
+  developmentPlans       DevelopmentPlan[]
+  reviewsGiven           PeerReview[]      @relation("reviewer")
+  reviewsReceived        PeerReview[]      @relation("reviewee")
+  jobRequirementsCreated JobRequirement[]
+}
+
+model Skill {
+  id       String @id @default(cuid())
+  name     String @unique
+  category String?
+
+  employeeSkills EmployeeSkill[]
+}
+
+model EmployeeSkill {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skillId      String
+  skill        Skill    @relation(fields: [skillId], references: [id])
+  level        Int
+  selfAssessed Boolean  @default(true)
+  note         String?
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, skillId])
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  category    String?
+  date        DateTime
+  createdAt   DateTime @default(now())
+}
+
+model DevelopmentGoal {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title        String
+  metric       String?
+  targetValue  Float?
+  currentValue Float?
+  status       GoalStatus @default(NOT_STARTED)
+  aiScore      Float?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model DevelopmentPlan {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content     String // markdown
+  aiGenerated Boolean  @default(false)
+  status      String   @default("draft")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  versions DevelopmentPlanVersion[]
+}
+
+model DevelopmentPlanVersion {
+  id            String          @id @default(cuid())
+  planId        String
+  plan          DevelopmentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  content       String
+  changeSummary String?
+  createdAt     DateTime        @default(now())
+}
+
+model PeerReview {
+  id         String   @id @default(cuid())
+  reviewerId String
+  reviewer   User     @relation("reviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  revieweeId String
+  reviewee   User     @relation("reviewee", fields: [revieweeId], references: [id], onDelete: Cascade)
+  content    String
+  ratings    Json?
+  createdAt  DateTime @default(now())
+}
+
+model JobRequirement {
+  id              String   @id @default(cuid())
+  companyId       String
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdById     String
+  createdBy       User     @relation(fields: [createdById], references: [id])
+  title           String
+  description     String
+  requiredSkills  String[]
+  status          String   @default("open")
+  createdAt       DateTime @default(now())
+}
+
+model AiProviderConfig {
+  id        String     @id @default(cuid())
+  provider  AiProvider @unique
+  apiKey    String
+  baseUrl   String?
+  model     String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
