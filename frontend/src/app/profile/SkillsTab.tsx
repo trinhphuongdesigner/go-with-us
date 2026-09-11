@@ -2,19 +2,19 @@
 
 import * as React from 'react';
 import Typography from '@mui/material/Typography';
-import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
+import PageSkeleton from '@/components/ui/PageSkeleton';
 import Stack from '@mui/material/Stack';
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import Rating from '@mui/material/Rating';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import Table from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
-import IconButton from '@mui/material/IconButton';
+import IconButton from '@/components/ui/IconButton';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { useAuth } from '@/contexts/AuthContext';
 import { ApiError } from '@/lib/api/client';
@@ -47,7 +47,7 @@ export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
       try {
         await Promise.all([loadCatalog(), loadMySkills(user.id)]);
       } catch (err) {
-        setError(err instanceof ApiError ? err.message : 'Failed to load skills');
+        setError(err instanceof ApiError ? err.message : 'Không tải được kỹ năng');
       }
     })();
   }, [user, loadCatalog, loadMySkills]);
@@ -68,7 +68,7 @@ export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
     if (!user) return;
     const trimmedName = skillName.trim();
     if (!trimmedName) {
-      setError('Skill name is required');
+      setError('Cần có tên kỹ năng');
       return;
     }
     setError(null);
@@ -82,7 +82,7 @@ export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
       resetForm();
       onChanged();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to save skill');
+      setError(err instanceof ApiError ? err.message : 'Không lưu được kỹ năng');
     } finally {
       setSaving(false);
     }
@@ -103,16 +103,16 @@ export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
             onInputChange={(_e, value) => setSkillName(value)}
             sx={{ minWidth: 260, flex: 1 }}
             renderInput={(params) => (
-              <TextField {...params} label="Skill name" placeholder="e.g. TypeScript" size="small" />
+              <TextField {...params} label="Tên kỹ năng" placeholder="ví dụ TypeScript" size="small" />
             )}
           />
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="body2">Level</Typography>
+            <Typography variant="body2">Cấp độ</Typography>
             <Rating value={level} max={5} onChange={(_e, value) => setLevel(value ?? 1)} />
           </Box>
         </Stack>
         <TextField
-          label="Note (optional)"
+          label="Ghi chú (tuỳ chọn)"
           value={note}
           onChange={(e) => setNote(e.target.value)}
           multiline
@@ -127,25 +127,23 @@ export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
         ) : null}
         <Box>
           <Button variant="contained" onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving...' : 'Save skill'}
+            {saving ? 'Đang lưu...' : 'Lưu kỹ năng'}
           </Button>
         </Box>
       </Stack>
 
       {!mySkills ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-          <CircularProgress size={28} />
-        </Box>
+        <PageSkeleton variant="table" rows={4} embedded />
       ) : mySkills.length === 0 ? (
-        <Typography variant="body1">No skills logged yet — add one above.</Typography>
+        <Typography variant="body1">Chưa có kỹ năng nào — thêm ở trên.</Typography>
       ) : (
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Skill</TableCell>
-              <TableCell>Level</TableCell>
-              <TableCell>Note</TableCell>
-              <TableCell align="right">Edit</TableCell>
+              <TableCell>Kỹ năng</TableCell>
+              <TableCell>Cấp độ</TableCell>
+              <TableCell>Ghi chú</TableCell>
+              <TableCell align="right">Sửa</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>

@@ -19,7 +19,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { AiChatService } from '../ai-chat/ai-chat.service';
 import type { ChatMessage } from '../ai-chat/ai-chat.types';
 import type { AuthenticatedUser } from '../auth/jwt.strategy';
-import { AssistantQueryDto } from './dto/assistant.dto';
+import { AssistantQueryDto, UpdateConversationDto } from './dto/assistant.dto';
 
 /** How many past turns to replay to the model. */
 const HISTORY_LIMIT = 10;
@@ -91,6 +91,18 @@ export class AssistantService {
       where: { id: conversation.id },
     });
     return { id: conversation.id };
+  }
+
+  async updateConversation(
+    id: string,
+    dto: UpdateConversationDto,
+    caller: AuthenticatedUser,
+  ) {
+    const conversation = await this.getConversation(id, caller);
+    return this.prisma.assistantConversation.update({
+      where: { id: conversation.id },
+      data: { pinned: dto.pinned },
+    });
   }
 
   /**

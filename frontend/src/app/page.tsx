@@ -1,6 +1,5 @@
 'use client';
 
-import AppShell from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
@@ -11,16 +10,14 @@ export default function DashboardPage() {
   const { user } = useAuth();
 
   return (
-    <AppShell>
-      <PageContainer>
-        <PageHeader title="Dashboard" subtitle={`Welcome back${user ? `, ${user.name}` : ''}.`} />
-        <Card title="Coming soon">
+    <PageContainer>
+        <PageHeader title="Trang chủ" subtitle={`Chào mừng trở lại${user ? `, ${user.name}` : ''}.`} />
+        <Card title="Sắp ra mắt">
           <Typography variant="body1">
-            Role-specific dashboard widgets (company overview for Super Admin, team insight for Company
-            Admin, personal snapshot for Employee) land in a later phase.
+            Các khối theo vai trò (tổng quan công ty cho quản trị nền tảng, tổng quan đội ngũ cho quản trị
+            công ty, ảnh chụp cá nhân cho nhân sự) sẽ có ở giai đoạn sau.
           </Typography>
         </Card>
-      </PageContainer>
-    </AppShell>
+    </PageContainer>
   );
 }

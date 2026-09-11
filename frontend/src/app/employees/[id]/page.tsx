@@ -2,17 +2,16 @@
 
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import AppShell from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
 import StatusChip from '@/components/ui/StatusChip';
 import Typography from '@mui/material/Typography';
-import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
+import PageSkeleton from '@/components/ui/PageSkeleton';
 import Stack from '@mui/material/Stack';
 import Rating from '@mui/material/Rating';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import Table from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
@@ -22,12 +21,7 @@ import ArrowBackOutlinedIcon from '@mui/icons-material/ArrowBackOutlined';
 import * as skillsCompetencyApi from '@/lib/api/skillsCompetencyApi';
 import type { CompetencyInsight } from '@/lib/api/skillsCompetencyApi';
 import { ApiError } from '@/lib/api/client';
-
-const GOAL_STATUS_LABELS: Record<string, string> = {
-  NOT_STARTED: 'Not started',
-  IN_PROGRESS: 'In progress',
-  ACHIEVED: 'Achieved',
-};
+import { GOAL_STATUS_LABEL } from '@/lib/labels';
 
 export default function EmployeeInsightPage() {
   const params = useParams<{ id: string }>();
@@ -43,15 +37,14 @@ export default function EmployeeInsightPage() {
       .getInsight(userId)
       .then(setInsight)
       .catch((err) => {
-        setError(err instanceof ApiError ? err.message : 'Failed to load competency insight');
+        setError(err instanceof ApiError ? err.message : 'Không tải được tổng quan năng lực');
       });
   }, [userId]);
 
   return (
-    <AppShell>
-      <PageContainer>
+    <PageContainer>
         <PageHeader
-          title={insight ? insight.profile.name : 'Employee insight'}
+          title={insight ? insight.profile.name : 'Tổng quan nhân sự'}
           subtitle={insight?.profile.jobTitle ?? undefined}
           actions={
             <>
@@ -61,75 +54,73 @@ export default function EmployeeInsightPage() {
                 startIcon={<ArrowBackOutlinedIcon fontSize="small" />}
                 onClick={() => router.push('/employees')}
               >
-                Back to employees
+                Quay lại nhân sự
               </Button>
               <Button
                 variant="contained"
                 size="small"
                 onClick={() => router.push(`/employees/${params.id}/passport`)}
               >
-                Career passport
+                Hộ chiếu nghề nghiệp
               </Button>
             </>
           }
         />
 
         {error ? (
-          <Card title="Competency insight">
+          <Card title="Tổng quan năng lực">
             <Typography variant="body2" sx={{ color: 'error.main' }}>
               {error}
             </Typography>
           </Card>
         ) : !insight ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-            <CircularProgress size={28} />
-          </Box>
+          <PageSkeleton variant="cards" />
         ) : (
           <Stack spacing={3}>
-            <Card title="Profile & scores">
+            <Card title="Hồ sơ & điểm">
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={4}>
                 <Box>
-                  <Typography variant="body2">Contribution score</Typography>
+                  <Typography variant="body2">Điểm đóng góp</Typography>
                   <Typography variant="h2">{insight.profile.contributionScore ?? '—'}</Typography>
                 </Box>
                 <Box>
-                  <Typography variant="body2">Attitude score</Typography>
+                  <Typography variant="body2">Điểm thái độ</Typography>
                   <Typography variant="h2">{insight.profile.attitudeScore ?? '—'}</Typography>
                 </Box>
                 <Box>
-                  <Typography variant="body2">Activity log entries</Typography>
+                  <Typography variant="body2">Mục nhật ký hoạt động</Typography>
                   <Typography variant="h2">{insight.activityCount}</Typography>
                 </Box>
                 <Box>
-                  <Typography variant="body2">Peer reviews received</Typography>
+                  <Typography variant="body2">Đánh giá đồng nghiệp nhận được</Typography>
                   <Typography variant="h2">{insight.peerReviewReceivedCount}</Typography>
                 </Box>
               </Stack>
             </Card>
 
-            <Card title="Development goals">
+            <Card title="Mục tiêu phát triển">
               {Object.keys(insight.goalStatusCounts).length === 0 ? (
-                <Typography variant="body1">No development goals yet.</Typography>
+                <Typography variant="body1">Chưa có mục tiêu phát triển.</Typography>
               ) : (
                 <Stack direction="row" spacing={1.5} sx={{ flexWrap: 'wrap' }}>
                   {Object.entries(insight.goalStatusCounts).map(([status, count]) => (
-                    <StatusChip key={status} label={`${GOAL_STATUS_LABELS[status] ?? status}: ${count}`} tone={status === 'ACHIEVED' ? 'success' : status === 'IN_PROGRESS' ? 'info' : 'neutral'} />
+                    <StatusChip key={status} label={`${GOAL_STATUS_LABEL[status] ?? status}: ${count}`} tone={status === 'ACHIEVED' ? 'success' : status === 'IN_PROGRESS' ? 'info' : 'neutral'} />
                   ))}
                 </Stack>
               )}
             </Card>
 
-            <Card title="Skills">
+            <Card title="Kỹ năng">
               {insight.skills.length === 0 ? (
-                <Typography variant="body1">No skills logged yet.</Typography>
+                <Typography variant="body1">Chưa ghi nhận kỹ năng nào.</Typography>
               ) : (
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableCell>Skill</TableCell>
-                      <TableCell>Level</TableCell>
-                      <TableCell>Self-assessed</TableCell>
-                      <TableCell>Note</TableCell>
+                      <TableCell>Kỹ năng</TableCell>
+                      <TableCell>Cấp độ</TableCell>
+                      <TableCell>Tự đánh giá</TableCell>
+                      <TableCell>Ghi chú</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -139,7 +130,7 @@ export default function EmployeeInsightPage() {
                         <TableCell>
                           <Rating value={row.level} max={5} readOnly size="small" />
                         </TableCell>
-                        <TableCell>{row.selfAssessed ? 'Yes' : 'No'}</TableCell>
+                        <TableCell>{row.selfAssessed ? 'Có' : 'Không'}</TableCell>
                         <TableCell>{row.note ?? '—'}</TableCell>
                       </TableRow>
                     ))}
@@ -149,7 +140,6 @@ export default function EmployeeInsightPage() {
             </Card>
           </Stack>
         )}
-      </PageContainer>
-    </AppShell>
+    </PageContainer>
   );
 }

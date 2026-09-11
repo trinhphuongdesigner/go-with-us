@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
+import IconButton from '@/components/ui/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
 import { mdToHtml } from '@/lib/markdown';
@@ -78,7 +78,7 @@ export default function MarkdownSplitEditor({
           outline: 'none',
           resize: 'none',
           p: 2,
-          fontFamily: 'ui-monospace, SFMono-Regular, monospace',
+          fontFamily: 'var(--font-mono), ui-monospace, SFMono-Regular, monospace',
           fontSize: 13,
           lineHeight: 1.6,
           backgroundColor: colorTokens.surface,
@@ -97,7 +97,7 @@ export default function MarkdownSplitEditor({
       <Box sx={{ width: `${100 - splitPct}%`, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         {onExpand ? (
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 0.5 }}>
-            <Tooltip title="Expand">
+            <Tooltip title="Mở rộng">
               <IconButton size="small" onClick={onExpand}>
                 <OpenInFullIcon fontSize="small" />
               </IconButton>

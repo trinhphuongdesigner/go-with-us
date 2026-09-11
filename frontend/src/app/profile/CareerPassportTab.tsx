@@ -3,14 +3,12 @@
 import * as React from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
+import Dialog from '@/components/ui/Dialog';
+import PageSkeleton from '@/components/ui/PageSkeleton';
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import Chip from '@mui/material/Chip';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
 import Divider from '@mui/material/Divider';
-import LinearProgress from '@mui/material/LinearProgress';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -48,6 +46,7 @@ import OffboardingQueue from './OffboardingQueue';
  */
 export default function CareerPassportTab() {
   const { user } = useAuth();
+  const { ask, dialog } = useConfirmDialog();
 
   const [passport, setPassport] = React.useState<CareerPassport | null>(null);
   const [shares, setShares] = React.useState<PassportShare[]>([]);
@@ -86,7 +85,7 @@ export default function CareerPassportTab() {
       setShares(shareList);
       setMySummaries(summaryList);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to load passport');
+      setError(err instanceof ApiError ? err.message : 'Không tải được hộ chiếu nghề nghiệp');
     } finally {
       setLoading(false);
     }
@@ -110,7 +109,7 @@ export default function CareerPassportTab() {
       setProposalFor(employmentId);
     } catch (err) {
       setError(
-        err instanceof ApiError ? err.message : 'Failed to generate a summary',
+        err instanceof ApiError ? err.message : 'Không tạo được tóm tắt',
       );
     } finally {
       setGeneratingFor(null);
@@ -130,10 +129,10 @@ export default function CareerPassportTab() {
       });
       setProposal(null);
       setProposalFor(null);
-      setNotice('Summary saved to your passport.');
+      setNotice('Đã lưu tóm tắt vào hộ chiếu nghề nghiệp.');
       await load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to save summary');
+      setError(err instanceof ApiError ? err.message : 'Không lưu được tóm tắt');
     } finally {
       setBusy(false);
     }
@@ -145,12 +144,12 @@ export default function CareerPassportTab() {
     try {
       await requestOffboardingSummary(employmentId);
       setNotice(
-        'Requested — an admin will review and trigger it. You can check status here any time.',
+        'Đã gửi yêu cầu — quản trị sẽ xem và kích hoạt. Bạn có thể kiểm tra trạng thái tại đây.',
       );
       await load();
     } catch (err) {
       setError(
-        err instanceof ApiError ? err.message : 'Failed to request a summary',
+        err instanceof ApiError ? err.message : 'Không gửi được yêu cầu tóm tắt',
       );
     } finally {
       setRequestingFor(null);
@@ -159,7 +158,7 @@ export default function CareerPassportTab() {
 
   const handleAddEmployment = async () => {
     if (!jobTitle.trim() || !startDate) {
-      setError('A job title and start date are required.');
+      setError('Cần có chức danh và ngày bắt đầu.');
       return;
     }
     setBusy(true);
@@ -179,7 +178,7 @@ export default function CareerPassportTab() {
       await load();
     } catch (err) {
       setError(
-        err instanceof ApiError ? err.message : 'Failed to add employment',
+        err instanceof ApiError ? err.message : 'Không thêm được kỳ làm việc',
       );
     } finally {
       setBusy(false);
@@ -195,11 +194,11 @@ export default function CareerPassportTab() {
         endDate: new Date().toISOString(),
       });
       setNotice(
-        'Period closed. Your approved assessments from it stay on your record.',
+        'Đã đóng kỳ. Các đánh giá đã duyệt vẫn nằm trên hồ sơ của bạn.',
       );
       await load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to close period');
+      setError(err instanceof ApiError ? err.message : 'Không đóng được kỳ');
     } finally {
       setBusy(false);
     }
@@ -213,7 +212,7 @@ export default function CareerPassportTab() {
       setShareLabel('');
       await load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to create link');
+      setError(err instanceof ApiError ? err.message : 'Không tạo được liên kết');
     } finally {
       setBusy(false);
     }
@@ -224,7 +223,7 @@ export default function CareerPassportTab() {
       await revokePassportShare(id);
       await load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to revoke link');
+      setError(err instanceof ApiError ? err.message : 'Không thu hồi được liên kết');
     }
   };
 
@@ -241,7 +240,7 @@ export default function CareerPassportTab() {
           startIcon={<AddIcon />}
           onClick={() => setEmploymentOpen(true)}
         >
-          Add employment
+          Thêm kỳ làm việc
         </Button>
       </Box>
 
@@ -255,20 +254,22 @@ export default function CareerPassportTab() {
           {notice}
         </Alert>
       ) : null}
-      {loading ? <LinearProgress sx={{ mb: 3 }} /> : null}
-
+      {loading ? (
+        <PageSkeleton variant="cards" />
+      ) : (
+        <>
       {user?.role === 'COMPANY_ADMIN' || user?.role === 'SUPER_ADMIN' ? (
         <OffboardingQueue />
       ) : null}
 
       {proposal ? (
         <Card
-          title="AI summary proposal"
+          title="Đề xuất tóm tắt AI"
           sx={{ mb: 3 }}
           actions={
             <Stack direction="row" spacing={1}>
               <Button size="small" onClick={() => setProposal(null)}>
-                Discard
+                Bỏ qua
               </Button>
               <Button
                 size="small"
@@ -276,13 +277,13 @@ export default function CareerPassportTab() {
                 onClick={handleSaveSummary}
                 disabled={busy}
               >
-                Save to passport
+                Lưu vào hộ chiếu
               </Button>
             </Stack>
           }
         >
           <Alert severity="info" sx={{ mb: 2 }}>
-            Nothing is saved until you press save.
+            Chưa lưu gì cho đến khi bạn nhấn lưu.
           </Alert>
           <MarkdownBlock source={proposal.content} />
           <Stack direction="row" spacing={0.75} sx={{ flexWrap: 'wrap', gap: 0.75, mt: 2 }}>
@@ -308,10 +309,10 @@ export default function CareerPassportTab() {
                 disabled={generatingFor === period.id}
               >
                 {generatingFor === period.id
-                  ? 'Writing...'
+                  ? 'Đang viết...'
                   : period.summary
-                    ? 'Regenerate'
-                    : 'AI summary'}
+                    ? 'Tạo lại'
+                    : 'Tóm tắt AI'}
               </Button>
               {period.status === 'ACTIVE' ? (
                 <Button
@@ -320,7 +321,7 @@ export default function CareerPassportTab() {
                   onClick={() => handleEndEmployment(period.id)}
                   disabled={busy}
                 >
-                  End period
+                  Kết thúc kỳ
                 </Button>
               ) : null}
               {period.status === 'ENDED'
@@ -337,8 +338,8 @@ export default function CareerPassportTab() {
                           size="small"
                           label={
                             pendingRequest.generatedAt
-                              ? 'Org summary: ready for admin review'
-                              : 'Org summary: requested — waiting on admin'
+                              ? 'Tóm tắt tổ chức: chờ quản trị xem'
+                              : 'Tóm tắt tổ chức: đã yêu cầu — chờ quản trị'
                           }
                           color="warning"
                         />
@@ -352,8 +353,8 @@ export default function CareerPassportTab() {
                         disabled={requestingFor === period.id}
                       >
                         {requestingFor === period.id
-                          ? 'Requesting...'
-                          : 'Request org summary'}
+                          ? 'Đang gửi...'
+                          : 'Yêu cầu tóm tắt tổ chức'}
                       </Button>
                     );
                   })()
@@ -363,16 +364,16 @@ export default function CareerPassportTab() {
         />
       ) : null}
 
-      <Card title="Share links" sx={{ mt: 3 }}>
+      <Card title="Liên kết chia sẻ" sx={{ mt: 3 }}>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Give a prospective employer a read-only link to this passport. You
-          can revoke it at any time.
+          Gửi nhà tuyển dụng tương lai một liên kết chỉ đọc tới hộ chiếu này.
+          Bạn có thể thu hồi bất cứ lúc nào.
         </Typography>
 
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mb: 2.5 }}>
           <TextField
-            label="Label"
-            placeholder="Applying to ..."
+            label="Nhãn"
+            placeholder="Ứng tuyển vào ..."
             value={shareLabel}
             onChange={(e) => setShareLabel(e.target.value)}
             size="small"
@@ -380,13 +381,13 @@ export default function CareerPassportTab() {
           />
           <Box>
             <Button variant="contained" onClick={handleCreateShare} disabled={busy}>
-              Create link
+              Tạo liên kết
             </Button>
           </Box>
         </Stack>
 
         {shares.length === 0 ? (
-          <Typography variant="body2">No share link created yet.</Typography>
+          <Typography variant="body2">Chưa tạo liên kết chia sẻ nào.</Typography>
         ) : (
           <Stack divider={<Divider />} spacing={1.5}>
             {shares.map((share) => (
@@ -403,7 +404,7 @@ export default function CareerPassportTab() {
               >
                 <Box sx={{ minWidth: 0 }}>
                   <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                    {share.label ?? 'Untitled link'}
+                    {share.label ?? 'Liên kết chưa đặt tên'}
                   </Typography>
                   <Typography
                     variant="body2"
@@ -414,7 +415,7 @@ export default function CareerPassportTab() {
                 </Box>
                 <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                   <Chip
-                    label={share.revokedAt ? 'Revoked' : `${share.viewCount} views`}
+                    label={share.revokedAt ? 'Đã thu hồi' : `${share.viewCount} lượt xem`}
                     size="small"
                     color={share.revokedAt ? 'default' : 'success'}
                   />
@@ -423,18 +424,26 @@ export default function CareerPassportTab() {
                     startIcon={<ContentCopyOutlinedIcon />}
                     onClick={() => {
                       navigator.clipboard?.writeText(shareUrl(share.token));
-                      setNotice('Link copied.');
+                      setNotice('Đã sao chép liên kết.');
                     }}
                   >
-                    Copy
+                    Sao chép
                   </Button>
                   {!share.revokedAt ? (
                     <Button
-                      size="small"
+                      size="sm"
                       color="error"
-                      onClick={() => handleRevoke(share.id)}
+                      onClick={() =>
+                        ask({
+                          title: 'Thu hồi liên kết',
+                          description: 'Ai đang có liên kết này sẽ mất quyền truy cập ngay.',
+                          confirmLabel: 'Thu hồi',
+                          danger: true,
+                          onConfirm: () => handleRevoke(share.id),
+                        })
+                      }
                     >
-                      Revoke
+                      Thu hồi
                     </Button>
                   ) : null}
                 </Stack>
@@ -443,18 +452,27 @@ export default function CareerPassportTab() {
           </Stack>
         )}
       </Card>
+        </>
+      )}
 
       <Dialog
         open={employmentOpen}
         onClose={() => setEmploymentOpen(false)}
-        fullWidth
-        maxWidth="sm"
+        title="Thêm kỳ làm việc"
+        actions={
+          <>
+            <Button variant="text" onClick={() => setEmploymentOpen(false)}>
+              Hủy
+            </Button>
+            <Button variant="contained" onClick={handleAddEmployment} disabled={busy}>
+              {busy ? 'Đang lưu...' : 'Thêm'}
+            </Button>
+          </>
+        }
       >
-        <DialogTitle>Add employment period</DialogTitle>
-        <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
-              label="Job title"
+              label="Chức danh"
               value={jobTitle}
               onChange={(e) => setJobTitle(e.target.value)}
               required
@@ -462,21 +480,21 @@ export default function CareerPassportTab() {
             />
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               <TextField
-                label="Level"
+                label="Cấp bậc"
                 placeholder="Junior / Middle / Senior"
                 value={level}
                 onChange={(e) => setLevel(e.target.value)}
                 fullWidth
               />
               <TextField
-                label="Department"
+                label="Phòng ban"
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
                 fullWidth
               />
             </Stack>
             <TextField
-              label="Start date"
+              label="Ngày bắt đầu"
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
@@ -485,14 +503,8 @@ export default function CareerPassportTab() {
               fullWidth
             />
           </Stack>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setEmploymentOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleAddEmployment} disabled={busy}>
-            {busy ? 'Saving...' : 'Add'}
-          </Button>
-        </DialogActions>
       </Dialog>
+      {dialog}
     </Box>
   );
 }

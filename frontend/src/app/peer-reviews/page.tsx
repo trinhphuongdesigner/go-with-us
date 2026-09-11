@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import AppShell from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
@@ -10,11 +9,11 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import Alert from '@mui/material/Alert';
-import CircularProgress from '@mui/material/CircularProgress';
+import PageSkeleton from '@/components/ui/PageSkeleton';
 import Avatar from '@mui/material/Avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { listUsers } from '@/lib/api/usersApi';
@@ -32,14 +31,19 @@ import type { User } from '@/types';
 // richer competency-specific set without touching the API contract
 // (ratings is an open Json? column server-side).
 const RATING_CRITERIA: { key: string; label: string }[] = [
-  { key: 'collaboration', label: 'Collaboration' },
-  { key: 'communication', label: 'Communication' },
+  { key: 'collaboration', label: 'Hợp tác' },
+  { key: 'communication', label: 'Giao tiếp' },
 ];
+
+const RATING_KEY_LABEL: Record<string, string> = {
+  collaboration: 'Hợp tác',
+  communication: 'Giao tiếp',
+};
 
 const RATING_VALUES = [1, 2, 3, 4, 5];
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, {
+  return new Date(iso).toLocaleDateString('vi-VN', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -51,7 +55,7 @@ function RatingChips({ ratings }: { ratings: Record<string, number> | null }) {
   return (
     <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap', rowGap: 1 }}>
       {Object.entries(ratings).map(([key, value]) => (
-        <Chip key={key} size="small" label={`${key}: ${value}/5`} />
+        <Chip key={key} size="small" label={`${RATING_KEY_LABEL[key] ?? key}: ${value}/5`} />
       ))}
     </Stack>
   );
@@ -94,7 +98,7 @@ export default function PeerReviewsPage() {
       setReceivedReviews(received);
       setListsError(null);
     } catch (error) {
-      setListsError(error instanceof ApiError ? error.message : 'Failed to load reviews');
+      setListsError(error instanceof ApiError ? error.message : 'Không tải được đánh giá');
     } finally {
       setListsLoading(false);
     }
@@ -108,7 +112,7 @@ export default function PeerReviewsPage() {
         setListsError(null);
       })
       .catch((error) => {
-        setListsError(error instanceof ApiError ? error.message : 'Failed to load reviews');
+        setListsError(error instanceof ApiError ? error.message : 'Không tải được đánh giá');
       })
       .finally(() => setListsLoading(false));
   }, []);
@@ -133,7 +137,7 @@ export default function PeerReviewsPage() {
     setFormSuccess(false);
 
     if (!revieweeId || !content.trim()) {
-      setFormError('Pick a colleague and write some feedback first.');
+      setFormError('Chọn đồng nghiệp và viết nhận xét trước.');
       return;
     }
 
@@ -151,7 +155,7 @@ export default function PeerReviewsPage() {
       setListsLoading(true);
       await refreshLists();
     } catch (error) {
-      setFormError(error instanceof ApiError ? error.message : 'Failed to submit review');
+      setFormError(error instanceof ApiError ? error.message : 'Không gửi được đánh giá');
     } finally {
       setSubmitting(false);
     }
@@ -160,23 +164,22 @@ export default function PeerReviewsPage() {
   const noColleagues = !colleaguesLoading && colleagues.length === 0;
 
   return (
-    <AppShell>
-      <PageContainer>
-        <PageHeader title="Peer Reviews" subtitle="Reviews you have given and received." />
+    <PageContainer>
+        <PageHeader title="Đánh giá đồng nghiệp" subtitle="Các đánh giá bạn đã viết và nhận được." />
 
-        <Card title="Write a review" sx={{ mb: 3 }}>
+        <Card title="Viết đánh giá" sx={{ mb: 3 }}>
           <Box component="form" onSubmit={handleSubmit}>
             <Stack spacing={2.5}>
               {formError ? <Alert severity="error">{formError}</Alert> : null}
-              {formSuccess ? <Alert severity="success">Review submitted.</Alert> : null}
+              {formSuccess ? <Alert severity="success">Đã gửi đánh giá.</Alert> : null}
 
               <TextField
                 select
-                label="Colleague"
+                label="Đồng nghiệp"
                 value={revieweeId}
                 onChange={(e) => setRevieweeId(e.target.value)}
                 disabled={colleaguesLoading || noColleagues}
-                helperText={noColleagues ? 'No colleagues found in your company yet.' : ' '}
+                helperText={noColleagues ? 'Chưa có đồng nghiệp nào trong công ty.' : ' '}
                 fullWidth
               >
                 {colleagues.map((colleague) => (
@@ -188,7 +191,7 @@ export default function PeerReviewsPage() {
               </TextField>
 
               <TextField
-                label="Feedback"
+                label="Nhận xét"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 multiline
@@ -217,7 +220,7 @@ export default function PeerReviewsPage() {
 
               <Box>
                 <Button type="submit" variant="contained" disabled={submitting}>
-                  {submitting ? 'Submitting…' : 'Submit review'}
+                  {submitting ? 'Đang gửi…' : 'Gửi đánh giá'}
                 </Button>
               </Box>
             </Stack>
@@ -232,11 +235,11 @@ export default function PeerReviewsPage() {
 
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Card title="Reviews I've written">
+            <Card title="Đánh giá tôi đã viết">
               {listsLoading ? (
-                <CircularProgress size={24} />
+                <PageSkeleton variant="list" rows={3} embedded />
               ) : givenReviews.length === 0 ? (
-                <Typography variant="body2">You haven&apos;t written any reviews yet.</Typography>
+                <Typography variant="body2">Bạn chưa viết đánh giá nào.</Typography>
               ) : (
                 <Stack divider={<Divider />} spacing={2}>
                   {givenReviews.map((review) => (
@@ -266,11 +269,11 @@ export default function PeerReviewsPage() {
           </Box>
 
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Card title="Reviews about me">
+            <Card title="Đánh giá về tôi">
               {listsLoading ? (
-                <CircularProgress size={24} />
+                <PageSkeleton variant="list" rows={3} embedded />
               ) : receivedReviews.length === 0 ? (
-                <Typography variant="body2">No one has reviewed you yet.</Typography>
+                <Typography variant="body2">Chưa ai đánh giá bạn.</Typography>
               ) : (
                 <Stack divider={<Divider />} spacing={2}>
                   {receivedReviews.map((review) => (
@@ -299,7 +302,6 @@ export default function PeerReviewsPage() {
             </Card>
           </Box>
         </Stack>
-      </PageContainer>
-    </AppShell>
+    </PageContainer>
   );
 }

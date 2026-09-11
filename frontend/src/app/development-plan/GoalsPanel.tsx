@@ -3,13 +3,11 @@
 import * as React from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
+import Button from '@/components/ui/Button';
+import Dialog from '@/components/ui/Dialog';
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
+import IconButton from '@/components/ui/IconButton';
 import LinearProgress from '@mui/material/LinearProgress';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
@@ -34,18 +32,18 @@ import { colorTokens } from '@/theme/theme';
 
 const STATUS_OPTIONS: GoalStatus[] = ['NOT_STARTED', 'IN_PROGRESS', 'ACHIEVED'];
 const STATUS_LABEL: Record<GoalStatus, string> = {
-  NOT_STARTED: 'Not started',
-  IN_PROGRESS: 'In progress',
-  ACHIEVED: 'Achieved',
+  NOT_STARTED: 'Chưa bắt đầu',
+  IN_PROGRESS: 'Đang thực hiện',
+  ACHIEVED: 'Đã đạt',
 };
 const TABS: LifeCategory[] = ['WORK', 'PERSONAL'];
 const TAB_LABEL: Record<LifeCategory, string> = {
-  WORK: 'Work',
-  PERSONAL: 'Personal',
+  WORK: 'Công việc',
+  PERSONAL: 'Cá nhân',
 };
 const TAB_HINT: Record<LifeCategory, string> = {
-  WORK: 'Skills, certifications and anything serving the job.',
-  PERSONAL: "Health, sport, volunteering — doesn't serve the job directly, but gives context.",
+  WORK: 'Kỹ năng, chứng chỉ và những gì phục vụ công việc.',
+  PERSONAL: 'Sức khỏe, thể thao, tình nguyện — không trực tiếp phục vụ việc, nhưng cho ngữ cảnh.',
 };
 
 interface FormState {
@@ -67,6 +65,7 @@ export default function GoalsPanel({
   goals: DevelopmentGoal[];
   onChanged: () => void;
 }) {
+  const { ask, dialog } = useConfirmDialog();
   const [tab, setTab] = React.useState<LifeCategory>('WORK');
   const [open, setOpen] = React.useState(false);
   const [form, setForm] = React.useState<FormState>(EMPTY_FORM);
@@ -90,7 +89,7 @@ export default function GoalsPanel({
       setOpen(false);
       onChanged();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to add goal');
+      setError(err instanceof ApiError ? err.message : 'Không thêm được mục tiêu');
     } finally {
       setSaving(false);
     }
@@ -110,7 +109,7 @@ export default function GoalsPanel({
       onChanged();
       void updated;
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to update progress');
+      setError(err instanceof ApiError ? err.message : 'Không cập nhật được tiến độ');
     }
   };
 
@@ -119,7 +118,7 @@ export default function GoalsPanel({
       await updateGoal(goal.id, { status });
       onChanged();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to update goal');
+      setError(err instanceof ApiError ? err.message : 'Không cập nhật được mục tiêu');
     }
   };
 
@@ -128,7 +127,7 @@ export default function GoalsPanel({
       await deleteGoal(id);
       onChanged();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to delete goal');
+      setError(err instanceof ApiError ? err.message : 'Không xóa được mục tiêu');
     }
   };
 
@@ -143,8 +142,8 @@ export default function GoalsPanel({
             <Tab key={t} value={t} label={TAB_LABEL[t]} />
           ))}
         </Tabs>
-        <Button startIcon={<AddIcon />} size="small" onClick={() => setOpen(true)}>
-          Add goal
+        <Button startIcon={<AddIcon />} size="sm" onClick={() => setOpen(true)}>
+          Thêm mục tiêu
         </Button>
       </Stack>
       <Typography variant="body2" sx={{ fontSize: 12.5, mb: 2 }}>
@@ -159,7 +158,7 @@ export default function GoalsPanel({
 
       {visible.length === 0 ? (
         <Typography variant="body2">
-          No {TAB_LABEL[tab].toLowerCase()} goals yet.
+          Chưa có mục tiêu {TAB_LABEL[tab].toLowerCase()}.
         </Typography>
       ) : (
         <Stack divider={<Divider />} spacing={2}>
@@ -176,9 +175,9 @@ export default function GoalsPanel({
                       <Typography
                         component="span"
                         variant="body2"
-                        sx={{ ml: 1, fontSize: 11, color: colorTokens.accent }}
+                        sx={{ ml: 1, fontSize: 11, color: colorTokens.accentInk }}
                       >
-                        AI-suggested
+                        AI gợi ý
                       </Typography>
                     ) : null}
                   </Typography>
@@ -187,7 +186,7 @@ export default function GoalsPanel({
                   ) : null}
                   {goal.dueDate ? (
                     <Typography variant="body2" sx={{ fontSize: 12 }}>
-                      Due {new Date(goal.dueDate).toLocaleDateString()}
+                      Hạn {new Date(goal.dueDate).toLocaleDateString('vi-VN')}
                     </Typography>
                   ) : null}
                 </Box>
@@ -209,8 +208,20 @@ export default function GoalsPanel({
                     label={STATUS_LABEL[goal.status]}
                     tone={toneForStatus(goal.status)}
                   />
-                  <IconButton size="small" onClick={() => handleDelete(goal.id)}>
-                    <DeleteOutlineIcon fontSize="small" />
+                  <IconButton
+                    size="sm"
+                    aria-label="Xóa mục tiêu"
+                    onClick={() =>
+                      ask({
+                        title: 'Xóa mục tiêu',
+                        description: `Xóa “${goal.title}”? Hành động này không thể hoàn tác.`,
+                        confirmLabel: 'Xóa',
+                        danger: true,
+                        onConfirm: () => handleDelete(goal.id),
+                      })
+                    }
+                  >
+                    <DeleteOutlineIcon />
                   </IconButton>
                 </Stack>
               </Stack>
@@ -244,19 +255,31 @@ export default function GoalsPanel({
         </Stack>
       )}
 
-      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Add {TAB_LABEL[tab].toLowerCase()} goal</DialogTitle>
-        <DialogContent>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title={`Thêm mục tiêu ${TAB_LABEL[tab].toLowerCase()}`}
+        actions={
+          <>
+            <Button variant="text" onClick={() => setOpen(false)}>
+              Hủy
+            </Button>
+            <Button variant="contained" onClick={handleAdd} disabled={saving}>
+              {saving ? 'Đang thêm...' : 'Thêm'}
+            </Button>
+          </>
+        }
+      >
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
-              label="Title"
+              label="Tiêu đề"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               required
               fullWidth
             />
             <TextField
-              label="Description"
+              label="Mô tả"
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               fullWidth
@@ -264,7 +287,7 @@ export default function GoalsPanel({
               minRows={2}
             />
             <TextField
-              label="Due date"
+              label="Hạn"
               type="date"
               value={form.dueDate}
               onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
@@ -272,14 +295,8 @@ export default function GoalsPanel({
               fullWidth
             />
           </Stack>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleAdd} disabled={saving}>
-            {saving ? 'Adding...' : 'Add'}
-          </Button>
-        </DialogActions>
       </Dialog>
+      {dialog}
     </Box>
   );
 }

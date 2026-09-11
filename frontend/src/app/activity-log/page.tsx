@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import AppShell from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
@@ -10,11 +9,13 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
+import IconButton from '@/components/ui/IconButton';
 import Divider from '@mui/material/Divider';
 import Alert from '@mui/material/Alert';
+import PageSkeleton from '@/components/ui/PageSkeleton';
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import {
@@ -26,7 +27,7 @@ import {
 } from '@/lib/api/activityLogsApi';
 import { ApiError } from '@/lib/api/client';
 
-const CATEGORY_OPTIONS = ['Hobby', 'Volunteer', 'Certification', 'Other'];
+const CATEGORY_OPTIONS = ['Sở thích', 'Tình nguyện', 'Chứng chỉ', 'Khác'];
 
 function toDateInputValue(iso: string): string {
   // Truncate an ISO datetime down to the yyyy-MM-dd an <input type="date">
@@ -38,7 +39,7 @@ function toDateInputValue(iso: string): string {
 function formatDisplayDate(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return date.toLocaleDateString('vi-VN', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 interface FormState {
@@ -56,6 +57,7 @@ const EMPTY_FORM: FormState = {
 };
 
 export default function ActivityLogPage() {
+  const { ask, dialog } = useConfirmDialog();
   const [logs, setLogs] = React.useState<ActivityLog[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -75,7 +77,7 @@ export default function ActivityLogPage() {
         setError(null);
       })
       .catch((err: unknown) => {
-        setError(err instanceof ApiError ? err.message : 'Failed to load activity log.');
+        setError(err instanceof ApiError ? err.message : 'Không tải được nhật ký hoạt động.');
       })
       .finally(() => {
         setLoading(false);
@@ -115,14 +117,14 @@ export default function ActivityLogPage() {
         handleCancelEdit();
       }
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to delete entry.');
+      setError(err instanceof ApiError ? err.message : 'Không xóa được mục này.');
     }
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!form.title.trim() || !form.date) {
-      setFormError('Title and date are required.');
+      setFormError('Cần có tiêu đề và ngày.');
       return;
     }
 
@@ -145,24 +147,23 @@ export default function ActivityLogPage() {
       }
       handleCancelEdit();
     } catch (err) {
-      setFormError(err instanceof ApiError ? err.message : 'Failed to save entry.');
+      setFormError(err instanceof ApiError ? err.message : 'Không lưu được mục này.');
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <AppShell>
-      <PageContainer>
-        <PageHeader title="Activity Log" subtitle="Life & work activities you have logged." />
+    <PageContainer>
+        <PageHeader title="Nhật ký hoạt động" subtitle="Các hoạt động đời sống và công việc bạn đã ghi nhận." />
 
-        <Card title={editingId ? 'Edit activity' : 'Log an activity'} sx={{ mb: 3 }}>
+        <Card title={editingId ? 'Sửa hoạt động' : 'Ghi nhận hoạt động'} sx={{ mb: 3 }}>
           <Box component="form" onSubmit={handleSubmit}>
             <Stack spacing={2}>
               {formError ? <Alert severity="error">{formError}</Alert> : null}
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <TextField
-                  label="Title"
+                  label="Tiêu đề"
                   value={form.title}
                   onChange={handleFieldChange('title')}
                   fullWidth
@@ -170,14 +171,14 @@ export default function ActivityLogPage() {
                 />
                 <TextField
                   select
-                  label="Category"
+                  label="Danh mục"
                   value={form.category}
                   onChange={handleFieldChange('category')}
                   sx={{ minWidth: { sm: 200 } }}
                   fullWidth
                 >
                   <MenuItem value="">
-                    <em>None</em>
+                    <em>Không chọn</em>
                   </MenuItem>
                   {CATEGORY_OPTIONS.map((option) => (
                     <MenuItem key={option} value={option}>
@@ -186,7 +187,7 @@ export default function ActivityLogPage() {
                   ))}
                 </TextField>
                 <TextField
-                  label="Date"
+                  label="Ngày"
                   type="date"
                   value={form.date}
                   onChange={handleFieldChange('date')}
@@ -196,7 +197,7 @@ export default function ActivityLogPage() {
                 />
               </Stack>
               <TextField
-                label="Description"
+                label="Mô tả"
                 value={form.description}
                 onChange={handleFieldChange('description')}
                 multiline
@@ -205,11 +206,11 @@ export default function ActivityLogPage() {
               />
               <Stack direction="row" spacing={1.5}>
                 <Button type="submit" variant="contained" disabled={saving}>
-                  {editingId ? 'Save changes' : 'Add activity'}
+                  {editingId ? 'Lưu thay đổi' : 'Thêm hoạt động'}
                 </Button>
                 {editingId ? (
                   <Button variant="text" onClick={handleCancelEdit} disabled={saving}>
-                    Cancel
+                    Hủy
                   </Button>
                 ) : null}
               </Stack>
@@ -217,16 +218,16 @@ export default function ActivityLogPage() {
           </Box>
         </Card>
 
-        <Card title="Your activities">
+        <Card title="Hoạt động của bạn">
           {error ? (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
             </Alert>
           ) : null}
           {loading ? (
-            <Typography variant="body2">Loading…</Typography>
+            <PageSkeleton variant="list" rows={4} embedded />
           ) : logs.length === 0 ? (
-            <Typography variant="body2">No activities logged yet — add your first one above.</Typography>
+            <Typography variant="body2">Chưa có hoạt động nào — thêm mục đầu tiên ở trên.</Typography>
           ) : (
             <Stack divider={<Divider />} spacing={2}>
               {logs.map((log) => (
@@ -251,11 +252,23 @@ export default function ActivityLogPage() {
                     ) : null}
                   </Box>
                   <Stack direction="row" spacing={0.5}>
-                    <IconButton size="small" onClick={() => handleEdit(log)} aria-label="Edit activity">
-                      <EditOutlinedIcon fontSize="small" />
+                    <IconButton size="sm" onClick={() => handleEdit(log)} aria-label="Sửa hoạt động">
+                      <EditOutlinedIcon />
                     </IconButton>
-                    <IconButton size="small" onClick={() => void handleDelete(log.id)} aria-label="Delete activity">
-                      <DeleteOutlineIcon fontSize="small" />
+                    <IconButton
+                      size="sm"
+                      aria-label="Xóa hoạt động"
+                      onClick={() =>
+                        ask({
+                          title: 'Xóa hoạt động',
+                          description: `Xóa “${log.title}”? Hành động này không thể hoàn tác.`,
+                          confirmLabel: 'Xóa',
+                          danger: true,
+                          onConfirm: () => handleDelete(log.id),
+                        })
+                      }
+                    >
+                      <DeleteOutlineIcon />
                     </IconButton>
                   </Stack>
                 </Box>
@@ -263,7 +276,7 @@ export default function ActivityLogPage() {
             </Stack>
           )}
         </Card>
-      </PageContainer>
-    </AppShell>
+        {dialog}
+    </PageContainer>
   );
 }

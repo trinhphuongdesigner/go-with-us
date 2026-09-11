@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import Checkbox from '@mui/material/Checkbox';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
@@ -22,6 +22,7 @@ import StatusChip from '@/components/ui/StatusChip';
 import { colorTokens, radiusTokens } from '@/theme/theme';
 import * as api from '@/lib/api/developmentPlansApi';
 import type { DevelopmentMilestone } from '@/lib/api/developmentPlansApi';
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import InlineRoadmapField from './InlineRoadmapField';
 
 function TaskComposer({
@@ -109,6 +110,7 @@ export default function MilestonesPanel({
   milestones: DevelopmentMilestone[];
   onChanged: () => Promise<void>;
 }) {
+  const { ask, dialog } = useConfirmDialog();
   const [error, setError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [pendingTask, setPendingTask] = React.useState<{ id: string; done: boolean } | null>(null);

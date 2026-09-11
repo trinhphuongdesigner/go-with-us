@@ -3,12 +3,10 @@
 import * as React from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
+import Dialog from '@/components/ui/Dialog';
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import Chip from '@mui/material/Chip';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
 import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
@@ -62,6 +60,7 @@ export default function ProjectsTab({
   employments: EmploymentEntry[];
   onChanged: () => void;
 }) {
+  const { ask, dialog } = useConfirmDialog();
   const [open, setOpen] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [form, setForm] = React.useState<FormState>(EMPTY);
@@ -93,7 +92,7 @@ export default function ProjectsTab({
 
   const handleSave = async () => {
     if (!form.name.trim() || !form.role.trim() || !form.startDate) {
-      setError('Project name, your role and a start date are required.');
+      setError('Cần có tên dự án, vai trò và ngày bắt đầu.');
       return;
     }
 
@@ -122,7 +121,7 @@ export default function ProjectsTab({
       setOpen(false);
       onChanged();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to save project');
+      setError(err instanceof ApiError ? err.message : 'Không lưu được dự án');
     } finally {
       setSaving(false);
     }
@@ -134,7 +133,7 @@ export default function ProjectsTab({
       onChanged();
     } catch (err) {
       setError(
-        err instanceof ApiError ? err.message : 'Failed to delete project',
+        err instanceof ApiError ? err.message : 'Không xóa được dự án',
       );
     }
   };
@@ -143,7 +142,7 @@ export default function ProjectsTab({
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Button startIcon={<AddIcon />} variant="outlined" onClick={openCreate}>
-          Add project
+          Thêm dự án
         </Button>
       </Box>
 
@@ -155,8 +154,7 @@ export default function ProjectsTab({
 
       {projects.length === 0 ? (
         <Typography variant="body2">
-          No projects recorded yet. Add one, or import your CV to fill this in
-          automatically.
+          Chưa có dự án nào. Thêm thủ công, hoặc nhập CV để điền tự động.
         </Typography>
       ) : (
         <Stack divider={<Divider />} spacing={2}>
@@ -178,19 +176,27 @@ export default function ProjectsTab({
                     {project.role}
                     {project.domain ? ` · ${project.domain}` : ''} ·{' '}
                     {toInputDate(project.startDate)} →{' '}
-                    {toInputDate(project.endDate) || 'now'}
+                    {toInputDate(project.endDate) || 'nay'}
                   </Typography>
                 </Box>
                 <Stack direction="row" spacing={1}>
-                  <Button size="small" onClick={() => openEdit(project)}>
-                    Edit
+                  <Button size="sm" onClick={() => openEdit(project)}>
+                    Sửa
                   </Button>
                   <Button
-                    size="small"
+                    size="sm"
                     color="error"
-                    onClick={() => handleDelete(project.id)}
+                    onClick={() =>
+                      ask({
+                        title: 'Xóa dự án',
+                        description: `Xóa “${project.name}” khỏi hồ sơ? Hành động này không thể hoàn tác.`,
+                        confirmLabel: 'Xóa',
+                        danger: true,
+                        onConfirm: () => handleDelete(project.id),
+                      })
+                    }
                   >
-                    Delete
+                    Xóa
                   </Button>
                 </Stack>
               </Box>
@@ -217,9 +223,21 @@ export default function ProjectsTab({
         </Stack>
       )}
 
-      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{editingId ? 'Edit project' : 'Add project'}</DialogTitle>
-        <DialogContent>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title={editingId ? 'Sửa dự án' : 'Thêm dự án'}
+        actions={
+          <>
+            <Button variant="text" onClick={() => setOpen(false)}>
+              Hủy
+            </Button>
+            <Button variant="contained" onClick={handleSave} disabled={saving}>
+              {saving ? 'Đang lưu...' : 'Lưu'}
+            </Button>
+          </>
+        }
+      >
           {error ? (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
@@ -227,35 +245,35 @@ export default function ProjectsTab({
           ) : null}
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
-              label="Project name"
+              label="Tên dự án"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
               fullWidth
             />
             <TextField
-              label="Your role"
+              label="Vai trò của bạn"
               value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value })}
               required
               fullWidth
             />
             <TextField
-              label="Domain"
-              helperText="Business domain, e.g. real estate, fintech"
+              label="Lĩnh vực"
+              helperText="Domain nghiệp vụ, ví dụ bất động sản, fintech"
               value={form.domain}
               onChange={(e) => setForm({ ...form, domain: e.target.value })}
               fullWidth
             />
             <TextField
-              label="Tech stack"
-              helperText="Comma-separated, e.g. React, Node.js, PostgreSQL"
+              label="Công nghệ"
+              helperText="Cách nhau bằng dấu phẩy, ví dụ React, Node.js, PostgreSQL"
               value={form.techStack}
               onChange={(e) => setForm({ ...form, techStack: e.target.value })}
               fullWidth
             />
             <TextField
-              label="Contribution / result"
+              label="Đóng góp / kết quả"
               value={form.contribution}
               onChange={(e) =>
                 setForm({ ...form, contribution: e.target.value })
@@ -266,7 +284,7 @@ export default function ProjectsTab({
             />
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               <TextField
-                label="Start date"
+                label="Ngày bắt đầu"
                 type="date"
                 value={form.startDate}
                 onChange={(e) => setForm({ ...form, startDate: e.target.value })}
@@ -275,9 +293,9 @@ export default function ProjectsTab({
                 fullWidth
               />
               <TextField
-                label="End date"
+                label="Ngày kết thúc"
                 type="date"
-                helperText="Leave empty if ongoing"
+                helperText="Để trống nếu đang làm"
                 value={form.endDate}
                 onChange={(e) => setForm({ ...form, endDate: e.target.value })}
                 slotProps={{ inputLabel: { shrink: true } }}
@@ -287,15 +305,15 @@ export default function ProjectsTab({
             {employments.length > 0 ? (
               <TextField
                 select
-                label="Employment period"
-                helperText="Links this project to a job, so it stays in context later"
+                label="Kỳ làm việc"
+                helperText="Gắn dự án với một vị trí để sau này vẫn còn ngữ cảnh"
                 value={form.employmentId}
                 onChange={(e) =>
                   setForm({ ...form, employmentId: e.target.value })
                 }
                 fullWidth
               >
-                <MenuItem value="">Not linked</MenuItem>
+                <MenuItem value="">Chưa gắn</MenuItem>
                 {employments.map((employment) => (
                   <MenuItem key={employment.id} value={employment.id}>
                     {employment.jobTitle} @ {employment.company.name}
@@ -304,14 +322,8 @@ export default function ProjectsTab({
               </TextField>
             ) : null}
           </Stack>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving...' : 'Save'}
-          </Button>
-        </DialogActions>
       </Dialog>
+      {dialog}
     </Box>
   );
 }

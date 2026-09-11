@@ -4,9 +4,8 @@ import * as React from 'react';
 import NextLink from 'next/link';
 import { useParams } from 'next/navigation';
 import Alert from '@mui/material/Alert';
-import Button from '@mui/material/Button';
-import LinearProgress from '@mui/material/LinearProgress';
-import AppShell from '@/components/layout/AppShell';
+import Button from '@/components/ui/Button';
+import PageSkeleton from '@/components/ui/PageSkeleton';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import PassportView from '@/components/passport/PassportView';
@@ -41,7 +40,7 @@ export default function EmployeePassportPage() {
       } catch (err) {
         if (!cancelled) {
           setError(
-            err instanceof ApiError ? err.message : 'Failed to load passport',
+            err instanceof ApiError ? err.message : 'Không tải được hộ chiếu nghề nghiệp',
           );
         }
       } finally {
@@ -54,18 +53,17 @@ export default function EmployeePassportPage() {
   }, [params.id, user]);
 
   return (
-    <AppShell>
-      <PageContainer>
+    <PageContainer>
         <PageHeader
-          title={passport ? `${passport.user.name} — Career Passport` : 'Career Passport'}
-          subtitle="Employment periods, approved assessments and AI recaps."
+          title={passport ? `${passport.user.name} — Hộ chiếu nghề nghiệp` : 'Hộ chiếu nghề nghiệp'}
+          subtitle="Các kỳ làm việc, đánh giá đã duyệt và tóm tắt AI."
           actions={
             <Button
               component={NextLink}
               href={`/employees/${params.id}`}
               variant="outlined"
             >
-              Back to insight
+              Quay lại tổng quan
             </Button>
           }
         />
@@ -75,10 +73,11 @@ export default function EmployeePassportPage() {
             {error}
           </Alert>
         ) : null}
-        {loading ? <LinearProgress sx={{ mb: 3 }} /> : null}
-
-        {passport ? <PassportView passport={passport} /> : null}
-      </PageContainer>
-    </AppShell>
+        {loading ? (
+          <PageSkeleton variant="profile" />
+        ) : passport ? (
+          <PassportView passport={passport} />
+        ) : null}
+    </PageContainer>
   );
 }

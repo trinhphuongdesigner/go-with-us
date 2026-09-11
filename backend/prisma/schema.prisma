@@ -681,6 +681,8 @@ model AssistantConversation {
   /// doesn't change topic mid-thread. GENERAL keeps today's behaviour
   /// (roster search for admins / personal companion for employees).
   focus     AssistantFocus @default(GENERAL)
+  /// Pinned threads sort first in the history list (full page + floating panel).
+  pinned    Boolean        @default(false)
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
 

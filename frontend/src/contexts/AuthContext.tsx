@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import * as authApi from '@/lib/api/authApi';
 import { getStoredToken, setStoredToken, ApiError } from '@/lib/api/client';
 import type { User } from '@/types';
+import Loading from '@/components/ui/Loading';
 
 interface AuthContextValue {
   user: User | null;
@@ -73,8 +74,8 @@ export function useAuth(): AuthContextValue {
 
 /**
  * Gates children behind an authenticated session — redirects to /login
- * once loading settles with no user. Used by AppShell so every
- * authenticated route gets this for free just by rendering inside it.
+ * once loading settles with no user. Used by AppShell (mounted once from
+ * the root layout) so every authenticated route gets this for free.
  */
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -87,7 +88,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   }, [loading, user, router]);
 
   if (loading || !user) {
-    return null;
+    return <Loading variant="fullscreen" size="lg" />;
   }
 
   return <>{children}</>;

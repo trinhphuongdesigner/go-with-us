@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import Checkbox from '@mui/material/Checkbox';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
@@ -17,7 +17,6 @@ import StepLabel from '@mui/material/StepLabel';
 import Stepper from '@mui/material/Stepper';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import AppShell from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
@@ -30,7 +29,7 @@ import {
   type ParsedProfile,
 } from '@/lib/api/profileImportsApi';
 
-const STEPS = ['Provide your CV', 'Review what AI found', 'Save to profile'];
+const STEPS = ['Cung cấp CV', 'Xem AI tìm thấy gì', 'Lưu vào hồ sơ'];
 
 /** Which proposed items the user ticked, by section and index. */
 type Selection = Record<keyof SelectableSections, Set<number>>;
@@ -89,7 +88,7 @@ export default function ProfileImportPage() {
     // only ever send the text. Binary CVs (PDF/DOCX) need pasting for now.
     if (!/\.(txt|md|markdown|json|csv)$/i.test(file.name)) {
       setError(
-        'Only plain-text files can be read directly. For a PDF or Word CV, copy the text and paste it below.',
+        'Chỉ đọc được file văn bản thuần. Với CV PDF hoặc Word, hãy sao chép nội dung rồi dán bên dưới.',
       );
       return;
     }
@@ -110,7 +109,7 @@ export default function ProfileImportPage() {
   const handleParse = async () => {
     if (pending.current) return;
     if (rawText.trim().length < 20) {
-      setError('Paste at least a few lines of your CV first.');
+      setError('Hãy dán ít nhất vài dòng CV trước.');
       return;
     }
 
@@ -125,7 +124,7 @@ export default function ProfileImportPage() {
       });
       const done = await parseProfileImport(created.id);
       if (!done.parsedData) {
-        throw new Error('AI returned nothing to review');
+        throw new Error('AI không trả về gì để xem lại');
       }
       setImportId(done.id);
       setParsed(done.parsedData);
@@ -139,7 +138,7 @@ export default function ProfileImportPage() {
           ? err.message
           : err instanceof Error
             ? err.message
-            : 'Failed to read this CV',
+            : 'Không đọc được CV này',
       );
     } finally {
       pending.current = false;
@@ -218,11 +217,10 @@ export default function ProfileImportPage() {
   };
 
   return (
-    <AppShell>
-      <PageContainer>
+    <PageContainer>
         <PageHeader
-          title="Import CV"
-          subtitle="Paste your CV or LinkedIn profile — AI turns it into structured profile data for you to review."
+          title="Nhập CV"
+          subtitle="Dán CV hoặc hồ sơ LinkedIn — AI chuyển thành dữ liệu có cấu trúc để bạn xem lại."
         />
 
         <Card sx={{ mb: 3 }}>
@@ -242,7 +240,7 @@ export default function ProfileImportPage() {
         ) : null}
 
         {step === 0 ? (
-          <Card title="Your CV">
+          <Card title="CV của bạn">
             <Stack spacing={2}>
               <TextField
                 select
@@ -252,9 +250,9 @@ export default function ProfileImportPage() {
                 onChange={(e) => setSourceType(e.target.value as ImportSourceType)}
                 sx={{ maxWidth: 280 }}
               >
-                <MenuItem value="CV_TEXT">Pasted CV text</MenuItem>
-                <MenuItem value="CV_FILE">CV file</MenuItem>
-                <MenuItem value="LINKEDIN_URL">LinkedIn profile</MenuItem>
+                <MenuItem value="CV_TEXT">Dán nội dung CV</MenuItem>
+                <MenuItem value="CV_FILE">File CV</MenuItem>
+                <MenuItem value="LINKEDIN_URL">Hồ sơ LinkedIn</MenuItem>
               </TextField>
 
               {sourceType === 'LINKEDIN_URL' ? (
@@ -306,7 +304,7 @@ export default function ProfileImportPage() {
                   onClick={handleParse}
                   disabled={busy || rawText.trim().length < 20}
                 >
-                  {busy ? 'Reading your CV...' : 'Read with AI'}
+                  {busy ? 'Đang đọc CV...' : 'Đọc bằng AI'}
                 </Button>
               </Box>
             </Stack>
@@ -383,7 +381,7 @@ export default function ProfileImportPage() {
             <Card title={`Skills (${parsed.skills.length})`} sx={{ mb: 3 }}>
               {sectionSelection('skills', 'skills')}
               {parsed.skills.length === 0 ? (
-                <Typography variant="body2">None found.</Typography>
+                <Typography variant="body2">Không tìm thấy.</Typography>
               ) : (
                 <Stack>
                   {parsed.skills.map((skill, index) => (
@@ -406,7 +404,7 @@ export default function ProfileImportPage() {
             <Card title={`Certificates (${parsed.certifications.length})`} sx={{ mb: 3 }}>
               {sectionSelection('certifications', 'certificates')}
               {parsed.certifications.length === 0 ? (
-                <Typography variant="body2">None found.</Typography>
+                <Typography variant="body2">Không tìm thấy.</Typography>
               ) : (
                 <Stack>
                   {parsed.certifications.map((certification, index) => (
@@ -437,7 +435,7 @@ export default function ProfileImportPage() {
             <Card title={`Projects (${parsed.projects.length})`} sx={{ mb: 3 }}>
               {sectionSelection('projects', 'projects')}
               {parsed.projects.length === 0 ? (
-                <Typography variant="body2">None found.</Typography>
+                <Typography variant="body2">Không tìm thấy.</Typography>
               ) : (
                 <Stack divider={<Divider />} spacing={1}>
                   {parsed.projects.map((project, index) => (
@@ -459,7 +457,7 @@ export default function ProfileImportPage() {
                               {project.role}
                               {project.domain ? ` · ${project.domain}` : ''}
                               {project.startDate
-                                ? ` · ${project.startDate} → ${project.endDate ?? 'now'}`
+                                ? ` · ${project.startDate} → ${project.endDate ?? 'nay'}`
                                 : ''}
                             </Typography>
                             {project.contribution ? (
@@ -488,7 +486,7 @@ export default function ProfileImportPage() {
             <Card title={`Awards (${parsed.awards.length})`} sx={{ mb: 3 }}>
               {sectionSelection('awards', 'awards')}
               {parsed.awards.length === 0 ? (
-                <Typography variant="body2">None found.</Typography>
+                <Typography variant="body2">Không tìm thấy.</Typography>
               ) : (
                 <Stack>
                   {parsed.awards.map((award, index) => (
@@ -537,14 +535,14 @@ export default function ProfileImportPage() {
                   : `Apply ${selectedCount} selected items${applyTitle ? ' + job title' : ''}`}
               </Button>
               <Button onClick={() => setStep(0)} disabled={busy}>
-                Back
+                Quay lại
               </Button>
             </Stack>
           </>
         ) : null}
 
         {step === 2 ? (
-          <Card title="Done">
+          <Card title="Xong">
             <Alert severity="success" sx={{ mb: 2 }}>
               {result}
             </Alert>
@@ -566,12 +564,11 @@ export default function ProfileImportPage() {
                   setError(null);
                 }}
               >
-                Import another
+                Nhập CV khác
               </Button>
             </Stack>
           </Card>
         ) : null}
-      </PageContainer>
-    </AppShell>
+    </PageContainer>
   );
 }

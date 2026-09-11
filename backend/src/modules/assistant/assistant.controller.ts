@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -11,7 +12,7 @@ import { AssistantService } from './assistant.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/jwt.strategy';
-import { AssistantQueryDto } from './dto/assistant.dto';
+import { AssistantQueryDto, UpdateConversationDto } from './dto/assistant.dto';
 
 /**
  * M5 — the cross-cutting assistant. Same endpoint for both audiences; the
@@ -42,6 +43,15 @@ export class AssistantController {
     @CurrentUser() caller: AuthenticatedUser,
   ) {
     return this.service.removeConversation(id, caller);
+  }
+
+  @Patch('conversations/:id')
+  updateConversation(
+    @Param('id') id: string,
+    @Body() dto: UpdateConversationDto,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
+    return this.service.updateConversation(id, dto, caller);
   }
 
   @Post('query')

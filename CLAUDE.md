@@ -169,10 +169,14 @@ most importantly why the career record must outlive an employment):
 
 ## Conventions for new work
 
-- Every authenticated page: wrap in `AppShell` + `PageContainer` +
-  `PageHeader`, content inside `Card`s (`frontend/src/components/ui/`) —
+- `AppShell` lives in `app/layout.tsx` (persists across navigations). Do
+  not wrap individual pages in `AppShell` — that remounts the sidebar.
+  Every authenticated page: `PageContainer` + `PageHeader`, content
+  inside `Card`s (`frontend/src/components/ui/`) —
   no raw content directly on the page background, per `docs/style-concept.md`
-  section 4.
+  section 4. Buttons / dialogs / confirm / loading: `Button`, `Dialog`,
+  `ConfirmDialog`, `PageSkeleton` in `frontend/src/components/ui/` — see
+  `agent.md` §6 Shared UI system. Do not import MUI Button/Dialog directly.
 - Every backend route: `JwtAuthGuard` (+ `RolesGuard`/`@Roles(...)` when
   role-restricted), `@CurrentUser()` for the caller's `AuthenticatedUser`
   (`{ id, email, role, companyId }`) — mirror `backend/src/modules/users/`

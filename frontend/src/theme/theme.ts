@@ -1,4 +1,5 @@
 import { createTheme } from '@mui/material/styles';
+import { buttonSizes, iconSizes, loadingSizes } from './tokens';
 
 /**
  * DEFAULT theme — always used for the Admin side (Super Admin + Company
@@ -6,24 +7,32 @@ import { createTheme } from '@mui/material/styles';
  * ThemeConcept in the backend Prisma schema: DEFAULT/ANIME/FILM/
  * GATHER_TOWN — only ANIME/FILM/GATHER_TOWN reskin the Employee UI).
  *
- * Implements D:\Coding\AI_Tool\docs\style-concept.md exactly — tokens,
- * typography, radius/shadow scale, and the MUI component override table.
+ * Radius/shadow scale and component shape still follow
+ * docs/style-concept.md; the color tokens below are CareerMate's steel-blue
+ * / seafoam / cream palette. `#3368A0` is dark enough for text on white
+ * (~5.9:1), so `accentInk` aliases it — still prefer `accentInk` over
+ * `accent` whenever the color is a `color:`/icon foreground, not a fill.
  */
 
 export const colorTokens = {
-  bg: '#fafafc',
-  canvas: '#e9e7f2',
+  bg: '#F2EFE7',
+  canvas: '#F2EFE7',
   surface: '#ffffff',
-  text: '#1c1b2e',
-  neutral400: '#6e6c87',
-  neutral500: '#8b899f',
-  divider: '#e8e7f0',
-  accent: '#6d5bd0',
-  accent300: '#5847be',
-  accent700: '#8577de',
-  accent900: '#efebfa',
-  success: '#1c9c6b',
-  danger: '#d34848',
+  text: '#1c2836',
+  neutral400: '#5a6f80',
+  neutral500: '#6d8190',
+  divider: '#C8DFDB',
+  accent: '#3368A0',
+  accent300: '#285480',
+  accent700: '#66A3BF',
+  accent900: '#C8DFDB',
+  accentInk: '#3368A0',
+  // White (or near-white) sitting on an `accent` fill — avatars, logo mark.
+  accentContrast: '#ffffff',
+  warning: '#c47d1a',
+  success: '#2d8a6e',
+  danger: '#c44b4b',
+  tint: '#66A3BF',
 } as const;
 
 export const radiusTokens = {
@@ -33,12 +42,15 @@ export const radiusTokens = {
 } as const;
 
 export const shadowTokens = {
-  card: '0 1px 2px rgba(28,27,46,.04), 0 8px 22px rgba(28,27,46,.07)',
-  md: '0 4px 16px rgba(28,27,46,.14)',
-  lg: '0 24px 60px rgba(28,27,46,.18)',
+  card: '0 1px 2px rgba(28,40,54,.04), 0 8px 22px rgba(28,40,54,.07)',
+  md: '0 4px 16px rgba(28,40,54,.14)',
+  lg: '0 24px 60px rgba(28,40,54,.18)',
 } as const;
 
-const fontFamily = 'var(--font-google-sans), system-ui, sans-serif';
+export { buttonSizes, iconSizes, loadingSizes };
+
+// One sans family for title, body, button, caption — see agent.md §6.
+const fontFamily = 'var(--font-sans), system-ui, sans-serif';
 
 export const theme = createTheme({
   palette: {
@@ -71,27 +83,38 @@ export const theme = createTheme({
   typography: {
     fontFamily,
     h1: {
+      fontFamily,
       fontSize: 32,
       fontWeight: 500,
       letterSpacing: '-0.01em',
     },
     h2: {
+      fontFamily,
       fontSize: 22,
       fontWeight: 500,
     },
     h3: {
+      fontFamily,
       fontSize: 19,
       fontWeight: 500,
     },
     body1: {
+      fontFamily,
       fontSize: 15,
       lineHeight: 1.55,
     },
     body2: {
+      fontFamily,
       fontSize: 14,
       color: colorTokens.neutral400,
     },
+    caption: {
+      fontFamily,
+      fontSize: 12,
+      color: colorTokens.neutral400,
+    },
     button: {
+      fontFamily,
       textTransform: 'none',
       fontWeight: 500,
     },
@@ -101,6 +124,7 @@ export const theme = createTheme({
       styleOverrides: {
         body: {
           backgroundColor: colorTokens.canvas,
+          fontFamily,
         },
         '*::-webkit-scrollbar': {
           width: 9,
@@ -110,25 +134,87 @@ export const theme = createTheme({
           background: 'transparent',
         },
         '*::-webkit-scrollbar-thumb': {
-          background: '#c9c8d6',
+          background: colorTokens.accent700,
           borderRadius: 8,
         },
       },
     },
+    MuiTypography: {
+      defaultProps: {
+        variantMapping: {
+          h1: 'h1',
+          h2: 'h2',
+          h3: 'h3',
+        },
+      },
+      styleOverrides: {
+        root: {
+          fontFamily,
+        },
+      },
+    },
     MuiButton: {
+      defaultProps: {
+        disableElevation: true,
+        size: 'medium',
+      },
       styleOverrides: {
         root: {
           borderRadius: radiusTokens.md,
-          minHeight: 44,
-          padding: '10px 18px',
-          fontSize: 14.5,
           fontWeight: 500,
           textTransform: 'none',
+          whiteSpace: 'nowrap',
+          flexShrink: 0,
           boxShadow: 'none',
           '&:hover': {
             boxShadow: 'none',
           },
         },
+        sizeMedium: {
+          minHeight: buttonSizes.md.minHeight,
+          padding: buttonSizes.md.padding,
+          fontSize: buttonSizes.md.fontSize,
+        },
+        sizeSmall: {
+          minHeight: buttonSizes.sm.minHeight,
+          padding: buttonSizes.sm.padding,
+          fontSize: buttonSizes.sm.fontSize,
+          '& .MuiButton-startIcon > *:nth-of-type(1), & .MuiButton-endIcon > *:nth-of-type(1)': {
+            fontSize: iconSizes.sm,
+          },
+        },
+        startIcon: {
+          '& > *:nth-of-type(1)': { fontSize: iconSizes.md },
+        },
+        endIcon: {
+          '& > *:nth-of-type(1)': { fontSize: iconSizes.md },
+        },
+      },
+    },
+    MuiIconButton: {
+      defaultProps: {
+        size: 'small',
+      },
+      styleOverrides: {
+        sizeSmall: {
+          width: 36,
+          height: 36,
+        },
+        sizeMedium: {
+          width: 40,
+          height: 40,
+        },
+      },
+    },
+    MuiSvgIcon: {
+      defaultProps: {
+        fontSize: 'small',
+      },
+      styleOverrides: {
+        fontSizeSmall: { fontSize: iconSizes.md },
+        fontSizeMedium: { fontSize: iconSizes.md },
+        fontSizeLarge: { fontSize: iconSizes.lg },
+        fontSizeInherit: { fontSize: 'inherit' },
       },
     },
     MuiCard: {
@@ -156,19 +242,27 @@ export const theme = createTheme({
           '& .MuiOutlinedInput-notchedOutline': {
             borderColor: colorTokens.divider,
           },
+          '&:hover .MuiOutlinedInput-notchedOutline': {
+            borderColor: colorTokens.accent700,
+          },
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
             borderColor: colorTokens.accent,
-            boxShadow: '0 0 0 3px rgba(109,91,208,.14)',
+            boxShadow: '0 0 0 3px rgba(51,104,160,.18)',
           },
+        },
+        input: {
+          fontFamily,
+          fontSize: 14,
         },
       },
     },
     MuiInputLabel: {
       styleOverrides: {
         root: {
+          fontFamily,
           fontSize: 12,
           fontWeight: 500,
-          color: 'rgba(28,27,46,.65)',
+          color: 'rgba(28,40,54,.65)',
         },
       },
     },
@@ -178,11 +272,15 @@ export const theme = createTheme({
           borderRadius: 10,
           fontWeight: 500,
           fontSize: 12,
+          fontFamily,
         },
       },
     },
     MuiTableCell: {
       styleOverrides: {
+        root: {
+          fontFamily,
+        },
         head: {
           fontSize: 11,
           textTransform: 'uppercase',
@@ -202,6 +300,17 @@ export const theme = createTheme({
         },
       },
     },
+    MuiMenuItem: {
+      styleOverrides: {
+        root: {
+          borderRadius: 6,
+          marginLeft: 6,
+          marginRight: 6,
+          fontSize: 13.5,
+          fontFamily,
+        },
+      },
+    },
     MuiTooltip: {
       defaultProps: {
         arrow: true,
@@ -212,6 +321,7 @@ export const theme = createTheme({
           backgroundColor: colorTokens.text,
           color: '#ffffff',
           borderRadius: 8,
+          fontFamily,
         },
         arrow: {
           color: colorTokens.text,
@@ -223,6 +333,26 @@ export const theme = createTheme({
         paper: {
           borderRadius: radiusTokens.lg,
           boxShadow: shadowTokens.lg,
+        },
+      },
+    },
+    MuiDialogTitle: {
+      styleOverrides: {
+        root: {
+          fontFamily,
+          fontSize: 22,
+          fontWeight: 500,
+          padding: '24px 24px 8px',
+        },
+      },
+    },
+    MuiTab: {
+      styleOverrides: {
+        root: {
+          fontFamily,
+          textTransform: 'none',
+          fontWeight: 500,
+          whiteSpace: 'nowrap',
         },
       },
     },

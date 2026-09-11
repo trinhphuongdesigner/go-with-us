@@ -3,12 +3,10 @@
 import * as React from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
+import Dialog from '@/components/ui/Dialog';
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import Chip from '@mui/material/Chip';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
 import Divider from '@mui/material/Divider';
 import Link from '@mui/material/Link';
 import MenuItem from '@mui/material/MenuItem';
@@ -26,10 +24,10 @@ import {
 } from '@/lib/api/competencyProfileApi';
 
 const TYPES: { value: CertificationType; label: string }[] = [
-  { value: 'DEGREE', label: 'Degree' },
-  { value: 'LANGUAGE', label: 'Language' },
-  { value: 'PROFESSIONAL', label: 'Professional' },
-  { value: 'OTHER', label: 'Other' },
+  { value: 'DEGREE', label: 'Bằng cấp' },
+  { value: 'LANGUAGE', label: 'Ngoại ngữ' },
+  { value: 'PROFESSIONAL', label: 'Chuyên môn' },
+  { value: 'OTHER', label: 'Khác' },
 ];
 
 interface FormState {
@@ -62,6 +60,7 @@ export default function CertificationsTab({
   certifications: Certification[];
   onChanged: () => void;
 }) {
+  const { ask, dialog } = useConfirmDialog();
   const [open, setOpen] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [form, setForm] = React.useState<FormState>(EMPTY);
@@ -92,7 +91,7 @@ export default function CertificationsTab({
 
   const handleSave = async () => {
     if (!form.name.trim()) {
-      setError('A certificate name is required.');
+      setError('Cần có tên chứng chỉ.');
       return;
     }
 
@@ -120,7 +119,7 @@ export default function CertificationsTab({
       onChanged();
     } catch (err) {
       setError(
-        err instanceof ApiError ? err.message : 'Failed to save certificate',
+        err instanceof ApiError ? err.message : 'Không lưu được chứng chỉ',
       );
     } finally {
       setSaving(false);
@@ -133,7 +132,7 @@ export default function CertificationsTab({
       onChanged();
     } catch (err) {
       setError(
-        err instanceof ApiError ? err.message : 'Failed to delete certificate',
+        err instanceof ApiError ? err.message : 'Không xóa được chứng chỉ',
       );
     }
   };
@@ -142,7 +141,7 @@ export default function CertificationsTab({
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Button startIcon={<AddIcon />} variant="outlined" onClick={openCreate}>
-          Add certificate
+          Thêm chứng chỉ
         </Button>
       </Box>
 
@@ -154,8 +153,7 @@ export default function CertificationsTab({
 
       {certifications.length === 0 ? (
         <Typography variant="body2">
-          No certificates yet — degrees, IELTS/TOEIC scores and professional
-          certifications all belong here.
+          Chưa có chứng chỉ — bằng cấp, điểm IELTS/TOEIC và chứng chỉ chuyên môn đều ở đây.
         </Typography>
       ) : (
         <Stack divider={<Divider />} spacing={2}>
@@ -176,17 +174,17 @@ export default function CertificationsTab({
                     {certification.name}
                   </Typography>
                   <Chip
-                    label={certification.type}
+                    label={TYPES.find((t) => t.value === certification.type)?.label ?? certification.type}
                     size="small"
                     variant="outlined"
                     sx={{ height: 20, fontSize: 11 }}
                   />
                 </Stack>
                 <Typography variant="body2">
-                  {certification.issuer ?? 'Unknown issuer'}
+                  {certification.issuer ?? 'Chưa rõ đơn vị cấp'}
                   {certification.score ? ` · ${certification.score}` : ''}
                   {certification.issuedAt
-                    ? ` · issued ${toInputDate(certification.issuedAt)}`
+                    ? ` · cấp ngày ${toInputDate(certification.issuedAt)}`
                     : ''}
                 </Typography>
                 {certification.credentialUrl ? (
@@ -196,20 +194,28 @@ export default function CertificationsTab({
                     rel="noopener"
                     variant="body2"
                   >
-                    View credential
+                    Xem chứng chỉ
                   </Link>
                 ) : null}
               </Box>
               <Stack direction="row" spacing={1}>
-                <Button size="small" onClick={() => openEdit(certification)}>
-                  Edit
+                <Button size="sm" onClick={() => openEdit(certification)}>
+                  Sửa
                 </Button>
                 <Button
-                  size="small"
+                  size="sm"
                   color="error"
-                  onClick={() => handleDelete(certification.id)}
+                  onClick={() =>
+                    ask({
+                      title: 'Xóa chứng chỉ',
+                      description: `Xóa “${certification.name}”? Hành động này không thể hoàn tác.`,
+                      confirmLabel: 'Xóa',
+                      danger: true,
+                      onConfirm: () => handleDelete(certification.id),
+                    })
+                  }
                 >
-                  Delete
+                  Xóa
                 </Button>
               </Stack>
             </Box>
@@ -217,11 +223,21 @@ export default function CertificationsTab({
         </Stack>
       )}
 
-      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>
-          {editingId ? 'Edit certificate' : 'Add certificate'}
-        </DialogTitle>
-        <DialogContent>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title={editingId ? 'Sửa chứng chỉ' : 'Thêm chứng chỉ'}
+        actions={
+          <>
+            <Button variant="text" onClick={() => setOpen(false)}>
+              Hủy
+            </Button>
+            <Button variant="contained" onClick={handleSave} disabled={saving}>
+              {saving ? 'Đang lưu...' : 'Lưu'}
+            </Button>
+          </>
+        }
+      >
           {error ? (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
@@ -229,7 +245,7 @@ export default function CertificationsTab({
           ) : null}
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
-              label="Name"
+              label="Tên"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
@@ -238,7 +254,7 @@ export default function CertificationsTab({
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               <TextField
                 select
-                label="Type"
+                label="Loại"
                 value={form.type}
                 onChange={(e) =>
                   setForm({ ...form, type: e.target.value as CertificationType })
@@ -252,22 +268,22 @@ export default function CertificationsTab({
                 ))}
               </TextField>
               <TextField
-                label="Score"
-                helperText="e.g. IELTS 7.0, TOEIC 600"
+                label="Điểm"
+                helperText="ví dụ IELTS 7.0, TOEIC 600"
                 value={form.score}
                 onChange={(e) => setForm({ ...form, score: e.target.value })}
                 fullWidth
               />
             </Stack>
             <TextField
-              label="Issuer"
+              label="Đơn vị cấp"
               value={form.issuer}
               onChange={(e) => setForm({ ...form, issuer: e.target.value })}
               fullWidth
             />
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               <TextField
-                label="Issued at"
+                label="Ngày cấp"
                 type="date"
                 value={form.issuedAt}
                 onChange={(e) => setForm({ ...form, issuedAt: e.target.value })}
@@ -275,7 +291,7 @@ export default function CertificationsTab({
                 fullWidth
               />
               <TextField
-                label="Expires at"
+                label="Ngày hết hạn"
                 type="date"
                 value={form.expiresAt}
                 onChange={(e) => setForm({ ...form, expiresAt: e.target.value })}
@@ -284,7 +300,7 @@ export default function CertificationsTab({
               />
             </Stack>
             <TextField
-              label="Credential URL"
+              label="URL chứng chỉ"
               value={form.credentialUrl}
               onChange={(e) =>
                 setForm({ ...form, credentialUrl: e.target.value })
@@ -292,14 +308,8 @@ export default function CertificationsTab({
               fullWidth
             />
           </Stack>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving...' : 'Save'}
-          </Button>
-        </DialogActions>
       </Dialog>
+      {dialog}
     </Box>
   );
 }

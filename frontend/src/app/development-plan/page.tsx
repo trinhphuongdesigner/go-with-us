@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Box from '@mui/material/Box';
 import AppShell from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
@@ -8,7 +9,6 @@ import Card from '@/components/ui/Card';
 import MarkdownSplitEditor from '@/components/ui/MarkdownSplitEditor';
 import Alert from '@mui/material/Alert';
 import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
@@ -209,8 +209,8 @@ function DevelopmentPlanContent() {
             before saving.
           </Typography>
           <TextField
-            label="Instruction (optional)"
-            placeholder="e.g. Focus more on leadership skills for the next quarter"
+            label="Hướng dẫn (tuỳ chọn)"
+            placeholder="ví dụ Tập trung kỹ năng lãnh đạo trong quý tới"
             size="small"
             fullWidth
             value={instruction}

@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
-import LinearProgress from '@mui/material/LinearProgress';
+import PageSkeleton from '@/components/ui/PageSkeleton';
 import Typography from '@mui/material/Typography';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
@@ -39,7 +39,7 @@ export default function SharedPassportPage() {
           setError(
             err instanceof ApiError
               ? err.message
-              : 'This share link is no longer valid',
+              : 'Liên kết chia sẻ này không còn hiệu lực',
           );
         }
       } finally {
@@ -55,9 +55,9 @@ export default function SharedPassportPage() {
     <Box sx={{ minHeight: '100vh', backgroundColor: colorTokens.bg }}>
       <PageContainer>
         <PageHeader
-          title="Career Passport"
-          subtitle="Shared read-only record — employment history, approved assessments and achievements."
-          actions={<Chip label="Shared view" color="primary" variant="outlined" />}
+          title="Hộ chiếu nghề nghiệp"
+          subtitle="Bản xem chia sẻ chỉ đọc — lịch sử làm việc, đánh giá đã duyệt và thành tích."
+          actions={<Chip label="Bản chia sẻ" color="primary" variant="outlined" />}
         />
 
         {error ? (
@@ -65,17 +65,19 @@ export default function SharedPassportPage() {
             {error}
           </Alert>
         ) : null}
-        {loading ? <LinearProgress sx={{ mb: 3 }} /> : null}
-
-        {passport ? <PassportView passport={passport} /> : null}
+        {loading ? (
+          <PageSkeleton variant="profile" />
+        ) : passport ? (
+          <PassportView passport={passport} />
+        ) : null}
 
         {passport ? (
           <Typography
             variant="body2"
-            sx={{ mt: 4, textAlign: 'center', fontSize: 12.5 }}
+            sx={{ mt: 4, textAlign: 'center' }}
           >
-            Shared by {passport.user.name} via CareerMate. Only assessments the
-            employer approved are shown.
+            Được chia sẻ bởi {passport.user.name} qua CareerMate. Chỉ hiện đánh giá
+            mà công ty đã duyệt.
           </Typography>
         ) : null}
       </PageContainer>

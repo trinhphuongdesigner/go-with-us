@@ -2,13 +2,11 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import AppShell from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
+import PageSkeleton from '@/components/ui/PageSkeleton';
 import Typography from '@mui/material/Typography';
-import CircularProgress from '@mui/material/CircularProgress';
-import Box from '@mui/material/Box';
 import Table from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
@@ -28,33 +26,30 @@ export default function EmployeesPage() {
       .listUsers()
       .then((users) => setEmployees(users.filter((u) => u.role === 'EMPLOYEE')))
       .catch((err) => {
-        setError(err instanceof ApiError ? err.message : 'Failed to load employees');
+        setError(err instanceof ApiError ? err.message : 'Không tải được danh sách nhân sự');
       });
   }, []);
 
   return (
-    <AppShell>
-      <PageContainer>
-        <PageHeader title="Employees" subtitle="Your company's workforce." />
-        <Card title="Employees">
+    <PageContainer>
+        <PageHeader title="Nhân sự" subtitle="Đội ngũ của công ty bạn." />
+        <Card title="Nhân sự">
           {error ? (
             <Typography variant="body2" sx={{ color: 'error.main' }}>
               {error}
             </Typography>
           ) : !employees ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress size={28} />
-            </Box>
+            <PageSkeleton variant="table" rows={5} embedded />
           ) : employees.length === 0 ? (
-            <Typography variant="body1">No employees yet.</Typography>
+            <Typography variant="body1">Chưa có nhân sự nào.</Typography>
           ) : (
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Job title</TableCell>
-                  <TableCell>Contribution score</TableCell>
-                  <TableCell>Attitude score</TableCell>
+                  <TableCell>Tên</TableCell>
+                  <TableCell>Chức danh</TableCell>
+                  <TableCell>Điểm đóng góp</TableCell>
+                  <TableCell>Điểm thái độ</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -75,7 +70,6 @@ export default function EmployeesPage() {
             </Table>
           )}
         </Card>
-      </PageContainer>
-    </AppShell>
+    </PageContainer>
   );
 }

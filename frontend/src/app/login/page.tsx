@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import Chip from '@mui/material/Chip';
 import MenuItem from '@mui/material/MenuItem';
 import Select, { type SelectChangeEvent } from '@mui/material/Select';
@@ -31,29 +31,29 @@ const ROLE_TONE: Record<DemoRole, StatusTone> = {
 };
 
 const ACCOUNT_GROUPS: Array<{ label: string; accounts: DemoAccount[] }> = [
-  { label: 'Employees', accounts: DEMO_ACCOUNTS.filter((account) => account.role === 'EMPLOYEE') },
+  { label: 'Nhân sự', accounts: DEMO_ACCOUNTS.filter((account) => account.role === 'EMPLOYEE') },
   {
-    label: 'Company',
+    label: 'Công ty',
     accounts: DEMO_ACCOUNTS.filter((account) => account.role === 'COMPANY_ADMIN'),
   },
   {
-    label: 'Platform',
+    label: 'Nền tảng',
     accounts: DEMO_ACCOUNTS.filter((account) => account.role === 'SUPER_ADMIN'),
   },
 ];
 
 const PITCH_POINTS = [
   {
-    title: 'History that outlives a manager',
-    body: 'Projects, skills, and monthly notes stay on the record when a PM leaves mid-cycle.',
+    title: 'Hồ sơ còn lại khi quản lý đã đi',
+    body: 'Dự án, kỹ năng và ghi nhận hàng tháng vẫn nằm trên hệ thống khi PM nghỉ giữa kỳ.',
   },
   {
-    title: 'Two-way assessment',
-    body: 'Your company sets the rubric. Employees record their own work — not only top-down scores.',
+    title: 'Đánh giá hai chiều',
+    body: 'Công ty tự dựng bộ tiêu chí. Nhân sự tự ghi nhận công việc — không chỉ điểm từ trên xuống.',
   },
   {
-    title: 'Ask for people in plain language',
-    body: '“Who has React and a real-estate domain?” instead of asking a DC lead, then every PM.',
+    title: 'Tìm người bằng ngôn ngữ tự nhiên',
+    body: '“Ai có React và từng làm domain bất động sản?” thay vì hỏi DC lead rồi từng PM.',
   },
 ];
 
@@ -152,7 +152,7 @@ export default function LoginPage() {
       await login(email.trim(), password);
       router.replace('/');
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Login failed');
+      setError(err instanceof ApiError ? err.message : 'Đăng nhập thất bại');
     } finally {
       setSubmitting(false);
     }
@@ -231,7 +231,7 @@ export default function LoginPage() {
                 height: 48,
                 borderRadius: `${radiusTokens.md}px`,
                 backgroundColor: colorTokens.accent,
-                color: '#fff',
+                color: colorTokens.accentContrast,
                 display: 'grid',
                 placeItems: 'center',
                 fontSize: 15,
@@ -248,7 +248,7 @@ export default function LoginPage() {
                 fontWeight: 600,
                 letterSpacing: '0.08em',
                 textTransform: 'uppercase',
-                color: colorTokens.accent300,
+                color: colorTokens.accentInk,
                 mb: 1,
               }}
             >
@@ -263,7 +263,7 @@ export default function LoginPage() {
                 maxWidth: 420,
               }}
             >
-              The record that stays when people move on.
+              Hồ sơ còn lại khi người đã chuyển đi.
             </Typography>
             <Typography variant="body2" sx={{ maxWidth: 400, color: colorTokens.text }}>
               HR sees the whole journey. Employees keep their own history. Staffing a project takes
@@ -314,7 +314,7 @@ export default function LoginPage() {
           }}
         >
           <Typography variant="h2" sx={{ mb: 0.5 }}>
-            Sign in
+            Đăng nhập
           </Typography>
           <Typography variant="body2" sx={{ mb: 3 }}>
             Choose a demo account to fill your credentials, or sign in with your own.
@@ -340,7 +340,7 @@ export default function LoginPage() {
                   display: 'block',
                   fontSize: 12,
                   fontWeight: 500,
-                  color: 'rgba(28,27,46,.65)',
+                  color: 'rgba(28,40,54,.65)',
                   mb: 0.75,
                 }}
               >
@@ -359,7 +359,7 @@ export default function LoginPage() {
                   if (!account) {
                     return (
                       <Typography variant="body2" sx={{ py: 0.5 }}>
-                        Choose who to sign in as
+                        Chọn người muốn đăng nhập
                       </Typography>
                     );
                   }
@@ -448,7 +448,7 @@ export default function LoginPage() {
           </Box>
 
           <Typography variant="body2" sx={{ mt: 'auto', pt: 4 }}>
-            Demo workspace. Same password for every seeded user.
+            Không gian demo. Mọi tài khoản seed dùng chung một mật khẩu.
           </Typography>
         </Box>
       </Box>

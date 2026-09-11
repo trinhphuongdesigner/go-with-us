@@ -1,5 +1,11 @@
 import { AssistantFocus } from '@prisma/client';
-import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 export class AssistantQueryDto {
   @IsString()
@@ -19,4 +25,9 @@ export class AssistantQueryDto {
   @IsOptional()
   @IsEnum(AssistantFocus)
   focus?: AssistantFocus;
+}
+
+export class UpdateConversationDto {
+  @IsBoolean()
+  pinned!: boolean;
 }

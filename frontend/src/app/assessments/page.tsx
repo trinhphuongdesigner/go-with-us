@@ -5,16 +5,15 @@ import NextLink from 'next/link';
 import { useRouter } from 'next/navigation';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
-import LinearProgress from '@mui/material/LinearProgress';
+import PageSkeleton from '@/components/ui/PageSkeleton';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
-import AppShell from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
@@ -30,6 +29,7 @@ import {
   type AssessmentStatus,
 } from '@/lib/api/assessmentsApi';
 import { listUsers } from '@/lib/api/usersApi';
+import { ASSESSMENT_STATUS_LABEL, MOOD_LABEL } from '@/lib/labels';
 import type { User } from '@/types';
 
 const STATUS_TONE: Record<
@@ -83,7 +83,7 @@ export default function AssessmentsPage() {
       }
     } catch (err) {
       setError(
-        err instanceof ApiError ? err.message : 'Failed to load assessments',
+        err instanceof ApiError ? err.message : 'Không tải được đánh giá',
       );
     } finally {
       setLoading(false);
@@ -122,18 +122,17 @@ export default function AssessmentsPage() {
       router.push(`/assessments/${created.id}`);
     } catch (err) {
       setError(
-        err instanceof ApiError ? err.message : 'Failed to start assessment',
+        err instanceof ApiError ? err.message : 'Không bắt đầu được đánh giá',
       );
       setStarting(false);
     }
   };
 
   return (
-    <AppShell>
-      <PageContainer>
+    <PageContainer>
         <PageHeader
-          title="Cross Assessment"
-          subtitle="Your monthly check-in, colleague assessments, and the record that follows you."
+          title="Đánh giá chéo"
+          subtitle="Tự đánh giá hàng tháng, đánh giá đồng nghiệp, và hồ sơ đi cùng bạn."
           actions={
             isAdmin ? (
               <Button
@@ -142,7 +141,7 @@ export default function AssessmentsPage() {
                 variant="outlined"
                 startIcon={<SettingsOutlinedIcon />}
               >
-                Criteria settings
+                Cài đặt tiêu chí
               </Button>
             ) : undefined
           }
@@ -153,15 +152,17 @@ export default function AssessmentsPage() {
             {error}
           </Alert>
         ) : null}
-        {loading ? <LinearProgress sx={{ mb: 3 }} /> : null}
-
-        <Card title="Current cycle" sx={{ mb: 3 }}>
+        {loading ? (
+          <PageSkeleton variant="cards" />
+        ) : (
+          <>
+        <Card title="Kỳ hiện tại" sx={{ mb: 3 }}>
           {!cycle ? (
             <Typography variant="body2">
-              No open assessment cycle right now.
+              Hiện chưa có kỳ đánh giá đang mở.
               {isAdmin
-                ? ' Open one from Criteria settings to let people start checking in.'
-                : ' Your admin opens one when the round starts.'}
+                ? ' Mở một kỳ từ Cài đặt tiêu chí để mọi người bắt đầu tự đánh giá.'
+                : ' Quản trị sẽ mở kỳ khi vòng đánh giá bắt đầu.'}
             </Typography>
           ) : (
             <>
@@ -179,9 +180,9 @@ export default function AssessmentsPage() {
                     <Chip label={cycle.period} size="small" sx={{ ml: 0.5 }} />
                   </Typography>
                   <Typography variant="body2" sx={{ mt: 0.5 }}>
-                    Scale: {cycle.template.name}
+                    Thang điểm: {cycle.template.name}
                     {cycle.dueDate
-                      ? ` · due ${new Date(cycle.dueDate).toLocaleDateString()}`
+                      ? ` · hạn ${new Date(cycle.dueDate).toLocaleDateString('vi-VN')}`
                       : ''}
                   </Typography>
                 </Box>
@@ -191,7 +192,7 @@ export default function AssessmentsPage() {
                     href={`/assessments/${openSelfDraft.id}`}
                     variant="contained"
                   >
-                    Continue my check-in
+                    Tiếp tục tự đánh giá
                   </Button>
                 ) : (
                   <Button
@@ -199,7 +200,7 @@ export default function AssessmentsPage() {
                     onClick={() => startAssessment('SELF')}
                     disabled={starting}
                   >
-                    {starting ? 'Starting...' : 'Start my check-in'}
+                    {starting ? 'Đang bắt đầu...' : 'Bắt đầu tự đánh giá'}
                   </Button>
                 )}
               </Stack>
@@ -208,12 +209,12 @@ export default function AssessmentsPage() {
                 <>
                   <Divider sx={{ my: 2.5 }} />
                   <Typography variant="body2" sx={{ mb: 1.5 }}>
-                    Assess a colleague
+                    Đánh giá đồng nghiệp
                   </Typography>
                   <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                     <TextField
                       select
-                      label="Colleague"
+                      label="Đồng nghiệp"
                       value={colleagueId}
                       onChange={(e) => setColleagueId(e.target.value)}
                       sx={{ minWidth: 260 }}
@@ -232,7 +233,7 @@ export default function AssessmentsPage() {
                         disabled={!colleagueId || starting}
                         onClick={() => startAssessment('PEER', colleagueId)}
                       >
-                        Start assessment
+                        Bắt đầu đánh giá
                       </Button>
                     </Box>
                   </Stack>
@@ -243,34 +244,35 @@ export default function AssessmentsPage() {
         </Card>
 
         {isAdmin ? (
-          <Card title={`Waiting for approval (${pending.length})`} sx={{ mb: 3 }}>
+          <Card title={`Chờ duyệt (${pending.length})`} sx={{ mb: 3 }}>
             <AssessmentList
               items={pending}
-              emptyText="Nothing waiting on you right now."
-              nameOf={(a) => `${a.reviewee.name} · by ${a.reviewer.name}`}
+              emptyText="Hiện không có bài nào chờ bạn duyệt."
+              nameOf={(a) => `${a.reviewee.name} · bởi ${a.reviewer.name}`}
             />
           </Card>
         ) : null}
 
-        <Card title="About me" sx={{ mb: 3 }}>
+        <Card title="Về tôi" sx={{ mb: 3 }}>
           <AssessmentList
             items={received}
-            emptyText="No one has assessed you yet."
-            nameOf={(a) => `${a.reviewer.name} → you`}
+            emptyText="Chưa ai đánh giá bạn."
+            nameOf={(a) => `${a.reviewer.name} → bạn`}
           />
         </Card>
 
-        <Card title="Written by me">
+        <Card title="Tôi đã viết">
           <AssessmentList
             items={given}
-            emptyText="You have not written any assessment yet."
+            emptyText="Bạn chưa viết đánh giá nào."
             nameOf={(a) =>
-              a.type === 'SELF' ? 'Self check-in' : `About ${a.reviewee.name}`
+              a.type === 'SELF' ? 'Tự đánh giá' : `Về ${a.reviewee.name}`
             }
           />
         </Card>
-      </PageContainer>
-    </AppShell>
+          </>
+        )}
+    </PageContainer>
   );
 }
 
@@ -306,8 +308,8 @@ function AssessmentList({
               {nameOf(item)}
             </Typography>
             <Typography variant="body2">
-              {item.cycle ? `${item.cycle.name} · ${item.cycle.period}` : 'No cycle'}
-              {item.mood ? ` · mood: ${item.mood}` : ''}
+              {item.cycle ? `${item.cycle.name} · ${item.cycle.period}` : 'Không thuộc kỳ'}
+              {item.mood ? ` · tâm trạng: ${MOOD_LABEL[item.mood] ?? item.mood}` : ''}
             </Typography>
           </Box>
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
@@ -315,7 +317,7 @@ function AssessmentList({
               <Chip label={`${item.totalScore}/10`} size="small" color="primary" />
             ) : null}
             <Chip
-              label={item.status}
+              label={ASSESSMENT_STATUS_LABEL[item.status] ?? item.status}
               size="small"
               color={STATUS_TONE[item.status]}
             />
@@ -324,7 +326,7 @@ function AssessmentList({
               href={`/assessments/${item.id}`}
               size="small"
             >
-              Open
+              Mở
             </Button>
           </Stack>
         </Box>

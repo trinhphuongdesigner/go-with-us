@@ -5,44 +5,36 @@ import NextLink from 'next/link';
 import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import Chip from '@mui/material/Chip';
-import IconButton from '@mui/material/IconButton';
+import IconButton from '@/components/ui/IconButton';
 import LinearProgress from '@mui/material/LinearProgress';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import SendIcon from '@mui/icons-material/Send';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
-import AppShell from '@/components/layout/AppShell';
+import PushPinIcon from '@mui/icons-material/PushPin';
+import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
 import MarkdownBlock from '@/components/ui/MarkdownBlock';
 import { useAuth } from '@/contexts/AuthContext';
 import { ApiError } from '@/lib/api/client';
+import { ADMIN_PROMPTS, EMPLOYEE_PROMPTS } from '@/lib/assistantPrompts';
 import {
   askAssistant,
   deleteConversation,
   getConversation,
   listConversations,
+  updateConversation,
   type AssistantConversation,
   type AssistantMessage,
   type ReferencedPerson,
 } from '@/lib/api/assistantApi';
 import { colorTokens } from '@/theme/theme';
-
-const ADMIN_PROMPTS = [
-  'Ai có kinh nghiệm React trên 2 năm và từng làm domain bất động sản?',
-  'Who is the strongest backend candidate for a fintech project?',
-  'List people with an English certificate above TOEIC 600.',
-];
-
-const EMPLOYEE_PROMPTS = [
-  'Tôi nên trau dồi kỹ năng gì để lên Senior?',
-  'What should my next development goal be?',
-  'Summarise how I have grown this year.',
-];
 
 /**
  * M5 — one assistant, two audiences. Admins/sales get roster search grounded
@@ -50,6 +42,7 @@ const EMPLOYEE_PROMPTS = [
  * their own record (the backend decides which, from the caller's role).
  */
 export default function AssistantPage() {
+  const { ask, dialog } = useConfirmDialog();
   const { user } = useAuth();
   const isAdmin = user?.role === 'COMPANY_ADMIN' || user?.role === 'SUPER_ADMIN';
 
@@ -92,7 +85,7 @@ export default function AssistantPage() {
       setReferenced([]);
     } catch (err) {
       setError(
-        err instanceof ApiError ? err.message : 'Failed to open conversation',
+        err instanceof ApiError ? err.message : 'Không mở được cuộc trò chuyện',
       );
     }
   };
@@ -130,7 +123,7 @@ export default function AssistantPage() {
     } catch (err) {
       setMessages((prev) => prev.filter((m) => m.id !== pending.id));
       setQuestion(value);
-      setError(err instanceof ApiError ? err.message : 'The assistant failed');
+      setError(err instanceof ApiError ? err.message : 'Trợ lý không trả lời được');
     } finally {
       setBusy(false);
     }
@@ -146,7 +139,16 @@ export default function AssistantPage() {
       }
       await loadConversations();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to delete');
+      setError(err instanceof ApiError ? err.message : 'Không xóa được');
+    }
+  };
+
+  const handleTogglePin = async (conversation: AssistantConversation) => {
+    try {
+      await updateConversation(conversation.id, { pinned: !conversation.pinned });
+      await loadConversations();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Không cập nhật được ghim');
     }
   };
 
@@ -160,18 +162,17 @@ export default function AssistantPage() {
   const suggestions = isAdmin ? ADMIN_PROMPTS : EMPLOYEE_PROMPTS;
 
   return (
-    <AppShell>
-      <PageContainer>
+    <PageContainer>
         <PageHeader
-          title="AI Assistant"
+          title="Trợ lý AI"
           subtitle={
             isAdmin
-              ? 'Ask in plain language who fits a project — answers come from real competency profiles.'
-              : 'Your personal career companion — grounded in your own record.'
+              ? 'Hỏi bằng ngôn ngữ thường ai phù hợp dự án — câu trả lời dựa trên hồ sơ năng lực thật.'
+              : 'Người đồng hành nghề nghiệp — chỉ dựa trên hồ sơ của bạn.'
           }
           actions={
             <Button variant="outlined" onClick={startNew}>
-              New conversation
+              Cuộc trò chuyện mới
             </Button>
           }
         />
@@ -188,7 +189,7 @@ export default function AssistantPage() {
               {messages.length === 0 ? (
                 <Box sx={{ py: 2 }}>
                   <Typography variant="body2" sx={{ mb: 2 }}>
-                    Try one of these:
+                    Thử một trong các câu này:
                   </Typography>
                   <Stack spacing={1}>
                     {suggestions.map((prompt) => (
@@ -246,7 +247,7 @@ export default function AssistantPage() {
 
               <Stack direction="row" spacing={1.5} sx={{ mt: 2.5 }}>
                 <TextField
-                  placeholder="Ask anything..."
+                  placeholder="Hỏi bất cứ điều gì..."
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
                   onKeyDown={(e) => {
@@ -267,14 +268,14 @@ export default function AssistantPage() {
                     onClick={() => handleAsk()}
                     disabled={busy || !question.trim()}
                   >
-                    Ask
+                    Hỏi
                   </Button>
                 </Box>
               </Stack>
             </Card>
 
             {referenced.length > 0 ? (
-              <Card title="People mentioned">
+              <Card title="Người được nhắc">
                 <Stack spacing={1.5}>
                   {referenced.map((person) => (
                     <Box
@@ -287,7 +288,7 @@ export default function AssistantPage() {
                     >
                       <Avatar
                         src={person.avatarUrl ?? undefined}
-                        sx={{ width: 36, height: 36, bgcolor: colorTokens.accent }}
+                        sx={{ width: 36, height: 36, bgcolor: colorTokens.accent, color: colorTokens.accentContrast }}
                       >
                         {person.name?.[0]?.toUpperCase() ?? '?'}
                       </Avatar>
@@ -296,7 +297,7 @@ export default function AssistantPage() {
                           {person.name}
                         </Typography>
                         <Typography variant="body2" sx={{ fontSize: 12.5 }}>
-                          {person.jobTitle ?? 'No title'}
+                          {person.jobTitle ?? 'Chưa có chức danh'}
                         </Typography>
                       </Box>
                       <Button
@@ -304,14 +305,14 @@ export default function AssistantPage() {
                         href={`/employees/${person.id}`}
                         size="small"
                       >
-                        Profile
+                        Hồ sơ
                       </Button>
                       <Button
                         component={NextLink}
                         href={`/employees/${person.id}/passport`}
                         size="small"
                       >
-                        Passport
+                        Hộ chiếu
                       </Button>
                     </Box>
                   ))}
@@ -321,9 +322,9 @@ export default function AssistantPage() {
           </Box>
 
           <Box sx={{ width: { xs: '100%', md: 280 }, flexShrink: 0 }}>
-            <Card title="History">
+            <Card title="Lịch sử">
               {conversations.length === 0 ? (
-                <Typography variant="body2">No conversation yet.</Typography>
+                <Typography variant="body2">Chưa có cuộc trò chuyện nào.</Typography>
               ) : (
                 <Stack spacing={0.5}>
                   {conversations.map((conversation) => (
@@ -351,9 +352,28 @@ export default function AssistantPage() {
                       </Button>
                       <IconButton
                         size="small"
-                        onClick={() => handleDelete(conversation.id)}
+                        onClick={() => handleTogglePin(conversation)}
                       >
-                        <DeleteOutlineIcon fontSize="small" />
+                        {conversation.pinned ? (
+                          <PushPinIcon fontSize="small" color="primary" />
+                        ) : (
+                          <PushPinOutlinedIcon fontSize="small" />
+                        )}
+                      </IconButton>
+                      <IconButton
+                        size="sm"
+                    aria-label="Xóa cuộc trò chuyện"
+                    onClick={() =>
+                      ask({
+                        title: 'Xóa cuộc trò chuyện',
+                        description: `Xóa “${conversation.title}”? Hành động này không thể hoàn tác.`,
+                        confirmLabel: 'Xóa',
+                            danger: true,
+                            onConfirm: () => handleDelete(conversation.id),
+                          })
+                        }
+                      >
+                        <DeleteOutlineIcon />
                       </IconButton>
                     </Box>
                   ))}
@@ -361,7 +381,7 @@ export default function AssistantPage() {
               )}
               {conversationId ? (
                 <Chip
-                  label="Continuing this thread"
+                  label="Đang tiếp tục hội thoại này"
                   size="small"
                   color="primary"
                   variant="outlined"
@@ -371,7 +391,7 @@ export default function AssistantPage() {
             </Card>
           </Box>
         </Stack>
-      </PageContainer>
-    </AppShell>
+        {dialog}
+    </PageContainer>
   );
 }
