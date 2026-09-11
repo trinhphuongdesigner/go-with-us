@@ -4,7 +4,17 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { AssessmentStatus, AssistantFocus, Prisma, Role } from '@prisma/client';
+import {
+  AdminPermission,
+  AssessmentStatus,
+  AssistantFocus,
+  Prisma,
+  Role,
+} from '@prisma/client';
+import {
+  assertAdminPermission,
+  hasAdminPermission,
+} from '../../common/access/admin-permissions';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AiChatService } from '../ai-chat/ai-chat.service';
 import type { ChatMessage } from '../ai-chat/ai-chat.types';
@@ -47,7 +57,13 @@ export class AssistantService {
 
   listConversations(caller: AuthenticatedUser) {
     return this.prisma.assistantConversation.findMany({
-      where: { userId: caller.id },
+      where: {
+        userId: caller.id,
+        ...(caller.role === Role.COMPANY_ADMIN &&
+        !hasAdminPermission(caller, AdminPermission.VIEW)
+          ? { focus: AssistantFocus.ROADMAP }
+          : {}),
+      },
       orderBy: { updatedAt: 'desc' },
     });
   }
@@ -59,6 +75,12 @@ export class AssistantService {
     });
     if (!conversation || conversation.userId !== caller.id) {
       throw new NotFoundException(`Conversation ${id} not found`);
+    }
+    if (
+      caller.role === Role.COMPANY_ADMIN &&
+      conversation.focus === AssistantFocus.GENERAL
+    ) {
+      assertAdminPermission(caller, AdminPermission.VIEW);
     }
     return conversation;
   }
@@ -87,6 +109,13 @@ export class AssistantService {
    * saveRoadmap() (a separate explicit call) commits a proposal.
    */
   async query(dto: AssistantQueryDto, caller: AuthenticatedUser) {
+    if (
+      !dto.conversationId &&
+      caller.role === Role.COMPANY_ADMIN &&
+      (dto.focus ?? AssistantFocus.GENERAL) === AssistantFocus.GENERAL
+    ) {
+      assertAdminPermission(caller, AdminPermission.VIEW);
+    }
     const conversation = dto.conversationId
       ? await this.getConversation(dto.conversationId, caller)
       : await this.prisma.assistantConversation.create({
@@ -167,6 +196,7 @@ export class AssistantService {
 
   /** Company roster + profile data, for staffing questions. */
   private async buildRosterContext(caller: AuthenticatedUser) {
+    assertAdminPermission(caller, AdminPermission.VIEW);
     if (caller.role !== Role.SUPER_ADMIN && !caller.companyId) {
       throw new ForbiddenException('No company scope for this account');
     }

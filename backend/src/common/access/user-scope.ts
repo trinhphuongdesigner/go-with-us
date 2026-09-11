@@ -1,5 +1,6 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { AdminPermission, Role } from '@prisma/client';
+import { assertAdminPermission } from './admin-permissions';
 import type { PrismaService } from '../../prisma/prisma.service';
 import type { AuthenticatedUser } from '../../modules/auth/jwt.strategy';
 
@@ -22,6 +23,7 @@ export async function assertCanViewUser(
   if (caller.role === Role.SUPER_ADMIN) return;
 
   if (caller.role === Role.COMPANY_ADMIN) {
+    assertAdminPermission(caller, AdminPermission.VIEW);
     const target = await prisma.user.findUnique({
       where: { id: targetUserId },
       select: { companyId: true },

@@ -9,7 +9,8 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { AdminPermission, Role } from '@prisma/client';
+import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { JobRequirementsService } from './job-requirements.service';
 import { CreateJobRequirementDto } from './dto/create-job-requirement.dto';
 import { UpdateJobRequirementDto } from './dto/update-job-requirement.dto';
@@ -43,6 +44,7 @@ export class JobRequirementsController {
 
   @Post()
   @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @RequirePermission(AdminPermission.COLLECT)
   create(
     @Body() dto: CreateJobRequirementDto,
     @CurrentUser() caller: AuthenticatedUser,
@@ -51,6 +53,7 @@ export class JobRequirementsController {
   }
 
   @Patch(':id')
+  @RequirePermission(AdminPermission.COLLECT)
   update(
     @Param('id') id: string,
     @Body() dto: UpdateJobRequirementDto,
@@ -60,12 +63,14 @@ export class JobRequirementsController {
   }
 
   @Delete(':id')
+  @RequirePermission(AdminPermission.COLLECT)
   remove(@Param('id') id: string, @CurrentUser() caller: AuthenticatedUser) {
     return this.jobRequirementsService.remove(id, caller);
   }
 
   @Post(':id/match')
   @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @RequirePermission(AdminPermission.VIEW)
   match(@Param('id') id: string, @CurrentUser() caller: AuthenticatedUser) {
     return this.jobRequirementsService.match(id, caller);
   }

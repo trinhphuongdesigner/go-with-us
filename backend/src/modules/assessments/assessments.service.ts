@@ -5,6 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  AdminPermission,
+  AssessmentScoreDimension,
   AssessmentStatus,
   AssessmentType,
   CycleStatus,
@@ -12,6 +14,15 @@ import {
   Role,
   TemplateStatus,
 } from '@prisma/client';
+import {
+  assertAdminPermission,
+  hasAdminPermission,
+} from '../../common/access/admin-permissions';
+import {
+  computeAssessmentScores,
+  roundScore,
+  validateAnswers,
+} from './assessment-scoring';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   assertCanViewUser,
@@ -39,10 +50,6 @@ const TEMPLATE_INCLUDE = {
   },
 };
 
-type TemplateWithGroups = Prisma.AssessmentTemplateGetPayload<{
-  include: typeof TEMPLATE_INCLUDE;
-}>;
-
 @Injectable()
 export class AssessmentsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -50,6 +57,7 @@ export class AssessmentsService {
   // --- Templates -----------------------------------------------------------
 
   listTemplates(caller: AuthenticatedUser, companyId?: string) {
+    assertAdminPermission(caller, AdminPermission.CROSS_ASSESS);
     const scope = resolveCompanyScope(caller, companyId);
     return this.prisma.assessmentTemplate.findMany({
       where: { companyId: scope },
@@ -58,8 +66,12 @@ export class AssessmentsService {
     });
   }
 
-  async getTemplate(id: string, caller: AuthenticatedUser) {
-    const template = await this.prisma.assessmentTemplate.findUnique({
+  async getTemplate(
+    id: string,
+    caller: AuthenticatedUser,
+    db: Prisma.TransactionClient = this.prisma,
+  ) {
+    const template = await db.assessmentTemplate.findUnique({
       where: { id },
       include: TEMPLATE_INCLUDE,
     });
@@ -84,6 +96,7 @@ export class AssessmentsService {
     dto: CreateAssessmentTemplateDto,
     caller: AuthenticatedUser,
   ) {
+    assertAdminPermission(caller, AdminPermission.CROSS_ASSESS);
     const companyId = resolveCompanyScope(caller, dto.companyId);
     if (dto.groups.length === 0) {
       throw new BadRequestException('A template needs at least one group');
@@ -106,58 +119,99 @@ export class AssessmentsService {
     dto: UpdateAssessmentTemplateDto,
     caller: AuthenticatedUser,
   ) {
-    const template = await this.getTemplate(id, caller);
-    this.assertCanManageCompany(caller, template.companyId);
-
-    // Replacing the tree bumps the version; approved assessments are
-    // unaffected because they hold their own templateSnapshot.
-    if (dto.groups) {
-      await this.prisma.assessmentGroup.deleteMany({
-        where: { templateId: template.id },
+    assertAdminPermission(caller, AdminPermission.CROSS_ASSESS);
+    return this.transaction(async (tx) => {
+      const template = await this.getTemplate(id, caller, tx);
+      this.assertCanManageCompany(caller, template.companyId);
+      const usage = await tx.assessmentTemplate.findUniqueOrThrow({
+        where: { id },
+        select: { _count: { select: { cycles: true, assessments: true } } },
       });
-    }
-
-    return this.prisma.assessmentTemplate.update({
-      where: { id: template.id },
-      data: {
-        name: dto.name,
-        description: dto.description,
-        status: dto.status,
-        ...(dto.groups
-          ? {
-              version: { increment: 1 },
-              groups: { create: this.buildGroupCreateInput(dto.groups) },
-            }
-          : {}),
-      },
-      include: TEMPLATE_INCLUDE,
+      const changesCriteria =
+        dto.groups !== undefined ||
+        dto.name !== undefined ||
+        dto.description !== undefined;
+      // A cycle pins its scale. Copy used templates instead of deleting the
+      // questions (which would cascade-delete historical answers).
+      if (
+        changesCriteria &&
+        (usage._count.cycles > 0 || usage._count.assessments > 0)
+      ) {
+        await tx.assessmentTemplate.update({
+          where: { id },
+          data: { status: TemplateStatus.ARCHIVED },
+        });
+        return tx.assessmentTemplate.create({
+          data: {
+            companyId: template.companyId,
+            createdById: caller.id,
+            name: dto.name ?? template.name,
+            description: dto.description ?? template.description,
+            status: dto.status ?? TemplateStatus.DRAFT,
+            version: template.version + 1,
+            groups: {
+              create: this.buildGroupCreateInput(
+                dto.groups ??
+                  template.groups.map((group) => ({
+                    ...group,
+                    description: group.description ?? undefined,
+                    questions: group.questions.map((question) => ({
+                      ...question,
+                      guidance: question.guidance ?? undefined,
+                    })),
+                  })),
+              ),
+            },
+          },
+          include: TEMPLATE_INCLUDE,
+        });
+      }
+      if (dto.groups) {
+        await tx.assessmentGroup.deleteMany({ where: { templateId: id } });
+      }
+      return tx.assessmentTemplate.update({
+        where: { id },
+        data: {
+          name: dto.name,
+          description: dto.description,
+          status: dto.status,
+          ...(dto.groups
+            ? {
+                version: { increment: 1 },
+                groups: { create: this.buildGroupCreateInput(dto.groups) },
+              }
+            : {}),
+        },
+        include: TEMPLATE_INCLUDE,
+      });
     });
   }
 
   async removeTemplate(id: string, caller: AuthenticatedUser) {
-    const template = await this.getTemplate(id, caller);
-    this.assertCanManageCompany(caller, template.companyId);
-
-    const usage = await this.prisma.assessment.count({
-      where: { templateId: template.id },
-    });
-    if (usage > 0) {
-      // History must stay readable, so a used template is archived, never
-      // deleted.
-      await this.prisma.assessmentTemplate.update({
-        where: { id: template.id },
-        data: { status: TemplateStatus.ARCHIVED },
+    assertAdminPermission(caller, AdminPermission.CROSS_ASSESS);
+    return this.transaction(async (tx) => {
+      const template = await this.getTemplate(id, caller, tx);
+      this.assertCanManageCompany(caller, template.companyId);
+      const usage = await tx.assessmentTemplate.findUniqueOrThrow({
+        where: { id },
+        select: { _count: { select: { assessments: true, cycles: true } } },
       });
-      return { id: template.id, archived: true };
-    }
-
-    await this.prisma.assessmentTemplate.delete({ where: { id: template.id } });
-    return { id: template.id, archived: false };
+      if (usage._count.assessments > 0 || usage._count.cycles > 0) {
+        await tx.assessmentTemplate.update({
+          where: { id },
+          data: { status: TemplateStatus.ARCHIVED },
+        });
+        return { id, archived: true };
+      }
+      await tx.assessmentTemplate.delete({ where: { id } });
+      return { id, archived: false };
+    });
   }
 
   // --- Cycles --------------------------------------------------------------
 
   listCycles(caller: AuthenticatedUser, companyId?: string) {
+    assertAdminPermission(caller, AdminPermission.CROSS_ASSESS);
     const scope = resolveCompanyScope(caller, companyId);
     return this.prisma.assessmentCycle.findMany({
       where: { companyId: scope },
@@ -170,6 +224,7 @@ export class AssessmentsService {
   }
 
   async createCycle(dto: CreateAssessmentCycleDto, caller: AuthenticatedUser) {
+    assertAdminPermission(caller, AdminPermission.CROSS_ASSESS);
     const companyId = resolveCompanyScope(caller, dto.companyId);
     const template = await this.getTemplate(dto.templateId, caller);
     if (template.companyId !== companyId) {
@@ -202,6 +257,7 @@ export class AssessmentsService {
     dto: UpdateAssessmentCycleDto,
     caller: AuthenticatedUser,
   ) {
+    assertAdminPermission(caller, AdminPermission.CROSS_ASSESS);
     const cycle = await this.prisma.assessmentCycle.findUnique({
       where: { id },
     });
@@ -262,12 +318,16 @@ export class AssessmentsService {
   }
 
   /** Everything waiting for this admin to approve. */
-  listPendingApproval(caller: AuthenticatedUser) {
-    const companyId = resolveCompanyScope(caller);
+  listPendingApproval(caller: AuthenticatedUser, companyId?: string) {
+    assertAdminPermission(caller, AdminPermission.APPROVE);
+    const scope =
+      caller.role === Role.SUPER_ADMIN
+        ? companyId
+        : resolveCompanyScope(caller);
     return this.prisma.assessment.findMany({
       where: {
         status: AssessmentStatus.SUBMITTED,
-        reviewee: { companyId },
+        ...(scope ? { template: { companyId: scope } } : {}),
       },
       include: {
         reviewee: { select: { id: true, name: true, jobTitle: true } },
@@ -298,12 +358,13 @@ export class AssessmentsService {
       assessment.reviewerId === caller.id ||
       assessment.revieweeId === caller.id;
     if (!isParticipant) {
-      await assertCanViewUser(
-        this.prisma,
-        caller,
-        assessment.revieweeId,
-        'assessments',
-      );
+      const permission = hasAdminPermission(caller, AdminPermission.VIEW)
+        ? AdminPermission.VIEW
+        : hasAdminPermission(caller, AdminPermission.APPROVE)
+          ? AdminPermission.APPROVE
+          : AdminPermission.EDIT;
+      assertAdminPermission(caller, permission);
+      this.assertCanManageCompany(caller, assessment.template.companyId);
     }
 
     return assessment;
@@ -355,6 +416,20 @@ export class AssessmentsService {
       throw new BadRequestException('This assessment cycle is closed');
     }
 
+    if (cycle.companyId !== reviewee.companyId) {
+      throw new ForbiddenException(
+        'The assessment cycle must belong to the reviewee company',
+      );
+    }
+    if (caller.role === Role.COMPANY_ADMIN && revieweeId !== caller.id) {
+      assertAdminPermission(caller, AdminPermission.CROSS_ASSESS);
+    }
+    if (dto.type === AssessmentType.MANAGER) {
+      assertAdminPermission(caller, AdminPermission.CROSS_ASSESS);
+    }
+    const template = await this.getTemplate(cycle.templateId, caller);
+    validateAnswers(template, dto.answers ?? []);
+
     // Tie the record to the employment period so it keeps its context after
     // the person leaves the company (docs/careermate-scope.md section 2.3).
     const employment = await this.prisma.employment.findFirst({
@@ -395,89 +470,119 @@ export class AssessmentsService {
     dto: UpdateAssessmentDto,
     caller: AuthenticatedUser,
   ) {
-    const assessment = await this.findEditable(id, caller);
-
-    if (dto.answers) {
-      await this.replaceAnswers(assessment.id, dto.answers);
-    }
-
-    return this.prisma.assessment.update({
-      where: { id: assessment.id },
-      data: {
-        mood: dto.mood,
-        highlights: dto.highlights,
-        comment: dto.comment,
-      },
-      include: { answers: true, template: { include: TEMPLATE_INCLUDE } },
+    return this.transaction(async (tx) => {
+      const assessment = await this.findEditable(id, caller, tx, true);
+      const template = await this.getTemplate(
+        assessment.templateId,
+        caller,
+        tx,
+      );
+      if (dto.answers) {
+        validateAnswers(template, dto.answers);
+        await this.replaceAnswers(tx, assessment.id, dto.answers);
+      }
+      const answers = await tx.assessmentAnswer.findMany({
+        where: { assessmentId: id },
+      });
+      const scores =
+        assessment.status === AssessmentStatus.SUBMITTED
+          ? computeAssessmentScores(template, answers)
+          : { totalScore: null, contributionScore: null, attitudeScore: null };
+      return tx.assessment.update({
+        where: { id },
+        data: {
+          mood: dto.mood,
+          highlights: dto.highlights,
+          comment: dto.comment,
+          ...scores,
+        },
+        include: { answers: true, template: { include: TEMPLATE_INCLUDE } },
+      });
     });
   }
 
-  /** Locks the record for review and computes the weighted total. */
+  /** Only the author submits; score and answer changes are one transaction. */
   async submitAssessment(
     id: string,
     dto: UpdateAssessmentDto,
     caller: AuthenticatedUser,
   ) {
-    const assessment = await this.findEditable(id, caller);
-
-    if (dto.answers) {
-      await this.replaceAnswers(assessment.id, dto.answers);
-    }
-
-    const [template, answers] = await Promise.all([
-      this.prisma.assessmentTemplate.findUnique({
-        where: { id: assessment.templateId },
-        include: TEMPLATE_INCLUDE,
-      }),
-      this.prisma.assessmentAnswer.findMany({
-        where: { assessmentId: assessment.id },
-      }),
-    ]);
-    if (!template) {
-      throw new NotFoundException('The template for this assessment is gone');
-    }
-    if (answers.length === 0) {
-      throw new BadRequestException('Answer at least one question first');
-    }
-
-    return this.prisma.assessment.update({
-      where: { id: assessment.id },
-      data: {
-        mood: dto.mood,
-        highlights: dto.highlights,
-        comment: dto.comment,
-        status: AssessmentStatus.SUBMITTED,
-        submittedAt: new Date(),
-        totalScore: this.computeWeightedScore(template, answers),
-      },
-      include: { answers: true },
+    return this.transaction(async (tx) => {
+      const assessment = await this.findEditable(id, caller, tx);
+      const template = await this.getTemplate(
+        assessment.templateId,
+        caller,
+        tx,
+      );
+      if (dto.answers) {
+        validateAnswers(template, dto.answers, true);
+        await this.replaceAnswers(tx, id, dto.answers);
+      }
+      const answers = await tx.assessmentAnswer.findMany({
+        where: { assessmentId: id },
+      });
+      return tx.assessment.update({
+        where: { id },
+        data: {
+          mood: dto.mood,
+          highlights: dto.highlights,
+          comment: dto.comment,
+          status: AssessmentStatus.SUBMITTED,
+          submittedAt: new Date(),
+          ...computeAssessmentScores(template, answers),
+        },
+        include: { answers: true },
+      });
     });
   }
 
-  /**
-   * Approval is what makes the record permanent — it freezes a copy of the
-   * template so later edits to the company's scale never rewrite what was
-   * agreed here.
-   */
+  /** Freeze criteria, recompute scores and update the profile atomically. */
   async approveAssessment(id: string, caller: AuthenticatedUser) {
-    const assessment = await this.loadForApproval(id, caller);
-
-    const template = await this.prisma.assessmentTemplate.findUnique({
-      where: { id: assessment.templateId },
-      include: TEMPLATE_INCLUDE,
-    });
-
-    return this.prisma.assessment.update({
-      where: { id: assessment.id },
-      data: {
-        status: AssessmentStatus.APPROVED,
-        approvedById: caller.id,
-        approvedAt: new Date(),
-        templateSnapshot: template
-          ? (JSON.parse(JSON.stringify(template)) as Prisma.InputJsonValue)
-          : undefined,
-      },
-      include: { answers: true },
+    assertAdminPermission(caller, AdminPermission.APPROVE);
+    return this.transaction(async (tx) => {
+      const assessment = await this.loadForApproval(id, caller, tx);
+      const template = await this.getTemplate(
+        assessment.templateId,
+        caller,
+        tx,
+      );
+      const answers = await tx.assessmentAnswer.findMany({
+        where: { assessmentId: id },
+      });
+      const approved = await tx.assessment.update({
+        where: { id },
+        data: {
+          ...computeAssessmentScores(template, answers),
+          status: AssessmentStatus.APPROVED,
+          approvedById: caller.id,
+          approvedAt: new Date(),
+          templateSnapshot: JSON.parse(
+            JSON.stringify(template),
+          ) as Prisma.InputJsonValue,
+        },
+        include: { answers: true },
+      });
+      const average = await tx.assessment.aggregate({
+        where: {
+          revieweeId: assessment.revieweeId,
+          status: AssessmentStatus.APPROVED,
+        },
+        _avg: { contributionScore: true, attitudeScore: true },
+      });
+      await tx.user.update({
+        where: { id: assessment.revieweeId },
+        data: {
+          contributionScore:
+            average._avg.contributionScore === null
+              ? null
+              : roundScore(average._avg.contributionScore),
+          attitudeScore:
+            average._avg.attitudeScore === null
+              ? null
+              : roundScore(average._avg.attitudeScore),
+        },
+      });
+      return approved;
     });
   }
 
@@ -486,26 +591,42 @@ export class AssessmentsService {
     dto: ReviewAssessmentDto,
     caller: AuthenticatedUser,
   ) {
-    const assessment = await this.loadForApproval(id, caller);
-
-    return this.prisma.assessment.update({
-      where: { id: assessment.id },
-      data: {
-        status: AssessmentStatus.REJECTED,
-        approvedById: caller.id,
-        approvedAt: new Date(),
-        comment: dto.comment ?? assessment.comment,
-      },
+    assertAdminPermission(caller, AdminPermission.APPROVE);
+    return this.transaction(async (tx) => {
+      const assessment = await this.loadForApproval(id, caller, tx);
+      return tx.assessment.update({
+        where: { id },
+        data: {
+          status: AssessmentStatus.REJECTED,
+          approvedById: caller.id,
+          approvedAt: new Date(),
+          comment: dto.comment ?? assessment.comment,
+        },
+      });
     });
   }
 
   // --- Helpers -------------------------------------------------------------
 
   private buildGroupCreateInput(groups: GroupDto[]) {
+    if (
+      !groups.length ||
+      !groups.some((g) => (g.weight ?? 1) > 0) ||
+      groups.some(
+        (g) =>
+          !g.questions.length || !g.questions.some((q) => (q.weight ?? 1) > 0),
+      )
+    ) {
+      throw new BadRequestException(
+        'A template needs groups with positively weighted questions',
+      );
+    }
     return groups.map((group, groupIndex) => ({
       name: group.name,
       description: group.description,
       weight: group.weight ?? 1,
+      scoreDimension:
+        group.scoreDimension ?? AssessmentScoreDimension.CONTRIBUTION,
       order: groupIndex,
       questions: {
         create: group.questions.map((question, questionIndex) => ({
@@ -529,50 +650,63 @@ export class AssessmentsService {
     );
   }
 
-  /** Only the author can edit, and only before it is submitted. */
-  private async findEditable(id: string, caller: AuthenticatedUser) {
-    const assessment = await this.prisma.assessment.findUnique({
+  /** Drafts belong to their author. Submitted edits require EDIT; approved history is immutable. */
+  private async findEditable(
+    id: string,
+    caller: AuthenticatedUser,
+    tx: Prisma.TransactionClient,
+    allowSubmitted = false,
+  ) {
+    const assessment = await tx.assessment.findUnique({
       where: { id },
+      include: { template: { select: { companyId: true } } },
     });
-    if (!assessment || assessment.reviewerId !== caller.id) {
-      throw new NotFoundException(`Assessment ${id} not found`);
+    if (!assessment) throw new NotFoundException(`Assessment ${id} not found`);
+    if (assessment.status === AssessmentStatus.SUBMITTED && allowSubmitted) {
+      assertAdminPermission(caller, AdminPermission.EDIT);
+      this.assertCanManageCompany(caller, assessment.template.companyId);
+      return assessment;
     }
     if (
       assessment.status === AssessmentStatus.APPROVED ||
       assessment.status === AssessmentStatus.SUBMITTED
     ) {
       throw new BadRequestException(
-        'This assessment has already been submitted',
+        'This assessment has already been submitted or approved',
       );
     }
+    if (assessment.reviewerId !== caller.id)
+      throw new NotFoundException(`Assessment ${id} not found`);
     return assessment;
   }
 
-  private async loadForApproval(id: string, caller: AuthenticatedUser) {
-    const assessment = await this.prisma.assessment.findUnique({
+  private async loadForApproval(
+    id: string,
+    caller: AuthenticatedUser,
+    tx: Prisma.TransactionClient,
+  ) {
+    const assessment = await tx.assessment.findUnique({
       where: { id },
-      include: { reviewee: { select: { companyId: true } } },
+      include: { template: { select: { companyId: true } } },
     });
-    if (!assessment) {
-      throw new NotFoundException(`Assessment ${id} not found`);
-    }
+    if (!assessment) throw new NotFoundException(`Assessment ${id} not found`);
+    this.assertCanManageCompany(caller, assessment.template.companyId);
     if (assessment.status !== AssessmentStatus.SUBMITTED) {
       throw new BadRequestException(
         'Only a submitted assessment can be approved or rejected',
       );
     }
-    if (assessment.reviewee.companyId) {
-      this.assertCanManageCompany(caller, assessment.reviewee.companyId);
-    } else if (caller.role !== Role.SUPER_ADMIN) {
-      throw new ForbiddenException('Not allowed to approve this assessment');
-    }
     return assessment;
   }
 
-  private async replaceAnswers(assessmentId: string, answers: AnswerDto[]) {
-    await this.prisma.assessmentAnswer.deleteMany({ where: { assessmentId } });
-    if (answers.length === 0) return;
-    await this.prisma.assessmentAnswer.createMany({
+  private async replaceAnswers(
+    tx: Prisma.TransactionClient,
+    assessmentId: string,
+    answers: AnswerDto[],
+  ) {
+    await tx.assessmentAnswer.deleteMany({ where: { assessmentId } });
+    if (!answers.length) return;
+    await tx.assessmentAnswer.createMany({
       data: answers.map((a) => ({
         assessmentId,
         questionId: a.questionId,
@@ -582,40 +716,23 @@ export class AssessmentsService {
     });
   }
 
-  /**
-   * Weighted score on a 0-10 scale: each question is normalised against its
-   * own maxScore, averaged within its group by question weight, then groups
-   * are averaged by group weight.
-   */
-  private computeWeightedScore(
-    template: TemplateWithGroups,
-    answers: { questionId: string; score: number }[],
-  ): number | null {
-    const scoreByQuestion = new Map(
-      answers.map((a) => [a.questionId, a.score]),
-    );
-
-    let weightedSum = 0;
-    let totalGroupWeight = 0;
-
-    for (const group of template.groups) {
-      let groupSum = 0;
-      let groupWeight = 0;
-
-      for (const question of group.questions) {
-        const raw = scoreByQuestion.get(question.id);
-        if (raw === undefined) continue;
-        const max = question.maxScore || 10;
-        groupSum += (raw / max) * 10 * question.weight;
-        groupWeight += question.weight;
+  /** Serializable retries prevent two approvals from losing each other's profile scores. */
+  private async transaction<T>(
+    work: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await this.prisma.$transaction(work, {
+          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+        });
+      } catch (error) {
+        if (
+          !(error instanceof Prisma.PrismaClientKnownRequestError) ||
+          error.code !== 'P2034' ||
+          attempt >= 3
+        )
+          throw error;
       }
-
-      if (groupWeight === 0) continue;
-      weightedSum += (groupSum / groupWeight) * group.weight;
-      totalGroupWeight += group.weight;
     }
-
-    if (totalGroupWeight === 0) return null;
-    return Math.round((weightedSum / totalGroupWeight) * 100) / 100;
   }
 }

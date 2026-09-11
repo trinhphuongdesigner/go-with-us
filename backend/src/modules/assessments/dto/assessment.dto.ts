@@ -54,7 +54,7 @@ export class AnswerDto {
   questionId!: string;
 
   @IsInt()
-  @Min(0)
+  @Min(1)
   score!: number;
 
   @IsOptional()

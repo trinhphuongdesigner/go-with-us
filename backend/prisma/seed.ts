@@ -1,4 +1,4 @@
-import { PrismaClient, Role } from '@prisma/client';
+import { AdminPermission, PrismaClient, Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -43,22 +43,76 @@ async function main() {
 
   const companyAdmin = await prisma.user.upsert({
     where: { email: 'admin@acme.dev' },
-    update: {},
+    update: {
+      role: Role.COMPANY_ADMIN,
+      companyId: company.id,
+      adminPermissions: [AdminPermission.FULL],
+    },
     create: {
       email: 'admin@acme.dev',
       passwordHash,
       name: 'Acme Admin',
       role: Role.COMPANY_ADMIN,
+      adminPermissions: [AdminPermission.FULL],
       companyId: company.id,
       jobTitle: 'HR Manager',
     },
   });
 
+  const limitedAdmins = await Promise.all(
+    [
+      {
+        email: 'viewer@acme.dev',
+        name: 'Acme Viewer',
+        adminPermissions: [AdminPermission.VIEW],
+      },
+      {
+        email: 'approver@acme.dev',
+        name: 'Acme Approver',
+        adminPermissions: [AdminPermission.VIEW, AdminPermission.APPROVE],
+      },
+      {
+        email: 'assessor@acme.dev',
+        name: 'Acme Assessment Operator',
+        adminPermissions: [
+          AdminPermission.VIEW,
+          AdminPermission.COLLECT,
+          AdminPermission.CROSS_ASSESS,
+          AdminPermission.EDIT,
+        ],
+      },
+    ].map((admin) =>
+      prisma.user.upsert({
+        where: { email: admin.email },
+        update: {
+          role: Role.COMPANY_ADMIN,
+          companyId: company.id,
+          adminPermissions: admin.adminPermissions,
+        },
+        create: {
+          ...admin,
+          passwordHash,
+          role: Role.COMPANY_ADMIN,
+          companyId: company.id,
+          jobTitle: 'HR',
+        },
+      }),
+    ),
+  );
+
   const employees = await Promise.all(
     [
-      { email: 'alice@acme.dev', name: 'Alice Nguyen', jobTitle: 'Frontend Engineer' },
+      {
+        email: 'alice@acme.dev',
+        name: 'Alice Nguyen',
+        jobTitle: 'Frontend Engineer',
+      },
       { email: 'bob@acme.dev', name: 'Bob Tran', jobTitle: 'Backend Engineer' },
-      { email: 'carol@acme.dev', name: 'Carol Le', jobTitle: 'Product Designer' },
+      {
+        email: 'carol@acme.dev',
+        name: 'Carol Le',
+        jobTitle: 'Product Designer',
+      },
     ].map((e) =>
       prisma.user.upsert({
         where: { email: e.email },
@@ -164,6 +218,7 @@ async function main() {
             },
             {
               name: 'Attitude & collaboration',
+              scoreDimension: 'ATTITUDE',
               description: 'How they work with the people around them.',
               weight: 2,
               order: 1,
@@ -225,10 +280,19 @@ async function main() {
     },
   });
 
-  console.log('\nSeed complete. Demo login credentials (all use the same password):\n');
+  console.log(
+    '\nSeed complete. Demo login credentials (all use the same password):\n',
+  );
   console.log(`  Password for every seeded user: ${DEMO_PASSWORD}\n`);
   console.log(`  SUPER_ADMIN   -> ${superAdmin.email}`);
-  console.log(`  COMPANY_ADMIN -> ${companyAdmin.email}  (company: ${company.name})`);
+  console.log(
+    `  COMPANY_ADMIN -> ${companyAdmin.email}  (company: ${company.name})`,
+  );
+  for (const admin of limitedAdmins) {
+    console.log(
+      `  COMPANY_ADMIN -> ${admin.email} (${admin.adminPermissions.join(' + ')})`,
+    );
+  }
   for (const emp of employees) {
     console.log(`  EMPLOYEE      -> ${emp.email}`);
   }

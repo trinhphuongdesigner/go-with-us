@@ -6,7 +6,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { Role } from '@prisma/client';
+import { AdminPermission, Role } from '@prisma/client';
+import { assertAdminPermission } from '../../common/access/admin-permissions';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -41,6 +42,9 @@ export class UsersService {
    * authenticated role, and mutate methods separately role-checking).
    */
   findAll(caller: AuthenticatedUser) {
+    if (caller.role === Role.COMPANY_ADMIN) {
+      assertAdminPermission(caller, AdminPermission.VIEW);
+    }
     if (caller.role === Role.SUPER_ADMIN) {
       return this.prisma.user.findMany({
         select: PUBLIC_USER_SELECT,
@@ -78,6 +82,7 @@ export class UsersService {
    * this stays open for flexibility). EMPLOYEE callers cannot create users.
    */
   async create(dto: CreateUserDto, caller: AuthenticatedUser) {
+    assertAdminPermission(caller, AdminPermission.COLLECT);
     if (caller.role === Role.EMPLOYEE) {
       throw new ForbiddenException('Employees cannot create users');
     }
@@ -98,6 +103,8 @@ export class UsersService {
           'Company admins can only create EMPLOYEE users',
         );
       }
+      if (!caller.companyId)
+        throw new ForbiddenException('No company scope for this account');
       companyId = caller.companyId;
     } else if (caller.role === Role.SUPER_ADMIN) {
       if (dto.role !== Role.SUPER_ADMIN && !dto.companyId) {
@@ -135,8 +142,16 @@ export class UsersService {
     }
 
     const isSelf = target.id === caller.id;
+    if (
+      !isSelf ||
+      dto.contributionScore !== undefined ||
+      dto.attitudeScore !== undefined
+    ) {
+      assertAdminPermission(caller, AdminPermission.COLLECT);
+    }
     const isSameCompanyAdmin =
       caller.role === Role.COMPANY_ADMIN &&
+      !!caller.companyId &&
       caller.companyId === target.companyId;
     if (!isSelf && caller.role !== Role.SUPER_ADMIN && !isSameCompanyAdmin) {
       throw new ForbiddenException('Not allowed to update this user');
@@ -150,6 +165,7 @@ export class UsersService {
   }
 
   async remove(id: string, caller: AuthenticatedUser) {
+    assertAdminPermission(caller, AdminPermission.COLLECT);
     const target = await this.prisma.user.findUnique({ where: { id } });
     if (!target) {
       throw new NotFoundException(`User ${id} not found`);
@@ -157,6 +173,7 @@ export class UsersService {
 
     const isSameCompanyAdmin =
       caller.role === Role.COMPANY_ADMIN &&
+      !!caller.companyId &&
       caller.companyId === target.companyId;
     if (caller.role !== Role.SUPER_ADMIN && !isSameCompanyAdmin) {
       throw new ForbiddenException('Not allowed to delete this user');
@@ -172,6 +189,9 @@ export class UsersService {
   ) {
     if (caller.role === Role.SUPER_ADMIN) return;
     if (caller.id === target.id) return;
+    if (caller.role === Role.COMPANY_ADMIN) {
+      assertAdminPermission(caller, AdminPermission.VIEW);
+    }
     if (caller.companyId && caller.companyId === target.companyId) return;
     throw new ForbiddenException('Not allowed to view this user');
   }

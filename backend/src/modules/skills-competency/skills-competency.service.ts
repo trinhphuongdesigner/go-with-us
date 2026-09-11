@@ -3,7 +3,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { AdminPermission, Role } from '@prisma/client';
+import { assertAdminPermission } from '../../common/access/admin-permissions';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UpsertSkillDto } from './dto/upsert-skill.dto';
 import { EmployeeSkillItemDto } from './dto/employee-skill-item.dto';
@@ -106,6 +107,7 @@ export class SkillsCompetencyService {
    * alone doesn't know about companyId scoping.
    */
   async getInsight(userId: string, caller: AuthenticatedUser) {
+    assertAdminPermission(caller, AdminPermission.VIEW);
     const target = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -123,6 +125,7 @@ export class SkillsCompetencyService {
 
     const isSameCompanyAdmin =
       caller.role === Role.COMPANY_ADMIN &&
+      !!caller.companyId &&
       caller.companyId === target.companyId;
     if (caller.role !== Role.SUPER_ADMIN && !isSameCompanyAdmin) {
       throw new ForbiddenException('Not allowed to view this insight');
@@ -173,6 +176,7 @@ export class SkillsCompetencyService {
   ) {
     if (caller.role === Role.SUPER_ADMIN) return;
     if (caller.id === target.id) return;
+    assertAdminPermission(caller, AdminPermission.VIEW);
     if (
       caller.role === Role.COMPANY_ADMIN &&
       caller.companyId &&

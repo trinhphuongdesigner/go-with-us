@@ -8,7 +8,8 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { AdminPermission, Role } from '@prisma/client';
+import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { CareerPassportService } from './career-passport.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -108,6 +109,7 @@ export class CareerPassportController {
 
   @Get('summaries/pending')
   @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @RequirePermission(AdminPermission.APPROVE)
   listPendingOffboardingSummaries(
     @CurrentUser() caller: AuthenticatedUser,
     @Query('companyId') companyId?: string,
@@ -117,6 +119,7 @@ export class CareerPassportController {
 
   @Post('summaries/:id/trigger')
   @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @RequirePermission(AdminPermission.APPROVE)
   triggerOffboardingSummary(
     @Param('id') id: string,
     @CurrentUser() caller: AuthenticatedUser,
@@ -126,6 +129,7 @@ export class CareerPassportController {
 
   @Patch('summaries/:id')
   @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @RequirePermission(AdminPermission.EDIT)
   updateOffboardingSummary(
     @Param('id') id: string,
     @Body() dto: UpdateOffboardingSummaryDto,
@@ -136,6 +140,7 @@ export class CareerPassportController {
 
   @Post('summaries/:id/approve')
   @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @RequirePermission(AdminPermission.APPROVE)
   approveOffboardingSummary(
     @Param('id') id: string,
     @CurrentUser() caller: AuthenticatedUser,

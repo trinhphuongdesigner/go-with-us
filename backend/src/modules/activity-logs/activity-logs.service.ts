@@ -1,9 +1,5 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { assertCanViewUser } from '../../common/access/user-scope';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateActivityLogDto } from './dto/create-activity-log.dto';
 import { UpdateActivityLogDto } from './dto/update-activity-log.dto';
@@ -22,28 +18,7 @@ export class ActivityLogsService {
   async findAll(caller: AuthenticatedUser, userId?: string) {
     const targetUserId = userId ?? caller.id;
 
-    if (targetUserId !== caller.id) {
-      if (caller.role === Role.SUPER_ADMIN) {
-        // allowed
-      } else if (caller.role === Role.COMPANY_ADMIN) {
-        const target = await this.prisma.user.findUnique({
-          where: { id: targetUserId },
-          select: { companyId: true },
-        });
-        if (!target) {
-          throw new NotFoundException(`User ${targetUserId} not found`);
-        }
-        if (!caller.companyId || caller.companyId !== target.companyId) {
-          throw new ForbiddenException(
-            "Not allowed to view this user's activity log",
-          );
-        }
-      } else {
-        throw new ForbiddenException(
-          "Not allowed to view this user's activity log",
-        );
-      }
-    }
+    await assertCanViewUser(this.prisma, caller, targetUserId, 'activity log');
 
     return this.prisma.activityLog.findMany({
       where: { userId: targetUserId },

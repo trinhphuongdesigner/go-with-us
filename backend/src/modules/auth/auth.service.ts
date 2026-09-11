@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { Role } from '@prisma/client';
+import { AdminPermission, Role } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -78,6 +78,7 @@ export class AuthService {
     email: string;
     name: string;
     role: Role;
+    adminPermissions: AdminPermission[];
     companyId: string | null;
     avatarUrl: string | null;
     jobTitle: string | null;
@@ -100,6 +101,7 @@ export class AuthService {
     email: string;
     name: string;
     role: Role;
+    adminPermissions: AdminPermission[];
     companyId: string | null;
     avatarUrl: string | null;
     jobTitle: string | null;
@@ -114,6 +116,12 @@ export class AuthService {
       avatarUrl: user.avatarUrl,
       jobTitle: user.jobTitle,
       themeConcept: user.themeConcept,
+      adminPermissions:
+        user.role === Role.SUPER_ADMIN
+          ? [AdminPermission.FULL]
+          : user.role === Role.COMPANY_ADMIN
+            ? user.adminPermissions
+            : [],
     };
   }
 }

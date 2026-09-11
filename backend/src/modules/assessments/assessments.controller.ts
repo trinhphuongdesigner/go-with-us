@@ -9,7 +9,8 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { AdminPermission, Role } from '@prisma/client';
+import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { AssessmentsService } from './assessments.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -46,6 +47,7 @@ export class AssessmentsController {
 
   @Get('templates')
   @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @RequirePermission(AdminPermission.CROSS_ASSESS)
   listTemplates(
     @CurrentUser() caller: AuthenticatedUser,
     @Query('companyId') companyId?: string,
@@ -63,6 +65,7 @@ export class AssessmentsController {
 
   @Post('templates')
   @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @RequirePermission(AdminPermission.CROSS_ASSESS)
   createTemplate(
     @Body() dto: CreateAssessmentTemplateDto,
     @CurrentUser() caller: AuthenticatedUser,
@@ -72,6 +75,7 @@ export class AssessmentsController {
 
   @Patch('templates/:id')
   @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @RequirePermission(AdminPermission.CROSS_ASSESS)
   updateTemplate(
     @Param('id') id: string,
     @Body() dto: UpdateAssessmentTemplateDto,
@@ -82,6 +86,7 @@ export class AssessmentsController {
 
   @Delete('templates/:id')
   @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @RequirePermission(AdminPermission.CROSS_ASSESS)
   removeTemplate(
     @Param('id') id: string,
     @CurrentUser() caller: AuthenticatedUser,
@@ -93,6 +98,7 @@ export class AssessmentsController {
 
   @Get('cycles')
   @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @RequirePermission(AdminPermission.CROSS_ASSESS)
   listCycles(
     @CurrentUser() caller: AuthenticatedUser,
     @Query('companyId') companyId?: string,
@@ -107,6 +113,7 @@ export class AssessmentsController {
 
   @Post('cycles')
   @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @RequirePermission(AdminPermission.CROSS_ASSESS)
   createCycle(
     @Body() dto: CreateAssessmentCycleDto,
     @CurrentUser() caller: AuthenticatedUser,
@@ -116,6 +123,7 @@ export class AssessmentsController {
 
   @Patch('cycles/:id')
   @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @RequirePermission(AdminPermission.CROSS_ASSESS)
   updateCycle(
     @Param('id') id: string,
     @Body() dto: UpdateAssessmentCycleDto,
@@ -128,8 +136,12 @@ export class AssessmentsController {
 
   @Get('pending-approval')
   @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
-  listPendingApproval(@CurrentUser() caller: AuthenticatedUser) {
-    return this.service.listPendingApproval(caller);
+  @RequirePermission(AdminPermission.APPROVE)
+  listPendingApproval(
+    @CurrentUser() caller: AuthenticatedUser,
+    @Query('companyId') companyId?: string,
+  ) {
+    return this.service.listPendingApproval(caller, companyId);
   }
 
   @Get()
@@ -177,6 +189,7 @@ export class AssessmentsController {
 
   @Post(':id/approve')
   @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @RequirePermission(AdminPermission.APPROVE)
   approveAssessment(
     @Param('id') id: string,
     @CurrentUser() caller: AuthenticatedUser,
@@ -186,6 +199,7 @@ export class AssessmentsController {
 
   @Post(':id/reject')
   @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @RequirePermission(AdminPermission.APPROVE)
   rejectAssessment(
     @Param('id') id: string,
     @Body() dto: ReviewAssessmentDto,
