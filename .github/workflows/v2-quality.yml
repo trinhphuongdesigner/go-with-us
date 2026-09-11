@@ -1,0 +1,78 @@
+name: CareerMate v2 quality
+
+on:
+  pull_request:
+    paths:
+      - "v2/**"
+      - ".github/workflows/v2-quality.yml"
+  push:
+    branches: ["feat/v2-rebuild"]
+    paths:
+      - "v2/**"
+      - ".github/workflows/v2-quality.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: careermate-v2-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: careermate
+          POSTGRES_PASSWORD: careermate
+          POSTGRES_DB: careermate_v2_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U careermate -d careermate_v2_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      CAREERMATE_ENVIRONMENT: test
+      CAREERMATE_DATABASE_URL: postgresql+asyncpg://careermate:careermate@127.0.0.1:5432/careermate_v2_test
+      CAREERMATE_TEST_DATABASE_URL: postgresql+asyncpg://careermate:careermate@127.0.0.1:5432/careermate_v2_test
+      CAREERMATE_MIGRATION_DATABASE_URL: postgresql+asyncpg://careermate:careermate@127.0.0.1:5432/careermate_v2_test
+      CAREERMATE_JWT_SECRET: ci-only-secret-that-is-at-least-32-characters
+      NEXT_PUBLIC_DEMO_MODE: "true"
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          version: "0.8.17"
+          enable-cache: true
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: v2/frontend/package-lock.json
+
+      - name: Install backend
+        working-directory: v2/backend
+        run: uv sync --dev --locked
+      - name: Verify migrations on PostgreSQL
+        working-directory: v2/backend
+        run: uv run alembic upgrade head
+      - name: Install frontend
+        working-directory: v2/frontend
+        run: npm ci
+      - name: Install pinned Gitleaks
+        run: bash v2/scripts/install-gitleaks.sh
+      - name: Install Chromium
+        working-directory: v2/frontend
+        run: npx playwright install --with-deps chromium
+      - name: Run fail-closed quality gates
+        run: bash v2/scripts/check.sh

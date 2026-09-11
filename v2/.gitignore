@@ -1,0 +1,31 @@
+# Python
+backend/.venv/
+backend/.mypy_cache/
+backend/.pytest_cache/
+backend/.ruff_cache/
+backend/**/__pycache__/
+backend/**/*.py[cod]
+backend/.coverage
+backend/htmlcov/
+.tools/
+**/__pycache__/
+**/*.py[cod]
+
+# Next.js and Node
+frontend/node_modules/
+frontend/.next/
+frontend/coverage/
+frontend/playwright-report/
+frontend/test-results/
+frontend/.env.local
+
+# Local runtime data and secrets
+*.db
+*.sqlite
+*.sqlite3
+.env
+.env.*
+!.env.example
+
+# Generated evidence
+reports/**/traces/

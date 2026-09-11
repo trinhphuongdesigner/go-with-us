@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "overall_status": "NOT_RUN",
+  "required": [
+    "backend_format",
+    "backend_lint",
+    "backend_typecheck",
+    "backend_tests",
+    "migration_check",
+    "openapi_contract",
+    "frontend_lint",
+    "frontend_typecheck",
+    "frontend_tests",
+    "frontend_build",
+    "playwright_390",
+    "playwright_768",
+    "playwright_1440",
+    "accessibility",
+    "security",
+    "independent_review"
+  ],
+  "checks": []
+}

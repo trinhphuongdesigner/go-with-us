@@ -1,0 +1,256 @@
+{
+  "schema_version": "1.0",
+  "report_language": "vi",
+  "feature_id": "escape-test",
+  "feature_name": "Escape <script>alert(1)</script> & \"quotes\"",
+  "branch": "feat/v2-rebuild",
+  "implementation_sha": "0123456789abcdef0123456789abcdef01234567",
+  "generated_at": "2025-09-12T02:00:00Z",
+  "scope": [
+    "<b>bold</b>"
+  ],
+  "user_value": "Value with < & > and \"quotes\"",
+  "functional_breakdown": [
+    {
+      "step": 1,
+      "actor": "D",
+      "behavior": "Behavior with <script>"
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "Desc <img src=x onerror=alert(1)>",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-ESC-01"
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "id": "CHK-ESC-01",
+      "category": "FORMAT",
+      "required": true,
+      "status": "PASS",
+      "command": "echo 'x < y'",
+      "cwd": ".",
+      "started_at": "2025-09-12T01:59:00Z",
+      "finished_at": "2025-09-12T01:59:01Z",
+      "exit_code": 0,
+      "exact_sha": "0123456789abcdef0123456789abcdef01234567",
+      "summary": "Summary with < & > \" '",
+      "artifact_paths": [
+        "<path>"
+      ]
+    },
+    {
+      "id": "CHK-LINT-02",
+      "category": "LINT",
+      "required": true,
+      "status": "PASS",
+      "command": "verify-lint",
+      "cwd": ".",
+      "started_at": "2025-09-12T01:59:00Z",
+      "finished_at": "2025-09-12T01:59:01Z",
+      "exit_code": 0,
+      "exact_sha": "0123456789abcdef0123456789abcdef01234567",
+      "summary": "LINT passed",
+      "artifact_paths": []
+    },
+    {
+      "id": "CHK-TYPECHECK-03",
+      "category": "TYPECHECK",
+      "required": true,
+      "status": "PASS",
+      "command": "verify-typecheck",
+      "cwd": ".",
+      "started_at": "2025-09-12T01:59:00Z",
+      "finished_at": "2025-09-12T01:59:01Z",
+      "exit_code": 0,
+      "exact_sha": "0123456789abcdef0123456789abcdef01234567",
+      "summary": "TYPECHECK passed",
+      "artifact_paths": []
+    },
+    {
+      "id": "CHK-UNIT-04",
+      "category": "UNIT",
+      "required": true,
+      "status": "PASS",
+      "command": "verify-unit",
+      "cwd": ".",
+      "started_at": "2025-09-12T01:59:00Z",
+      "finished_at": "2025-09-12T01:59:01Z",
+      "exit_code": 0,
+      "exact_sha": "0123456789abcdef0123456789abcdef01234567",
+      "summary": "UNIT passed",
+      "artifact_paths": []
+    },
+    {
+      "id": "CHK-INTEGRATION-05",
+      "category": "INTEGRATION",
+      "required": true,
+      "status": "PASS",
+      "command": "verify-integration",
+      "cwd": ".",
+      "started_at": "2025-09-12T01:59:00Z",
+      "finished_at": "2025-09-12T01:59:01Z",
+      "exit_code": 0,
+      "exact_sha": "0123456789abcdef0123456789abcdef01234567",
+      "summary": "INTEGRATION passed",
+      "artifact_paths": []
+    },
+    {
+      "id": "CHK-CONTRACT-06",
+      "category": "CONTRACT",
+      "required": true,
+      "status": "PASS",
+      "command": "verify-contract",
+      "cwd": ".",
+      "started_at": "2025-09-12T01:59:00Z",
+      "finished_at": "2025-09-12T01:59:01Z",
+      "exit_code": 0,
+      "exact_sha": "0123456789abcdef0123456789abcdef01234567",
+      "summary": "CONTRACT passed",
+      "artifact_paths": []
+    },
+    {
+      "id": "CHK-MIGRATION-07",
+      "category": "MIGRATION",
+      "required": true,
+      "status": "PASS",
+      "command": "verify-migration",
+      "cwd": ".",
+      "started_at": "2025-09-12T01:59:00Z",
+      "finished_at": "2025-09-12T01:59:01Z",
+      "exit_code": 0,
+      "exact_sha": "0123456789abcdef0123456789abcdef01234567",
+      "summary": "MIGRATION passed",
+      "artifact_paths": []
+    },
+    {
+      "id": "CHK-E2E-08",
+      "category": "E2E",
+      "required": true,
+      "status": "PASS",
+      "command": "verify-e2e",
+      "cwd": ".",
+      "started_at": "2025-09-12T01:59:00Z",
+      "finished_at": "2025-09-12T01:59:01Z",
+      "exit_code": 0,
+      "exact_sha": "0123456789abcdef0123456789abcdef01234567",
+      "summary": "E2E passed",
+      "artifact_paths": []
+    },
+    {
+      "id": "CHK-ACCESSIBILITY-09",
+      "category": "ACCESSIBILITY",
+      "required": true,
+      "status": "PASS",
+      "command": "verify-accessibility",
+      "cwd": ".",
+      "started_at": "2025-09-12T01:59:00Z",
+      "finished_at": "2025-09-12T01:59:01Z",
+      "exit_code": 0,
+      "exact_sha": "0123456789abcdef0123456789abcdef01234567",
+      "summary": "ACCESSIBILITY passed",
+      "artifact_paths": []
+    },
+    {
+      "id": "CHK-SECURITY-10",
+      "category": "SECURITY",
+      "required": true,
+      "status": "PASS",
+      "command": "verify-security",
+      "cwd": ".",
+      "started_at": "2025-09-12T01:59:00Z",
+      "finished_at": "2025-09-12T01:59:01Z",
+      "exit_code": 0,
+      "exact_sha": "0123456789abcdef0123456789abcdef01234567",
+      "summary": "SECURITY passed",
+      "artifact_paths": []
+    },
+    {
+      "id": "CHK-PERFORMANCE-11",
+      "category": "PERFORMANCE",
+      "required": true,
+      "status": "PASS",
+      "command": "verify-performance",
+      "cwd": ".",
+      "started_at": "2025-09-12T01:59:00Z",
+      "finished_at": "2025-09-12T01:59:01Z",
+      "exit_code": 0,
+      "exact_sha": "0123456789abcdef0123456789abcdef01234567",
+      "summary": "PERFORMANCE passed",
+      "artifact_paths": []
+    },
+    {
+      "id": "CHK-MANUAL-UI-12",
+      "category": "MANUAL_UI",
+      "required": true,
+      "status": "PASS",
+      "command": "verify-manual_ui",
+      "cwd": ".",
+      "started_at": "2025-09-12T01:59:00Z",
+      "finished_at": "2025-09-12T01:59:01Z",
+      "exit_code": 0,
+      "exact_sha": "0123456789abcdef0123456789abcdef01234567",
+      "summary": "MANUAL_UI passed",
+      "artifact_paths": []
+    },
+    {
+      "id": "CHK-BUILD-13",
+      "category": "BUILD",
+      "required": true,
+      "status": "PASS",
+      "command": "verify-build",
+      "cwd": ".",
+      "started_at": "2025-09-12T01:59:00Z",
+      "finished_at": "2025-09-12T01:59:01Z",
+      "exit_code": 0,
+      "exact_sha": "0123456789abcdef0123456789abcdef01234567",
+      "summary": "BUILD passed",
+      "artifact_paths": []
+    }
+  ],
+  "persona_reviews": [
+    {
+      "persona": "EMPLOYEE_22_30",
+      "viewport": "1280x720",
+      "status": "PASS",
+      "findings": [
+        {
+          "severity": "P0",
+          "description": "Finding <b>bold</b>",
+          "resolution": "Fix <script>"
+        }
+      ]
+    },
+    {
+      "persona": "HR_35_45",
+      "viewport": "1280x720",
+      "status": "PASS",
+      "findings": []
+    },
+    {
+      "persona": "MANAGER_45_55",
+      "viewport": "1280x720",
+      "status": "PASS",
+      "findings": []
+    },
+    {
+      "persona": "LOW_TECH_USER",
+      "viewport": "1280x720",
+      "status": "PASS",
+      "findings": []
+    }
+  ],
+  "known_gaps": [
+    {
+      "description": "Gap <x>",
+      "impact": "LOW",
+      "next_action": "Action <y>"
+    }
+  ],
+  "overall_status": "PASS"
+}
