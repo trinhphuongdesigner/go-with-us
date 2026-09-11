@@ -46,7 +46,7 @@ export default function CompanyRequestsPage() {
                 alignItems: { sm: 'center' },
                 justifyContent: 'space-between',
                 gap: 1.5,
-                border: `1px solid ${colorTokens.divider}`,
+                border: `1px solid ${colorTokens.border}`,
                 borderRadius: `${radiusTokens.md}px`,
                 p: 2,
               }}

@@ -5,10 +5,8 @@ export default function PageContainer({ children }: { children: React.ReactNode 
     <Box
       component="main"
       sx={{
-        maxWidth: 1200,
-        mx: 'auto',
-        px: { xs: 2, md: 4 },
-        py: { xs: 3, md: 4 },
+        px: { xs: 2, md: 3 },
+        py: { xs: 2, md: 3 },
       }}
     >
       {children}

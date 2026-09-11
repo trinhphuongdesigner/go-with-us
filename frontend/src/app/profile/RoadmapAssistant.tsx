@@ -179,7 +179,7 @@ export default function RoadmapAssistant({
               px: 2,
               py: 1.5,
               borderRadius: 2,
-              bgcolor: message.role === 'user' ? colorTokens.accent900 : colorTokens.bg,
+              bgcolor: message.role === 'user' ? colorTokens.primarySubtle : colorTokens.canvas,
             }}
           >
             <Typography sx={{ fontSize: 11, fontWeight: 600, mb: 0.5 }}>
@@ -279,7 +279,7 @@ export default function RoadmapAssistant({
           </Typography>
           <Stack spacing={2}>
             {preview?.milestones.map((milestone, index) => (
-              <Box key={index} sx={{ p: 2, bgcolor: colorTokens.bg, borderRadius: 2 }}>
+              <Box key={index} sx={{ p: 2, bgcolor: colorTokens.canvas, borderRadius: 2 }}>
                 <Typography sx={{ fontWeight: 600, overflowWrap: 'anywhere' }}>
                   {index + 1}. {milestone.title}
                 </Typography>
@@ -294,7 +294,7 @@ export default function RoadmapAssistant({
                 <Box component="ul" sx={{ pl: 2.5, mb: 0 }}>
                   {milestone.tasks.map((task, taskIndex) => (
                     <Box component="li" key={taskIndex} sx={{ mb: 1, overflowWrap: 'anywhere' }}>
-                      <Typography variant="body2" sx={{ color: colorTokens.text }}>
+                      <Typography variant="body2" sx={{ color: colorTokens.heading }}>
                         {task.title}
                       </Typography>
                       <Typography variant="body2">Success metric: {task.metric}</Typography>

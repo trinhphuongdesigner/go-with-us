@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CareerMate · Milo & Sage assets</title>
+  <link rel="stylesheet" href="tokens.css">
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:var(--cm-canvas);color:var(--cm-body);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}header,main,footer{max-width:1280px;margin:auto;padding:32px}header{display:flex;justify-content:space-between;align-items:center;gap:24px;border-bottom:1px solid var(--cm-border)}.brand{display:flex;align-items:center;gap:14px}.brand img{width:52px;height:52px}h1{font-size:27px;color:var(--cm-heading);margin:0}h2{font-size:24px;color:var(--cm-heading);margin:0 0 6px}.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--cm-primary);font-weight:700}p{margin:6px 0 20px;color:var(--cm-secondary)}header p{margin:0;font-size:14px}.pill{padding:8px 14px;background:var(--cm-primary-subtle);border-radius:24px;color:var(--cm-primary-text);font-size:13px;white-space:nowrap}section{margin-top:38px}.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 24px}.toolbar span{margin-right:12px;font-size:14px;color:var(--cm-secondary)}button,a{font:inherit}button{border:1px solid var(--cm-border);background:white;padding:10px 16px;border-radius:12px;cursor:pointer;color:var(--cm-body)}button[aria-pressed=true]{background:var(--cm-primary);color:white;border-color:var(--cm-primary)}:focus-visible{outline:3px solid var(--cm-primary);outline-offset:4px}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}.tile{border:1px solid var(--cm-border);border-radius:18px;overflow:hidden;background:white;min-width:0}.art{display:flex;align-items:center;justify-content:center;background:#F3E9D7;min-height:210px;padding:18px}.art img{display:block;width:100%;height:180px;object-fit:contain}.characters .art{min-height:270px}.characters .art img{height:238px}.avatars .art{min-height:190px}.avatars .art img{height:150px}.info{padding:15px 18px}.info strong{display:block;font-size:14px;color:var(--cm-heading);overflow-wrap:anywhere}.meta{display:block;color:var(--cm-secondary);font-size:12px;margin-top:4px}.links{display:flex;gap:16px;margin-top:12px}a{color:var(--cm-primary-text);font-size:13px;text-decoration-thickness:1px;text-underline-offset:3px}.icons{grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px}.icons .art{min-height:75px;padding:16px;color:var(--cm-primary)}.icons svg{width:24px;height:24px}.icons .info{padding:10px 12px}.icons .info strong{font-size:12px}.icons .meta{display:none}.icons .links{margin-top:6px}.palette{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}.swatch{height:64px;border-radius:12px;border:1px solid #d9dfd9}.color strong,.color code{display:block;font-size:12px;margin-top:5px}.color code{color:var(--cm-secondary)}body[data-background=white] .art{background:#FFFFFF}body[data-background=sage] .art{background:#DDEBE0}body[data-background=dark] .art{background:#243F36}body[data-background=dark] .icons .art{color:#D6E7D8}body[data-background=checker] .art{background-color:#FFFFFF;background-image:linear-gradient(45deg,#e4e8e2 25%,transparent 25%),linear-gradient(-45deg,#e4e8e2 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e4e8e2 75%),linear-gradient(-45deg,transparent 75%,#e4e8e2 75%);background-size:20px 20px;background-position:0 0,0 10px,10px -10px,-10px 0}footer{font-size:13px;color:var(--cm-secondary);border-top:1px solid var(--cm-border);margin-top:40px}#error{color:#AD442E}.notice{background:#E4EFE7;border-radius:16px;padding:20px 24px}.notice p{margin:0}code{font-size:13px}nav{display:flex;gap:18px;flex-wrap:wrap;margin-top:20px}#counts{margin:6px 0 0} @media(max-width:850px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.icons{grid-template-columns:repeat(auto-fill,minmax(112px,1fr))}.palette{grid-template-columns:repeat(4,1fr)}header,main,footer{padding:24px}header{align-items:flex-start}.pill{display:none}}@media(max-width:440px){h1{font-size:21px}.grid{gap:10px}.art{padding:10px}.info{padding:12px}.palette{grid-template-columns:repeat(3,1fr)}}
+  </style>
+</head>
+<body data-background="sand">
+  <header><div class="brand"><img src="brand/mark.svg" alt=""><div><div class="eyebrow">CareerMate · Design assets</div><h1>Milo & Sage</h1><p>Nhân vật, biểu tượng và chi tiết lộ trình</p></div></div><span class="pill">Asset pack · v1</span></header>
+  <main>
+    <div class="notice"><p>Đổi nền bên dưới để kiểm tra độ trong suốt. Nhân vật dùng PNG/WebP; icon, huy hiệu và bậc lộ trình dùng SVG để phóng to hoặc đổi màu.</p><p id="counts"></p></div>
+    <nav aria-label="Nhóm asset"><a href="#characters">Nhân vật</a><a href="#avatars">Avatar</a><a href="#roadmap">Lộ trình</a><a href="#badges">Huy hiệu</a><a href="#illustrations">Minh họa</a><a href="#icons">Icon</a><a href="#colors">Màu sắc</a></nav>
+    <section aria-label="Nền xem trước"><div class="toolbar"><span>Nền xem trước</span><button type="button" data-value="sand" aria-pressed="true">Beige</button><button type="button" data-value="white" aria-pressed="false">Trắng</button><button type="button" data-value="sage" aria-pressed="false">Sage</button><button type="button" data-value="dark" aria-pressed="false">Tối</button><button type="button" data-value="checker" aria-pressed="false">Ô caro</button></div></section>
+    <p id="error" role="alert"></p><div id="assets"></div>
+    <section id="colors"><h2>Màu sắc</h2><p>Điểm nhấn sage, nền sáng và sắc sand ấm.</p><div id="palette" class="palette"></div></section>
+  </main>
+  <footer>Nhân vật được tạo bằng công cụ imagegen. Icon từ Material UI, kèm giấy phép MIT trong LICENSE-icons.txt. Chữ, nhãn trạng thái và đường nối mindmap nên dựng bằng code.</footer>
+  <script type="module">
+    const groupInfo = {
+      characters: ['Nhân vật đồng hành','Tách riêng nhân vật khỏi giao diện để đặt trên các màu nền.'],
+      avatars: ['Avatar','Dùng trong phần chọn người đồng hành; không kèm chữ hoặc khung UI.'],
+      roadmap: ['Bậc lộ trình','4 trạng thái. Dùng nhãn văn bản và trạng thái nút trong code.'],
+      badges: ['Huy hiệu','Các mốc học tập, phản hồi, phối hợp và thành tựu.'],
+      illustrations: ['Minh họa','Dùng ở trạng thái trống, thư viện và phần gợi ý.'],
+      brand: ['Dấu hiệu thương hiệu','Bản màu sage và bản đơn sắc có thể đổi bằng currentColor.'],
+      icons: ['Icon giao diện','43 icon cùng một họ, dùng ở kích thước 18 / 20 / 24 px.'],
+    };
+    const el = (tag, text, className) => { const node=document.createElement(tag);if(text)node.textContent=text;if(className)node.className=className;return node; };
+    document.querySelectorAll('[data-value]').forEach(button=>button.addEventListener('click',()=>{
+      document.body.dataset.background=button.dataset.value;
+      document.querySelectorAll('[data-value]').forEach(other=>other.setAttribute('aria-pressed',String(other===button)));
+    }));
+    try {
+      const response=await fetch('./manifest.json');if(!response.ok)throw new Error('Không tải được manifest asset.');
+      const manifest=await response.json();
+      document.getElementById('counts').textContent=`${manifest.assets.length} asset riêng biệt · ${manifest.assets.filter(asset=>asset.format==='svg').length} SVG`;
+      for(const [category,[heading,description]] of Object.entries(groupInfo)){
+        const assets=manifest.assets.filter(asset=>asset.category===category);if(!assets.length)continue;
+        const section=el('section');section.id=category;section.append(el('h2',heading),el('p',description));const grid=el('div','',`grid ${category}`);
+        for(const asset of assets){
+          const tile=el('article','','tile');const art=el('div','','art');
+          if(category==='icons'){
+            const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');icon.setAttribute('viewBox','0 0 24 24');icon.setAttribute('aria-hidden','true');
+            const use=document.createElementNS('http://www.w3.org/2000/svg','use');use.setAttribute('href',`icons/sprite.svg#${asset.id}`);icon.append(use);art.append(icon);
+          }else{const image=el('img');image.src=asset.src;image.alt='';image.width=asset.width;image.height=asset.height;art.append(image);}
+          const info=el('div','','info');info.append(el('strong',asset.id));info.append(el('span',`${asset.width} × ${asset.height} · ${asset.format.toUpperCase()}`,'meta'));
+          const links=el('div','','links');const download=el('a',asset.format.toUpperCase());download.href=asset.src;download.download='';links.append(download);
+          if(asset.master){const png=el('a','PNG');png.href=asset.master;png.download='';links.append(png);}info.append(links);tile.append(art,info);grid.append(tile);
+        }section.append(grid);document.getElementById('assets').append(section);
+      }
+      for(const [name,color] of Object.entries(manifest.palette)){const item=el('div','','color');const swatch=el('div','','swatch');swatch.style.background=color;item.append(swatch,el('strong',name),el('code',color));document.getElementById('palette').append(item);}
+    } catch(error){document.getElementById('error').textContent=error.message;}
+  </script>
+</body>
+</html>

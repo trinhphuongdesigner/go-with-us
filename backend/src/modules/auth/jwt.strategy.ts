@@ -42,13 +42,38 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!user) {
       throw new UnauthorizedException('User no longer exists');
     }
+
+    // Resolve effective admin permissions from RoleDefinition (dynamic roles)
+    // Falls back to legacy user.adminPermissions for COMPANY_ADMIN during transition
+    let adminPermissions: AdminPermission[] = [];
+
+    if (user.role === Role.SUPER_ADMIN) {
+      adminPermissions = [AdminPermission.FULL];
+    } else {
+      // For roles with companyId (COMPANY_ADMIN, HR, BOD, EMPLOYEE)
+      // SUPER_ADMIN case handled above with companyId: null
+      const roleDef = await this.prisma.roleDefinition.findFirst({
+        where: { companyId: user.companyId, role: user.role },
+      });
+
+      if (roleDef) {
+        adminPermissions = roleDef.permissions;
+      } else if (user.role === Role.COMPANY_ADMIN) {
+        // Fallback to legacy per-user permissions for existing COMPANY_ADMINs
+        adminPermissions = user.adminPermissions;
+      } else {
+        // HR/BOD without RoleDefinition → empty (no permissions until provisioned)
+        adminPermissions = [];
+      }
+    }
+
     return {
       id: user.id,
       email: user.email,
       name: user.name,
       role: user.role,
       companyId: user.companyId,
-      adminPermissions: user.adminPermissions,
+      adminPermissions,
     };
   }
 }

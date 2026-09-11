@@ -15,19 +15,19 @@ import type { DevelopmentMilestone, DevelopmentGoal } from '@/lib/api/developmen
 function CareerCharacter({ future = false }: { future?: boolean }) {
   return (
     <svg viewBox="0 0 120 120" width="88" height="88" aria-hidden="true">
-      <circle cx="60" cy="60" r="58" fill={colorTokens.accent900} />
-      <path d="M31 67V43c0-19 12-30 29-30s29 11 29 30v24z" fill={colorTokens.text} />
+      <circle cx="60" cy="60" r="58" fill={colorTokens.primarySubtle} />
+      <path d="M31 67V43c0-19 12-30 29-30s29 11 29 30v24z" fill={colorTokens.heading} />
       <path
         d="M18 112c2-26 19-35 42-35s40 9 42 35"
-        fill={future ? colorTokens.accent300 : colorTokens.accent700}
+        fill={future ? colorTokens.primary : colorTokens.selectedBorder}
       />
       <path d="M51 69v14l9 9 9-9V69" fill="#e9ad88" />
       <path
         d="M38 39c0 0 14-2 21-13 5 9 14 13 23 13v15c0 16-10 25-22 25S38 70 38 54z"
         fill="#f3c6a5"
       />
-      <circle cx="49" cy="51" r="2" fill={colorTokens.text} />
-      <circle cx="71" cy="51" r="2" fill={colorTokens.text} />
+      <circle cx="49" cy="51" r="2" fill={colorTokens.heading} />
+      <circle cx="71" cy="51" r="2" fill={colorTokens.heading} />
       <path
         d="M54 65q6 5 12 0"
         fill="none"
@@ -45,7 +45,7 @@ function CareerCharacter({ future = false }: { future?: boolean }) {
             height="13"
             rx="5"
             fill="none"
-            stroke={colorTokens.text}
+            stroke={colorTokens.heading}
             strokeWidth="2"
           />
           <rect
@@ -55,18 +55,18 @@ function CareerCharacter({ future = false }: { future?: boolean }) {
             height="13"
             rx="5"
             fill="none"
-            stroke={colorTokens.text}
+            stroke={colorTokens.heading}
             strokeWidth="2"
           />
-          <path d="M56 49h8" stroke={colorTokens.text} strokeWidth="2" />
+          <path d="M56 49h8" stroke={colorTokens.heading} strokeWidth="2" />
         </>
       ) : (
         <>
-          <rect x="31" y="89" width="58" height="26" rx="4" fill={colorTokens.text} />
+          <rect x="31" y="89" width="58" height="26" rx="4" fill={colorTokens.heading} />
           <path
             d="M54 99l-5 4 5 4m12-8 5 4-5 4"
             fill="none"
-            stroke={colorTokens.accent900}
+            stroke={colorTokens.primarySubtle}
             strokeWidth="2"
           />
         </>
@@ -95,13 +95,13 @@ export default function RoadmapJourney({
         p: { xs: 2, md: 3 },
         mb: 3,
         borderRadius: 2,
-        bgcolor: colorTokens.bg,
-        border: `1px solid ${colorTokens.divider}`,
+        bgcolor: colorTokens.canvas,
+        border: `1px solid ${colorTokens.border}`,
       }}
     >
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 2 }}>
         <FlagOutlinedIcon color="primary" fontSize="small" />
-        <Typography sx={{ fontSize: 12, fontWeight: 600, color: colorTokens.accent300 }}>
+        <Typography sx={{ fontSize: 12, fontWeight: 600, color: colorTokens.primary }}>
           {aliceDemo ? 'Alice demo · career direction' : 'Your career direction'}
         </Typography>
       </Stack>
@@ -136,7 +136,7 @@ export default function RoadmapJourney({
           </Box>
         </Stack>
         <Box sx={{ textAlign: 'center', px: 1 }}>
-          <Typography sx={{ fontSize: 24, fontWeight: 600, color: colorTokens.accent300 }}>
+          <Typography sx={{ fontSize: 24, fontWeight: 600, color: colorTokens.primary }}>
             {percent}%
           </Typography>
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center', my: 0.5 }}>

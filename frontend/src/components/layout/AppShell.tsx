@@ -25,6 +25,7 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutlineOutlined';
 import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined';
 import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
 import AssignmentTurnedInOutlinedIcon from '@mui/icons-material/AssignmentTurnedInOutlined';
+import SecurityOutlinedIcon from '@mui/icons-material/SecurityOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import MenuOutlinedIcon from '@mui/icons-material/MenuOutlined';
@@ -90,26 +91,32 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Nhân sự',
     href: '/employees',
     icon: <GroupsOutlinedIcon fontSize="small" />,
-    roles: ['COMPANY_ADMIN'],
+    roles: ['COMPANY_ADMIN', 'HR', 'BOD'],
   },
   {
     label: 'Yêu cầu công việc',
     href: '/job-requirements',
     icon: <WorkOutlineOutlinedIcon fontSize="small" />,
-    roles: ['COMPANY_ADMIN'],
+    roles: ['HR', 'BOD'],
   },
   {
     label: 'Trợ lý AI',
     href: '/assistant',
     icon: <AutoAwesomeOutlinedIcon fontSize="small" />,
-    roles: ['COMPANY_ADMIN', 'EMPLOYEE'],
+    roles: ['HR', 'BOD', 'EMPLOYEE'],
   },
   {
     label: 'Đánh giá chéo',
     href: '/assessments',
     icon: <FactCheckOutlinedIcon fontSize="small" />,
-    roles: ['COMPANY_ADMIN', 'EMPLOYEE'],
+    roles: ['HR', 'BOD', 'EMPLOYEE'],
     requiresCompany: true,
+  },
+  {
+    label: 'Phân quyền',
+    href: '/roles',
+    icon: <SecurityOutlinedIcon fontSize="small" />,
+    roles: ['COMPANY_ADMIN'],
   },
   {
     label: 'Cài đặt',
@@ -186,7 +193,8 @@ function Sidebar({
         flexShrink: 0,
         display: 'flex',
         flexDirection: 'column',
-        borderRight: isLg ? `1px solid ${colorTokens.divider}` : 'none',
+        bgcolor: colorTokens.surface,
+        borderRight: isLg ? `1px solid ${colorTokens.border}` : 'none',
         overflowX: 'hidden',
         overflowY: 'auto',
         height: isLg ? 'auto' : '100%',
@@ -203,15 +211,15 @@ function Sidebar({
           gap: 1.5,
           px: isFull ? 2.5 : 0,
           justifyContent: isFull ? 'flex-start' : 'center',
-          borderBottom: `1px solid ${colorTokens.divider}`,
+          borderBottom: `1px solid ${colorTokens.border}`,
         }}
       >
         <Avatar
           sx={{
             width: 40,
             height: 40,
-            bgcolor: colorTokens.accent,
-            color: colorTokens.accentContrast,
+            bgcolor: colorTokens.primary,
+            color: '#ffffff',
             fontWeight: 600,
             fontSize: 16,
             flexShrink: 0,
@@ -223,7 +231,7 @@ function Sidebar({
           sx={{
             fontWeight: 700,
             fontSize: 16,
-            color: colorTokens.text,
+            color: colorTokens.heading,
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             opacity: isFull ? 1 : 0,
@@ -243,7 +251,7 @@ function Sidebar({
             flexDirection: 'column',
             alignItems: isFull ? 'stretch' : 'center',
             gap: 0.75,
-            borderBottom: `1px solid ${colorTokens.divider}`,
+            borderBottom: `1px solid ${colorTokens.border}`,
           }}
         >
           <Tooltip title="Tất cả công ty" placement="right" disableHoverListener={isFull}>
@@ -254,11 +262,11 @@ function Sidebar({
                 display: 'flex',
                 alignItems: 'center',
                 gap: 0.75,
-                color: colorTokens.neutral400,
+                color: colorTokens.secondary,
                 textDecoration: 'none',
                 fontSize: 13,
                 fontWeight: 500,
-                '&:hover': { color: colorTokens.text },
+                '&:hover': { color: colorTokens.heading },
               }}
             >
               <ArrowBackOutlinedIcon fontSize="inherit" sx={{ fontSize: 16 }} />
@@ -268,7 +276,7 @@ function Sidebar({
           {isFull ? (
             <Typography
               noWrap
-              sx={{ fontWeight: 700, fontSize: 14.5, color: colorTokens.text }}
+              sx={{ fontWeight: 700, fontSize: 14.5, color: colorTokens.heading }}
             >
               {companyScopeName ?? 'Đang tải…'}
             </Typography>
@@ -304,11 +312,11 @@ function Sidebar({
                 justifyContent: isFull ? 'flex-start' : 'center',
                 px: isFull ? 1.5 : 0,
                 transition: 'padding 0.2s ease',
-                color: colorTokens.neutral400,
+                color: colorTokens.secondary,
                 '&.Mui-selected': {
-                  backgroundColor: colorTokens.accent900,
-                  color: colorTokens.accentInk,
-                  '&:hover': { backgroundColor: colorTokens.accent900 },
+                  backgroundColor: colorTokens.primarySubtle,
+                  color: colorTokens.primary,
+                  '&:hover': { backgroundColor: colorTokens.primarySubtle },
                 },
               }}
             >
@@ -383,11 +391,11 @@ function TopBar({ sidebarCollapsed, onToggleSidebar }: TopBarProps) {
         justifyContent: 'space-between',
         gap: 1.5,
         px: 3,
-        borderBottom: `1px solid ${colorTokens.divider}`,
+        borderBottom: `1px solid ${colorTokens.border}`,
       }}
     >
       <Tooltip title={sidebarCollapsed ? 'Mở rộng menu' : 'Thu gọn menu'}>
-        <IconButton onClick={onToggleSidebar} sx={{ color: colorTokens.neutral400 }}>
+        <IconButton onClick={onToggleSidebar} sx={{ color: colorTokens.secondary }}>
           {sidebarCollapsed ? <MenuOutlinedIcon fontSize="small" /> : <MenuOpenOutlinedIcon fontSize="small" />}
         </IconButton>
       </Tooltip>
@@ -397,7 +405,7 @@ function TopBar({ sidebarCollapsed, onToggleSidebar }: TopBarProps) {
             ? { component: NextLink, href: '/company', sx: { textAlign: 'right', textDecoration: 'none' } }
             : { sx: { textAlign: 'right' } })}
         >
-          <Typography variant="body2" noWrap sx={{ color: colorTokens.text, fontWeight: 500, lineHeight: 1.3 }}>
+          <Typography variant="body2" noWrap sx={{ color: colorTokens.heading, fontWeight: 500, lineHeight: 1.3 }}>
             {identityLabel}
           </Typography>
           {!isCompanyAdmin && (
@@ -407,7 +415,7 @@ function TopBar({ sidebarCollapsed, onToggleSidebar }: TopBarProps) {
           )}
         </Box>
         <IconButton onClick={(event) => setAnchorEl(event.currentTarget)} sx={{ p: 0.5 }}>
-          <Avatar sx={{ width: 36, height: 36, bgcolor: colorTokens.accent, color: colorTokens.accentContrast }}>
+          <Avatar sx={{ width: 36, height: 36, bgcolor: colorTokens.primary, color: '#ffffff' }}>
             {isCompanyAdmin ? <ApartmentOutlinedIcon fontSize="small" /> : identityInitial}
           </Avatar>
         </IconButton>
@@ -468,18 +476,18 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <RequireAuth>
-      <Box sx={{ minHeight: '100vh', display: 'flex', bgcolor: colorTokens.bg }}>
+      <Box sx={{ minHeight: '100vh', display: 'flex', bgcolor: colorTokens.canvas }}>
         <Sidebar
           collapsed={sidebarCollapsed}
           mobileOpen={mobileNavOpen}
           onCloseMobile={() => setMobileNavOpen(false)}
         />
-        <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', bgcolor: colorTokens.canvas }}>
           <TopBar
             sidebarCollapsed={isLg ? sidebarCollapsed : !mobileNavOpen}
             onToggleSidebar={toggleSidebar}
           />
-          <Box sx={{ flex: 1 }}>{children}</Box>
+          <Box sx={{ flex: 1, overflow: 'auto' }}>{children}</Box>
         </Box>
       </Box>
     </RequireAuth>

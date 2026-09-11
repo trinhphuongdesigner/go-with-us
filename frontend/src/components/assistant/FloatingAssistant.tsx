@@ -170,9 +170,9 @@ export default function FloatingAssistant() {
               bottom: 24,
               right: 24,
               zIndex: PANEL_Z_INDEX,
-              backgroundColor: colorTokens.accent,
+              backgroundColor: colorTokens.primary,
               color: '#fff',
-              '&:hover': { backgroundColor: colorTokens.accent300 },
+              '&:hover': { backgroundColor: colorTokens.primary },
             }}
           >
             <AutoAwesomeOutlinedIcon />
@@ -193,7 +193,7 @@ export default function FloatingAssistant() {
             borderRadius: `${radiusTokens.lg}px`,
             boxShadow: shadowTokens.lg,
             backgroundColor: colorTokens.surface,
-            border: `1px solid ${colorTokens.divider}`,
+            border: `1px solid ${colorTokens.border}`,
             overflow: 'hidden',
           }}
         >
@@ -204,7 +204,7 @@ export default function FloatingAssistant() {
               gap: 0.5,
               px: 2,
               py: 1.5,
-              borderBottom: `1px solid ${colorTokens.divider}`,
+              borderBottom: `1px solid ${colorTokens.border}`,
             }}
           >
             <Tooltip title="Lịch sử">
@@ -212,7 +212,7 @@ export default function FloatingAssistant() {
                 <MenuOutlinedIcon fontSize="small" />
               </IconButton>
             </Tooltip>
-            <Typography sx={{ flex: 1, fontWeight: 600, fontSize: 14.5, color: colorTokens.text }}>
+            <Typography sx={{ flex: 1, fontWeight: 600, fontSize: 14.5, color: colorTokens.heading }}>
               Trợ lý AI
             </Typography>
             <Tooltip title="Chat mới">
@@ -274,8 +274,8 @@ export default function FloatingAssistant() {
                         px: 1.5,
                         py: 1,
                         borderRadius: 2,
-                        backgroundColor: message.role === 'user' ? colorTokens.accent900 : colorTokens.bg,
-                        border: `1px solid ${colorTokens.divider}`,
+                        backgroundColor: message.role === 'user' ? colorTokens.primarySubtle : colorTokens.canvas,
+                        border: `1px solid ${colorTokens.border}`,
                         overflowWrap: 'break-word',
                         wordBreak: 'break-word',
                       }}
@@ -296,7 +296,7 @@ export default function FloatingAssistant() {
           <Stack
             direction="row"
             spacing={1}
-            sx={{ p: 1.5, borderTop: `1px solid ${colorTokens.divider}` }}
+            sx={{ p: 1.5, borderTop: `1px solid ${colorTokens.border}` }}
           >
             <TextField
               placeholder="Hỏi bất cứ điều gì..."
@@ -331,7 +331,7 @@ export default function FloatingAssistant() {
               gap: 1,
               px: 2,
               py: 2,
-              borderBottom: `1px solid ${colorTokens.divider}`,
+              borderBottom: `1px solid ${colorTokens.border}`,
             }}
           >
             <Typography sx={{ flex: 1, fontWeight: 600 }}>Lịch sử</Typography>
@@ -375,7 +375,7 @@ export default function FloatingAssistant() {
                     <Typography variant="body2" noWrap>
                       {conversation.title}
                     </Typography>
-                    <Typography variant="body2" noWrap sx={{ fontSize: 11, color: colorTokens.neutral400 }}>
+                    <Typography variant="body2" noWrap sx={{ fontSize: 11, color: colorTokens.secondary }}>
                       {new Date(conversation.updatedAt).toLocaleString('vi-VN')}
                     </Typography>
                   </Button>

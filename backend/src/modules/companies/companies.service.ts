@@ -39,7 +39,7 @@ export class CompaniesService {
 
     const passwordHash = await bcrypt.hash(dto.adminPassword, SALT_ROUNDS);
 
-    return this.prisma.company.create({
+    const company = await this.prisma.company.create({
       data: {
         name: dto.name,
         industry: dto.industry,
@@ -55,6 +55,34 @@ export class CompaniesService {
       },
       include: { users: true },
     });
+
+    // Auto-create role definitions for this company
+    // SUPER_ADMIN is global (companyId=null), handled at system init
+    await this.prisma.roleDefinition.createMany({
+      data: [
+        {
+          companyId: company.id,
+          role: Role.COMPANY_ADMIN,
+          permissions: [AdminPermission.FULL],
+          isHidden: true,
+        },
+        {
+          companyId: company.id,
+          role: Role.HR,
+          permissions: [AdminPermission.VIEW, AdminPermission.COLLECT, AdminPermission.CROSS_ASSESS, AdminPermission.EDIT],
+          isHidden: false,
+        },
+        {
+          companyId: company.id,
+          role: Role.BOD,
+          permissions: [AdminPermission.VIEW, AdminPermission.APPROVE],
+          isHidden: false,
+        },
+      ],
+      skipDuplicates: true,
+    });
+
+    return company;
   }
 
   async update(id: string, dto: UpdateCompanyDto) {

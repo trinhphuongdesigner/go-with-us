@@ -225,9 +225,9 @@ export default function AssistantPage() {
                           borderRadius: 2,
                           backgroundColor:
                             message.role === 'user'
-                              ? colorTokens.accent900
-                              : colorTokens.bg,
-                          border: `1px solid ${colorTokens.divider}`,
+                              ? colorTokens.primarySubtle
+                              : colorTokens.canvas,
+                          border: `1px solid ${colorTokens.border}`,
                         }}
                       >
                         {message.role === 'user' ? (
@@ -288,7 +288,7 @@ export default function AssistantPage() {
                     >
                       <Avatar
                         src={person.avatarUrl ?? undefined}
-                        sx={{ width: 36, height: 36, bgcolor: colorTokens.accent, color: colorTokens.accentContrast }}
+                        sx={{ width: 36, height: 36, bgcolor: colorTokens.primary, color: '#ffffff' }}
                       >
                         {person.name?.[0]?.toUpperCase() ?? '?'}
                       </Avatar>

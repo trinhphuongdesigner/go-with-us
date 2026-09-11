@@ -60,7 +60,7 @@ export default function EmployeesPage() {
                   key={employee.id}
                   onClick={() => router.push(`/employees/${employee.id}`)}
                   sx={{
-                    border: `1px solid ${colorTokens.divider}`,
+                    border: `1px solid ${colorTokens.border}`,
                     borderRadius: `${radiusTokens.md}px`,
                     p: 2,
                     display: 'flex',
@@ -70,17 +70,17 @@ export default function EmployeesPage() {
                     gap: 0.5,
                     cursor: 'pointer',
                     transition: 'border-color 0.15s ease',
-                    '&:hover': { borderColor: colorTokens.accent },
+                    '&:hover': { borderColor: colorTokens.primary },
                   }}
                 >
-                  <Avatar sx={{ width: 48, height: 48, bgcolor: colorTokens.accent, color: colorTokens.accentContrast }}>
+                  <Avatar sx={{ width: 48, height: 48, bgcolor: colorTokens.primary, color: '#ffffff' }}>
                     {employee.name?.[0]?.toUpperCase() ?? '?'}
                   </Avatar>
                   <Typography variant="body1" sx={{ fontWeight: 600, mt: 1 }}>
                     {employee.name}
                   </Typography>
                   <Typography variant="body2">{employee.jobTitle ?? 'Chưa có chức danh'}</Typography>
-                  <Box sx={{ display: 'flex', gap: 2, mt: 1, fontSize: 12, color: colorTokens.neutral400 }}>
+                  <Box sx={{ display: 'flex', gap: 2, mt: 1, fontSize: 12, color: colorTokens.secondary }}>
                     <span>Đóng góp: {employee.contributionScore ?? '—'}</span>
                     <span>Thái độ: {employee.attitudeScore ?? '—'}</span>
                   </Box>

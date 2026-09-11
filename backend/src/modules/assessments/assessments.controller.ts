@@ -9,11 +9,12 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { AdminPermission, Role } from '@prisma/client';
 import { AssessmentsService } from './assessments.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/jwt.strategy';
 import {
@@ -63,6 +64,7 @@ export class AssessmentsController {
 
   @Post('templates')
   @Roles(Role.HR, Role.SUPER_ADMIN)
+  @RequirePermission(AdminPermission.CROSS_ASSESS)
   createTemplate(
     @Body() dto: CreateAssessmentTemplateDto,
     @CurrentUser() caller: AuthenticatedUser,
@@ -72,6 +74,7 @@ export class AssessmentsController {
 
   @Patch('templates/:id')
   @Roles(Role.HR, Role.SUPER_ADMIN)
+  @RequirePermission(AdminPermission.CROSS_ASSESS)
   updateTemplate(
     @Param('id') id: string,
     @Body() dto: UpdateAssessmentTemplateDto,
@@ -82,6 +85,7 @@ export class AssessmentsController {
 
   @Delete('templates/:id')
   @Roles(Role.HR, Role.SUPER_ADMIN)
+  @RequirePermission(AdminPermission.CROSS_ASSESS)
   removeTemplate(
     @Param('id') id: string,
     @CurrentUser() caller: AuthenticatedUser,
@@ -128,6 +132,7 @@ export class AssessmentsController {
 
   @Get('pending-approval')
   @Roles(Role.BOD, Role.SUPER_ADMIN)
+  @RequirePermission(AdminPermission.APPROVE)
   listPendingApproval(
     @CurrentUser() caller: AuthenticatedUser,
     @Query('companyId') companyId?: string,
@@ -180,6 +185,7 @@ export class AssessmentsController {
 
   @Post(':id/approve')
   @Roles(Role.BOD, Role.SUPER_ADMIN)
+  @RequirePermission(AdminPermission.APPROVE)
   approveAssessment(
     @Param('id') id: string,
     @CurrentUser() caller: AuthenticatedUser,
@@ -189,6 +195,7 @@ export class AssessmentsController {
 
   @Post(':id/reject')
   @Roles(Role.BOD, Role.SUPER_ADMIN)
+  @RequirePermission(AdminPermission.APPROVE)
   rejectAssessment(
     @Param('id') id: string,
     @Body() dto: ReviewAssessmentDto,

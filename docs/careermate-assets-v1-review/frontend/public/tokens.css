@@ -1,0 +1,15 @@
+:root {
+  --cm-canvas: #F7F8F5;
+  --cm-surface: #FFFFFF;
+  --cm-primary: #3E7868;
+  --cm-primary-text: #336655;
+  --cm-primary-subtle: #E4EFE7;
+  --cm-selected-border: #91B3A1;
+  --cm-sand: #F3E9D7;
+  --cm-heading: #243F36;
+  --cm-body: #303B36;
+  --cm-secondary: #626C65;
+  --cm-border: #E2E8E4;
+  --cm-muted: #EFF2EF;
+  --cm-danger: #AD442E;
+}

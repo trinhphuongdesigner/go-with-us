@@ -176,7 +176,7 @@ export default function MilestonesPanel({
       {adding ? (
         <Box
           component="form"
-          sx={{ p: 2, mb: 2, border: `1px solid ${colorTokens.divider}`, borderRadius: 2 }}
+          sx={{ p: 2, mb: 2, border: `1px solid ${colorTokens.border}`, borderRadius: 2 }}
           onSubmit={async (event) => {
             event.preventDefault();
             if (busy || !title.trim()) return;
@@ -226,9 +226,9 @@ export default function MilestonesPanel({
           sx={{
             p: 3,
             textAlign: 'center',
-            border: `1px dashed ${colorTokens.accent700}`,
+            border: `1px dashed ${colorTokens.selectedBorder}`,
             borderRadius: 2,
-            bgcolor: colorTokens.bg,
+            bgcolor: colorTokens.canvas,
           }}
         >
           <Typography sx={{ fontWeight: 600, mb: 0.5 }}>Your next chapter starts here</Typography>
@@ -245,7 +245,7 @@ export default function MilestonesPanel({
             overflowX: 'auto',
             pb: 2,
             px: 0.5,
-            '&:focus-visible': { outline: `2px solid ${colorTokens.accent}` },
+            '&:focus-visible': { outline: `2px solid ${colorTokens.primary}` },
           }}
         >
           <Box
@@ -279,7 +279,7 @@ export default function MilestonesPanel({
                         left: 0,
                         right: -16,
                         height: 2,
-                        bgcolor: colorTokens.divider,
+                        bgcolor: colorTokens.border,
                       }}
                     />
                     <Box
@@ -292,8 +292,8 @@ export default function MilestonesPanel({
                         placeItems: 'center',
                         borderRadius: '50%',
                         fontWeight: 600,
-                        bgcolor: complete ? colorTokens.accent : colorTokens.accent900,
-                        color: complete ? '#fff' : colorTokens.accent300,
+                        bgcolor: complete ? colorTokens.primary : colorTokens.primarySubtle,
+                        color: complete ? '#fff' : colorTokens.primary,
                         border: `2px solid ${colorTokens.surface}`,
                       }}
                     >
@@ -306,7 +306,7 @@ export default function MilestonesPanel({
                     <Box
                       sx={{
                         p: 2,
-                        border: `1px solid ${complete ? colorTokens.accent700 : colorTokens.divider}`,
+                        border: `1px solid ${complete ? colorTokens.selectedBorder : colorTokens.border}`,
                         borderRadius: `${radiusTokens.md}px`,
                         bgcolor: colorTokens.surface,
                       }}
@@ -386,7 +386,7 @@ export default function MilestonesPanel({
                           .map((task, taskIndex) => (
                             <Box
                               key={task.id}
-                              sx={{ borderTop: `1px solid ${colorTokens.divider}`, pt: 1 }}
+                              sx={{ borderTop: `1px solid ${colorTokens.border}`, pt: 1 }}
                             >
                               <Stack direction="row" sx={{ alignItems: 'flex-start' }}>
                                 <Checkbox

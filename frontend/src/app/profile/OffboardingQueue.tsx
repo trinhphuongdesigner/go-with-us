@@ -191,8 +191,8 @@ export default function OffboardingQueue() {
                         p: 1.5,
                         mb: 1.5,
                         borderRadius: 1,
-                        backgroundColor: colorTokens.bg,
-                        border: `1px solid ${colorTokens.divider}`,
+                        backgroundColor: colorTokens.canvas,
+                        border: `1px solid ${colorTokens.border}`,
                       }}
                     >
                       <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>

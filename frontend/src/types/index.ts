@@ -3,7 +3,19 @@
 // Phase-2 feature slices should add their own types alongside their own
 // *Api.ts module rather than growing this file into a shared bottleneck.
 
-export type Role = 'SUPER_ADMIN' | 'COMPANY_ADMIN' | 'EMPLOYEE';
+export type Role = 'SUPER_ADMIN' | 'COMPANY_ADMIN' | 'BOD' | 'HR' | 'EMPLOYEE';
+
+export type AdminPermission = 'VIEW' | 'COLLECT' | 'CROSS_ASSESS' | 'APPROVE' | 'EDIT' | 'FULL';
+
+export interface RoleDefinition {
+  id: string;
+  companyId: string | null;
+  role: Role;
+  permissions: AdminPermission[];
+  isHidden: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export type ThemeConcept = 'DEFAULT' | 'ANIME' | 'FILM' | 'GATHER_TOWN';
 

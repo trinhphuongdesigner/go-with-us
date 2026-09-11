@@ -1,0 +1,511 @@
+{
+  "version": 1,
+  "palette": {
+    "canvas": "#F7F8F5",
+    "surface": "#FFFFFF",
+    "primary": "#3E7868",
+    "primaryText": "#336655",
+    "primarySubtle": "#E4EFE7",
+    "selectedBorder": "#91B3A1",
+    "sand": "#F3E9D7",
+    "heading": "#243F36",
+    "body": "#303B36",
+    "secondary": "#626C65",
+    "border": "#E2E8E4",
+    "muted": "#EFF2EF",
+    "danger": "#AD442E"
+  },
+  "assets": [
+    {
+      "id": "home",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/home.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/HomeOutlined"
+    },
+    {
+      "id": "profile",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/profile.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/PersonOutlineOutlined"
+    },
+    {
+      "id": "team",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/team.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/GroupsOutlined"
+    },
+    {
+      "id": "assessment",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/assessment.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/AssignmentOutlined"
+    },
+    {
+      "id": "chat",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/chat.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/ChatBubbleOutlineOutlined"
+    },
+    {
+      "id": "career",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/career.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/WorkOutlineOutlined"
+    },
+    {
+      "id": "learning",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/learning.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/SchoolOutlined"
+    },
+    {
+      "id": "roadmap",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/roadmap.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/AccountTreeOutlined"
+    },
+    {
+      "id": "calendar",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/calendar.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/CalendarTodayOutlined"
+    },
+    {
+      "id": "clock",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/clock.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/AccessTimeOutlined"
+    },
+    {
+      "id": "document",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/document.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/DescriptionOutlined"
+    },
+    {
+      "id": "folder",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/folder.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/FolderOutlined"
+    },
+    {
+      "id": "certificate",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/certificate.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/WorkspacePremiumOutlined"
+    },
+    {
+      "id": "trophy",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/trophy.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/EmojiEventsOutlined"
+    },
+    {
+      "id": "goal",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/goal.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/OutlinedFlag"
+    },
+    {
+      "id": "customize",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/customize.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/TuneOutlined"
+    },
+    {
+      "id": "edit",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/edit.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/EditOutlined"
+    },
+    {
+      "id": "add",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/add.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/AddRounded"
+    },
+    {
+      "id": "close",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/close.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/CloseRounded"
+    },
+    {
+      "id": "arrow-right",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/arrow-right.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/ArrowForwardRounded"
+    },
+    {
+      "id": "arrow-left",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/arrow-left.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/ArrowBackRounded"
+    },
+    {
+      "id": "chevron-up",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/chevron-up.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/KeyboardArrowUpRounded"
+    },
+    {
+      "id": "chevron-down",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/chevron-down.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/KeyboardArrowDownRounded"
+    },
+    {
+      "id": "drag",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/drag.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/DragIndicatorRounded"
+    },
+    {
+      "id": "check",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/check.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/CheckRounded"
+    },
+    {
+      "id": "lock",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/lock.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/LockOutlined"
+    },
+    {
+      "id": "search",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/search.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/SearchRounded"
+    },
+    {
+      "id": "info",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/info.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/InfoOutlined"
+    },
+    {
+      "id": "check-circle",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/check-circle.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/CheckCircleOutlineOutlined"
+    },
+    {
+      "id": "pdf",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/pdf.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/PictureAsPdfOutlined"
+    },
+    {
+      "id": "upload",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/upload.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/UploadFileOutlined"
+    },
+    {
+      "id": "save",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/save.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/SaveOutlined"
+    },
+    {
+      "id": "undo",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/undo.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/UndoRounded"
+    },
+    {
+      "id": "help",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/help.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/HelpOutlineOutlined"
+    },
+    {
+      "id": "settings",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/settings.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/SettingsOutlined"
+    },
+    {
+      "id": "bell",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/bell.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/NotificationsNoneOutlined"
+    },
+    {
+      "id": "personal",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/personal.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/FavoriteBorderOutlined"
+    },
+    {
+      "id": "fit",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/fit.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/FullscreenRounded"
+    },
+    {
+      "id": "zoom-in",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/zoom-in.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/ZoomInRounded"
+    },
+    {
+      "id": "zoom-out",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/zoom-out.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/ZoomOutRounded"
+    },
+    {
+      "id": "list",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/list.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/FormatListBulletedRounded"
+    },
+    {
+      "id": "download",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/download.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/DownloadRounded"
+    },
+    {
+      "id": "view",
+      "category": "icons",
+      "src": "/brand/careermate/v1/icons/view.svg",
+      "width": 24,
+      "height": 24,
+      "format": "svg",
+      "origin": "@mui/icons-material/VisibilityOutlined"
+    },
+    {
+      "id": "step-completed",
+      "category": "roadmap",
+      "src": "/brand/careermate/v1/roadmap/step-completed.svg",
+      "width": 256,
+      "height": 160,
+      "format": "svg"
+    },
+    {
+      "id": "step-current",
+      "category": "roadmap",
+      "src": "/brand/careermate/v1/roadmap/step-current.svg",
+      "width": 256,
+      "height": 160,
+      "format": "svg"
+    },
+    {
+      "id": "step-upcoming",
+      "category": "roadmap",
+      "src": "/brand/careermate/v1/roadmap/step-upcoming.svg",
+      "width": 256,
+      "height": 160,
+      "format": "svg"
+    },
+    {
+      "id": "step-goal",
+      "category": "roadmap",
+      "src": "/brand/careermate/v1/roadmap/step-goal.svg",
+      "width": 256,
+      "height": 160,
+      "format": "svg"
+    },
+    {
+      "id": "badge-learning",
+      "category": "badges",
+      "src": "/brand/careermate/v1/badges/badge-learning.svg",
+      "width": 160,
+      "height": 176,
+      "format": "svg"
+    },
+    {
+      "id": "badge-feedback",
+      "category": "badges",
+      "src": "/brand/careermate/v1/badges/badge-feedback.svg",
+      "width": 160,
+      "height": 176,
+      "format": "svg"
+    },
+    {
+      "id": "badge-team",
+      "category": "badges",
+      "src": "/brand/careermate/v1/badges/badge-team.svg",
+      "width": 160,
+      "height": 176,
+      "format": "svg"
+    },
+    {
+      "id": "badge-achievement",
+      "category": "badges",
+      "src": "/brand/careermate/v1/badges/badge-achievement.svg",
+      "width": 160,
+      "height": 176,
+      "format": "svg"
+    },
+    {
+      "id": "spot-learning",
+      "category": "illustrations",
+      "src": "/brand/careermate/v1/illustrations/spot-learning.svg",
+      "width": 320,
+      "height": 240,
+      "format": "svg"
+    },
+    {
+      "id": "spot-mindmap",
+      "category": "illustrations",
+      "src": "/brand/careermate/v1/illustrations/spot-mindmap.svg",
+      "width": 320,
+      "height": 240,
+      "format": "svg"
+    },
+    {
+      "id": "spot-documents",
+      "category": "illustrations",
+      "src": "/brand/careermate/v1/illustrations/spot-documents.svg",
+      "width": 320,
+      "height": 240,
+      "format": "svg"
+    },
+    {
+      "id": "mark",
+      "category": "brand",
+      "src": "/brand/careermate/v1/brand/mark.svg",
+      "width": 64,
+      "height": 64,
+      "format": "svg"
+    },
+    {
+      "id": "mark-mono",
+      "category": "brand",
+      "src": "/brand/careermate/v1/brand/mark-mono.svg",
+      "width": 64,
+      "height": 64,
+      "format": "svg"
+    }
+  ]
+}

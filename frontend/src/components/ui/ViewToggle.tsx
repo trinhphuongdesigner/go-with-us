@@ -29,7 +29,7 @@ export default function ViewToggle({ value, onChange }: ViewToggleProps) {
       aria-label="Chế độ xem"
       sx={{
         display: 'inline-flex',
-        border: `1px solid ${colorTokens.divider}`,
+        border: `1px solid ${colorTokens.border}`,
         borderRadius: `${radiusTokens.md}px`,
         overflow: 'hidden',
         flexShrink: 0,
@@ -52,13 +52,13 @@ export default function ViewToggle({ value, onChange }: ViewToggleProps) {
                 width: 40,
                 height: 36,
                 border: 'none',
-                borderLeft: i > 0 ? `1px solid ${colorTokens.divider}` : 'none',
+                borderLeft: i > 0 ? `1px solid ${colorTokens.border}` : 'none',
                 cursor: 'pointer',
-                color: selected ? colorTokens.accentInk : colorTokens.neutral400,
-                backgroundColor: selected ? colorTokens.accent900 : 'transparent',
+                color: selected ? colorTokens.primary : colorTokens.secondary,
+                backgroundColor: selected ? colorTokens.primarySubtle : 'transparent',
                 transition: 'background-color 0.15s ease, color 0.15s ease',
                 '&:hover': {
-                  backgroundColor: selected ? colorTokens.accent900 : 'rgba(51,104,160,0.08)',
+                  backgroundColor: selected ? colorTokens.primarySubtle : 'rgba(51,104,160,0.08)',
                 },
               }}
             >

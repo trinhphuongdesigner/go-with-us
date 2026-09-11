@@ -302,7 +302,7 @@ export default function AssessmentDetailPage() {
                       {question.guidance ? (
                         <Typography
                           variant="body2"
-                          sx={{ mt: 0.25, color: colorTokens.neutral500 }}
+                          sx={{ mt: 0.25, color: colorTokens.secondary }}
                         >
                           {question.guidance}
                         </Typography>

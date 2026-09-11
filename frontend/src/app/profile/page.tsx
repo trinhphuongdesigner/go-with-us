@@ -139,7 +139,7 @@ function ProfilePageContent() {
               >
                 <Avatar
                   src={profile.user.avatarUrl ?? undefined}
-                  sx={{ width: 64, height: 64, bgcolor: colorTokens.accent, color: colorTokens.accentContrast }}
+                  sx={{ width: 64, height: 64, bgcolor: colorTokens.primary, color: '#ffffff' }}
                 >
                   {profile.user.name?.[0]?.toUpperCase() ?? '?'}
                 </Avatar>
@@ -207,7 +207,7 @@ function ProfilePageContent() {
                   sx={{
                     width: { xs: '100%', md: 220 },
                     flexShrink: 0,
-                    borderBottom: { xs: `1px solid ${colorTokens.divider}`, md: 'none' },
+                    borderBottom: { xs: `1px solid ${colorTokens.border}`, md: 'none' },
                     pb: { xs: 1.5, md: 0 },
                     mb: { xs: 1.5, md: 0 },
                     pr: { md: 2.5 },
@@ -230,11 +230,11 @@ function ProfilePageContent() {
                           borderRadius: `${radiusTokens.md}px`,
                           flexShrink: 0,
                           whiteSpace: 'nowrap',
-                          color: colorTokens.neutral400,
+                          color: colorTokens.secondary,
                           '&.Mui-selected': {
-                            backgroundColor: colorTokens.accent900,
-                            color: colorTokens.accentInk,
-                            '&:hover': { backgroundColor: colorTokens.accent900 },
+                            backgroundColor: colorTokens.primarySubtle,
+                            color: colorTokens.primary,
+                            '&:hover': { backgroundColor: colorTokens.primarySubtle },
                           },
                         }}
                       >
