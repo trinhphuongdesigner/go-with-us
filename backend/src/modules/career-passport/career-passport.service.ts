@@ -231,6 +231,8 @@ export class CareerPassportService {
         email: true,
         jobTitle: true,
         avatarUrl: true,
+        contributionScore: true,
+        attitudeScore: true,
         company: { select: { id: true, name: true } },
       },
     });
@@ -370,7 +372,9 @@ export class CareerPassportService {
         },
         include: {
           cycle: { select: { period: true } },
-          answers: { include: { question: { select: { text: true } } } },
+          answers: {
+            include: { question: { select: { text: true, maxScore: true } } },
+          },
         },
         orderBy: { approvedAt: 'asc' },
       }),
@@ -540,6 +544,16 @@ export class CareerPassportService {
    */
   async triggerOffboardingSummary(id: string, caller: AuthenticatedUser) {
     const summary = await this.loadOffboardingDraft(id, caller);
+    if (summary.generatedAt) {
+      throw new BadRequestException(
+        'This summary has already been generated; its evaluation is locked',
+      );
+    }
+    if (!summary.employmentId) {
+      throw new BadRequestException(
+        'Offboarding requires an employment period',
+      );
+    }
 
     const [assessments, projects, skills, goals] = await Promise.all([
       this.prisma.assessment.findMany({
@@ -550,7 +564,9 @@ export class CareerPassportService {
         },
         include: {
           cycle: { select: { period: true } },
-          answers: { include: { question: { select: { text: true } } } },
+          answers: {
+            include: { question: { select: { text: true, maxScore: true } } },
+          },
         },
         orderBy: { approvedAt: 'asc' },
       }),
@@ -574,24 +590,30 @@ export class CareerPassportService {
       }),
     ]);
 
-    if (assessments.length === 0 && projects.length === 0) {
+    if (assessments.length === 0) {
       throw new BadRequestException(
-        'Not enough organization data yet — no approved assessments or projects for this period',
+        'An offboarding evaluation requires approved assessments for this employment period',
       );
     }
 
+    const redact = this.offboardingRedactor(
+      summary.employment?.company.name,
+      projects,
+    );
     const { content } = await this.aiChatService.send({
       systemPrompt: this.buildOffboardingPrompt(),
       messages: [
         {
           role: 'user',
-          content: this.buildSummaryContext(
-            { name: summary.user.name, jobTitle: summary.user.jobTitle },
-            summary.employment,
-            assessments,
-            projects,
-            skills,
-            goals,
+          content: redact(
+            this.buildSummaryContext(
+              { name: summary.user.name, jobTitle: summary.user.jobTitle },
+              summary.employment,
+              assessments,
+              projects,
+              skills,
+              goals,
+            ),
           ),
         },
       ],
@@ -599,18 +621,30 @@ export class CareerPassportService {
 
     const proposal = this.parseOffboardingReply(content);
 
-    return this.prisma.careerSummary.update({
-      where: { id: summary.id },
+    const saved = await this.prisma.careerSummary.updateMany({
+      where: {
+        id: summary.id,
+        status: CareerSummaryStatus.DRAFT,
+        generatedAt: null,
+      },
       data: {
-        content: proposal.narrative,
-        evaluation: proposal.evaluation,
+        content: redact(proposal.narrative),
+        evaluation: redact(proposal.evaluation),
         dimensionScores:
           proposal.dimensionScores as unknown as Prisma.InputJsonValue,
-        strengths: proposal.strengths,
-        growthAreas: proposal.growthAreas,
+        strengths: proposal.strengths.map(redact),
+        growthAreas: proposal.growthAreas.map(redact),
         aiGenerated: true,
         generatedAt: new Date(),
       },
+    });
+    if (saved.count !== 1) {
+      throw new BadRequestException(
+        'This summary has already been generated or approved',
+      );
+    }
+    return this.prisma.careerSummary.findUniqueOrThrow({
+      where: { id: summary.id },
     });
   }
 
@@ -625,9 +659,18 @@ export class CareerPassportService {
     if (!summary.generatedAt) {
       throw new BadRequestException('Trigger the AI summary before editing it');
     }
-    return this.prisma.careerSummary.update({
-      where: { id: summary.id },
+    const saved = await this.prisma.careerSummary.updateMany({
+      where: {
+        id: summary.id,
+        status: CareerSummaryStatus.DRAFT,
+        generatedAt: { not: null },
+      },
       data: { content: dto.content },
+    });
+    if (saved.count !== 1)
+      throw new BadRequestException('This summary is no longer editable');
+    return this.prisma.careerSummary.findUniqueOrThrow({
+      where: { id: summary.id },
     });
   }
 
@@ -638,13 +681,22 @@ export class CareerPassportService {
         'Trigger the AI summary before approving it',
       );
     }
-    return this.prisma.careerSummary.update({
-      where: { id: summary.id },
+    const saved = await this.prisma.careerSummary.updateMany({
+      where: {
+        id: summary.id,
+        status: CareerSummaryStatus.DRAFT,
+        generatedAt: { not: null },
+      },
       data: {
         status: CareerSummaryStatus.APPROVED,
         approvedById: caller.id,
         approvedAt: new Date(),
       },
+    });
+    if (saved.count !== 1)
+      throw new BadRequestException('This summary has already been approved');
+    return this.prisma.careerSummary.findUniqueOrThrow({
+      where: { id: summary.id },
     });
   }
 
@@ -689,6 +741,31 @@ export class CareerPassportService {
     return summary;
   }
 
+  /** Replace known identifiers before sending context, and again before saving AI output. */
+  private offboardingRedactor(
+    companyName: string | undefined,
+    projects: { name: string }[],
+  ) {
+    const labels = new Map<string, string>();
+    if (companyName?.trim())
+      labels.set(companyName.trim().toLowerCase(), '[Organization]');
+    projects.forEach((project, index) => {
+      if (project.name.trim())
+        labels.set(project.name.trim().toLowerCase(), `[Project ${index + 1}]`);
+    });
+    const names = [...labels.keys()].sort((a, b) => b.length - a.length);
+    if (!names.length) return (text: string) => text;
+    const escaped = names.map((name) =>
+      name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+    );
+    const pattern = new RegExp(escaped.join('|'), 'gi');
+    return (text: string) =>
+      text.replace(
+        pattern,
+        (match) => labels.get(match.toLowerCase()) ?? '[Redacted]',
+      );
+  }
+
   private buildOffboardingPrompt(): string {
     return `You write the ORGANIZATION-VERIFIED career recap that follows a person after they leave — this is not self-reported, it is the company's own judgement of their time there, grounded strictly in approved assessment data.
 
@@ -701,7 +778,7 @@ Reply with ONLY a JSON object of this exact shape, no prose, no markdown code fe
   "growthAreas": ["<short phrase>"]
 }
 
-CRITICAL redaction rule for "narrative" only: NEVER mention an exact project name or client/customer name. Describe them generically instead — e.g. "a retail client's inventory platform" instead of the actual project name, "a fintech client" instead of the actual company name. This rule does not apply to "evaluation" (it has no project/client names to redact anyway — it's about the person, not the work).
+CRITICAL redaction rule for ALL text fields: NEVER mention an exact project name or client/customer name. Describe them generically instead — e.g. "a retail client's inventory platform" instead of the actual project name, "a fintech client" instead of the actual company name. Preserve anonymized project/organization labels. Describe unnamed clients generically. Never reintroduce identifying names in evaluation, strengths or growthAreas.
 
 Other rules:
 - Ground every claim in the data provided. Never invent a project, score or achievement.
@@ -723,6 +800,12 @@ Other rules:
     } catch {
       throw new BadGatewayException(
         'AI provider returned an unparseable offboarding summary',
+      );
+    }
+
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new BadGatewayException(
+        'AI provider returned an invalid offboarding summary',
       );
     }
 
@@ -842,7 +925,7 @@ Rules:
       answers: {
         score: number;
         comment: string | null;
-        question: { text: string };
+        question: { text: string; maxScore?: number };
       }[];
     }[],
     projects: {
@@ -865,7 +948,7 @@ Rules:
             const answerText = a.answers
               .map(
                 (ans) =>
-                  `${ans.question.text}: ${ans.score}/10${ans.comment ? ` — ${ans.comment}` : ''}`,
+                  `${ans.question.text}: ${ans.score}/${ans.question.maxScore ?? 10}${ans.comment ? ` — ${ans.comment}` : ''}`,
               )
               .join('; ');
             return `- ${a.cycle?.period ?? 'n/a'} [${a.type}] overall ${a.totalScore ?? 'n/a'}/10${a.mood ? `, mood: ${a.mood}` : ''}${a.highlights ? `, highlights: ${a.highlights}` : ''}${answerText ? `\n    ${answerText}` : ''}`;

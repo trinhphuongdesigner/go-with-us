@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { Role } from '@prisma/client';
+import { AdminPermission, Role } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
@@ -49,6 +49,7 @@ export class CompaniesService {
             name: dto.adminName,
             passwordHash,
             role: Role.COMPANY_ADMIN,
+            adminPermissions: [AdminPermission.FULL],
           },
         },
       },

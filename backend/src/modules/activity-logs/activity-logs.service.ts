@@ -17,12 +17,7 @@ export class ActivityLogsService {
    */
   async findAll(caller: AuthenticatedUser, userId?: string) {
     const targetUserId = userId ?? caller.id;
-    await assertCanViewUser(
-      this.prisma,
-      caller,
-      targetUserId,
-      'activity log',
-    );
+    await assertCanViewUser(this.prisma, caller, targetUserId, 'activity log');
 
     return this.prisma.activityLog.findMany({
       where: { userId: targetUserId },

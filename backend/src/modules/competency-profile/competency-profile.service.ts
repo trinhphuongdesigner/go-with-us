@@ -243,6 +243,8 @@ export class CompetencyProfileService {
         email: true,
         role: true,
         jobTitle: true,
+        contributionScore: true,
+        attitudeScore: true,
         avatarUrl: true,
         companyId: true,
         company: { select: { id: true, name: true } },

@@ -19,6 +19,21 @@ enum Role {
   EMPLOYEE
 }
 
+enum AdminPermission {
+  VIEW
+  COLLECT
+  CROSS_ASSESS
+  APPROVE
+  EDIT
+  FULL
+}
+
+/// Explicit mapping to profile scores; never infer a dimension from a name.
+enum AssessmentScoreDimension {
+  CONTRIBUTION
+  ATTITUDE
+}
+
 enum ThemeConcept {
   DEFAULT
   ANIME
@@ -147,17 +162,18 @@ model Company {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  name         String
-  role         Role
+  id               String            @id @default(cuid())
+  email            String            @unique
+  passwordHash     String
+  name             String
+  role             Role
+  adminPermissions AdminPermission[] @default([])
   // Pointer to the CURRENT employer only — history lives in Employment[].
   // Goes null when the person leaves; their assessment record survives via
   // Employment (docs/careermate-scope.md section 2.3). SetNull rather than
   // Cascade so deleting a company never destroys a person's career record.
-  companyId    String?
-  company      Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  companyId        String?
+  company          Company?          @relation(fields: [companyId], references: [id], onDelete: SetNull)
 
   avatarUrl String?
   // Self-described professional title/specialty (e.g. "Frontend Developer").
@@ -513,14 +529,15 @@ model AssessmentTemplate {
 }
 
 model AssessmentGroup {
-  id          String             @id @default(cuid())
-  templateId  String
-  template    AssessmentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  name        String
-  description String?
+  id             String                   @id @default(cuid())
+  templateId     String
+  template       AssessmentTemplate       @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?
   /// Relative weight of this group within the template.
-  weight      Float              @default(1)
-  order       Int                @default(0)
+  weight         Float                    @default(1)
+  scoreDimension AssessmentScoreDimension @default(CONTRIBUTION)
+  order          Int                      @default(0)
 
   questions AssessmentQuestion[]
 
@@ -568,34 +585,37 @@ model AssessmentCycle {
 /// because it points at Employment, and keeps templateSnapshot so later
 /// edits to the company's template never rewrite approved history.
 model Assessment {
-  id               String             @id @default(cuid())
-  cycleId          String?
-  cycle            AssessmentCycle?   @relation(fields: [cycleId], references: [id], onDelete: SetNull)
-  templateId       String
-  template         AssessmentTemplate @relation(fields: [templateId], references: [id])
-  revieweeId       String
-  reviewee         User               @relation("assessmentReviewee", fields: [revieweeId], references: [id], onDelete: Cascade)
-  reviewerId       String
-  reviewer         User               @relation("assessmentReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
-  employmentId     String?
-  employment       Employment?        @relation(fields: [employmentId], references: [id], onDelete: SetNull)
-  type             AssessmentType
+  id                String             @id @default(cuid())
+  cycleId           String?
+  cycle             AssessmentCycle?   @relation(fields: [cycleId], references: [id], onDelete: SetNull)
+  templateId        String
+  template          AssessmentTemplate @relation(fields: [templateId], references: [id])
+  revieweeId        String
+  reviewee          User               @relation("assessmentReviewee", fields: [revieweeId], references: [id], onDelete: Cascade)
+  reviewerId        String
+  reviewer          User               @relation("assessmentReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  employmentId      String?
+  employment        Employment?        @relation(fields: [employmentId], references: [id], onDelete: SetNull)
+  type              AssessmentType
   /// Monthly self check-in fields (SELF only).
-  mood             String?
-  highlights       String?
-  comment          String?
+  mood              String?
+  highlights        String?
+  comment           String?
   /// Weighted total, computed on submit from the answers.
-  totalScore       Float?
-  status           AssessmentStatus   @default(DRAFT)
-  submittedAt      DateTime?
-  approvedById     String?
-  approvedBy       User?              @relation("assessmentApprover", fields: [approvedById], references: [id], onDelete: SetNull)
-  approvedAt       DateTime?
+  totalScore        Float?
+  /// Weighted 0-10 scores, frozen on approval and averaged onto User.
+  contributionScore Float?
+  attitudeScore     Float?
+  status            AssessmentStatus   @default(DRAFT)
+  submittedAt       DateTime?
+  approvedById      String?
+  approvedBy        User?              @relation("assessmentApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvedAt        DateTime?
   /// Frozen copy of the template (groups/weights/questions) taken at
   /// approval — this is what makes an approved assessment immutable history.
-  templateSnapshot Json?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
+  templateSnapshot  Json?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
   answers AssessmentAnswer[]
 

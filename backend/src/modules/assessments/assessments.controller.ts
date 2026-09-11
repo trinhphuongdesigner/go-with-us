@@ -128,8 +128,11 @@ export class AssessmentsController {
 
   @Get('pending-approval')
   @Roles(Role.BOD, Role.SUPER_ADMIN)
-  listPendingApproval(@CurrentUser() caller: AuthenticatedUser) {
-    return this.service.listPendingApproval(caller);
+  listPendingApproval(
+    @CurrentUser() caller: AuthenticatedUser,
+    @Query('companyId') companyId?: string,
+  ) {
+    return this.service.listPendingApproval(caller, companyId);
   }
 
   @Get()

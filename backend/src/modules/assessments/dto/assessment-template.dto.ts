@@ -1,6 +1,7 @@
-import { TemplateStatus } from '@prisma/client';
+import { AssessmentScoreDimension, TemplateStatus } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
+  ArrayMinSize,
   IsArray,
   IsEnum,
   IsInt,
@@ -44,6 +45,10 @@ export class GroupDto {
   @IsString()
   description?: string;
 
+  @IsOptional()
+  @IsEnum(AssessmentScoreDimension)
+  scoreDimension?: AssessmentScoreDimension;
+
   /** Relative weight of this group within the template. */
   @IsOptional()
   @IsNumber()
@@ -51,6 +56,7 @@ export class GroupDto {
   weight?: number;
 
   @IsArray()
+  @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => QuestionDto)
   questions!: QuestionDto[];
@@ -71,6 +77,7 @@ export class CreateAssessmentTemplateDto {
   companyId?: string;
 
   @IsArray()
+  @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => GroupDto)
   groups!: GroupDto[];
@@ -97,6 +104,7 @@ export class UpdateAssessmentTemplateDto {
    */
   @IsOptional()
   @IsArray()
+  @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => GroupDto)
   groups?: GroupDto[];

@@ -11,7 +11,10 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthenticatedUser } from '../auth/jwt.strategy';
-import { canManageRole, getManageableRoles } from '../../common/access/role-hierarchy';
+import {
+  canManageRole,
+  getManageableRoles,
+} from '../../common/access/role-hierarchy';
 
 const SALT_ROUNDS = 10;
 
@@ -173,9 +176,12 @@ export class UsersService {
     // can't promote someone to BOD, BOD can't promote to COMPANY_ADMIN.
     if (dto.role !== undefined && dto.role !== target.role) {
       if (!isPrivileged || isSelf) {
-        throw new ForbiddenException('Not allowed to change this user\'s role');
+        throw new ForbiddenException("Not allowed to change this user's role");
       }
-      if (caller.role !== Role.SUPER_ADMIN && !canManageRole(caller.role, dto.role)) {
+      if (
+        caller.role !== Role.SUPER_ADMIN &&
+        !canManageRole(caller.role, dto.role)
+      ) {
         throw new ForbiddenException(
           `${caller.role} cannot assign the ${dto.role} role`,
         );

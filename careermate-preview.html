@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="vi" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CareerMate — AI-First Talent Intelligence & Career Passport</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            heading: ['"Space Grotesk"', '"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              200: '#ddd6fe',
+              300: '#c4b5fd',
+              400: '#a78bfa',
+              500: '#8b5cf6',
+              600: '#6d5bd0', // Core project purple
+              700: '#5847be',
+              800: '#483b9c',
+              900: '#3c3280',
+            },
+            surface: '#ffffff',
+            canvas: '#fafafc',
+            subtle: '#e8e7f0',
+            darktext: '#1c1b2e',
+            mutedtext: '#6e6c87',
+          },
+          boxShadow: {
+            card: '0 1px 3px rgba(28,27,46,.04), 0 8px 24px rgba(28,27,46,.06)',
+            popover: '0 12px 36px rgba(28,27,46,.12)',
+            glow: '0 0 20px rgba(109,91,208,0.25)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background-color: #fafafc; color: #1c1b2e; }
+    .nav-active { background-color: #6d5bd0; color: #ffffff !important; font-weight: 600; }
+    .nav-active svg { stroke: #ffffff !important; }
+    .badge-accent { background: #efebfa; color: #5847be; border: 1px solid #ddd6fe; }
+    .badge-success { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .badge-warning { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+    .badge-cyan { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+    /* Custom range slider */
+    input[type=range] {
+      accent-color: #6d5bd0;
+    }
+  </style>
+</head>
+<body class="h-full antialiased flex flex-col bg-[#fafafc] text-[#1c1b2e]">
+
+  <!-- Top App Bar with Persona Switcher -->
+  <header class="h-16 border-b border-[#e8e7f0] bg-white sticky top-0 z-40 px-6 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6d5bd0] to-[#5847be] flex items-center justify-center text-white shadow-md shadow-[#6d5bd0]/20">
+          <i data-lucide="sparkles" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-heading font-bold text-lg tracking-tight text-[#1c1b2e]">CareerMate</span>
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full badge-accent">AI-Native</span>
+          </div>
+          <p class="text-[11px] text-[#6e6c87]">Talent Intelligence & Lifetime Career Passport</p>
+        </div>
+      </div>
+
+      <div class="h-6 w-[1px] bg-[#e8e7f0] mx-2 hidden md:block"></div>
+
+      <!-- Persona Indicator / Switcher -->
+      <div class="relative hidden sm:flex items-center gap-2 bg-[#f4f3fa] p-1 rounded-xl border border-[#e8e7f0]">
+        <span class="text-[11px] font-semibold text-[#6e6c87] pl-2 flex items-center gap-1.5">
+          <i data-lucide="eye" class="w-3.5 h-3.5"></i> Góc nhìn:
+        </span>
+        <select id="personaSelect" onchange="changePersona(this.value)" class="text-xs font-semibold text-[#1c1b2e] bg-white border border-[#e8e7f0] rounded-lg px-2.5 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#6d5bd0] shadow-sm">
+          <option value="pm">Project Manager (PM / Staffing)</option>
+          <option value="hr">HR & Talent Lead</option>
+          <option value="employee" selected>Nhân viên (Alice Trần - Fullstack Lead)</option>
+          <option value="bom">Ban Giám Đốc (BOM / Executive)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <!-- AI Status Badge -->
+      <div class="hidden lg:flex items-center gap-2 text-xs font-medium text-[#15803d] bg-[#dcfce7] border border-[#bbf7d0] px-3 py-1.5 rounded-lg">
+        <span class="w-2 h-2 rounded-full bg-[#16a34a] animate-pulse"></span>
+        <span>AI Engine: Sẵn sàng</span>
+      </div>
+
+      <!-- Quick Action: Share Passport -->
+      <button onclick="openModal('sharePassportModal')" class="flex items-center gap-2 text-xs font-semibold px-3.5 py-2 rounded-xl border border-[#e8e7f0] bg-white hover:bg-[#fafafc] text-[#1c1b2e] transition shadow-sm cursor-pointer">
+        <i data-lucide="share-2" class="w-4 h-4 text-[#6d5bd0]"></i>
+        <span class="hidden sm:inline">Chia sẻ Career Passport</span>
+      </button>
+
+      <!-- User Profile Dropdown -->
+      <div class="flex items-center gap-2.5 pl-2 border-l border-[#e8e7f0]">
+        <div class="relative cursor-pointer">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#6d5bd0] to-[#a78bfa] text-white flex items-center justify-center font-bold text-xs shadow-sm">
+            AT
+          </div>
+          <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#16a34a] border-2 border-white rounded-full"></span>
+        </div>
+        <div class="hidden xl:block text-left">
+          <div class="text-xs font-semibold text-[#1c1b2e]">Alice Trần</div>
+          <div class="text-[11px] text-[#6e6c87]">Lead Software Architect</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- App Layout -->
+  <div class="flex-1 flex overflow-hidden">
+    
+    <!-- Modern Navigation Sidebar -->
+    <aside class="w-64 border-r border-[#e8e7f0] bg-white flex flex-col justify-between p-4 shrink-0 overflow-y-auto">
+      <div class="space-y-6">
+        <div>
+          <div class="text-[10px] font-bold uppercase tracking-wider text-[#8b899f] px-3 mb-2">Trí Tuệ Nhân Sự (AI)</div>
+          <nav class="space-y-1">
+            <button onclick="switchView('search')" id="nav-search" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-[#1c1b2e] hover:bg-[#f4f3fa] transition nav-active cursor-pointer">
+              <i data-lucide="search-check" class="w-4 h-4 text-[#6d5bd0]"></i>
+              <span class="flex-1 text-left">AI Smart Talent Search</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded-md bg-white/20 text-white font-bold">NLQ</span>
+            </button>
+            <button onclick="switchView('import')" id="nav-import" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-[#6e6c87] hover:text-[#1c1b2e] hover:bg-[#f4f3fa] transition cursor-pointer">
+              <i data-lucide="file-up" class="w-4 h-4 text-[#6e6c87]"></i>
+              <span class="flex-1 text-left">AI Import CV / LinkedIn</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded-md badge-accent font-bold">Fast</span>
+            </button>
+          </nav>
+        </div>
+
+        <div>
+          <div class="text-[10px] font-bold uppercase tracking-wider text-[#8b899f] px-3 mb-2">Hồ Sơ & Hành Trình</div>
+          <nav class="space-y-1">
+            <button onclick="switchView('passport')" id="nav-passport" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-[#6e6c87] hover:text-[#1c1b2e] hover:bg-[#f4f3fa] transition cursor-pointer">
+              <i data-lucide="id-card" class="w-4 h-4 text-[#6e6c87]"></i>
+              <span class="flex-1 text-left">Career Passport Trọn Đời</span>
+              <span class="w-2 h-2 rounded-full bg-[#16a34a]"></span>
+            </button>
+            <button onclick="switchView('assessment')" id="nav-assessment" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-[#6e6c87] hover:text-[#1c1b2e] hover:bg-[#f4f3fa] transition cursor-pointer">
+              <i data-lucide="star-half" class="w-4 h-4 text-[#6e6c87]"></i>
+              <span class="flex-1 text-left">Đánh Giá Chéo (Cross)</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded-md badge-warning font-bold">Kỳ Q3</span>
+            </button>
+            <button onclick="switchView('roadmap')" id="nav-roadmap" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-[#6e6c87] hover:text-[#1c1b2e] hover:bg-[#f4f3fa] transition cursor-pointer">
+              <i data-lucide="milestone" class="w-4 h-4 text-[#6e6c87]"></i>
+              <span class="flex-1 text-left">Lộ Trình & Goal Tracker</span>
+            </button>
+          </nav>
+        </div>
+
+        <div>
+          <div class="text-[10px] font-bold uppercase tracking-wider text-[#8b899f] px-3 mb-2">Hệ Thống Doanh Nghiệp</div>
+          <nav class="space-y-1">
+            <button class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-[#6e6c87] hover:text-[#1c1b2e] hover:bg-[#f4f3fa] transition cursor-pointer">
+              <i data-lucide="sliders" class="w-4 h-4 text-[#6e6c87]"></i>
+              <span class="flex-1 text-left">Cấu Hình Tiêu Chí Đánh Giá</span>
+            </button>
+            <button class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-[#6e6c87] hover:text-[#1c1b2e] hover:bg-[#f4f3fa] transition cursor-pointer">
+              <i data-lucide="shield-check" class="w-4 h-4 text-[#6e6c87]"></i>
+              <span class="flex-1 text-left">Bảo Mật & Snapshot Ledger</span>
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Sidebar Footer / Value Proposition Card -->
+      <div class="p-3.5 rounded-2xl bg-gradient-to-br from-[#faf5ff] to-[#f4f3fa] border border-[#ddd6fe] space-y-2">
+        <div class="flex items-center gap-2 text-xs font-bold text-[#5847be]">
+          <i data-lucide="zap" class="w-4 h-4 fill-[#6d5bd0] text-[#6d5bd0]"></i>
+          <span>Giá Trị Vượt Trội</span>
+        </div>
+        <p class="text-[11px] text-[#6e6c87] leading-relaxed">
+          Tìm nhân sự phù hợp sau <b class="text-[#1c1b2e]">30 giây</b> (trước đây mất 3-5 ngày). Dữ liệu nhân sự không bao giờ mất khi chuyển công ty!
+        </p>
+      </div>
+    </aside>
+
+    <!-- Main Dynamic Content Workspace -->
+    <main class="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+
+      <!-- VIEW 1: AI SMART TALENT SEARCH -->
+      <section id="view-search" class="space-y-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="font-heading text-2xl font-bold tracking-tight text-[#1c1b2e]">AI Smart Talent Search</h1>
+              <span class="text-xs px-2.5 py-1 rounded-full badge-cyan font-semibold flex items-center gap-1">
+                <i data-lucide="bot" class="w-3.5 h-3.5"></i> Natural Language Query
+              </span>
+            </div>
+            <p class="text-xs text-[#6e6c87] mt-1">Tìm kiếm nhân sự chính xác bằng câu hỏi tự nhiên thay vì lọc từ khóa thủ công</p>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-[#6e6c87]">Dự án mục tiêu:</span>
+            <span class="text-xs font-bold px-3 py-1.5 rounded-lg bg-white border border-[#e8e7f0] text-[#1c1b2e] shadow-sm">
+              🏦 NeoBank Core v3.0
+            </span>
+          </div>
+        </div>
+
+        <!-- AI NLQ Search Box -->
+        <div class="bg-white rounded-2xl border border-[#e8e7f0] p-4 shadow-card space-y-3">
+          <div class="relative flex items-center">
+            <div class="absolute left-4 text-[#6d5bd0]">
+              <i data-lucide="sparkles" class="w-5 h-5"></i>
+            </div>
+            <input 
+              id="aiQueryInput"
+              type="text" 
+              value="Tìm Senior Fullstack có trên 2 năm kinh nghiệm React, từng làm Fintech, giao tiếp tiếng Anh tốt và sẵn sàng làm ngay"
+              placeholder="Nhập yêu cầu nhân sự bằng ngôn ngữ tự nhiên..."
+              class="w-full pl-12 pr-32 py-3.5 text-sm font-medium text-[#1c1b2e] placeholder-[#8b899f] bg-[#fafafc] border border-[#e8e7f0] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6d5bd0] focus:bg-white transition"
+              onkeydown="if(event.key==='Enter') executeAiSearch()"
+            />
+            <button 
+              onclick="executeAiSearch()"
+              class="absolute right-2 px-4 py-2 bg-[#6d5bd0] hover:bg-[#5847be] text-white text-xs font-semibold rounded-lg flex items-center gap-2 transition shadow-sm cursor-pointer"
+            >
+              <i data-lucide="wand-2" class="w-4 h-4"></i>
+              <span>AI Đối Soát</span>
+            </button>
+          </div>
+
+          <!-- Suggested Quick Prompts -->
+          <div class="flex flex-wrap items-center gap-2 pt-1">
+            <span class="text-[11px] font-semibold text-[#8b899f]">Gợi ý truy vấn mẫu:</span>
+            <button onclick="setQuery(this.innerText)" class="text-[11px] px-2.5 py-1 rounded-md bg-[#fafafc] hover:bg-[#efebfa] border border-[#e8e7f0] hover:border-[#ddd6fe] text-[#6e6c87] hover:text-[#5847be] transition cursor-pointer">
+              React + Fintech + English IELTS 7.0+
+            </button>
+            <button onclick="setQuery(this.innerText)" class="text-[11px] px-2.5 py-1 rounded-md bg-[#fafafc] hover:bg-[#efebfa] border border-[#e8e7f0] hover:border-[#ddd6fe] text-[#6e6c87] hover:text-[#5847be] transition cursor-pointer">
+              Solutions Architect AWS có chứng chỉ Professional
+            </button>
+            <button onclick="setQuery(this.innerText)" class="text-[11px] px-2.5 py-1 rounded-md bg-[#fafafc] hover:bg-[#efebfa] border border-[#e8e7f0] hover:border-[#ddd6fe] text-[#6e6c87] hover:text-[#5847be] transition cursor-pointer">
+              Senior QA tự động hóa kiểm thử Cypress / Playwright
+            </button>
+          </div>
+        </div>
+
+        <!-- Bento Grid: Search Results + Talent Analytics -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-8 space-y-4">
+            <div class="flex items-center justify-between px-1">
+              <div class="flex items-center gap-2">
+                <h2 class="text-sm font-bold uppercase tracking-wider text-[#6e6c87]">Ứng Viên Phù Hợp Nhất (AI Match)</h2>
+                <span id="matchCountBadge" class="text-xs px-2 py-0.5 rounded-full badge-accent font-bold">2 Nhân sự</span>
+              </div>
+              <div class="text-xs text-[#6e6c87]">
+                Thời gian đối soát: <span class="font-bold text-[#1c1b2e]">0.42s</span> qua 148 hồ sơ
+              </div>
+            </div>
+
+            <!-- Candidate Card 1 -->
+            <div class="bg-white rounded-2xl border-2 border-[#ddd6fe] p-5 shadow-card hover:border-[#6d5bd0] transition space-y-4 relative">
+              <div class="absolute -top-3 right-6 px-3 py-1 rounded-full bg-gradient-to-r from-[#6d5bd0] to-[#5847be] text-white text-[11px] font-bold shadow-md flex items-center gap-1.5">
+                <i data-lucide="award" class="w-3.5 h-3.5"></i> 96% Tương Thích Hoàn Hảo
+              </div>
+
+              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-1">
+                <div class="flex items-center gap-3.5">
+                  <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#6d5bd0] to-[#c4b5fd] text-white flex items-center justify-center font-bold text-lg shadow-sm">
+                    AT
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h3 class="font-heading font-bold text-base text-[#1c1b2e]">Alice Trần (Trần Minh Hiếu)</h3>
+                      <span class="text-[11px] font-bold px-2 py-0.5 rounded-md badge-success flex items-center gap-1">
+                        <i data-lucide="check-circle" class="w-3 h-3"></i> Đã Xác Thực
+                      </span>
+                    </div>
+                    <div class="text-xs text-[#6e6c87] mt-0.5">Lead Fullstack Architect · 5+ Năm kinh nghiệm · Đang rảnh 50% capacity</div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                  <button onclick="viewEmployeeDetail()" class="flex-1 sm:flex-none text-xs font-semibold px-3.5 py-2 rounded-xl border border-[#e8e7f0] hover:bg-[#f4f3fa] text-[#1c1b2e] transition cursor-pointer">
+                    Xem Passport
+                  </button>
+                  <button onclick="openAssignModal('Alice Trần')" class="flex-1 sm:flex-none text-xs font-semibold px-4 py-2 rounded-xl bg-[#6d5bd0] hover:bg-[#5847be] text-white transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
+                    <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Gán Dự Án
+                  </button>
+                </div>
+              </div>
+
+              <div class="p-3.5 rounded-xl bg-[#faf5ff] border border-[#ede9fe] space-y-2">
+                <div class="flex items-center gap-1.5 text-xs font-bold text-[#5847be]">
+                  <i data-lucide="cpu" class="w-4 h-4"></i>
+                  <span>Lập Luận Phân Tích Của AI:</span>
+                </div>
+                <p class="text-xs text-[#1c1b2e] leading-relaxed">
+                  ✓ <b>Kinh nghiệm Fintech:</b> Đã hoàn thành dự án Core Banking Gateway tại TechCorp (2022–2024), xử lý 200k TPS.<br>
+                  ✓ <b>Kỹ năng React:</b> 4.8/5 sao từ đánh giá chéo Q2-2026, am hiểu sâu SSR, Next.js và Zustand.<br>
+                  ✓ <b>Ngoại ngữ & Kỹ năng mềm:</b> Chứng chỉ IELTS 7.5 còn hạn; điểm hợp tác đồng đội đạt 9.4/10.
+                </p>
+              </div>
+
+              <div class="flex flex-wrap gap-1.5 pt-1">
+                <span class="text-xs px-2.5 py-1 rounded-lg bg-[#fafafc] border border-[#e8e7f0] font-medium text-[#1c1b2e]">React.js (Chuyên sâu)</span>
+                <span class="text-xs px-2.5 py-1 rounded-lg bg-[#fafafc] border border-[#e8e7f0] font-medium text-[#1c1b2e]">Node.js Microservices</span>
+                <span class="text-xs px-2.5 py-1 rounded-lg bg-[#fafafc] border border-[#e8e7f0] font-medium text-[#1c1b2e]">PCI-DSS Fintech</span>
+                <span class="text-xs px-2.5 py-1 rounded-lg bg-[#fafafc] border border-[#e8e7f0] font-medium text-[#1c1b2e]">IELTS 7.5</span>
+                <span class="text-xs px-2.5 py-1 rounded-lg bg-[#fafafc] border border-[#e8e7f0] font-medium text-[#1c1b2e]">AWS Solution Architect</span>
+              </div>
+            </div>
+
+            <!-- Candidate Card 2 -->
+            <div class="bg-white rounded-2xl border border-[#e8e7f0] p-5 shadow-card hover:border-[#6d5bd0] transition space-y-4">
+              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div class="flex items-center gap-3.5">
+                  <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#0891b2] to-[#67e8f9] text-white flex items-center justify-center font-bold text-lg shadow-sm">
+                    BN
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h3 class="font-heading font-bold text-base text-[#1c1b2e]">Bob Nguyễn</h3>
+                      <span class="text-xs px-2 py-0.5 rounded-full badge-cyan font-bold">84% Match</span>
+                    </div>
+                    <div class="text-xs text-[#6e6c87] mt-0.5">Senior Frontend Engineer · 3+ Năm kinh nghiệm · Sẵn sàng 100%</div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                  <button class="flex-1 sm:flex-none text-xs font-semibold px-3.5 py-2 rounded-xl border border-[#e8e7f0] hover:bg-[#f4f3fa] text-[#1c1b2e] transition cursor-pointer">
+                    Xem Passport
+                  </button>
+                  <button onclick="openAssignModal('Bob Nguyễn')" class="flex-1 sm:flex-none text-xs font-semibold px-4 py-2 rounded-xl bg-[#6d5bd0] hover:bg-[#5847be] text-white transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
+                    <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Gán Dự Án
+                  </button>
+                </div>
+              </div>
+
+              <div class="p-3 rounded-xl bg-[#f8fafc] border border-[#e2e8f0] text-xs text-[#6e6c87]">
+                <span class="font-semibold text-[#1c1b2e]">Nhận định AI:</span> Điểm mạnh giao diện React và Tailwind rất cao (9.2/10). Tuy nhiên chỉ mới tiếp cận domain E-commerce, cần 1-2 tuần làm quen với quy chuẩn bảo mật tài chính ngân hàng.
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column (4 cols): Bento Analytics -->
+          <div class="lg:col-span-4 space-y-4">
+            <div class="bg-white rounded-2xl border border-[#e8e7f0] p-5 shadow-card space-y-3">
+              <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#6d5bd0]">
+                <i data-lucide="trending-up" class="w-4 h-4"></i>
+                <span>Hiệu Suất Staffing Dự Án</span>
+              </div>
+              <div class="grid grid-cols-2 gap-3 pt-1">
+                <div class="p-3 rounded-xl bg-[#f4f3fa] border border-[#e8e7f0] text-center">
+                  <div class="text-xs text-[#6e6c87]">Cách cũ</div>
+                  <div class="text-lg font-heading font-bold text-[#b45309]">3–5 Ngày</div>
+                  <div class="text-[10px] text-[#8b899f] mt-0.5">Dò hỏi PM, gửi mail</div>
+                </div>
+                <div class="p-3 rounded-xl bg-[#efebfa] border border-[#ddd6fe] text-center">
+                  <div class="text-xs text-[#5847be]">CareerMate</div>
+                  <div class="text-lg font-heading font-bold text-[#5847be]">30 Giây</div>
+                  <div class="text-[10px] text-[#5847be] mt-0.5">AI tự động đối soát</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-[#e8e7f0] p-5 shadow-card space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="text-xs font-bold uppercase tracking-wider text-[#6e6c87]">Sử Dụng Nhân Lực Tổ Chức</div>
+                <span class="text-xs font-bold text-[#15803d]">+12% vs quý trước</span>
+              </div>
+              <div class="flex items-baseline gap-2">
+                <span class="text-3xl font-heading font-extrabold text-[#1c1b2e]">88.4%</span>
+                <span class="text-xs text-[#6e6c87]">tổng quỹ thời gian phân bổ</span>
+              </div>
+              <div class="w-full bg-[#e8e7f0] h-2.5 rounded-full overflow-hidden">
+                <div class="bg-[#6d5bd0] h-full rounded-full" style="width: 88.4%"></div>
+              </div>
+              <div class="flex justify-between text-[11px] text-[#6e6c87]">
+                <span>132 Đang trên dự án</span>
+                <span>16 Đang bench / đào tạo</span>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-[#fed7aa] p-5 shadow-card space-y-3 bg-gradient-to-br from-white to-[#fff7ed]">
+              <div class="flex items-center gap-2 text-xs font-bold text-[#c2410c]">
+                <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                <span>Cảnh Báo Giữ Chân Nhân Tài (AI)</span>
+              </div>
+              <p class="text-xs text-[#1c1b2e] leading-relaxed">
+                Phát hiện <b>2 nhân sự chủ chốt</b> có dấu hiệu quá tải (Mood 😓 Overwhelmed 2 tháng liên tiếp) và chưa được review ghi nhận thành tích mới.
+              </p>
+              <button class="w-full py-2 bg-white hover:bg-[#fff1e6] border border-[#fdba74] text-xs font-semibold text-[#c2410c] rounded-xl transition cursor-pointer">
+                Xem Đề Xuất Giảm Tải Của AI →
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 2: LIFETIME CAREER PASSPORT -->
+      <section id="view-passport" class="space-y-6 hidden">
+        <div class="bg-white rounded-2xl border border-[#e8e7f0] p-6 shadow-card space-y-6">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-[#e8e7f0]">
+            <div class="flex items-center gap-4">
+              <div class="w-20 h-20 rounded-2xl bg-gradient-to-tr from-[#6d5bd0] to-[#a78bfa] text-white flex items-center justify-center font-heading font-bold text-2xl shadow-md">
+                AT
+              </div>
+              <div>
+                <div class="flex items-center gap-2.5 flex-wrap">
+                  <h1 class="font-heading text-2xl font-bold text-[#1c1b2e]">Alice Trần (Trần Minh Hiếu)</h1>
+                  <span class="text-xs px-3 py-1 rounded-full badge-success font-bold flex items-center gap-1">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Lifetime Passport Verified
+                  </span>
+                  <span class="text-xs px-2.5 py-0.5 rounded-md badge-accent font-mono font-semibold">ID: CMP-89241</span>
+                </div>
+                <p class="text-xs text-[#6e6c87] mt-1">Lead Software Architect · Làm việc tại Madison Technologies (2024–Hiện tại)</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2.5">
+              <button onclick="openModal('sharePassportModal')" class="px-4 py-2.5 bg-[#6d5bd0] hover:bg-[#5847be] text-white text-xs font-bold rounded-xl flex items-center gap-2 transition shadow-sm cursor-pointer">
+                <i data-lucide="qr-code" class="w-4 h-4"></i>
+                <span>Tạo Link / Mã QR Chia Sẻ</span>
+              </button>
+              <button class="px-3.5 py-2.5 bg-white border border-[#e8e7f0] hover:bg-[#fafafc] text-xs font-semibold rounded-xl text-[#1c1b2e] flex items-center gap-2 transition cursor-pointer">
+                <i data-lucide="download" class="w-4 h-4 text-[#6e6c87]"></i>
+                <span>Xuất PDF Passport</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-xl bg-[#faf5ff] border border-[#ddd6fe] flex items-start gap-3">
+            <div class="w-8 h-8 rounded-lg bg-[#6d5bd0] text-white flex items-center justify-center shrink-0 mt-0.5">
+              <i data-lucide="compass" class="w-4 h-4"></i>
+            </div>
+            <div class="text-xs text-[#1c1b2e] leading-relaxed">
+              <span class="font-bold text-[#5847be]">Đặc quyền Career Passport:</span> Dữ liệu đánh giá của bạn là tài sản trọn đời. Kể cả khi chuyển sang công ty mới, mọi chứng chỉ, phản hồi đã duyệt và tổng hợp năng lực của từng kỳ làm việc vẫn thuộc quyền sở hữu của bạn, sẵn sàng chia sẻ có kiểm soát!
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-6 space-y-4">
+              <h2 class="text-xs font-bold uppercase tracking-wider text-[#6e6c87] flex items-center gap-2">
+                <i data-lucide="building-2" class="w-4 h-4 text-[#6d5bd0]"></i>
+                <span>Lịch Sử Kỳ Làm Việc & AI Executive Summary</span>
+              </h2>
+
+              <div class="p-4 rounded-xl bg-white border border-[#e8e7f0] space-y-3 relative hover:border-[#6d5bd0] transition">
+                <div class="flex items-center justify-between">
+                  <div class="font-heading font-bold text-sm text-[#1c1b2e]">Madison Technologies</div>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full badge-success font-bold">2024 — Hiện tại (Active)</span>
+                </div>
+                <div class="text-xs font-semibold text-[#6d5bd0]">Vị trí: Lead Software Architect & Tech Advisor</div>
+                <div class="p-3 rounded-lg bg-[#fafafc] border border-[#e8e7f0] text-xs text-[#1c1b2e] leading-relaxed">
+                  <span class="font-bold text-[#5847be]">🤖 AI Summary kỳ hiện tại:</span> Hoàn thành xuất sắc 3 đợt Cross-Assessment với điểm trung bình 9.3/10. Dẫn dắt thành công chuyển đổi hệ thống sang kiến trúc Microservices & Event-driven, trực tiếp cố vấn cho 4 kỹ sư trẻ.
+                </div>
+              </div>
+
+              <div class="p-4 rounded-xl bg-white border border-[#e8e7f0] space-y-3 relative hover:border-[#6d5bd0] transition">
+                <div class="flex items-center justify-between">
+                  <div class="font-heading font-bold text-sm text-[#1c1b2e]">TechCorp Global</div>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full badge-accent font-bold">2021 — 2024 (Đã kết thúc)</span>
+                </div>
+                <div class="text-xs font-semibold text-[#6e6c87]">Vị trí: Senior Backend & Cloud Engineer</div>
+                <div class="p-3 rounded-lg bg-[#fafafc] border border-[#e8e7f0] text-xs text-[#1c1b2e] leading-relaxed">
+                  <span class="font-bold text-[#5847be]">🤖 AI Summary quá khứ:</span> Được ghi nhận là "Best Technical Contributor 2023". Triển khai hệ thống thanh toán đạt chuẩn PCI-DSS Level 1, tỷ lệ uptime 99.99%.
+                </div>
+              </div>
+            </div>
+
+            <div class="lg:col-span-6 space-y-4">
+              <div class="flex items-center justify-between">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-[#6e6c87] flex items-center gap-2">
+                  <i data-lucide="target" class="w-4 h-4 text-[#6d5bd0]"></i>
+                  <span>Dual-Track Tracker: Công Việc & Đời Sống</span>
+                </h2>
+                <button class="text-xs font-semibold text-[#6d5bd0] hover:underline flex items-center gap-1 cursor-pointer">
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i> Thêm Mục Tiêu
+                </button>
+              </div>
+
+              <div class="p-4 rounded-xl bg-white border border-[#e8e7f0] space-y-2.5">
+                <div class="flex items-center justify-between text-xs font-bold text-[#1c1b2e]">
+                  <span class="flex items-center gap-1.5 text-[#5847be]">
+                    <i data-lucide="briefcase" class="w-3.5 h-3.5"></i> 1. Mục Tiêu Công Nghệ & Dự Án
+                  </span>
+                  <span class="text-[11px] text-[#15803d] font-bold">2/3 Hoàn thành</span>
+                </div>
+                <div class="space-y-2 text-xs">
+                  <div class="flex items-center justify-between p-2 rounded-lg bg-[#fafafc] border border-[#e8e7f0]">
+                    <div class="flex items-center gap-2">
+                      <i data-lucide="check" class="w-4 h-4 text-[#15803d]"></i>
+                      <span class="line-through text-[#8b899f]">Tối ưu latency API thanh toán &lt; 80ms</span>
+                    </div>
+                    <span class="text-[10px] badge-success px-1.5 py-0.5 rounded">Xong</span>
+                  </div>
+                  <div class="flex items-center justify-between p-2 rounded-lg bg-[#fafafc] border border-[#e8e7f0]">
+                    <div class="flex items-center gap-2">
+                      <i data-lucide="clock" class="w-4 h-4 text-[#b45309]"></i>
+                      <span>Đạt chứng chỉ AWS Solutions Architect Professional</span>
+                    </div>
+                    <span class="text-[10px] badge-warning px-1.5 py-0.5 rounded">Đang ôn thi</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="p-4 rounded-xl bg-white border border-[#e8e7f0] space-y-2.5">
+                <div class="flex items-center justify-between text-xs font-bold text-[#1c1b2e]">
+                  <span class="flex items-center gap-1.5 text-[#0369a1]">
+                    <i data-lucide="heart-handshake" class="w-3.5 h-3.5"></i> 2. Đời Sống, Thể Thao & Đóng Góp Xã Hội
+                  </span>
+                  <span class="text-[11px] text-[#0369a1] font-bold">Điểm nhấn độc quyền</span>
+                </div>
+                <div class="space-y-2 text-xs">
+                  <div class="flex items-center justify-between p-2 rounded-lg bg-[#fafafc] border border-[#e8e7f0]">
+                    <div class="flex items-center gap-2">
+                      <i data-lucide="check" class="w-4 h-4 text-[#15803d]"></i>
+                      <span>Hoàn thành VnExpress Marathon Quy Nhơn 21km</span>
+                    </div>
+                    <span class="text-[10px] badge-success px-1.5 py-0.5 rounded">Đã đạt</span>
+                  </div>
+                  <div class="flex items-center justify-between p-2 rounded-lg bg-[#fafafc] border border-[#e8e7f0]">
+                    <div class="flex items-center gap-2">
+                      <i data-lucide="check" class="w-4 h-4 text-[#15803d]"></i>
+                      <span>Diễn giả chia sẻ Tech Talk "Clean Architecture 2026"</span>
+                    </div>
+                    <span class="text-[10px] badge-success px-1.5 py-0.5 rounded">Đã duyệt</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 3: CROSS ASSESSMENT -->
+      <section id="view-assessment" class="space-y-6 hidden">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="font-heading text-2xl font-bold tracking-tight text-[#1c1b2e]">Đánh Giá Chéo Kỳ Q3-2026</h1>
+              <span class="text-xs px-2.5 py-0.5 rounded-full badge-warning font-bold">Chờ Bạn Đánh Giá</span>
+            </div>
+            <p class="text-xs text-[#6e6c87] mt-1">Đánh giá minh bạch kết hợp trọng số công ty và AI Copilot hỗ trợ phản hồi công tâm</p>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span class="text-xs px-3 py-1.5 rounded-xl bg-white border border-[#e8e7f0] text-[#1c1b2e] font-semibold flex items-center gap-1.5">
+              <i data-lucide="lock" class="w-3.5 h-3.5 text-[#16a34a]"></i> Snapshot Sealed sau duyệt
+            </span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-7 bg-white rounded-2xl border border-[#e8e7f0] p-6 shadow-card space-y-6">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-bold uppercase tracking-wider text-[#1c1b2e] flex items-center gap-2">
+                  <span class="w-5 h-5 rounded-full bg-[#6d5bd0] text-white flex items-center justify-center text-[11px]">1</span>
+                  Cảm Xúc & Năng Lượng Làm Việc Trong Kỳ
+                </label>
+                <span class="text-xs text-[#6d5bd0] font-semibold" id="selectedMoodLabel">Đang Rất Thăng Hoa 🚀</span>
+              </div>
+              
+              <div class="grid grid-cols-5 gap-2">
+                <button type="button" onclick="selectMood(this, '🚀 Thăng hoa')" class="mood-btn p-3 rounded-xl border-2 border-[#6d5bd0] bg-[#efebfa] text-center transition cursor-pointer">
+                  <div class="text-2xl">🚀</div>
+                  <div class="text-[11px] font-bold text-[#5847be] mt-1">Thăng hoa</div>
+                </button>
+                <button type="button" onclick="selectMood(this, '😊 Tích cực')" class="mood-btn p-3 rounded-xl border border-[#e8e7f0] hover:bg-[#fafafc] text-center transition cursor-pointer">
+                  <div class="text-2xl">😊</div>
+                  <div class="text-[11px] font-medium text-[#6e6c87] mt-1">Tích cực</div>
+                </button>
+                <button type="button" onclick="selectMood(this, '😐 Bình thường')" class="mood-btn p-3 rounded-xl border border-[#e8e7f0] hover:bg-[#fafafc] text-center transition cursor-pointer">
+                  <div class="text-2xl">😐</div>
+                  <div class="text-[11px] font-medium text-[#6e6c87] mt-1">Ổn định</div>
+                </button>
+                <button type="button" onclick="selectMood(this, '😓 Quá tải')" class="mood-btn p-3 rounded-xl border border-[#e8e7f0] hover:bg-[#fafafc] text-center transition cursor-pointer">
+                  <div class="text-2xl">😓</div>
+                  <div class="text-[11px] font-medium text-[#6e6c87] mt-1">Quá tải</div>
+                </button>
+                <button type="button" onclick="selectMood(this, '🔥 Kiệt sức')" class="mood-btn p-3 rounded-xl border border-[#e8e7f0] hover:bg-[#fafafc] text-center transition cursor-pointer">
+                  <div class="text-2xl">🔥</div>
+                  <div class="text-[11px] font-medium text-[#6e6c87] mt-1">Kiệt sức</div>
+                </button>
+              </div>
+            </div>
+
+            <hr class="border-[#e8e7f0]">
+
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-bold uppercase tracking-wider text-[#1c1b2e] flex items-center gap-2">
+                  <span class="w-5 h-5 rounded-full bg-[#6d5bd0] text-white flex items-center justify-center text-[11px]">2</span>
+                  Bộ Tiêu Chí Năng Lực Cốt Lõi (Có Trọng Số)
+                </label>
+                <span class="text-xs font-bold text-[#15803d]">Điểm quy đổi: <span id="totalScore">9.1</span>/10</span>
+              </div>
+
+              <div class="space-y-1.5 p-3.5 rounded-xl bg-[#fafafc] border border-[#e8e7f0]">
+                <div class="flex justify-between text-xs">
+                  <span class="font-bold text-[#1c1b2e]">1. Kỹ Năng Chuyên Môn & Kiến Trúc Code (Trọng số 40%)</span>
+                  <span class="font-bold text-[#6d5bd0]" id="val1">9/10 Điểm</span>
+                </div>
+                <input type="range" min="1" max="10" value="9" oninput="updateScore(1, this.value)" class="w-full cursor-pointer">
+              </div>
+
+              <div class="space-y-1.5 p-3.5 rounded-xl bg-[#fafafc] border border-[#e8e7f0]">
+                <div class="flex justify-between text-xs">
+                  <span class="font-bold text-[#1c1b2e]">2. Hợp Tác & Giao Tiếp Đồng Đội (Trọng số 30%)</span>
+                  <span class="font-bold text-[#6d5bd0]" id="val2">9/10 Điểm</span>
+                </div>
+                <input type="range" min="1" max="10" value="9" oninput="updateScore(2, this.value)" class="w-full cursor-pointer">
+              </div>
+
+              <div class="space-y-1.5 p-3.5 rounded-xl bg-[#fafafc] border border-[#e8e7f0]">
+                <div class="flex justify-between text-xs">
+                  <span class="font-bold text-[#1c1b2e]">3. Tinh Thần Trách Nhiệm & Đổi Mới (Trọng số 30%)</span>
+                  <span class="font-bold text-[#6d5bd0]" id="val3">9/10 Điểm</span>
+                </div>
+                <input type="range" min="1" max="10" value="9" oninput="updateScore(3, this.value)" class="w-full cursor-pointer">
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-xs font-bold uppercase tracking-wider text-[#1c1b2e]">
+                Nhận Xét Tổng Thể (Reviewer Feedback)
+              </label>
+              <textarea 
+                id="assessmentComment"
+                rows="4"
+                class="w-full p-3 text-xs font-medium text-[#1c1b2e] bg-[#fafafc] border border-[#e8e7f0] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6d5bd0] focus:bg-white"
+                placeholder="Nhập nhận xét hoặc dùng gợi ý AI bên phải..."
+              >Alice luôn giữ vững vai trò đầu tàu kỹ thuật, giải quyết nhanh các sự cố thanh toán phức tạp. Cần tiếp tục duy trì tinh thần cố vấn kiến thức cho các bạn junior trong kỳ tới.</textarea>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-2">
+              <button class="px-4 py-2 text-xs font-semibold text-[#6e6c87] hover:text-[#1c1b2e] cursor-pointer">Lưu Bản Nháp</button>
+              <button onclick="alert('Đã nộp đánh giá chéo thành công! Kết quả đã được đóng băng snapshot vào Career Passport.')" class="px-5 py-2.5 bg-[#6d5bd0] hover:bg-[#5847be] text-white text-xs font-bold rounded-xl shadow-sm transition cursor-pointer">
+                Nộp & Đóng Dấu Snapshot
+              </button>
+            </div>
+          </div>
+
+          <div class="lg:col-span-5 space-y-4">
+            <div class="bg-gradient-to-br from-[#faf5ff] to-white rounded-2xl border-2 border-[#ddd6fe] p-5 shadow-card space-y-4">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-[#6d5bd0] text-white flex items-center justify-center">
+                  <i data-lucide="sparkles" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <h3 class="font-heading font-bold text-sm text-[#1c1b2e]">AI Feedback Copilot</h3>
+                  <p class="text-[11px] text-[#6e6c87]">Loại bỏ thiên vị cảm tính (Unconscious Bias)</p>
+                </div>
+              </div>
+
+              <div class="text-xs text-[#1c1b2e] leading-relaxed p-3.5 bg-white rounded-xl border border-[#ede9fe] space-y-2">
+                <div class="font-bold text-[#5847be] flex items-center gap-1.5">
+                  <i data-lucide="check" class="w-3.5 h-3.5"></i> Thành Tích Đo Lường Được (Data Thực)
+                </div>
+                <ul class="space-y-1 text-[#6e6c87]">
+                  <li>• Đã review 42 Pull Requests với tỷ lệ duyệt đúng hạn 98%.</li>
+                  <li>• Lead 1 dự án vượt tiến độ 1 tuần.</li>
+                  <li>• Không có lỗi bảo mật cấp Critical trong 3 tháng qua.</li>
+                </ul>
+              </div>
+
+              <div class="space-y-2">
+                <div class="text-xs font-bold text-[#1c1b2e]">Mẫu Câu Đề Xuất Công Tâm:</div>
+                <button onclick="useAiDraft(1)" class="w-full text-left p-3 rounded-xl bg-white hover:bg-[#faf5ff] border border-[#e8e7f0] hover:border-[#ddd6fe] text-xs text-[#1c1b2e] transition space-y-1 cursor-pointer">
+                  <div class="font-semibold text-[#5847be]">Định hướng khen thưởng & thăng tiến</div>
+                  <div class="text-[11px] text-[#6e6c87] line-clamp-2">"Đóng góp kỹ thuật vượt trội trong dự án Payment Gateway, đề xuất xem xét thăng tiến bậc Lead Architect II."</div>
+                </button>
+                <button onclick="useAiDraft(2)" class="w-full text-left p-3 rounded-xl bg-white hover:bg-[#faf5ff] border border-[#e8e7f0] hover:border-[#ddd6fe] text-xs text-[#1c1b2e] transition space-y-1 cursor-pointer">
+                  <div class="font-semibold text-[#0369a1]">Định hướng cân bằng khối lượng việc</div>
+                  <div class="text-[11px] text-[#6e6c87] line-clamp-2">"Năng suất rất cao nhưng cần ủy quyền bớt công việc review cơ bản để tránh kiệt sức."</div>
+                </button>
+              </div>
+
+              <div class="pt-2 text-[11px] text-[#8b899f] text-center">
+                AI đảm bảo mọi lời nhận xét đều có bằng chứng dữ liệu rõ ràng.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 4: AI IMPORT CV -->
+      <section id="view-import" class="space-y-6 hidden">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="font-heading text-2xl font-bold tracking-tight text-[#1c1b2e]">AI Import CV & LinkedIn</h1>
+              <span class="text-xs px-2.5 py-0.5 rounded-full badge-accent font-bold">Proposal Mode</span>
+            </div>
+            <p class="text-xs text-[#6e6c87] mt-1">Tự động trích xuất kỹ năng, chứng chỉ, kinh nghiệm dự án — tiết kiệm 80% thời gian nhập liệu</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-5 bg-white rounded-2xl border border-[#e8e7f0] p-6 shadow-card space-y-4">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-[#1c1b2e]">Tải Lên Hồ Sơ (PDF / Link)</h2>
+            
+            <div 
+              onclick="simulateAiParsing()" 
+              class="border-2 border-dashed border-[#ddd6fe] hover:border-[#6d5bd0] bg-[#faf5ff] hover:bg-[#f5f3ff] rounded-2xl p-8 text-center transition cursor-pointer space-y-3"
+            >
+              <div class="w-12 h-12 rounded-xl bg-white text-[#6d5bd0] flex items-center justify-center mx-auto shadow-sm">
+                <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-[#1c1b2e]">Kéo thả file CV hoặc bấm để chọn</div>
+                <div class="text-[11px] text-[#6e6c87] mt-1">Hỗ trợ PDF, DOCX, hoặc LinkedIn Export</div>
+              </div>
+              <span class="inline-block text-[11px] font-bold px-3 py-1 rounded-full badge-accent">
+                Bấm vào đây để test trích xuất ngay
+              </span>
+            </div>
+
+            <div id="parseProgressBox" class="space-y-2 hidden">
+              <div class="flex justify-between text-xs font-semibold">
+                <span class="text-[#6d5bd0] flex items-center gap-1.5">
+                  <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> AI đang phân tích dữ liệu...
+                </span>
+                <span id="progressPercent">100%</span>
+              </div>
+              <div class="w-full bg-[#e8e7f0] h-2 rounded-full overflow-hidden">
+                <div id="progressBar" class="bg-[#6d5bd0] h-full rounded-full transition-all duration-500" style="width: 100%"></div>
+              </div>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-[#fafafc] border border-[#e8e7f0] flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-red-100 text-red-600 flex items-center justify-center font-bold text-xs">
+                  PDF
+                </div>
+                <div>
+                  <div class="text-xs font-bold text-[#1c1b2e]">Resume_Tran_Minh_Hieu_2026.pdf</div>
+                  <div class="text-[11px] text-[#8b899f]">1.2 MB · Đã phân tích xong</div>
+                </div>
+              </div>
+              <i data-lucide="check-circle" class="w-4 h-4 text-[#15803d]"></i>
+            </div>
+          </div>
+
+          <div class="lg:col-span-7 bg-white rounded-2xl border border-[#e8e7f0] p-6 shadow-card space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-xs font-bold uppercase tracking-wider text-[#1c1b2e]">Đề Xuất AI Trích Xuất Được (AI Proposal)</h2>
+                <p class="text-[11px] text-[#6e6c87]">Chọn các mục bạn muốn chính thức ghi nhận vào hồ sơ</p>
+              </div>
+              <span class="text-xs font-bold px-2.5 py-1 rounded-md badge-success">Độ tin cậy: 98%</span>
+            </div>
+
+            <div class="space-y-3 pt-1">
+              <div class="p-3.5 rounded-xl border border-[#e8e7f0] space-y-2">
+                <div class="flex items-center justify-between text-xs font-bold text-[#1c1b2e]">
+                  <span>Kỹ Năng Phát Hiện (4)</span>
+                  <button class="text-[11px] text-[#6d5bd0] font-semibold cursor-pointer">Chọn tất cả</button>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                  <label class="flex items-center gap-2 p-2 rounded-lg bg-[#fafafc] cursor-pointer">
+                    <input type="checkbox" checked class="rounded text-[#6d5bd0] focus:ring-[#6d5bd0]">
+                    <span>React / Next.js (5 năm)</span>
+                  </label>
+                  <label class="flex items-center gap-2 p-2 rounded-lg bg-[#fafafc] cursor-pointer">
+                    <input type="checkbox" checked class="rounded text-[#6d5bd0] focus:ring-[#6d5bd0]">
+                    <span>PostgreSQL & Prisma</span>
+                  </label>
+                  <label class="flex items-center gap-2 p-2 rounded-lg bg-[#fafafc] cursor-pointer">
+                    <input type="checkbox" checked class="rounded text-[#6d5bd0] focus:ring-[#6d5bd0]">
+                    <span>Kubernetes Cloud Deploy</span>
+                  </label>
+                  <label class="flex items-center gap-2 p-2 rounded-lg bg-[#fafafc] cursor-pointer">
+                    <input type="checkbox" checked class="rounded text-[#6d5bd0] focus:ring-[#6d5bd0]">
+                    <span>Fintech Security Architecture</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="p-3.5 rounded-xl border border-[#e8e7f0] space-y-2">
+                <div class="text-xs font-bold text-[#1c1b2e]">Chứng Chỉ & Giải Thưởng</div>
+                <div class="space-y-2 text-xs">
+                  <label class="flex items-center gap-2 p-2 rounded-lg bg-[#fafafc] cursor-pointer">
+                    <input type="checkbox" checked class="rounded text-[#6d5bd0] focus:ring-[#6d5bd0]">
+                    <div>
+                      <div class="font-semibold">AWS Certified Solutions Architect – Professional (2025)</div>
+                      <div class="text-[10px] text-[#8b899f]">ID: AWS-PSA-908129</div>
+                    </div>
+                  </label>
+                  <label class="flex items-center gap-2 p-2 rounded-lg bg-[#fafafc] cursor-pointer">
+                    <input type="checkbox" checked class="rounded text-[#6d5bd0] focus:ring-[#6d5bd0]">
+                    <div>
+                      <div class="font-semibold">Best Engineering Contributor Award (2023)</div>
+                      <div class="text-[10px] text-[#8b899f]">TechCorp Global Annual Summit</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-3 border-t border-[#e8e7f0]">
+              <button class="px-4 py-2 text-xs font-semibold text-[#6e6c87] cursor-pointer">Hủy</button>
+              <button onclick="alert('Đã cập nhật thành công các kỹ năng và chứng chỉ vào Hồ sơ năng lực CareerMate!')" class="px-5 py-2.5 bg-[#6d5bd0] hover:bg-[#5847be] text-white text-xs font-bold rounded-xl shadow-sm transition cursor-pointer">
+                Lưu Vào Hồ Sơ Năng Lực
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 5: ROADMAP -->
+      <section id="view-roadmap" class="space-y-6 hidden">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="font-heading text-2xl font-bold tracking-tight text-[#1c1b2e]">Lộ Trình Phát Triển & Cột Mốc</h1>
+            <p class="text-xs text-[#6e6c87] mt-1">Bản đồ hành trình phát triển cá nhân theo năng lực đo lường được</p>
+          </div>
+          <button class="px-4 py-2 bg-[#6d5bd0] hover:bg-[#5847be] text-white text-xs font-bold rounded-xl flex items-center gap-2 transition cursor-pointer">
+            <i data-lucide="plus" class="w-4 h-4"></i> Thêm Cột Mốc Mới
+          </button>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-[#e8e7f0] p-6 shadow-card space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="p-4 rounded-xl border-2 border-[#16a34a] bg-[#f0fdf4] space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-[#15803d]">Cột mốc 1</span>
+                <i data-lucide="check-circle" class="w-4 h-4 text-[#16a34a]"></i>
+              </div>
+              <div class="font-heading font-bold text-sm text-[#1c1b2e]">Senior Fullstack</div>
+              <p class="text-xs text-[#6e6c87]">Master Frontend React + Backend Node.js. Đạt 9.0/10 đánh giá chéo.</p>
+              <div class="text-[10px] font-bold text-[#15803d]">Hoàn thành tháng 12/2024</div>
+            </div>
+
+            <div class="p-4 rounded-xl border-2 border-[#6d5bd0] bg-[#faf5ff] space-y-2 relative shadow-md">
+              <span class="absolute -top-2.5 right-3 text-[10px] px-2 py-0.5 rounded-full bg-[#6d5bd0] text-white font-bold">Hiện tại</span>
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-[#5847be]">Cột mốc 2</span>
+                <i data-lucide="compass" class="w-4 h-4 text-[#6d5bd0]"></i>
+              </div>
+              <div class="font-heading font-bold text-sm text-[#1c1b2e]">Lead Software Architect</div>
+              <p class="text-xs text-[#6e6c87]">Thiết kế hệ thống chịu tải lớn, cố vấn kỹ thuật và xây dựng văn hóa CI/CD.</p>
+              <div class="w-full bg-[#ddd6fe] h-1.5 rounded-full mt-2">
+                <div class="bg-[#6d5bd0] h-full rounded-full" style="width: 75%"></div>
+              </div>
+              <div class="text-[10px] font-bold text-[#5847be]">Đạt 75% tiêu chí</div>
+            </div>
+
+            <div class="p-4 rounded-xl border border-[#e8e7f0] bg-white space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-[#8b899f]">Cột mốc 3</span>
+                <i data-lucide="circle-dashed" class="w-4 h-4 text-[#8b899f]"></i>
+              </div>
+              <div class="font-heading font-bold text-sm text-[#1c1b2e]">Principal Architect</div>
+              <p class="text-xs text-[#6e6c87]">Định hướng kiến trúc toàn tổ chức đa sản phẩm, xây dựng chuẩn dữ liệu AI.</p>
+              <div class="text-[10px] text-[#8b899f]">Mục tiêu 2027</div>
+            </div>
+
+            <div class="p-4 rounded-xl border border-[#e8e7f0] bg-white space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-[#8b899f]">Cột mốc 4</span>
+                <i data-lucide="circle-dashed" class="w-4 h-4 text-[#8b899f]"></i>
+              </div>
+              <div class="font-heading font-bold text-sm text-[#1c1b2e]">VP of Engineering / CTO</div>
+              <p class="text-xs text-[#6e6c87]">Quản trị chiến lược công nghệ và phát triển đội ngũ nhân tài cấp cao.</p>
+              <div class="text-[10px] text-[#8b899f]">Tầm nhìn dài hạn</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL: SHARE CAREER PASSPORT -->
+  <div id="sharePassportModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl border border-[#e8e7f0] w-full max-w-md p-6 shadow-popover space-y-5 animate-in fade-in duration-200">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-[#efebfa] text-[#6d5bd0] flex items-center justify-center font-bold">
+            <i data-lucide="share-2" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-heading font-bold text-base text-[#1c1b2e]">Chia Sẻ Career Passport</h3>
+            <p class="text-[11px] text-[#6e6c87]">Hồ sơ năng lực xác thực an toàn</p>
+          </div>
+        </div>
+        <button onclick="closeModal('sharePassportModal')" class="text-[#8b899f] hover:text-[#1c1b2e] cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 rounded-2xl bg-[#faf5ff] border border-[#ddd6fe] text-center space-y-3">
+        <div class="w-40 h-40 bg-white border border-[#e8e7f0] rounded-xl mx-auto flex items-center justify-center shadow-sm p-2">
+          <svg class="w-36 h-36 text-[#1c1b2e]" viewBox="0 0 100 100" fill="currentColor">
+            <rect x="10" y="10" width="25" height="25" rx="3" fill="#6d5bd0"/>
+            <rect x="65" y="10" width="25" height="25" rx="3" fill="#6d5bd0"/>
+            <rect x="10" y="65" width="25" height="25" rx="3" fill="#6d5bd0"/>
+            <rect x="17" y="17" width="11" height="11" fill="white"/>
+            <rect x="72" y="17" width="11" height="11" fill="white"/>
+            <rect x="17" y="72" width="11" height="11" fill="white"/>
+            <rect x="42" y="15" width="8" height="8"/>
+            <rect x="42" y="30" width="16" height="8"/>
+            <rect x="15" y="45" width="20" height="8"/>
+            <rect x="45" y="45" width="12" height="12" fill="#6d5bd0"/>
+            <rect x="65" y="45" width="8" height="20"/>
+            <rect x="78" y="55" width="12" height="8"/>
+            <rect x="45" y="68" width="15" height="18"/>
+            <rect x="70" y="75" width="18" height="12"/>
+          </svg>
+        </div>
+        <div class="text-xs text-[#5847be] font-bold">Mã xác thực: CMP-PASS-90218</div>
+        <div class="text-[11px] text-[#6e6c87]">Nhà tuyển dụng có thể quét QR để xem hồ sơ đã kiểm chứng mà không chỉnh sửa được dữ liệu</div>
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="text-xs font-bold text-[#1c1b2e]">Đường dẫn xem an toàn (Có hạn 30 ngày):</label>
+        <div class="flex items-center gap-2">
+          <input type="text" readonly value="https://careermate.app/passport/verify?token=cmp_live_9281a8c0" class="flex-1 p-2.5 text-xs bg-[#fafafc] border border-[#e8e7f0] rounded-xl font-mono text-[#6e6c87]">
+          <button onclick="navigator.clipboard.writeText('https://careermate.app/passport/verify?token=cmp_live_9281a8c0'); alert('Đã sao chép link xác thực!');" class="px-3.5 py-2.5 bg-[#6d5bd0] hover:bg-[#5847be] text-white text-xs font-bold rounded-xl transition cursor-pointer">
+            Copy
+          </button>
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-2">
+        <button onclick="closeModal('sharePassportModal')" class="px-4 py-2 bg-white border border-[#e8e7f0] text-xs font-semibold rounded-xl text-[#1c1b2e] cursor-pointer">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ASSIGN TO PROJECT -->
+  <div id="assignModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl border border-[#e8e7f0] w-full max-w-md p-6 shadow-popover space-y-4 animate-in fade-in duration-200">
+      <div class="flex items-center justify-between">
+        <h3 class="font-heading font-bold text-base text-[#1c1b2e]">Gán Nhân Sự Vào Dự Án</h3>
+        <button onclick="closeModal('assignModal')" class="text-[#8b899f] hover:text-[#1c1b2e] cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="font-bold text-[#1c1b2e]">Nhân sự được chọn:</label>
+          <div id="assignTargetName" class="font-bold text-sm text-[#6d5bd0] mt-1">Alice Trần</div>
+        </div>
+        <div>
+          <label class="font-bold text-[#1c1b2e]">Chọn Dự Án:</label>
+          <select class="w-full mt-1 p-2.5 bg-[#fafafc] border border-[#e8e7f0] rounded-xl text-xs font-medium cursor-pointer">
+            <option>🏦 NeoBank Core v3.0 (Thiếu Lead Architect)</option>
+            <option>📱 Ví Điện Tử PayFast (Cần Senior React)</option>
+            <option>🛒 E-Commerce Checkout API</option>
+          </select>
+        </div>
+        <div>
+          <label class="font-bold text-[#1c1b2e]">Thời gian phân bổ:</label>
+          <select class="w-full mt-1 p-2.5 bg-[#fafafc] border border-[#e8e7f0] rounded-xl text-xs font-medium cursor-pointer">
+            <option>50% Capacity (20h / tuần)</option>
+            <option>100% Capacity (Toàn thời gian)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-[#e8e7f0]">
+        <button onclick="closeModal('assignModal')" class="px-4 py-2 text-xs font-semibold text-[#6e6c87] cursor-pointer">Hủy</button>
+        <button onclick="alert('Đã gán nhân sự thành công! Lịch làm việc và thông báo đã được gửi.'); closeModal('assignModal');" class="px-4 py-2 bg-[#6d5bd0] hover:bg-[#5847be] text-white text-xs font-bold rounded-xl transition cursor-pointer">
+          Xác Nhận Gán
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    function switchView(viewName) {
+      const views = ['search', 'passport', 'assessment', 'import', 'roadmap'];
+      views.forEach(v => {
+        const el = document.getElementById('view-' + v);
+        const nav = document.getElementById('nav-' + v);
+        if (el) {
+          if (v === viewName) {
+            el.classList.remove('hidden');
+          } else {
+            el.classList.add('hidden');
+          }
+        }
+        if (nav) {
+          if (v === viewName) {
+            nav.classList.add('nav-active');
+          } else {
+            nav.classList.remove('nav-active');
+          }
+        }
+      });
+      lucide.createIcons();
+    }
+
+    function changePersona(persona) {
+      if (persona === 'pm') {
+        switchView('search');
+        document.getElementById('aiQueryInput').value = "Tìm 1 Tech Lead có kinh nghiệm thanh toán Fintech để chữa cháy dự án NeoBank";
+        executeAiSearch();
+      } else if (persona === 'employee') {
+        switchView('passport');
+      } else if (persona === 'hr') {
+        switchView('assessment');
+      } else if (persona === 'bom') {
+        switchView('search');
+      }
+    }
+
+    function setQuery(text) {
+      document.getElementById('aiQueryInput').value = text;
+      executeAiSearch();
+    }
+
+    function executeAiSearch() {
+      const q = document.getElementById('aiQueryInput').value;
+      const countEl = document.getElementById('matchCountBadge');
+      countEl.innerText = "Đang quét AI...";
+      setTimeout(() => {
+        countEl.innerText = "2 Nhân sự phù hợp";
+        lucide.createIcons();
+      }, 350);
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+      lucide.createIcons();
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+    function openAssignModal(name) {
+      document.getElementById('assignTargetName').innerText = name;
+      openModal('assignModal');
+    }
+    function viewEmployeeDetail() {
+      switchView('passport');
+    }
+
+    function updateScore(criterion, val) {
+      document.getElementById('val' + criterion).innerText = val + '/10 Điểm';
+      const s1 = parseInt(document.querySelector('input[oninput*="1,"]').value);
+      const s2 = parseInt(document.querySelector('input[oninput*="2,"]').value);
+      const s3 = parseInt(document.querySelector('input[oninput*="3,"]').value);
+      const weighted = (s1 * 0.4 + s2 * 0.3 + s3 * 0.3).toFixed(1);
+      document.getElementById('totalScore').innerText = weighted;
+    }
+
+    function selectMood(btn, label) {
+      document.querySelectorAll('.mood-btn').forEach(b => {
+        b.className = 'mood-btn p-3 rounded-xl border border-[#e8e7f0] hover:bg-[#fafafc] text-center transition cursor-pointer';
+      });
+      btn.className = 'mood-btn p-3 rounded-xl border-2 border-[#6d5bd0] bg-[#efebfa] text-center transition cursor-pointer';
+      document.getElementById('selectedMoodLabel').innerText = label;
+    }
+
+    function useAiDraft(type) {
+      const commentBox = document.getElementById('assessmentComment');
+      if (type === 1) {
+        commentBox.value = "Alice thể hiện đóng góp kỹ thuật vượt trội trong dự án Payment Gateway, hoàn thành 100% mục tiêu chuyên môn không lỗi. Đề xuất xem xét thăng tiến bậc Lead Architect II trong đợt đánh giá này.";
+      } else {
+        commentBox.value = "Năng lực chuyên môn và tốc độ xử lý của Alice rất ấn tượng. Tuy nhiên nhận thấy khối lượng công việc đang khá dày, đề xuất quản lý điều phối thêm 1 junior hỗ trợ để tối ưu cân bằng đời sống.";
+      }
+    }
+
+    function simulateAiParsing() {
+      const box = document.getElementById('parseProgressBox');
+      const bar = document.getElementById('progressBar');
+      const text = document.getElementById('progressPercent');
+      box.classList.remove('hidden');
+      bar.style.width = '20%';
+      text.innerText = '20%';
+      setTimeout(() => {
+        bar.style.width = '65%';
+        text.innerText = '65% (Đang trích xuất thực thể skills)...';
+      }, 400);
+      setTimeout(() => {
+        bar.style.width = '100%';
+        text.innerText = '100% Hoàn thành (0.38s)!';
+        lucide.createIcons();
+      }, 900);
+    }
+  </script>
+</body>
+</html>

@@ -134,8 +134,8 @@ export default function GoalsPanel({
   return (
     <Box>
       <Stack
-        direction="row"
-        sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 1 }}
+        direction={{ xs: 'column', sm: 'row' }}
+        sx={{ justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 1, mb: 1 }}
       >
         <Tabs value={tab} onChange={(_, v: LifeCategory) => setTab(v)}>
           {TABS.map((t) => (
