@@ -24,6 +24,7 @@ import {
   CreateTaskDto,
   SaveRoadmapDto,
   UpdateMilestoneDto,
+  UpdatePlanSettingsDto,
   UpdateTaskDto,
 } from './dto/milestone.dto';
 
@@ -102,8 +103,11 @@ export class DevelopmentPlansController {
   // ---- Milestones & tasks --------------------------------------------
 
   @Get('me/milestones')
-  listMilestones(@CurrentUser() caller: AuthenticatedUser) {
-    return this.developmentPlansService.listMilestones(caller);
+  listMilestones(
+    @CurrentUser() caller: AuthenticatedUser,
+    @Query('category') category?: LifeCategory,
+  ) {
+    return this.developmentPlansService.listMilestones(caller, category);
   }
 
   @Post('me/milestones')
@@ -169,5 +173,13 @@ export class DevelopmentPlansController {
     @CurrentUser() caller: AuthenticatedUser,
   ) {
     return this.developmentPlansService.saveRoadmap(dto, caller);
+  }
+
+  @Patch('me/settings')
+  updatePlanSettings(
+    @Body() dto: UpdatePlanSettingsDto,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
+    return this.developmentPlansService.updatePlanSettings(dto, caller);
   }
 }

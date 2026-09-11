@@ -7,7 +7,7 @@ import PageSkeleton from '@/components/ui/PageSkeleton';
 import Stack from '@mui/material/Stack';
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
-import Rating from '@mui/material/Rating';
+import SkillLevelMeter from '@/components/ui/SkillLevelMeter';
 import Button from '@/components/ui/Button';
 import Table from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
@@ -16,6 +16,8 @@ import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@/components/ui/IconButton';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { ApiError } from '@/lib/api/client';
 import * as skillsCompetencyApi from '@/lib/api/skillsCompetencyApi';
@@ -24,6 +26,7 @@ import type { EmployeeSkill, Skill } from '@/lib/api/skillsCompetencyApi';
 /** Skill self-management — moved in from the old standalone /skills page. */
 export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
   const { user } = useAuth();
+  const { ask, dialog } = useConfirmDialog();
   const [catalog, setCatalog] = React.useState<Skill[] | null>(null);
   const [mySkills, setMySkills] = React.useState<EmployeeSkill[] | null>(null);
   const [error, setError] = React.useState<string | null>(null);
@@ -88,6 +91,17 @@ export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
     }
   };
 
+  const handleDelete = async (row: EmployeeSkill) => {
+    if (!user) return;
+    try {
+      await skillsCompetencyApi.deleteEmployeeSkill(user.id, row.skillId);
+      await loadMySkills(user.id);
+      onChanged();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Không xóa được kỹ năng');
+    }
+  };
+
   return (
     <Box>
       <Stack spacing={2} sx={{ mb: 3 }}>
@@ -108,7 +122,7 @@ export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
           />
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="body2">Cấp độ</Typography>
-            <Rating value={level} max={5} onChange={(_e, value) => setLevel(value ?? 1)} />
+            <SkillLevelMeter value={level} onChange={setLevel} />
           </Box>
         </Stack>
         <TextField
@@ -143,7 +157,7 @@ export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
               <TableCell>Kỹ năng</TableCell>
               <TableCell>Cấp độ</TableCell>
               <TableCell>Ghi chú</TableCell>
-              <TableCell align="right">Sửa</TableCell>
+              <TableCell align="right">Thao tác</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -151,12 +165,26 @@ export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
               <TableRow key={row.id}>
                 <TableCell>{row.skill.name}</TableCell>
                 <TableCell>
-                  <Rating value={row.level} max={5} readOnly size="small" />
+                  <SkillLevelMeter value={row.level} size="sm" />
                 </TableCell>
                 <TableCell>{row.note ?? '—'}</TableCell>
                 <TableCell align="right">
                   <IconButton size="small" onClick={() => handleEditRow(row)}>
                     <EditOutlinedIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() =>
+                      ask({
+                        title: 'Xóa kỹ năng',
+                        description: `Xóa "${row.skill.name}"? Hành động này không thể hoàn tác.`,
+                        confirmLabel: 'Xóa',
+                        danger: true,
+                        onConfirm: () => handleDelete(row),
+                      })
+                    }
+                  >
+                    <DeleteOutlineIcon fontSize="small" />
                   </IconButton>
                 </TableCell>
               </TableRow>
@@ -164,6 +192,7 @@ export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
           </TableBody>
         </Table>
       )}
+      {dialog}
     </Box>
   );
 }

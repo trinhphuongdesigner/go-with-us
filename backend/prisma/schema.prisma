@@ -305,6 +305,12 @@ model DevelopmentPlan {
   content     String // markdown
   aiGenerated Boolean  @default(false)
   status      String   @default("draft")
+  // Roadmap-level pacing the AI factors into milestone generation.
+  durationWeeks Int?
+  hoursPerWeek  Int?
+  // Roadmap UI prefs (character, view mode, costume color, reduce motion,
+  // font size) — a display concern, not queryable business data.
+  displaySettings Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -668,6 +674,9 @@ model DevelopmentMilestone {
   description String?
   dueDate     DateTime?
   status      MilestoneStatus @default(NOT_STARTED)
+  // WORK vs PERSONAL roadmap — lets a single plan hold two independent
+  // milestone tracks, same split as DevelopmentGoal.category.
+  category    LifeCategory    @default(WORK)
   order       Int             @default(0)
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt

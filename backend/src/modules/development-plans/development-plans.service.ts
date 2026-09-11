@@ -6,6 +6,7 @@ import {
 import { LifeCategory, MilestoneStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AiChatService } from '../ai-chat/ai-chat.service';
+import { asString, parseJsonReplyOrThrow } from '../ai-chat/ai-reply.utils';
 import type { AuthenticatedUser } from '../auth/jwt.strategy';
 import { CreateGoalDto } from './dto/create-goal.dto';
 import { UpdateGoalDto } from './dto/update-goal.dto';
@@ -14,6 +15,7 @@ import {
   CreateMilestoneDto,
   SaveRoadmapDto,
   UpdateMilestoneDto,
+  UpdatePlanSettingsDto,
   UpdateTaskDto,
 } from './dto/milestone.dto';
 
@@ -208,39 +210,20 @@ Reply with ONLY a JSON object of the exact shape {"planMd": string, "summary": s
   }
 
   private parseGeneratePlanReply(raw: string): GeneratePlanResult {
-    const stripped = this.stripCodeFences(raw);
+    const parsed = parseJsonReplyOrThrow<Record<string, unknown>>(
+      raw,
+      'development plan generation',
+      { anchored: true },
+    );
 
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(stripped);
-    } catch {
-      throw new BadGatewayException(
-        'AI provider returned a non-JSON reply for development plan generation',
-      );
-    }
-
-    if (
-      !parsed ||
-      typeof parsed !== 'object' ||
-      typeof (parsed as Record<string, unknown>).planMd !== 'string' ||
-      ((parsed as Record<string, unknown>).planMd as string).trim().length === 0
-    ) {
+    const planMd = asString(parsed.planMd);
+    if (!planMd) {
       throw new BadGatewayException(
         'AI provider returned an empty or malformed development plan',
       );
     }
 
-    const planMd = (parsed as Record<string, unknown>).planMd as string;
-    const summaryRaw = (parsed as Record<string, unknown>).summary;
-    const summary = typeof summaryRaw === 'string' ? summaryRaw : '';
-
-    return { planMd, summary };
-  }
-
-  private stripCodeFences(raw: string): string {
-    const trimmed = raw.trim();
-    const fenceMatch = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
-    return fenceMatch ? fenceMatch[1].trim() : trimmed;
+    return { planMd, summary: asString(parsed.summary) ?? '' };
   }
 
   // ---- Plan: persistence ----
@@ -298,13 +281,13 @@ Reply with ONLY a JSON object of the exact shape {"planMd": string, "summary": s
   // as saveMyPlan) — the plan's markdown stays the narrative, milestones
   // are the "đo lường được" (measurable) part of it.
 
-  async listMilestones(caller: AuthenticatedUser) {
+  async listMilestones(caller: AuthenticatedUser, category?: LifeCategory) {
     const plan = await this.prisma.developmentPlan.findFirst({
       where: { userId: caller.id },
     });
     if (!plan) return [];
     return this.prisma.developmentMilestone.findMany({
-      where: { planId: plan.id },
+      where: { planId: plan.id, ...(category ? { category } : {}) },
       include: { tasks: { orderBy: { order: 'asc' } } },
       orderBy: { order: 'asc' },
     });
@@ -349,6 +332,8 @@ Reply with ONLY a JSON object of the exact shape {"planMd": string, "summary": s
         description: dto.description,
         dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
         status: dto.status,
+        category: dto.category,
+        order: dto.order,
       },
       include: { tasks: true },
     });
@@ -400,10 +385,40 @@ Reply with ONLY a JSON object of the exact shape {"planMd": string, "summary": s
    */
   async saveRoadmap(dto: SaveRoadmapDto, caller: AuthenticatedUser) {
     const plan = await this.getOrCreatePlan(caller);
+    const category = dto.category ?? 'WORK';
 
+    if (dto.durationWeeks !== undefined || dto.hoursPerWeek !== undefined) {
+      await this.prisma.developmentPlan.update({
+        where: { id: plan.id },
+        data: {
+          durationWeeks: dto.durationWeeks,
+          hoursPerWeek: dto.hoursPerWeek,
+        },
+      });
+    }
+
+    // Only wipes this category's milestones — WORK and PERSONAL are
+    // independent tracks on the same plan.
     await this.prisma.developmentMilestone.deleteMany({
-      where: { planId: plan.id },
+      where: { planId: plan.id, category },
     });
+
+    // Lưu category dưới dạng goal (context cho lộ trình)
+    if (dto.milestones.length > 0) {
+      const endGoal = dto.milestones[dto.milestones.length - 1];
+      await this.prisma.developmentGoal.create({
+        data: {
+          userId: caller.id,
+          title: endGoal.title,
+          description: endGoal.description ?? undefined,
+          category,
+          dueDate: endGoal.dueDate ? new Date(endGoal.dueDate) : undefined,
+          status: 'NOT_STARTED',
+          progress: 0,
+          aiSuggested: true,
+        },
+      });
+    }
 
     for (const [index, milestone] of dto.milestones.entries()) {
       await this.prisma.developmentMilestone.create({
@@ -412,6 +427,7 @@ Reply with ONLY a JSON object of the exact shape {"planMd": string, "summary": s
           title: milestone.title,
           description: milestone.description,
           dueDate: milestone.dueDate ? new Date(milestone.dueDate) : undefined,
+          category,
           order: index,
           tasks: {
             create: milestone.tasks.map((t, i) => ({
@@ -424,7 +440,30 @@ Reply with ONLY a JSON object of the exact shape {"planMd": string, "summary": s
       });
     }
 
-    return this.listMilestones(caller);
+    return this.listMilestones(caller, category);
+  }
+
+  /**
+   * Merges roadmap UI prefs into DevelopmentPlan.displaySettings JSON —
+   * same get-or-create-plan pattern as saveRoadmap, but never touches
+   * milestones/content.
+   */
+  async updatePlanSettings(dto: UpdatePlanSettingsDto, caller: AuthenticatedUser) {
+    const plan = await this.getOrCreatePlan(caller);
+    const existing =
+      plan.displaySettings && typeof plan.displaySettings === 'object'
+        ? (plan.displaySettings as Record<string, unknown>)
+        : {};
+
+    const updates = Object.fromEntries(
+      Object.entries(dto).filter(([, v]) => v !== undefined),
+    );
+    const merged = { ...existing, ...updates };
+
+    return this.prisma.developmentPlan.update({
+      where: { id: plan.id },
+      data: { displaySettings: merged },
+    });
   }
 
   private async getOrCreatePlan(caller: AuthenticatedUser) {

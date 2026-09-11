@@ -18,6 +18,7 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { AiChatService } from '../ai-chat/ai-chat.service';
 import type { ChatMessage } from '../ai-chat/ai-chat.types';
+import { stripJsonFence } from '../ai-chat/ai-reply.utils';
 import type { AuthenticatedUser } from '../auth/jwt.strategy';
 import { AssistantQueryDto, UpdateConversationDto } from './dto/assistant.dto';
 
@@ -343,11 +344,25 @@ Rules:
       orderBy: { order: 'asc' },
     });
 
+    const certs = me.certifications.length
+      ? me.certifications.map((c) => `${c.name}${c.score ? ` (${c.score})` : ''}`).join(', ')
+      : 'none recorded';
+    const projects = me.projectExperiences.length
+      ? me.projectExperiences
+          .map(
+            (p) =>
+              `${p.name} as ${p.role}${p.domain ? ` [${p.domain}]` : ''}${p.techStack.length ? ` (${p.techStack.join('/')})` : ''}`,
+          )
+          .join('; ')
+      : 'none recorded';
+
     const systemPrompt = `You are CareerMate's roadmap-building coach for ${me.name}. Help them turn a growth goal into a concrete roadmap of milestones and measurable tasks.
 
 Their profile (use this automatically — never ask them to repeat it):
 Current title: ${me.jobTitle ?? 'n/a'}
 Skills: ${me.skills.map((s) => `${s.skill.name} (lvl ${s.level}/5)`).join(', ') || 'none recorded'}
+Certifications: ${certs}
+Recent projects: ${projects}
 Existing goals: ${me.goals.map((g) => `${g.title} [${g.category}, ${g.status}]`).join('; ') || 'none set'}
 Existing roadmap milestones: ${existingMilestones.map((m) => `${m.title} [${m.status}]`).join('; ') || 'none yet'}
 Recent approved assessment highlights: ${
@@ -422,11 +437,7 @@ Rules:
     knownUserIds: Set<string>,
     expectProposal: boolean,
   ): AssistantReply {
-    let text = raw.trim();
-    const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
-    if (fenceMatch) {
-      text = fenceMatch[1].trim();
-    }
+    const text = stripJsonFence(raw);
 
     let parsed: Record<string, unknown>;
     try {

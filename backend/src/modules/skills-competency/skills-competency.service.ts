@@ -95,6 +95,32 @@ export class SkillsCompetencyService {
   }
 
   /**
+   * Delete-own-only, mirroring bulkUpsertOwnSkills — there is no
+   * admin-override write path in this slice.
+   */
+  async removeOwnSkill(
+    userId: string,
+    skillId: string,
+    caller: AuthenticatedUser,
+  ) {
+    if (caller.id !== userId) {
+      throw new ForbiddenException('You can only remove your own skills');
+    }
+
+    const existing = await this.prisma.employeeSkill.findUnique({
+      where: { userId_skillId: { userId, skillId } },
+    });
+    if (!existing) {
+      throw new NotFoundException(`Skill ${skillId} not found for user`);
+    }
+
+    await this.prisma.employeeSkill.delete({
+      where: { userId_skillId: { userId, skillId } },
+    });
+    return { id: existing.id };
+  }
+
+  /**
    * HR/BOD-facing aggregated view — the controller's @Roles already narrows
    * callers to HR/BOD/SUPER_ADMIN; this re-asserts same-company scope plus
    * the account-management hierarchy (role-hierarchy.ts) since @Roles alone
