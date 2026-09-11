@@ -4,7 +4,7 @@
  */
 export const DEMO_PASSWORD = 'Password123!';
 
-export type DemoRole = 'SUPER_ADMIN' | 'COMPANY_ADMIN' | 'EMPLOYEE';
+export type DemoRole = 'SUPER_ADMIN' | 'COMPANY_ADMIN' | 'HR' | 'BOD' | 'EMPLOYEE';
 
 export interface DemoAccount {
   email: string;
@@ -31,6 +31,20 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
     company: 'Acme Corp',
   },
   {
+    email: 'hr@acme.dev',
+    name: 'HR Acme',
+    role: 'HR',
+    jobTitle: 'Chuyên viên nhân sự',
+    company: 'Acme Corp',
+  },
+  {
+    email: 'bod@acme.dev',
+    name: 'BOD Acme',
+    role: 'BOD',
+    jobTitle: 'Ban giám đốc',
+    company: 'Acme Corp',
+  },
+  {
     email: 'bob@acme.dev',
     name: 'Bob Tran',
     role: 'EMPLOYEE',
@@ -51,11 +65,20 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
     jobTitle: 'Nền tảng',
     company: null,
   },
+  {
+    email: 'dana@careermate.dev',
+    name: 'Dana Pham',
+    role: 'EMPLOYEE',
+    jobTitle: 'Kỹ sư Freelance',
+    company: null,
+  },
 ];
 
 export const ROLE_LABEL: Record<DemoRole, string> = {
   SUPER_ADMIN: 'Quản trị nền tảng',
   COMPANY_ADMIN: 'Quản trị công ty',
+  HR: 'Nhân sự',
+  BOD: 'Ban giám đốc',
   EMPLOYEE: 'Nhân sự',
 };
 

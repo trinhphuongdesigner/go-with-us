@@ -27,6 +27,8 @@ import { colorTokens, radiusTokens, shadowTokens } from '@/theme/theme';
 const ROLE_TONE: Record<DemoRole, StatusTone> = {
   SUPER_ADMIN: 'warning',
   COMPANY_ADMIN: 'info',
+  HR: 'info',
+  BOD: 'info',
   EMPLOYEE: 'success',
 };
 
@@ -34,7 +36,7 @@ const ACCOUNT_GROUPS: Array<{ label: string; accounts: DemoAccount[] }> = [
   { label: 'Nhân sự', accounts: DEMO_ACCOUNTS.filter((account) => account.role === 'EMPLOYEE') },
   {
     label: 'Công ty',
-    accounts: DEMO_ACCOUNTS.filter((account) => account.role === 'COMPANY_ADMIN'),
+    accounts: DEMO_ACCOUNTS.filter((account) => ['COMPANY_ADMIN', 'HR', 'BOD'].includes(account.role)),
   },
   {
     label: 'Nền tảng',
