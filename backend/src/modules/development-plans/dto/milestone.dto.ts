@@ -1,14 +1,20 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsBoolean,
   IsDateString,
   IsEnum,
+  IsIn,
+  IsInt,
   IsOptional,
   IsString,
+  Min,
   MinLength,
   ValidateNested,
 } from 'class-validator';
 import { MilestoneStatus } from '@prisma/client';
+
+type LifeCategory = 'WORK' | 'PERSONAL';
 
 export class CreateTaskDto {
   @IsString()
@@ -58,6 +64,15 @@ export class UpdateMilestoneDto {
   @IsOptional()
   @IsEnum(MilestoneStatus)
   status?: MilestoneStatus;
+
+  @IsOptional()
+  @IsIn(['WORK', 'PERSONAL'])
+  category?: LifeCategory;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  order?: number;
 }
 
 export class UpdateTaskDto {
@@ -100,8 +115,49 @@ export class RoadmapMilestoneDto {
  * confirmed" shape as the rest of the app's AI features.
  */
 export class SaveRoadmapDto {
+  @IsOptional()
+  @IsIn(['WORK', 'PERSONAL'])
+  category?: 'WORK' | 'PERSONAL';
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  durationWeeks?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  hoursPerWeek?: number;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => RoadmapMilestoneDto)
   milestones!: RoadmapMilestoneDto[];
+}
+
+/**
+ * Roadmap display prefs (character, view mode, costume color, reduce
+ * motion, font size) — merged into DevelopmentPlan.displaySettings JSON.
+ * A UI concern, not business data, so it isn't modeled as columns.
+ */
+export class UpdatePlanSettingsDto {
+  @IsOptional()
+  @IsString()
+  character?: string;
+
+  @IsOptional()
+  @IsIn(['stair', 'diagram'])
+  viewMode?: 'stair' | 'diagram';
+
+  @IsOptional()
+  @IsString()
+  costumeColor?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  reduceMotion?: boolean;
+
+  @IsOptional()
+  @IsIn(['sm', 'md', 'lg'])
+  fontSize?: 'sm' | 'md' | 'lg';
 }

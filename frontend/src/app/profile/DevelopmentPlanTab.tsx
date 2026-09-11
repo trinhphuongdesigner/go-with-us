@@ -5,228 +5,374 @@ import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
-import PageSkeleton from '@/components/ui/PageSkeleton';
-import MarkdownSplitEditor from '@/components/ui/MarkdownSplitEditor';
 import * as developmentPlansApi from '@/lib/api/developmentPlansApi';
-import type { DevelopmentGoal, DevelopmentMilestone } from '@/lib/api/developmentPlansApi';
-import GoalsPanel from './GoalsPanel';
-import MilestonesPanel from './MilestonesPanel';
-import RoadmapAssistant from './RoadmapAssistant';
-import RoadmapJourney from './RoadmapJourney';
+import type {
+  DevelopmentMilestone,
+  DevelopmentPlan,
+  LifeCategory,
+  RoadmapDisplaySettings,
+} from '@/lib/api/developmentPlansApi';
+import { askAssistant } from '@/lib/api/assistantApi';
+import { colorTokens } from '@/theme/theme';
+import RoadmapSummaryCard from './RoadmapSummaryCard';
+import RoadmapStaircase from './RoadmapStaircase';
+import RoadmapDetailPanel from './RoadmapDetailPanel';
+import RoadmapDiagram from './RoadmapDiagram';
+import RoadmapCustomizePanel, { type CustomizeSaveData } from './RoadmapCustomizePanel';
+import type { RoadmapCharacter } from './roadmapCharacters';
+
+type ViewMode = 'stair' | 'diagram';
 
 export default function DevelopmentPlanTab() {
-  const [goals, setGoals] = React.useState<DevelopmentGoal[] | null>(null);
-  const [goalsError, setGoalsError] = React.useState<string | null>(null);
+  const [plan, setPlan] = React.useState<DevelopmentPlan | null>(null);
+  const [category, setCategory] = React.useState<LifeCategory>('WORK');
   const [milestones, setMilestones] = React.useState<DevelopmentMilestone[] | null>(null);
   const [milestonesError, setMilestonesError] = React.useState<string | null>(null);
-  const [planMd, setPlanMd] = React.useState('');
-  const [savedPlanMd, setSavedPlanMd] = React.useState('');
-  const [planLoading, setPlanLoading] = React.useState(true);
-  const [instruction, setInstruction] = React.useState('');
-  const [generating, setGenerating] = React.useState(false);
-  const [saving, setSaving] = React.useState(false);
-  const [planError, setPlanError] = React.useState<string | null>(null);
-  const [planSaved, setPlanSaved] = React.useState(false);
-  const [lastSummary, setLastSummary] = React.useState<string | null>(null);
-  const [draftIsAiGenerated, setDraftIsAiGenerated] = React.useState(false);
-  const planPending = React.useRef(false);
+  const [viewMode, setViewMode] = React.useState<ViewMode>('stair');
+  const [selectedIndex, setSelectedIndex] = React.useState(0);
+  const [customizing, setCustomizing] = React.useState(false);
+  const [savingSettings, setSavingSettings] = React.useState(false);
 
-  const loadGoals = React.useCallback(
+  // AI roadmap builder state — the proposal is never self-persisting.
+  const [aiInput, setAiInput] = React.useState('');
+  const [aiBusy, setAiBusy] = React.useState(false);
+  const [aiError, setAiError] = React.useState<string | null>(null);
+  const [aiProposal, setAiProposal] = React.useState<DevelopmentMilestone[] | null>(null);
+
+  const loadPlan = React.useCallback(
     () =>
-      developmentPlansApi
-        .listGoals()
-        .then((data) => {
-          setGoals(data);
-          setGoalsError(null);
-        })
-        .catch((err) => {
-          setGoalsError(err instanceof Error ? err.message : 'Failed to load goals');
-        }),
+      developmentPlansApi.getMyPlan().then((data) => {
+        setPlan(data);
+        if (data?.displaySettings?.viewMode) setViewMode(data.displaySettings.viewMode);
+      }),
     [],
   );
 
   const loadMilestones = React.useCallback(
-    () =>
+    (cat: LifeCategory) =>
       developmentPlansApi
-        .listMilestones()
+        .listMilestones(cat)
         .then((data) => {
           setMilestones(data);
           setMilestonesError(null);
         })
         .catch((err) => {
-          const message = err instanceof Error ? err.message : 'Failed to load roadmap';
-          setMilestonesError(message);
-          throw new Error(message);
+          setMilestonesError(err instanceof Error ? err.message : 'Không tải được lộ trình');
         }),
     [],
   );
 
   React.useEffect(() => {
-    void loadGoals();
-    void loadMilestones().catch(() => undefined);
-  }, [loadGoals, loadMilestones]);
+    void loadPlan();
+  }, [loadPlan]);
 
   React.useEffect(() => {
-    developmentPlansApi
-      .getMyPlan()
-      .then((plan) => {
-        setPlanMd(plan?.content ?? '');
-        setSavedPlanMd(plan?.content ?? '');
-      })
-      .catch((err) =>
-        setPlanError(err instanceof Error ? err.message : 'Failed to load current plan'),
-      )
-      .finally(() => setPlanLoading(false));
-  }, []);
+    void loadMilestones(category);
+    setAiProposal(null);
+    setCustomizing(false);
+  }, [category, loadMilestones]);
 
-  const handleGenerate = async () => {
-    if (planPending.current || planLoading) return;
-    planPending.current = true;
-    setGenerating(true);
-    setPlanError(null);
-    setPlanSaved(false);
+  const isDraft = aiProposal !== null;
+  const activeMilestones = isDraft ? aiProposal! : milestones ?? [];
+  const sortedMilestones = React.useMemo(
+    () => [...activeMilestones].sort((a, b) => a.order - b.order),
+    [activeMilestones],
+  );
+
+  const currentIndex = React.useMemo(() => {
+    if (sortedMilestones.length === 0) return -1;
+    const idx = sortedMilestones.findIndex((m) => m.status !== 'DONE');
+    return idx === -1 ? sortedMilestones.length - 1 : idx;
+  }, [sortedMilestones]);
+
+  React.useEffect(() => {
+    setSelectedIndex(currentIndex >= 0 ? currentIndex : 0);
+  }, [category, isDraft, currentIndex]);
+
+  const selectedMilestone = sortedMilestones[selectedIndex];
+  const goalTitle = sortedMilestones.length > 0 ? sortedMilestones[sortedMilestones.length - 1].title : null;
+  const character = plan?.displaySettings?.character as RoadmapCharacter | undefined;
+
+  // ---- Task edits: persisted milestones hit the API, draft edits stay local ----
+
+  const handleToggleTask = (taskId: string, done: boolean) => {
+    if (isDraft) {
+      setAiProposal((prev) =>
+        prev ? prev.map((m) => ({ ...m, tasks: m.tasks.map((t) => (t.id === taskId ? { ...t, done } : t)) })) : null,
+      );
+      return;
+    }
+    setMilestones((prev) =>
+      prev ? prev.map((m) => ({ ...m, tasks: m.tasks.map((t) => (t.id === taskId ? { ...t, done } : t)) })) : null,
+    );
+    void developmentPlansApi.updateTask(taskId, { done }).catch(() => void loadMilestones(category));
+  };
+
+  // ---- AI roadmap skill: proposal only, explicit save persists ----
+
+  const handleAskAI = async () => {
+    const q = aiInput.trim();
+    if (!q || aiBusy) return;
+
+    setAiBusy(true);
+    setAiError(null);
+
+    const categoryLabel = category === 'WORK' ? 'Công việc' : 'Cá nhân';
+    const paceNote =
+      plan?.durationWeeks || plan?.hoursPerWeek
+        ? ` Thời lượng mong muốn: ${plan?.durationWeeks ? `${plan.durationWeeks} tuần` : ''}${
+            plan?.durationWeeks && plan?.hoursPerWeek ? ', ' : ''
+          }${plan?.hoursPerWeek ? `${plan.hoursPerWeek} giờ mỗi tuần` : ''}.`
+        : '';
+    const enrichedQuestion = `${q}\n\nLoại mục tiêu: ${categoryLabel}.${paceNote} Hãy xây dựng lộ trình với các cột mốc và nhiệm vụ phù hợp.`;
+
     try {
-      const result = await developmentPlansApi.generatePlan({
-        instruction: instruction.trim() || undefined,
-      });
-      setPlanMd(result.planMd);
-      setLastSummary(result.summary || null);
-      setDraftIsAiGenerated(true);
-    } catch (err) {
-      setPlanError(err instanceof Error ? err.message : 'Failed to generate development plan');
+      const res = await askAssistant({ question: enrichedQuestion, focus: 'ROADMAP' });
+      if (res.message.proposalData) {
+        const temp: DevelopmentMilestone[] = res.message.proposalData.milestones.map((m, i) => ({
+          id: `temp-${i}`,
+          planId: '',
+          title: m.title,
+          description: m.description ?? null,
+          dueDate: m.dueDate ?? null,
+          status: 'NOT_STARTED',
+          category,
+          order: i,
+          tasks: m.tasks.map((t, ti) => ({
+            id: `temp-${i}-${ti}`,
+            milestoneId: `temp-${i}`,
+            title: t.title,
+            metric: t.metric ?? null,
+            done: false,
+            order: ti,
+          })),
+        }));
+        setAiProposal(temp);
+      } else {
+        setAiError(res.message.content || 'AI cần thêm thông tin để đưa ra đề xuất.');
+      }
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : 'Không tạo được đề xuất');
     } finally {
-      planPending.current = false;
-      setGenerating(false);
+      setAiBusy(false);
     }
   };
 
-  const handleSavePlan = async () => {
-    if (planPending.current || planLoading || !planMd.trim()) return;
-    planPending.current = true;
-    setSaving(true);
-    setPlanError(null);
-    setPlanSaved(false);
+  const handleSaveAiProposal = async () => {
+    if (!aiProposal) return;
     try {
-      const plan = await developmentPlansApi.saveMyPlan({
-        content: planMd,
-        summary: lastSummary || undefined,
-        aiGenerated: draftIsAiGenerated,
+      const saved = await developmentPlansApi.saveRoadmap({
+        category,
+        milestones: aiProposal.map((m) => ({
+          title: m.title,
+          description: m.description ?? undefined,
+          dueDate: m.dueDate ?? undefined,
+          tasks: m.tasks.map((t) => ({ title: t.title, metric: t.metric ?? undefined })),
+        })),
       });
-      setSavedPlanMd(plan.content);
-      setPlanSaved(true);
-    } catch (err) {
-      setPlanError(err instanceof Error ? err.message : 'Failed to save development plan');
-    } finally {
-      planPending.current = false;
-      setSaving(false);
+      setMilestones(saved);
+      setAiProposal(null);
+      setAiInput('');
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : 'Lưu lộ trình thất bại');
     }
+  };
+
+  // ---- Tùy chỉnh lộ trình: inline editor replaces the main card body ----
+
+  const handleSaveCustomize = async (data: CustomizeSaveData) => {
+    setSavingSettings(true);
+    try {
+      const sourceById = new Map(activeMilestones.map((m) => [m.id, m]));
+      const saved = await developmentPlansApi.saveRoadmap({
+        category: data.category,
+        durationWeeks: data.durationWeeks,
+        hoursPerWeek: data.hoursPerWeek,
+        milestones: data.milestones.map((d) => {
+          const original = sourceById.get(d.id);
+          return {
+            title: d.title,
+            description: d.description || undefined,
+            dueDate: d.dueDate || undefined,
+            tasks: original ? original.tasks.map((t) => ({ title: t.title, metric: t.metric ?? undefined })) : [],
+          };
+        }),
+      });
+      const updatedPlan = await developmentPlansApi.updatePlanSettings(data.settings);
+      setPlan(updatedPlan);
+      if (data.settings.viewMode) setViewMode(data.settings.viewMode);
+      setCategory(data.category);
+      setMilestones(saved);
+      setAiProposal(null);
+      setCustomizing(false);
+    } catch (e) {
+      setMilestonesError(e instanceof Error ? e.message : 'Lưu tùy chỉnh thất bại');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  const viewsRef = React.useRef<HTMLDivElement | null>(null);
+  const scrollToViews = () => viewsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  const defaultSettings: RoadmapDisplaySettings = {
+    character: plan?.displaySettings?.character ?? 'milo-standing',
+    viewMode: plan?.displaySettings?.viewMode ?? 'stair',
+    costumeColor: plan?.displaySettings?.costumeColor,
+    reduceMotion: plan?.displaySettings?.reduceMotion ?? false,
+    fontSize: plan?.displaySettings?.fontSize ?? 'md',
   };
 
   return (
     <Box>
-      <Card title="Mục tiêu" sx={{ mb: 3 }}>
-        {goalsError ? (
-          <Alert
-            severity="error"
-            sx={{ mb: 2 }}
-            action={<Button color="inherit" onClick={() => void loadGoals()}>Thử lại</Button>}
-          >
-            {goalsError}
-          </Alert>
-        ) : null}
-        {goals ? (
-          <GoalsPanel goals={goals} onChanged={loadGoals} />
-        ) : !goalsError ? (
-          <PageSkeleton variant="list" rows={3} embedded />
-        ) : null}
-      </Card>
-
-      <Card title="Cột mốc lộ trình" sx={{ mb: 3, minWidth: 0 }}>
-        {milestones ? <RoadmapJourney milestones={milestones} goals={goals ?? []} /> : null}
-        {milestonesError ? (
-          <Alert
-            severity="error"
-            sx={{ mb: 2 }}
-            action={
-              <Button
-                color="inherit"
-                onClick={() => void loadMilestones().catch(() => undefined)}
-              >
-                Thử lại
+      <Card sx={{ mb: 3, minWidth: 0 }}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ justifyContent: 'space-between', alignItems: { sm: 'center' }, mb: 2 }}>
+          <Stack direction="row" spacing={2} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
+            <Typography sx={{ fontWeight: 600, fontSize: 16 }}>Hành trình của bạn</Typography>
+            <Stack direction="row" spacing={1}>
+              <Button variant={category === 'WORK' ? 'contained' : 'outlined'} size="sm" onClick={() => setCategory('WORK')}>
+                Công việc
               </Button>
-            }
-          >
+              <Button variant={category === 'PERSONAL' ? 'contained' : 'outlined'} size="sm" onClick={() => setCategory('PERSONAL')}>
+                Cá nhân
+              </Button>
+            </Stack>
+          </Stack>
+          {!customizing && (
+            <Button variant="outlined" size="sm" onClick={() => setCustomizing(true)}>
+              Tùy chỉnh lộ trình
+            </Button>
+          )}
+        </Stack>
+
+        {milestonesError && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setMilestonesError(null)}>
             {milestonesError}
           </Alert>
-        ) : null}
-        {milestones ? (
-          <MilestonesPanel milestones={milestones} onChanged={loadMilestones} />
-        ) : !milestonesError ? (
-          <PageSkeleton variant="list" rows={3} embedded />
-        ) : null}
+        )}
+
+        {customizing ? (
+          <RoadmapCustomizePanel
+            category={category}
+            durationWeeks={plan?.durationWeeks ?? null}
+            hoursPerWeek={plan?.hoursPerWeek ?? null}
+            milestones={activeMilestones}
+            settings={defaultSettings}
+            onCancel={() => setCustomizing(false)}
+            onSave={handleSaveCustomize}
+            saving={savingSettings}
+          />
+        ) : (
+          <>
+            <Box sx={{ mb: 2.5 }}>
+              <RoadmapSummaryCard
+                goalTitle={goalTitle}
+                milestones={sortedMilestones}
+                currentIndex={currentIndex}
+                durationWeeks={plan?.durationWeeks}
+                hoursPerWeek={plan?.hoursPerWeek}
+                character={character}
+                isDraft={isDraft}
+                onContinue={sortedMilestones.length > 0 ? scrollToViews : undefined}
+                onViewAll={sortedMilestones.length > 0 ? scrollToViews : undefined}
+              />
+            </Box>
+
+            {sortedMilestones.length === 0 ? (
+              <Typography variant="body2" sx={{ color: colorTokens.secondary, textAlign: 'center', py: 3 }}>
+                Chưa có lộ trình. Dùng trợ lý AI bên dưới để tạo đề xuất đầu tiên.
+              </Typography>
+            ) : (
+              <Box ref={viewsRef}>
+                <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+                  <Button variant={viewMode === 'stair' ? 'contained' : 'outlined'} size="sm" onClick={() => setViewMode('stair')}>
+                    Bậc thang
+                  </Button>
+                  <Button variant={viewMode === 'diagram' ? 'contained' : 'outlined'} size="sm" onClick={() => setViewMode('diagram')}>
+                    Sơ đồ
+                  </Button>
+                </Stack>
+
+                {viewMode === 'stair' ? (
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.6fr 1fr' }, gap: 2 }}>
+                    <RoadmapStaircase
+                      milestones={sortedMilestones}
+                      selectedIndex={selectedIndex}
+                      onSelect={setSelectedIndex}
+                      currentIndex={currentIndex}
+                      character={character}
+                    />
+                    <RoadmapDetailPanel
+                      milestone={selectedMilestone}
+                      index={selectedIndex}
+                      onToggleTask={handleToggleTask}
+                      onViewDiagram={() => setViewMode('diagram')}
+                    />
+                  </Box>
+                ) : (
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.6fr 1fr' }, gap: 2 }}>
+                    <RoadmapDiagram
+                      milestones={sortedMilestones}
+                      selectedIndex={selectedIndex}
+                      onSelect={setSelectedIndex}
+                      currentIndex={currentIndex}
+                    />
+                    <RoadmapDetailPanel
+                      milestone={selectedMilestone}
+                      index={selectedIndex}
+                      onToggleTask={handleToggleTask}
+                    />
+                  </Box>
+                )}
+
+                {isDraft && (
+                  <Stack direction="row" spacing={1.5} sx={{ mt: 2 }}>
+                    <Button variant="contained" onClick={() => void handleSaveAiProposal()}>
+                      Lưu lộ trình
+                    </Button>
+                    <Button variant="outlined" onClick={() => setAiProposal(null)}>
+                      Hủy đề xuất
+                    </Button>
+                  </Stack>
+                )}
+              </Box>
+            )}
+          </>
+        )}
       </Card>
 
       <Card title="Dựng lộ trình bằng AI" sx={{ mb: 3, minWidth: 0 }}>
-        <RoadmapAssistant
-          existingMilestones={milestonesError ? null : milestones}
-          onSaved={(saved) => {
-            setMilestones(saved);
-            setMilestonesError(null);
-          }}
-        />
-      </Card>
+        <Typography variant="body2" sx={{ mb: 1.5, color: colorTokens.secondary }}>
+          Nhập mong muốn của bạn cho mục tiêu {category === 'WORK' ? 'Công việc' : 'Cá nhân'} đang chọn. AI sẽ đề xuất
+          lộ trình với cột mốc và nhiệm vụ đo lường được — bạn xem, chỉnh sửa rồi mới lưu.
+        </Typography>
 
-      <Card title="Kế hoạch phát triển">
-        <TextField
-          label="Hướng dẫn (tuỳ chọn)"
-          placeholder="ví dụ Tập trung kỹ năng lãnh đạo trong quý tới"
-          size="small"
-          fullWidth
-          value={instruction}
-          onChange={(e) => setInstruction(e.target.value)}
-          disabled={planLoading || generating || saving}
-          sx={{ mb: 2 }}
-        />
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mb: 2 }}>
-          <Button
-            variant="contained"
-            onClick={() => void handleGenerate()}
-            disabled={planLoading || generating || saving || planMd !== savedPlanMd}
-          >
-            {generating ? 'Đang tạo…' : savedPlanMd ? 'Tạo lại' : 'Tạo'}
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={() => void handleSavePlan()}
-            disabled={planLoading || saving || generating || !planMd.trim() || planMd === savedPlanMd}
-          >
-            {saving ? 'Đang lưu…' : 'Lưu'}
-          </Button>
-        </Stack>
-        {planError ? <Alert severity="error" sx={{ mb: 2 }}>{planError}</Alert> : null}
-        {planSaved ? <Alert severity="success" sx={{ mb: 2 }}>Đã lưu kế hoạch.</Alert> : null}
-        {lastSummary ? <Alert severity="info" sx={{ mb: 2 }}>{lastSummary}</Alert> : null}
-        {planLoading ? (
-          <PageSkeleton variant="form" embedded />
-        ) : (
-          <Box
-            component="fieldset"
-            disabled={saving || generating}
-            sx={{ border: 0, p: 0, m: 0, minWidth: 0 }}
-          >
-            <MarkdownSplitEditor
-              value={planMd}
-              onChange={(value) => {
-                setPlanMd(value);
-                setDraftIsAiGenerated(false);
-                setLastSummary(null);
-                setPlanSaved(false);
-              }}
-              height={480}
-            />
+        <Box component="form" onSubmit={(e) => { e.preventDefault(); void handleAskAI(); }}>
+          <TextField
+            fullWidth
+            multiline
+            minRows={4}
+            maxRows={10}
+            placeholder="Ví dụ: Tôi muốn trở thành Product Manager trong 6 tháng tới. Tôi hiện là Frontend Developer..."
+            value={aiInput}
+            onChange={(e) => setAiInput(e.target.value)}
+            disabled={aiBusy}
+            sx={{ mb: 1 }}
+          />
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Button type="submit" variant="contained" disabled={aiBusy || !aiInput.trim()}>
+              {aiBusy ? 'Đang tạo…' : 'Gửi'}
+            </Button>
           </Box>
+        </Box>
+
+        {aiError && (
+          <Alert severity="error" sx={{ mt: 2 }} onClose={() => setAiError(null)}>
+            {aiError}
+          </Alert>
         )}
       </Card>
     </Box>

@@ -116,7 +116,7 @@ function ProfilePageContent() {
               variant="contained"
               startIcon={<UploadFileOutlinedIcon />}
             >
-              Nhập CV
+              Cập nhật hồ sơ năng lực
             </Button>
           }
         />

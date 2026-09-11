@@ -48,12 +48,23 @@ export interface UpdateGoalPayload {
   status?: GoalStatus;
 }
 
+export interface RoadmapDisplaySettings {
+  character?: string;
+  viewMode?: 'stair' | 'diagram';
+  costumeColor?: string;
+  reduceMotion?: boolean;
+  fontSize?: 'sm' | 'md' | 'lg';
+}
+
 export interface DevelopmentPlan {
   id: string;
   userId: string;
   content: string;
   aiGenerated: boolean;
   status: string;
+  durationWeeks: number | null;
+  hoursPerWeek: number | null;
+  displaySettings: RoadmapDisplaySettings | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -89,6 +100,7 @@ export interface DevelopmentMilestone {
   description: string | null;
   dueDate: string | null;
   status: MilestoneStatus;
+  category: LifeCategory;
   order: number;
   tasks: DevelopmentTask[];
 }
@@ -110,6 +122,8 @@ export interface UpdateMilestonePayload {
   description?: string;
   dueDate?: string;
   status?: MilestoneStatus;
+  category?: LifeCategory;
+  order?: number;
 }
 
 export interface UpdateTaskPayload {
@@ -126,6 +140,9 @@ export interface RoadmapMilestonePayload {
 }
 
 export interface SaveRoadmapPayload {
+  category?: LifeCategory;
+  durationWeeks?: number;
+  hoursPerWeek?: number;
   milestones: RoadmapMilestonePayload[];
 }
 
@@ -178,8 +195,11 @@ export function getMyPlan() {
 
 // ---- Milestones & tasks ----
 
-export function listMilestones() {
-  return apiRequest<DevelopmentMilestone[]>('/development-plans/me/milestones');
+export function listMilestones(category?: LifeCategory) {
+  const query = category ? `?category=${category}` : '';
+  return apiRequest<DevelopmentMilestone[]>(
+    `/development-plans/me/milestones${query}`,
+  );
 }
 
 export function createMilestone(payload: CreateMilestonePayload) {
@@ -226,6 +246,14 @@ export function deleteTask(id: string) {
 export function saveRoadmap(payload: SaveRoadmapPayload) {
   return apiRequest<DevelopmentMilestone[]>('/development-plans/me/roadmap', {
     method: 'POST',
+    body: payload,
+  });
+}
+
+/** Persists roadmap UI prefs (character, view mode, costume, etc). */
+export function updatePlanSettings(payload: RoadmapDisplaySettings) {
+  return apiRequest<DevelopmentPlan>('/development-plans/me/settings', {
+    method: 'PATCH',
     body: payload,
   });
 }
