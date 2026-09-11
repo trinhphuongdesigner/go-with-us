@@ -10,10 +10,11 @@ import Box from '@mui/material/Box';
 import Button from '@/components/ui/Button';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
+import List from '@mui/material/List';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemText from '@mui/material/ListItemText';
 import PageSkeleton from '@/components/ui/PageSkeleton';
 import Stack from '@mui/material/Stack';
-import Tab from '@mui/material/Tab';
-import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined';
 import PageContainer from '@/components/layout/PageContainer';
@@ -25,24 +26,30 @@ import {
   getCompetencyProfile,
   type CompetencyProfile,
 } from '@/lib/api/competencyProfileApi';
-import { colorTokens } from '@/theme/theme';
+import { colorTokens, radiusTokens } from '@/theme/theme';
 import ProfileTimeline from './ProfileTimeline';
+import PersonalInfoTab from './PersonalInfoTab';
 import SkillsTab from './SkillsTab';
 import CertificationsTab from './CertificationsTab';
 import ProjectsTab from './ProjectsTab';
 import AwardsTab from './AwardsTab';
 import CareerPassportTab from './CareerPassportTab';
+import ActivityTab from './ActivityTab';
+import DevelopmentPlanTab from './DevelopmentPlanTab';
 
 // 'passport' is a stable slug other pages deep-link to (e.g.
 // /profile?tab=passport) since Career Passport and My Skills moved in here
 // from their own nav entries — index-based routing would break if the tab
 // order ever changes.
 const TABS = [
+  { key: 'personal-info', label: 'Thông tin cá nhân' },
   { key: 'timeline', label: 'Dòng thời gian' },
   { key: 'skills', label: 'Kỹ năng' },
   { key: 'projects', label: 'Dự án' },
   { key: 'certifications', label: 'Chứng chỉ' },
   { key: 'awards', label: 'Thành tích' },
+  { key: 'activity', label: 'Nhật ký hoạt động' },
+  { key: 'development-plan', label: 'Lộ trình phát triển' },
   { key: 'passport', label: 'Hộ chiếu nghề nghiệp' },
 ] as const;
 
@@ -183,37 +190,92 @@ function ProfilePageContent() {
             </Card>
 
             <Card>
-              <Tabs
-                value={tab}
-                onChange={(_, next: number) => setTab(next)}
-                sx={{ mb: 2.5, borderBottom: `1px solid ${colorTokens.divider}` }}
+              <Stack
+                direction={{ xs: 'column', md: 'row' }}
+                divider={
+                  <Divider
+                    orientation="vertical"
+                    flexItem
+                    sx={{ display: { xs: 'none', md: 'block' } }}
+                  />
+                }
+                sx={{ alignItems: 'stretch' }}
               >
-                {TABS.map((t) => (
-                  <Tab key={t.key} label={t.label} />
-                ))}
-              </Tabs>
+                <Box
+                  component="nav"
+                  aria-label="Mục hồ sơ"
+                  sx={{
+                    width: { xs: '100%', md: 220 },
+                    flexShrink: 0,
+                    borderBottom: { xs: `1px solid ${colorTokens.divider}`, md: 'none' },
+                    pb: { xs: 1.5, md: 0 },
+                    mb: { xs: 1.5, md: 0 },
+                    pr: { md: 2.5 },
+                  }}
+                >
+                  <List
+                    sx={{
+                      display: 'flex',
+                      flexDirection: { xs: 'row', md: 'column' },
+                      gap: 0.5,
+                      overflowX: { xs: 'auto', md: 'visible' },
+                    }}
+                  >
+                    {TABS.map((t, index) => (
+                      <ListItemButton
+                        key={t.key}
+                        selected={tab === index}
+                        onClick={() => setTab(index)}
+                        sx={{
+                          borderRadius: `${radiusTokens.md}px`,
+                          flexShrink: 0,
+                          whiteSpace: 'nowrap',
+                          color: colorTokens.neutral400,
+                          '&.Mui-selected': {
+                            backgroundColor: colorTokens.accent900,
+                            color: colorTokens.accentInk,
+                            '&:hover': { backgroundColor: colorTokens.accent900 },
+                          },
+                        }}
+                      >
+                        <ListItemText
+                          primary={t.label}
+                          slotProps={{ primary: { sx: { fontSize: 14.5, fontWeight: 700 } } }}
+                        />
+                      </ListItemButton>
+                    ))}
+                  </List>
+                </Box>
 
-              {tab === 0 ? (
-                <ProfileTimeline entries={profile.timeline} />
-              ) : null}
-              {tab === 1 ? <SkillsTab onChanged={loadProfile} /> : null}
-              {tab === 2 ? (
-                <ProjectsTab
-                  projects={profile.projects}
-                  employments={profile.employments}
-                  onChanged={loadProfile}
-                />
-              ) : null}
-              {tab === 3 ? (
-                <CertificationsTab
-                  certifications={profile.certifications}
-                  onChanged={loadProfile}
-                />
-              ) : null}
-              {tab === 4 ? (
-                <AwardsTab awards={profile.awards} onChanged={loadProfile} />
-              ) : null}
-              {tab === 5 ? <CareerPassportTab /> : null}
+                <Box sx={{ flex: 1, minWidth: 0, pl: { md: 2.5 } }}>
+                  {tab === 0 ? (
+                    <PersonalInfoTab employments={profile.employments} />
+                  ) : null}
+                  {tab === 1 ? (
+                    <ProfileTimeline entries={profile.timeline} />
+                  ) : null}
+                  {tab === 2 ? <SkillsTab onChanged={loadProfile} /> : null}
+                  {tab === 3 ? (
+                    <ProjectsTab
+                      projects={profile.projects}
+                      employments={profile.employments}
+                      onChanged={loadProfile}
+                    />
+                  ) : null}
+                  {tab === 4 ? (
+                    <CertificationsTab
+                      certifications={profile.certifications}
+                      onChanged={loadProfile}
+                    />
+                  ) : null}
+                  {tab === 5 ? (
+                    <AwardsTab awards={profile.awards} onChanged={loadProfile} />
+                  ) : null}
+                  {tab === 6 ? <ActivityTab /> : null}
+                  {tab === 7 ? <DevelopmentPlanTab /> : null}
+                  {tab === 8 ? <CareerPassportTab /> : null}
+                </Box>
+              </Stack>
             </Card>
           </>
         ) : null}

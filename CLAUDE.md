@@ -4,9 +4,9 @@ Two-sided platform: **Super Admin** (platform level, no `companyId`) manages
 Companies; **Company Admin** (scoped to one `companyId`) manages employee
 competency profiles, views an "insight" dashboard for any employee, and
 matches employees against a project's required skills (AI-assisted);
-**Employee** (single flat tier — peers review each other, no
+**Employee** (single flat tier — peers assess each other, no
 sub-hierarchy) tracks own skills/experience, logs life activities,
-peer-reviews colleagues, sets development goals, and gets an AI-suggested
+cross-assesses colleagues, sets development goals, and gets an AI-suggested
 personal roadmap. Employees can pick a UI "concept" (default / anime /
 film / gather-town-pixel) that reskins their own UI — Admin always stays
 on the default look (see "Not yet built" below — this part is schema-only
@@ -46,7 +46,9 @@ cd frontend && npm install && npm run dev         # http://localhost:3001
 First-time setup (env files, DB migrate + seed) is in the root `README.md`.
 Seeded demo logins (password `Password123!` for all): `superadmin@careermate.dev`
 (SUPER_ADMIN), `admin@acme.dev` (COMPANY_ADMIN), `alice@acme.dev` /
-`bob@acme.dev` / `carol@acme.dev` (EMPLOYEE).
+`bob@acme.dev` / `carol@acme.dev` (EMPLOYEE, at Acme Corp), and
+`dana@careermate.dev` (EMPLOYEE, no company — for exercising company-gated
+UI like Cross Assessment).
 
 ## Data model
 
@@ -99,9 +101,8 @@ merge:**
   Admin roster + insight view).
 - **Activity Log** (`backend/src/modules/activity-logs/`) — owner-scoped
   CRUD, Company Admin/Super Admin can read another same-company user's log.
-  Frontend: `/activity-log`.
-- **Peer Reviews** (`backend/src/modules/peer-reviews/`) — given/received
-  lists + create (same-company only, no self-review). Frontend: `/peer-reviews`.
+  Frontend: a tab inside `/profile` (no standalone nav entry — it's part of
+  the employee's own profile, not a separate feature).
 - **Development Plan & Goals** (`backend/src/modules/development-plans/`)
   — `DevelopmentGoal` CRUD + the AI-assisted roadmap skill (see above).
   Frontend: `/development-plan`.

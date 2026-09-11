@@ -1,8 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import PageContainer from '@/components/layout/PageContainer';
-import PageHeader from '@/components/layout/PageHeader';
+import Box from '@mui/material/Box';
 import Card from '@/components/ui/Card';
 import MarkdownSplitEditor from '@/components/ui/MarkdownSplitEditor';
 import Typography from '@mui/material/Typography';
@@ -28,7 +27,7 @@ import RoadmapAssistant from './RoadmapAssistant';
  * D:\Coding\AI_Tool\docs\skills.md's intro) for both the markdown plan and
  * the roadmap assistant's milestone proposals.
  */
-export default function DevelopmentPlanPage() {
+export default function DevelopmentPlanTab() {
   const [goals, setGoals] = React.useState<DevelopmentGoal[] | null>(null);
   const [goalsError, setGoalsError] = React.useState<string | null>(null);
 
@@ -39,7 +38,6 @@ export default function DevelopmentPlanPage() {
     null,
   );
 
-  // Plan state
   const [planMd, setPlanMd] = React.useState('');
   const [hasSavedPlan, setHasSavedPlan] = React.useState(false);
   const [planLoading, setPlanLoading] = React.useState(true);
@@ -48,8 +46,6 @@ export default function DevelopmentPlanPage() {
   const [saving, setSaving] = React.useState(false);
   const [planError, setPlanError] = React.useState<string | null>(null);
   const [lastSummary, setLastSummary] = React.useState<string | null>(null);
-  // Tracks whether the current in-editor draft came from the AI skill
-  // (vs. a manual edit) so Save can pass the right aiGenerated flag.
   const [draftIsAiGenerated, setDraftIsAiGenerated] = React.useState(false);
 
   const loadGoals = React.useCallback(() => {
@@ -123,84 +119,82 @@ export default function DevelopmentPlanPage() {
   };
 
   return (
-    <PageContainer>
-        <PageHeader title="Lộ trình phát triển" subtitle="Lộ trình phát triển cá nhân của bạn." />
+    <Box>
+      <Card title="Mục tiêu" sx={{ mb: 3 }}>
+        {goalsError ? (
+          <Typography variant="body2" sx={{ color: colorTokens.danger, mb: 2 }}>
+            {goalsError}
+          </Typography>
+        ) : null}
+        {!goals ? (
+          <PageSkeleton variant="list" rows={3} embedded />
+        ) : (
+          <GoalsPanel goals={goals} onChanged={loadGoals} />
+        )}
+      </Card>
 
-        <Card title="Mục tiêu" sx={{ mb: 3 }}>
-          {goalsError ? (
-            <Typography variant="body2" sx={{ color: colorTokens.danger, mb: 2 }}>
-              {goalsError}
-            </Typography>
-          ) : null}
-          {!goals ? (
-            <PageSkeleton variant="list" rows={3} embedded />
-          ) : (
-            <GoalsPanel goals={goals} onChanged={loadGoals} />
-          )}
-        </Card>
+      <Card title="Cột mốc lộ trình" sx={{ mb: 3 }}>
+        {milestonesError ? (
+          <Typography variant="body2" sx={{ color: colorTokens.danger, mb: 2 }}>
+            {milestonesError}
+          </Typography>
+        ) : null}
+        {!milestones ? (
+          <PageSkeleton variant="list" rows={3} embedded />
+        ) : (
+          <MilestonesPanel milestones={milestones} onChanged={loadMilestones} />
+        )}
+      </Card>
 
-        <Card title="Cột mốc lộ trình" sx={{ mb: 3 }}>
-          {milestonesError ? (
-            <Typography variant="body2" sx={{ color: colorTokens.danger, mb: 2 }}>
-              {milestonesError}
-            </Typography>
-          ) : null}
-          {!milestones ? (
-            <PageSkeleton variant="list" rows={3} embedded />
-          ) : (
-            <MilestonesPanel milestones={milestones} onChanged={loadMilestones} />
-          )}
-        </Card>
+      <Card title="Dựng lộ trình bằng AI" sx={{ mb: 3 }}>
+        <RoadmapAssistant onSaved={loadMilestones} />
+      </Card>
 
-        <Card title="Dựng lộ trình bằng AI" sx={{ mb: 3 }}>
-          <RoadmapAssistant onSaved={loadMilestones} />
-        </Card>
+      <Card title="Kế hoạch phát triển">
+        <TextField
+          label="Hướng dẫn (tuỳ chọn)"
+          placeholder="ví dụ Tập trung kỹ năng lãnh đạo trong quý tới"
+          size="small"
+          fullWidth
+          value={instruction}
+          onChange={(e) => setInstruction(e.target.value)}
+          sx={{ mb: 2 }}
+        />
 
-        <Card title="Kế hoạch phát triển">
-          <TextField
-            label="Hướng dẫn (tuỳ chọn)"
-            placeholder="ví dụ Tập trung kỹ năng lãnh đạo trong quý tới"
-            size="small"
-            fullWidth
-            value={instruction}
-            onChange={(e) => setInstruction(e.target.value)}
-            sx={{ mb: 2 }}
+        <Stack direction="row" spacing={1.5} sx={{ mb: 2 }}>
+          <Button variant="contained" onClick={handleGenerate} disabled={generating}>
+            {generating ? 'Đang tạo…' : hasSavedPlan ? 'Tạo lại' : 'Tạo'}
+          </Button>
+          <Button variant="outlined" onClick={handleSavePlan} disabled={saving || !planMd.trim()}>
+            {saving ? 'Đang lưu…' : 'Lưu'}
+          </Button>
+        </Stack>
+
+        {planError ? (
+          <Typography variant="body2" sx={{ color: colorTokens.danger, mb: 2 }}>
+            {planError}
+          </Typography>
+        ) : null}
+
+        {lastSummary ? (
+          <Typography variant="body2" sx={{ color: colorTokens.neutral400, mb: 2 }}>
+            {lastSummary}
+          </Typography>
+        ) : null}
+
+        {planLoading ? (
+          <PageSkeleton variant="form" embedded />
+        ) : (
+          <MarkdownSplitEditor
+            value={planMd}
+            onChange={(value) => {
+              setPlanMd(value);
+              setDraftIsAiGenerated(false);
+            }}
+            height={480}
           />
-
-          <Stack direction="row" spacing={1.5} sx={{ mb: 2 }}>
-            <Button variant="contained" onClick={handleGenerate} disabled={generating}>
-              {generating ? 'Đang tạo…' : hasSavedPlan ? 'Tạo lại' : 'Tạo'}
-            </Button>
-            <Button variant="outlined" onClick={handleSavePlan} disabled={saving || !planMd.trim()}>
-              {saving ? 'Đang lưu…' : 'Lưu'}
-            </Button>
-          </Stack>
-
-          {planError ? (
-            <Typography variant="body2" sx={{ color: colorTokens.danger, mb: 2 }}>
-              {planError}
-            </Typography>
-          ) : null}
-
-          {lastSummary ? (
-            <Typography variant="body2" sx={{ color: colorTokens.neutral400, mb: 2 }}>
-              {lastSummary}
-            </Typography>
-          ) : null}
-
-          {planLoading ? (
-            <PageSkeleton variant="form" embedded />
-          ) : (
-            <MarkdownSplitEditor
-              value={planMd}
-              onChange={(value) => {
-                setPlanMd(value);
-                setDraftIsAiGenerated(false);
-              }}
-              height={480}
-            />
-          )}
-        </Card>
-    </PageContainer>
+        )}
+      </Card>
+    </Box>
   );
 }

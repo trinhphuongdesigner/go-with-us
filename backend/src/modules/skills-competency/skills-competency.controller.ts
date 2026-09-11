@@ -57,7 +57,7 @@ export class SkillsCompetencyController {
 
   @Get('insight/:userId')
   @UseGuards(RolesGuard)
-  @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.HR, Role.BOD, Role.SUPER_ADMIN)
   getInsight(
     @Param('userId') userId: string,
     @CurrentUser() caller: AuthenticatedUser,

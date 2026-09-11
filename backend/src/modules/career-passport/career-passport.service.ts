@@ -102,7 +102,7 @@ export class CareerPassportService {
         'companyId is required when the user has no current company',
       );
     }
-    if (caller.role === Role.COMPANY_ADMIN && companyId !== caller.companyId) {
+    if (caller.role === Role.HR && companyId !== caller.companyId) {
       throw new ForbiddenException('Not allowed to write for another company');
     }
 
@@ -137,10 +137,9 @@ export class CareerPassportService {
       throw new NotFoundException(`Employment ${id} not found`);
     }
     const isOwner = employment.userId === caller.id;
-    const isCompanyAdmin =
-      caller.role === Role.COMPANY_ADMIN &&
-      caller.companyId === employment.companyId;
-    if (!isOwner && !isCompanyAdmin && caller.role !== Role.SUPER_ADMIN) {
+    const isCompanyHr =
+      caller.role === Role.HR && caller.companyId === employment.companyId;
+    if (!isOwner && !isCompanyHr && caller.role !== Role.SUPER_ADMIN) {
       throw new ForbiddenException('Not allowed to edit this employment');
     }
 
@@ -669,10 +668,13 @@ export class CareerPassportService {
       throw new BadRequestException('This summary has already been approved');
     }
 
+    // Which of HR/BOD may call this is already narrowed per-endpoint by the
+    // controller's @Roles — trigger/approve are BOD, the narrative edit is
+    // HR — so this only needs to confirm same-company scope.
     const companyId = summary.employment?.companyId;
     if (caller.role === Role.SUPER_ADMIN) {
       // allowed
-    } else if (caller.role === Role.COMPANY_ADMIN) {
+    } else if (caller.role === Role.HR || caller.role === Role.BOD) {
       if (!companyId || caller.companyId !== companyId) {
         throw new ForbiddenException(
           'Not allowed to manage this offboarding summary',

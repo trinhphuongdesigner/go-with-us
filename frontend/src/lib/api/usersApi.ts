@@ -17,6 +17,14 @@ export interface UpdateUserPayload {
   themeConcept?: ThemeConcept;
   contributionScore?: number;
   attitudeScore?: number;
+  phone?: string;
+  dateOfBirth?: string;
+  idNumber?: string;
+  gender?: string;
+  /** Admin-only — UsersService rejects this field from an EMPLOYEE caller. */
+  onboardDate?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
 }
 
 export function listUsers() {

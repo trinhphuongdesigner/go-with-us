@@ -43,7 +43,7 @@ export interface CompetencyInsight {
   skills: EmployeeSkill[];
   goalStatusCounts: Record<string, number>;
   activityCount: number;
-  peerReviewReceivedCount: number;
+  assessmentsReceivedCount: number;
 }
 
 export function listSkills() {

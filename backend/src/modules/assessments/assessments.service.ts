@@ -107,7 +107,7 @@ export class AssessmentsService {
     caller: AuthenticatedUser,
   ) {
     const template = await this.getTemplate(id, caller);
-    this.assertCanManageCompany(caller, template.companyId);
+    this.assertCanManageTemplates(caller, template.companyId);
 
     // Replacing the tree bumps the version; approved assessments are
     // unaffected because they hold their own templateSnapshot.
@@ -136,7 +136,7 @@ export class AssessmentsService {
 
   async removeTemplate(id: string, caller: AuthenticatedUser) {
     const template = await this.getTemplate(id, caller);
-    this.assertCanManageCompany(caller, template.companyId);
+    this.assertCanManageTemplates(caller, template.companyId);
 
     const usage = await this.prisma.assessment.count({
       where: { templateId: template.id },
@@ -208,7 +208,7 @@ export class AssessmentsService {
     if (!cycle) {
       throw new NotFoundException(`Assessment cycle ${id} not found`);
     }
-    this.assertCanManageCompany(caller, cycle.companyId);
+    this.assertCanManageTemplates(caller, cycle.companyId);
 
     return this.prisma.assessmentCycle.update({
       where: { id },
@@ -519,14 +519,24 @@ export class AssessmentsService {
     }));
   }
 
-  private assertCanManageCompany(caller: AuthenticatedUser, companyId: string) {
+  /** HR builds/owns the scale — templates and cycles are their tool. */
+  private assertCanManageTemplates(caller: AuthenticatedUser, companyId: string) {
     if (caller.role === Role.SUPER_ADMIN) return;
-    if (caller.role === Role.COMPANY_ADMIN && caller.companyId === companyId) {
+    if (caller.role === Role.HR && caller.companyId === companyId) {
       return;
     }
     throw new ForbiddenException(
       'Not allowed to manage assessment settings for this company',
     );
+  }
+
+  /** BOD does the final review/approve sign-off on a submitted assessment. */
+  private assertCanApprove(caller: AuthenticatedUser, companyId: string) {
+    if (caller.role === Role.SUPER_ADMIN) return;
+    if (caller.role === Role.BOD && caller.companyId === companyId) {
+      return;
+    }
+    throw new ForbiddenException('Not allowed to approve this assessment');
   }
 
   /** Only the author can edit, and only before it is submitted. */
@@ -562,7 +572,7 @@ export class AssessmentsService {
       );
     }
     if (assessment.reviewee.companyId) {
-      this.assertCanManageCompany(caller, assessment.reviewee.companyId);
+      this.assertCanApprove(caller, assessment.reviewee.companyId);
     } else if (caller.role !== Role.SUPER_ADMIN) {
       throw new ForbiddenException('Not allowed to approve this assessment');
     }

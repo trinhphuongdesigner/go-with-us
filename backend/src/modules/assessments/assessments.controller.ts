@@ -30,9 +30,9 @@ import {
 
 /**
  * M3 — Cross Assessment. Three layers in one module:
- *   templates  (company builds its own scale — admin only)
- *   cycles     (a month-long round against a template — admin only)
- *   assessments (employees fill in, an admin approves)
+ *   templates  (company builds its own scale — HR only)
+ *   cycles     (a month-long round against a template — HR only)
+ *   assessments (employees fill in, BOD approves)
  *
  * Approving snapshots the template onto the record, which is what lets an
  * approved assessment follow the person for life.
@@ -45,7 +45,7 @@ export class AssessmentsController {
   // --- Templates -----------------------------------------------------------
 
   @Get('templates')
-  @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.HR, Role.SUPER_ADMIN)
   listTemplates(
     @CurrentUser() caller: AuthenticatedUser,
     @Query('companyId') companyId?: string,
@@ -62,7 +62,7 @@ export class AssessmentsController {
   }
 
   @Post('templates')
-  @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.HR, Role.SUPER_ADMIN)
   createTemplate(
     @Body() dto: CreateAssessmentTemplateDto,
     @CurrentUser() caller: AuthenticatedUser,
@@ -71,7 +71,7 @@ export class AssessmentsController {
   }
 
   @Patch('templates/:id')
-  @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.HR, Role.SUPER_ADMIN)
   updateTemplate(
     @Param('id') id: string,
     @Body() dto: UpdateAssessmentTemplateDto,
@@ -81,7 +81,7 @@ export class AssessmentsController {
   }
 
   @Delete('templates/:id')
-  @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.HR, Role.SUPER_ADMIN)
   removeTemplate(
     @Param('id') id: string,
     @CurrentUser() caller: AuthenticatedUser,
@@ -92,7 +92,7 @@ export class AssessmentsController {
   // --- Cycles --------------------------------------------------------------
 
   @Get('cycles')
-  @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.HR, Role.SUPER_ADMIN)
   listCycles(
     @CurrentUser() caller: AuthenticatedUser,
     @Query('companyId') companyId?: string,
@@ -106,7 +106,7 @@ export class AssessmentsController {
   }
 
   @Post('cycles')
-  @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.HR, Role.SUPER_ADMIN)
   createCycle(
     @Body() dto: CreateAssessmentCycleDto,
     @CurrentUser() caller: AuthenticatedUser,
@@ -115,7 +115,7 @@ export class AssessmentsController {
   }
 
   @Patch('cycles/:id')
-  @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.HR, Role.SUPER_ADMIN)
   updateCycle(
     @Param('id') id: string,
     @Body() dto: UpdateAssessmentCycleDto,
@@ -127,7 +127,7 @@ export class AssessmentsController {
   // --- Assessments ---------------------------------------------------------
 
   @Get('pending-approval')
-  @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.BOD, Role.SUPER_ADMIN)
   listPendingApproval(@CurrentUser() caller: AuthenticatedUser) {
     return this.service.listPendingApproval(caller);
   }
@@ -176,7 +176,7 @@ export class AssessmentsController {
   }
 
   @Post(':id/approve')
-  @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.BOD, Role.SUPER_ADMIN)
   approveAssessment(
     @Param('id') id: string,
     @CurrentUser() caller: AuthenticatedUser,
@@ -185,7 +185,7 @@ export class AssessmentsController {
   }
 
   @Post(':id/reject')
-  @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.BOD, Role.SUPER_ADMIN)
   rejectAssessment(
     @Param('id') id: string,
     @Body() dto: ReviewAssessmentDto,

@@ -170,6 +170,7 @@ Mọi màn authenticated dùng đúng component trong `frontend/src/components/u
 3. **Icon — size đồng bộ.** Token `iconSizes`: `sm=18` (trong button `sm`), `md=20` (mặc định — nav, IconButton, startIcon `md`), `lg=24` (empty/featured). Không set `fontSize={16}` / `22` lẻ. IconButton dùng `components/ui/IconButton`.
 4. **Loading + skeleton.** Route/auth gate dùng `components/ui/Loading` (fullscreen). Mọi trang / tab **fetch data** dùng `PageSkeleton` (table / list / form / profile / cards) — không spinner MUI trần, không text “Loading…”, không `LinearProgress` làm placeholder chính. `LinearProgress` chỉ cho hành động đang chạy (generate / match).
 5. **Dialog dùng chung.** Form modal → `components/ui/Dialog` (`title` + `children` + `actions`). Xóa / revoke / hành động phá hủy → `ConfirmDialog` (hoặc `useConfirmDialog`). Cấm xóa ngay không hỏi. Cấm `window.confirm`.
+6. **List/card toggle — bắt buộc cho mọi trang danh sách.** Bất kỳ trang nào render một danh sách bản ghi đồng dạng (roster, danh sách công ty/nhân sự/… — không tính feed nhiều loại nội dung trộn lẫn như Đánh giá đồng nghiệp/Đánh giá chéo) phải cho chọn 2 chế độ xem: **danh sách** (table, mặc định) và **card** (grid). Dùng `components/ui/ViewToggle` (2 icon-button trong 1 pill, tham khảo `SegmentedControl` của `madison-ai-workspace-tool`), đặt vào `actions` của `Card` chứa danh sách. Không tự vẽ toggle riêng lẻ từng trang.
 
 ---
 
@@ -218,5 +219,5 @@ Chưa cần GTM / doanh thu. **Cần tầm nhìn**. Slide có thể do AI làm �
 - [ ] Luồng HR ↔ Employee ↔ người staffing khép kín trên cùng hồ sơ.
 - [ ] AI: proposal → confirm; tiền/hậu xử lý; model theo độ khó; không paste raw.
 - [ ] UI lean, timeline/dự án/điểm tháng nhìn được, nhìn vào biết xài.
-- [ ] Button 1 dòng, size `sm`/`md`; 1 font sans; icon `sm`/`md`/`lg`; trang fetch có `PageSkeleton`; form dùng `Dialog`, xóa dùng `ConfirmDialog`.
+- [ ] Button 1 dòng, size `sm`/`md`; 1 font sans; icon `sm`/`md`/`lg`; trang fetch có `PageSkeleton`; form dùng `Dialog`, xóa dùng `ConfirmDialog`; trang danh sách bản ghi đồng dạng có `ViewToggle` (list/card).
 - [ ] Demo 3 bước đầu mục 7 chạy trên seed: Alice/Bob + admin Acme.

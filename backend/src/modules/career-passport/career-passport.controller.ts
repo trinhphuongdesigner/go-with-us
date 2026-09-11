@@ -107,7 +107,7 @@ export class CareerPassportController {
   }
 
   @Get('summaries/pending')
-  @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.BOD, Role.SUPER_ADMIN)
   listPendingOffboardingSummaries(
     @CurrentUser() caller: AuthenticatedUser,
     @Query('companyId') companyId?: string,
@@ -116,7 +116,7 @@ export class CareerPassportController {
   }
 
   @Post('summaries/:id/trigger')
-  @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.BOD, Role.SUPER_ADMIN)
   triggerOffboardingSummary(
     @Param('id') id: string,
     @CurrentUser() caller: AuthenticatedUser,
@@ -125,7 +125,7 @@ export class CareerPassportController {
   }
 
   @Patch('summaries/:id')
-  @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.HR, Role.SUPER_ADMIN)
   updateOffboardingSummary(
     @Param('id') id: string,
     @Body() dto: UpdateOffboardingSummaryDto,
@@ -135,7 +135,7 @@ export class CareerPassportController {
   }
 
   @Post('summaries/:id/approve')
-  @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.BOD, Role.SUPER_ADMIN)
   approveOffboardingSummary(
     @Param('id') id: string,
     @CurrentUser() caller: AuthenticatedUser,

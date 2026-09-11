@@ -42,7 +42,7 @@ export class JobRequirementsController {
   }
 
   @Post()
-  @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.HR, Role.BOD, Role.SUPER_ADMIN)
   create(
     @Body() dto: CreateJobRequirementDto,
     @CurrentUser() caller: AuthenticatedUser,
@@ -65,7 +65,7 @@ export class JobRequirementsController {
   }
 
   @Post(':id/match')
-  @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.HR, Role.BOD, Role.SUPER_ADMIN)
   match(@Param('id') id: string, @CurrentUser() caller: AuthenticatedUser) {
     return this.jobRequirementsService.match(id, caller);
   }

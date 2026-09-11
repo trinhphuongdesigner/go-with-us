@@ -11,6 +11,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthenticatedUser } from '../auth/jwt.strategy';
+import { canManageRole, getManageableRoles } from '../../common/access/role-hierarchy';
 
 const SALT_ROUNDS = 10;
 
@@ -26,6 +27,13 @@ const PUBLIC_USER_SELECT = {
   themeConcept: true,
   contributionScore: true,
   attitudeScore: true,
+  phone: true,
+  dateOfBirth: true,
+  idNumber: true,
+  gender: true,
+  onboardDate: true,
+  emergencyContactName: true,
+  emergencyContactPhone: true,
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -35,10 +43,12 @@ export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * SUPER_ADMIN sees every user; COMPANY_ADMIN sees only their own
-   * company's users; EMPLOYEE sees self + same-company peers (read-only —
-   * enforced by the controller only exposing this method behind any
-   * authenticated role, and mutate methods separately role-checking).
+   * SUPER_ADMIN sees every user. EMPLOYEE sees the full same-company
+   * roster, read-only (used for the assessment colleague picker etc — not
+   * an account-management view, so it's not scoped by the hierarchy below).
+   * COMPANY_ADMIN/BOD/HR see only the same-company users they're allowed to
+   * manage (see role-hierarchy.ts) — this list doubles as the roster for
+   * their user-management UI, so it should never show a peer or superior.
    */
   findAll(caller: AuthenticatedUser) {
     if (caller.role === Role.SUPER_ADMIN) {
@@ -52,8 +62,19 @@ export class UsersService {
       throw new ForbiddenException('No company scope for this account');
     }
 
+    if (caller.role === Role.EMPLOYEE) {
+      return this.prisma.user.findMany({
+        where: { companyId: caller.companyId },
+        select: PUBLIC_USER_SELECT,
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+
     return this.prisma.user.findMany({
-      where: { companyId: caller.companyId },
+      where: {
+        companyId: caller.companyId,
+        role: { in: getManageableRoles(caller.role) },
+      },
       select: PUBLIC_USER_SELECT,
       orderBy: { createdAt: 'desc' },
     });
@@ -72,10 +93,13 @@ export class UsersService {
   }
 
   /**
-   * COMPANY_ADMIN creates EMPLOYEE rows scoped to their own company.
-   * SUPER_ADMIN may create any role directly (COMPANY_ADMIN creation is
-   * normally done via CompaniesService.create alongside a new Company, but
-   * this stays open for flexibility). EMPLOYEE callers cannot create users.
+   * COMPANY_ADMIN/BOD/HR create users scoped to their own company, limited
+   * to roles strictly below their own in the hierarchy (role-hierarchy.ts)
+   * — e.g. COMPANY_ADMIN can create BOD/HR/EMPLOYEE, HR can only create
+   * EMPLOYEE. SUPER_ADMIN may create any role directly (COMPANY_ADMIN
+   * creation is normally done via CompaniesService.create alongside a new
+   * Company, but this stays open for flexibility). EMPLOYEE callers cannot
+   * create users.
    */
   async create(dto: CreateUserDto, caller: AuthenticatedUser) {
     if (caller.role === Role.EMPLOYEE) {
@@ -92,21 +116,21 @@ export class UsersService {
     }
 
     let companyId: string | null = null;
-    if (caller.role === Role.COMPANY_ADMIN) {
-      if (dto.role !== Role.EMPLOYEE) {
-        throw new ForbiddenException(
-          'Company admins can only create EMPLOYEE users',
-        );
-      }
-      companyId = caller.companyId;
-    } else if (caller.role === Role.SUPER_ADMIN) {
+    if (caller.role === Role.SUPER_ADMIN) {
       if (dto.role !== Role.SUPER_ADMIN && !dto.companyId) {
         throw new BadRequestException(
-          'companyId is required for COMPANY_ADMIN/EMPLOYEE users',
+          'companyId is required for COMPANY_ADMIN/BOD/HR/EMPLOYEE users',
         );
       }
       companyId =
         dto.role === Role.SUPER_ADMIN ? null : (dto.companyId ?? null);
+    } else {
+      if (!canManageRole(caller.role, dto.role)) {
+        throw new ForbiddenException(
+          `${caller.role} cannot create a ${dto.role} user`,
+        );
+      }
+      companyId = caller.companyId;
     }
 
     const passwordHash = await bcrypt.hash(dto.password, SALT_ROUNDS);
@@ -135,16 +159,44 @@ export class UsersService {
     }
 
     const isSelf = target.id === caller.id;
-    const isSameCompanyAdmin =
-      caller.role === Role.COMPANY_ADMIN &&
-      caller.companyId === target.companyId;
-    if (!isSelf && caller.role !== Role.SUPER_ADMIN && !isSameCompanyAdmin) {
+    const canManageTarget =
+      caller.role !== Role.EMPLOYEE &&
+      caller.companyId === target.companyId &&
+      canManageRole(caller.role, target.role);
+    const isPrivileged = caller.role === Role.SUPER_ADMIN || canManageTarget;
+    if (!isSelf && !isPrivileged) {
       throw new ForbiddenException('Not allowed to update this user');
     }
 
+    // Role reassignment: only a privileged (non-self) caller may do it, and
+    // only into a role that's also within their manageable tier — so HR
+    // can't promote someone to BOD, BOD can't promote to COMPANY_ADMIN.
+    if (dto.role !== undefined && dto.role !== target.role) {
+      if (!isPrivileged || isSelf) {
+        throw new ForbiddenException('Not allowed to change this user\'s role');
+      }
+      if (caller.role !== Role.SUPER_ADMIN && !canManageRole(caller.role, dto.role)) {
+        throw new ForbiddenException(
+          `${caller.role} cannot assign the ${dto.role} role`,
+        );
+      }
+    }
+
+    // onboardDate is an HR-controlled milestone, not something an employee
+    // reports about themselves — only an admin (super or same-company) may
+    // set it, whether or not the target happens to also be themselves.
+    if (dto.onboardDate !== undefined && caller.role === Role.EMPLOYEE) {
+      throw new ForbiddenException('Only an admin can set onboardDate');
+    }
+
+    const { dateOfBirth, onboardDate, ...rest } = dto;
     return this.prisma.user.update({
       where: { id },
-      data: dto,
+      data: {
+        ...rest,
+        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+        onboardDate: onboardDate ? new Date(onboardDate) : undefined,
+      },
       select: PUBLIC_USER_SELECT,
     });
   }
@@ -155,10 +207,11 @@ export class UsersService {
       throw new NotFoundException(`User ${id} not found`);
     }
 
-    const isSameCompanyAdmin =
-      caller.role === Role.COMPANY_ADMIN &&
-      caller.companyId === target.companyId;
-    if (caller.role !== Role.SUPER_ADMIN && !isSameCompanyAdmin) {
+    const canManageTarget =
+      caller.role !== Role.EMPLOYEE &&
+      caller.companyId === target.companyId &&
+      canManageRole(caller.role, target.role);
+    if (caller.role !== Role.SUPER_ADMIN && !canManageTarget) {
       throw new ForbiddenException('Not allowed to delete this user');
     }
 

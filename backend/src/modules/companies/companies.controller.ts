@@ -15,6 +15,8 @@ import { UpdateCompanyDto } from './dto/update-company.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/jwt.strategy';
 
 @Controller('companies')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -25,6 +27,19 @@ export class CompaniesController {
   @Roles(Role.SUPER_ADMIN)
   findAll() {
     return this.companiesService.findAll();
+  }
+
+  // Registered ahead of ':id' so it isn't shadowed by that param route.
+  @Get('me')
+  @Roles(Role.COMPANY_ADMIN)
+  findOwn(@CurrentUser() user: AuthenticatedUser) {
+    return this.companiesService.findOwn(user.companyId!);
+  }
+
+  @Patch('me')
+  @Roles(Role.COMPANY_ADMIN)
+  updateOwn(@CurrentUser() user: AuthenticatedUser, @Body() dto: UpdateCompanyDto) {
+    return this.companiesService.updateOwn(user.companyId!, dto);
   }
 
   @Get(':id')

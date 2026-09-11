@@ -23,9 +23,13 @@ interface ProviderConnectionRowProps {
  * D:\Coding\AI_Tool\docs\new-project-prompt-template.md section A
  * describes: masked key input, optional baseUrl/model override, Save/
  * Disconnect. GET never returns the real key (see AiSettingsService on the
- * backend) — the key field always starts blank; a saved connection is
- * only signaled via the "Connected" chip, never by prefilling the input.
+ * backend) — only `hasKey`. When a key is already set, the input renders
+ * as a disabled masked placeholder instead of the real value; "Đổi key"
+ * swaps it for a blank editable field, and only that new value (never the
+ * old one) goes into the save payload.
  */
+const MASKED_KEY = '••••••••••••••••';
+
 export default function ProviderConnectionRow({
   provider,
   label,
@@ -33,6 +37,7 @@ export default function ProviderConnectionRow({
   onChanged,
 }: ProviderConnectionRowProps) {
   const [apiKey, setApiKey] = React.useState('');
+  const [editingKey, setEditingKey] = React.useState(!setting.hasKey);
   const [baseUrl, setBaseUrl] = React.useState(setting.baseUrl ?? '');
   const [model, setModel] = React.useState(setting.model ?? '');
   const [saving, setSaving] = React.useState(false);
@@ -53,6 +58,7 @@ export default function ProviderConnectionRow({
       });
       onChanged(updated);
       setApiKey('');
+      setEditingKey(false);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Không lưu được kết nối');
     } finally {
@@ -67,6 +73,7 @@ export default function ProviderConnectionRow({
       await aiSettingsApi.deleteAiSetting(provider);
       onChanged({ provider, hasKey: false, baseUrl: null, model: null });
       setApiKey('');
+      setEditingKey(true);
       setBaseUrl('');
       setModel('');
     } catch (err) {
@@ -94,14 +101,24 @@ export default function ProviderConnectionRow({
       </Box>
 
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }}>
-        <TextField
-          type="password"
-          placeholder={setting.hasKey ? 'Để trống nếu giữ key hiện tại' : 'API key (ví dụ sk-...)'}
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          fullWidth
-          size="small"
-        />
+        {editingKey ? (
+          <TextField
+            type="password"
+            placeholder="API key (ví dụ sk-...)"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            fullWidth
+            size="small"
+            autoFocus={setting.hasKey}
+          />
+        ) : (
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <TextField value={MASKED_KEY} disabled fullWidth size="small" />
+            <Button variant="outlined" size="small" onClick={() => setEditingKey(true)}>
+              Đổi key
+            </Button>
+          </Box>
+        )}
         <TextField
           placeholder="Base URL (tuỳ chọn)"
           value={baseUrl}

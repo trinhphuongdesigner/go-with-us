@@ -78,7 +78,7 @@ export class JobRequirementsService {
       }
       companyId = dto.companyId;
     } else {
-      // COMPANY_ADMIN — force their own company, ignore any client-supplied
+      // HR/BOD — force their own company, ignore any client-supplied
       // companyId (RolesGuard already keeps EMPLOYEE out of this handler).
       if (!caller.companyId) {
         throw new ForbiddenException('No company scope for this account');
@@ -189,7 +189,7 @@ export class JobRequirementsService {
     return { matches, summary: parsed.summary };
   }
 
-  /** Loads a requirement and enforces creator/same-company-admin access. */
+  /** Loads a requirement and enforces creator/same-company HR-or-BOD access. */
   private async findOwned(id: string, caller: AuthenticatedUser) {
     const requirement = await this.prisma.jobRequirement.findUnique({
       where: { id },
@@ -199,12 +199,12 @@ export class JobRequirementsService {
     }
 
     const isCreator = requirement.createdById === caller.id;
-    const isSameCompanyAdmin =
-      caller.role === Role.COMPANY_ADMIN &&
+    const isSameCompanyManager =
+      (caller.role === Role.HR || caller.role === Role.BOD) &&
       caller.companyId === requirement.companyId;
     const isSuperAdmin = caller.role === Role.SUPER_ADMIN;
 
-    if (!isCreator && !isSameCompanyAdmin && !isSuperAdmin) {
+    if (!isCreator && !isSameCompanyManager && !isSuperAdmin) {
       throw new ForbiddenException(
         'Not allowed to manage this job requirement',
       );

@@ -1,13 +1,9 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateActivityLogDto } from './dto/create-activity-log.dto';
 import { UpdateActivityLogDto } from './dto/update-activity-log.dto';
 import type { AuthenticatedUser } from '../auth/jwt.strategy';
+import { assertCanViewUser } from '../../common/access/user-scope';
 
 @Injectable()
 export class ActivityLogsService {
@@ -15,35 +11,18 @@ export class ActivityLogsService {
 
   /**
    * Defaults to the caller's own activity log when no userId is given.
-   * Viewing someone else's log is allowed for COMPANY_ADMIN (same company
-   * only) and SUPER_ADMIN (anyone) — mirrors UsersService's visibility
-   * shape.
+   * Viewing someone else's log is gated by the account-management hierarchy
+   * (role-hierarchy.ts) via the shared assertCanViewUser helper — HR/BOD can
+   * view an EMPLOYEE's log, SUPER_ADMIN can view anyone's.
    */
   async findAll(caller: AuthenticatedUser, userId?: string) {
     const targetUserId = userId ?? caller.id;
-
-    if (targetUserId !== caller.id) {
-      if (caller.role === Role.SUPER_ADMIN) {
-        // allowed
-      } else if (caller.role === Role.COMPANY_ADMIN) {
-        const target = await this.prisma.user.findUnique({
-          where: { id: targetUserId },
-          select: { companyId: true },
-        });
-        if (!target) {
-          throw new NotFoundException(`User ${targetUserId} not found`);
-        }
-        if (!caller.companyId || caller.companyId !== target.companyId) {
-          throw new ForbiddenException(
-            "Not allowed to view this user's activity log",
-          );
-        }
-      } else {
-        throw new ForbiddenException(
-          "Not allowed to view this user's activity log",
-        );
-      }
-    }
+    await assertCanViewUser(
+      this.prisma,
+      caller,
+      targetUserId,
+      'activity log',
+    );
 
     return this.prisma.activityLog.findMany({
       where: { userId: targetUserId },

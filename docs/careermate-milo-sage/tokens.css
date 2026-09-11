@@ -1,0 +1,28 @@
+:root {
+  --cm-canvas: #f7f8f5;
+  --cm-surface: #ffffff;
+  --cm-primary: #3e7868;
+  --cm-primary-text: #336655;
+  --cm-primary-subtle: #e4efe7;
+  --cm-selected-border: #91b3a1;
+  --cm-sand: #f3e9d7;
+  --cm-heading: #243f36;
+  --cm-body: #303b36;
+  --cm-secondary: #626c65;
+  --cm-border: #e2e8e4;
+  --cm-muted: #eff2ef;
+  --cm-danger: #ad442e;
+  --cm-font-family: "Geist", system-ui, sans-serif;
+  --cm-line-height: 1.35;
+  --cm-space-4: 4px;
+  --cm-space-8: 8px;
+  --cm-space-12: 12px;
+  --cm-space-16: 16px;
+  --cm-space-24: 24px;
+  --cm-space-32: 32px;
+  --cm-space-48: 48px;
+  --cm-radius-8: 8px;
+  --cm-radius-14: 14px;
+  --cm-radius-22: 22px;
+  --cm-shadow-soft: 0 6px 16px rgba(36, 64, 54, 0.08);
+}
