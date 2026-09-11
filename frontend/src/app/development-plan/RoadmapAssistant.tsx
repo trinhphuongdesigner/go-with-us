@@ -94,7 +94,7 @@ export default function RoadmapAssistant({
       }
     } catch (err) {
       setQuestion(value);
-      setError(err instanceof ApiError ? err.message : 'The assistant failed');
+      setError(err instanceof ApiError ? err.message : 'Trợ lý không trả lời được');
     } finally {
       setBusy(false);
     }
@@ -144,7 +144,7 @@ export default function RoadmapAssistant({
         .filter((m) => m.tasks.length > 0),
     };
     if (payload.milestones.length === 0) {
-      setError('Add at least one milestone with one task before saving.');
+      setError('Thêm ít nhất một cột mốc với một nhiệm vụ trước khi lưu.');
       return;
     }
 
@@ -156,7 +156,7 @@ export default function RoadmapAssistant({
       setSaved(true);
       onSaved();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to save roadmap');
+      setError(err instanceof ApiError ? err.message : 'Không lưu được lộ trình');
     } finally {
       setSaving(false);
     }
@@ -171,14 +171,14 @@ export default function RoadmapAssistant({
       ) : null}
       {saved ? (
         <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSaved(false)}>
-          Roadmap saved — see it in Milestones above.
+          Đã lưu lộ trình — xem ở Cột mốc phía trên.
         </Alert>
       ) : null}
 
       {messages.length === 0 ? (
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Tell the assistant what you want to grow into — it already knows
-          your skills and goals, so you don&apos;t need to repeat those.
+          Nói với trợ lý bạn muốn phát triển thành gì — nó đã biết kỹ năng và
+          mục tiêu của bạn, không cần nhắc lại.
         </Typography>
       ) : (
         <Stack spacing={1.5} sx={{ mb: 2 }}>
@@ -212,7 +212,7 @@ export default function RoadmapAssistant({
 
       <Stack direction="row" spacing={1.5} sx={{ mb: 3 }}>
         <TextField
-          placeholder="e.g. I want to grow into a tech lead role in the next year"
+          placeholder="ví dụ Tôi muốn trở thành tech lead trong năm tới"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           onKeyDown={(e) => {
@@ -230,14 +230,14 @@ export default function RoadmapAssistant({
           onClick={() => handleAsk()}
           disabled={busy || !question.trim()}
         >
-          Send
+          Gửi
         </Button>
       </Stack>
 
       {draft ? (
         <Box>
           <Typography variant="body1" sx={{ fontWeight: 600, mb: 1.5 }}>
-            Proposed roadmap — edit anything before saving
+            Lộ trình đề xuất — sửa trước khi lưu
           </Typography>
           <Stack spacing={2}>
             {draft.map((milestone, mIndex) => (
@@ -251,14 +251,14 @@ export default function RoadmapAssistant({
               >
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                   <TextField
-                    label={`Milestone ${mIndex + 1}`}
+                    label={`Cột mốc ${mIndex + 1}`}
                     value={milestone.title}
                     onChange={(e) => patchMilestone(mIndex, { title: e.target.value })}
                     size="small"
                     fullWidth
                   />
                   <TextField
-                    label="Due date"
+                    label="Hạn"
                     type="date"
                     value={milestone.dueDate}
                     onChange={(e) =>
@@ -275,7 +275,7 @@ export default function RoadmapAssistant({
                   </IconButton>
                 </Stack>
                 <TextField
-                  label="Description"
+                  label="Mô tả"
                   value={milestone.description}
                   onChange={(e) =>
                     patchMilestone(mIndex, { description: e.target.value })
@@ -288,9 +288,9 @@ export default function RoadmapAssistant({
                 <Stack spacing={1} sx={{ mt: 2, pl: 1 }}>
                   {milestone.tasks.map((task, tIndex) => (
                     <Stack key={tIndex} direction="row" spacing={1}>
-                      <Chip label={`Task ${tIndex + 1}`} size="small" sx={{ mt: 0.5 }} />
+                      <Chip label={`Nhiệm vụ ${tIndex + 1}`} size="small" sx={{ mt: 0.5 }} />
                       <TextField
-                        label="Task"
+                        label="Nhiệm vụ"
                         value={task.title}
                         onChange={(e) =>
                           patchTask(mIndex, tIndex, { title: e.target.value })
@@ -299,7 +299,7 @@ export default function RoadmapAssistant({
                         fullWidth
                       />
                       <TextField
-                        label="How measured"
+                        label="Cách đo"
                         value={task.metric}
                         onChange={(e) =>
                           patchTask(mIndex, tIndex, { metric: e.target.value })
@@ -327,7 +327,7 @@ export default function RoadmapAssistant({
                       })
                     }
                   >
-                    Add task
+                    Thêm nhiệm vụ
                   </Button>
                 </Stack>
               </Box>
@@ -345,13 +345,13 @@ export default function RoadmapAssistant({
                 ])
               }
             >
-              Add milestone
+              Thêm cột mốc
             </Button>
             <Button variant="contained" onClick={handleSave} disabled={saving}>
-              {saving ? 'Saving...' : 'Save roadmap'}
+              {saving ? 'Đang lưu...' : 'Lưu lộ trình'}
             </Button>
             <Button onClick={() => setDraft(null)} disabled={saving}>
-              Discard
+              Bỏ qua
             </Button>
           </Stack>
         </Box>

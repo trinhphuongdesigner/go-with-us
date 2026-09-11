@@ -15,7 +15,6 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
-import AppShell from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
@@ -33,6 +32,7 @@ import {
   type AssessmentTemplate,
   type GroupPayload,
 } from '@/lib/api/assessmentsApi';
+import { CYCLE_STATUS_LABEL, TEMPLATE_STATUS_LABEL } from '@/lib/labels';
 import { colorTokens } from '@/theme/theme';
 
 interface DraftQuestion {
@@ -118,7 +118,7 @@ export default function AssessmentTemplatesPage() {
         setCycleTemplateId(templateList[0].id);
       }
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to load settings');
+      setError(err instanceof ApiError ? err.message : 'Không tải được cài đặt');
     } finally {
       setLoading(false);
     }
@@ -193,7 +193,7 @@ export default function AssessmentTemplatesPage() {
       .filter((group) => group.questions.length > 0);
 
     if (!name.trim() || cleanGroups.length === 0) {
-      setError('A name and at least one group with one question are required.');
+      setError('Cần có tên và ít nhất một nhóm với một câu hỏi.');
       return;
     }
 
@@ -206,19 +206,19 @@ export default function AssessmentTemplatesPage() {
           description: description.trim() || undefined,
           groups: cleanGroups,
         });
-        setNotice('Template updated — approved assessments keep their old scale.');
+        setNotice('Đã cập nhật thang điểm — bài đã duyệt giữ thang cũ.');
       } else {
         await createTemplate({
           name: name.trim(),
           description: description.trim() || undefined,
           groups: cleanGroups,
         });
-        setNotice('Template created.');
+        setNotice('Đã tạo thang điểm.');
       }
       resetForm();
       await load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to save template');
+      setError(err instanceof ApiError ? err.message : 'Không lưu được thang điểm');
     } finally {
       setSaving(false);
     }
@@ -231,7 +231,7 @@ export default function AssessmentTemplatesPage() {
       });
       await load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to update status');
+      setError(err instanceof ApiError ? err.message : 'Không cập nhật được trạng thái');
     }
   };
 
@@ -240,18 +240,18 @@ export default function AssessmentTemplatesPage() {
       const result = await deleteTemplate(template.id);
       setNotice(
         result.archived
-          ? 'This template is in use, so it was archived instead of deleted.'
-          : 'Template deleted.',
+          ? 'Thang điểm đang được dùng nên đã lưu trữ thay vì xóa.'
+          : 'Đã xóa thang điểm.',
       );
       await load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to delete');
+      setError(err instanceof ApiError ? err.message : 'Không xóa được');
     }
   };
 
   const handleCreateCycle = async () => {
     if (!cycleName.trim() || !cycleTemplateId) {
-      setError('A cycle name and template are required.');
+      setError('Cần có tên kỳ và thang điểm.');
       return;
     }
     setSaving(true);
@@ -263,10 +263,10 @@ export default function AssessmentTemplatesPage() {
         period: cyclePeriod,
       });
       setCycleName('');
-      setNotice('Cycle opened — people can start their check-in now.');
+      setNotice('Đã mở kỳ — mọi người có thể bắt đầu tự đánh giá.');
       await load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to open cycle');
+      setError(err instanceof ApiError ? err.message : 'Không mở được kỳ');
     } finally {
       setSaving(false);
     }
@@ -279,16 +279,15 @@ export default function AssessmentTemplatesPage() {
       });
       await load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to update cycle');
+      setError(err instanceof ApiError ? err.message : 'Không cập nhật được kỳ');
     }
   };
 
   return (
-    <AppShell>
-      <PageContainer>
+    <PageContainer>
         <PageHeader
-          title="Assessment criteria"
-          subtitle="Build your company's own competency scale — criteria groups, weights, and questions scored 1-10."
+          title="Tiêu chí đánh giá"
+          subtitle="Dựng thang năng lực của công ty — nhóm tiêu chí, trọng số, câu hỏi chấm 1–10."
         />
 
         {error ? (
@@ -306,26 +305,26 @@ export default function AssessmentTemplatesPage() {
         ) : (
           <>
         <Card
-          title={editingId ? 'Edit scale' : 'New scale'}
+          title={editingId ? 'Sửa thang điểm' : 'Thang điểm mới'}
           sx={{ mb: 3 }}
           actions={
             editingId ? (
               <Button size="small" onClick={resetForm}>
-                Cancel edit
+                Hủy sửa
               </Button>
             ) : undefined
           }
         >
           <Stack spacing={2}>
             <TextField
-              label="Name"
+              label="Tên"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
               fullWidth
             />
             <TextField
-              label="Description"
+              label="Mô tả"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               fullWidth
@@ -346,7 +345,7 @@ export default function AssessmentTemplatesPage() {
                   sx={{ mb: 1.5 }}
                 >
                   <TextField
-                    label={`Criteria group ${groupIndex + 1}`}
+                    label={`Nhóm tiêu chí ${groupIndex + 1}`}
                     value={group.name}
                     onChange={(e) =>
                       patchGroup(groupIndex, { name: e.target.value })
@@ -355,7 +354,7 @@ export default function AssessmentTemplatesPage() {
                     fullWidth
                   />
                   <TextField
-                    label="Weight"
+                    label="Trọng số"
                     type="number"
                     value={group.weight}
                     onChange={(e) =>
@@ -377,7 +376,7 @@ export default function AssessmentTemplatesPage() {
                 </Stack>
 
                 <TextField
-                  label="Group description"
+                  label="Mô tả nhóm"
                   value={group.description}
                   onChange={(e) =>
                     patchGroup(groupIndex, { description: e.target.value })
@@ -398,7 +397,7 @@ export default function AssessmentTemplatesPage() {
                     >
                       <Stack direction="row" spacing={1.5} sx={{ mb: 1 }}>
                         <TextField
-                          label={`Question ${questionIndex + 1}`}
+                          label={`Câu hỏi ${questionIndex + 1}`}
                           value={question.text}
                           onChange={(e) =>
                             patchQuestion(groupIndex, questionIndex, {
@@ -409,7 +408,7 @@ export default function AssessmentTemplatesPage() {
                           fullWidth
                         />
                         <TextField
-                          label="Weight"
+                          label="Trọng số"
                           type="number"
                           value={question.weight}
                           onChange={(e) =>
@@ -421,7 +420,7 @@ export default function AssessmentTemplatesPage() {
                           sx={{ width: 110 }}
                         />
                         <TextField
-                          label="Max"
+                          label="Tối đa"
                           type="number"
                           value={question.maxScore}
                           onChange={(e) =>
@@ -446,8 +445,8 @@ export default function AssessmentTemplatesPage() {
                         </IconButton>
                       </Stack>
                       <TextField
-                        label="Guidance"
-                        helperText="What this criterion means / how to score it"
+                        label="Hướng dẫn"
+                        helperText="Tiêu chí này nghĩa là gì / cách chấm điểm"
                         value={question.guidance}
                         onChange={(e) =>
                           patchQuestion(groupIndex, questionIndex, {
@@ -471,7 +470,7 @@ export default function AssessmentTemplatesPage() {
                     })
                   }
                 >
-                  Add question
+                  Thêm câu hỏi
                 </Button>
               </Box>
             ))}
@@ -482,21 +481,21 @@ export default function AssessmentTemplatesPage() {
                 variant="outlined"
                 onClick={() => setGroups([...groups, emptyGroup()])}
               >
-                Add criteria group
+                Thêm nhóm tiêu chí
               </Button>
             </Box>
 
             <Box>
               <Button variant="contained" onClick={handleSave} disabled={saving}>
-                {saving ? 'Saving...' : editingId ? 'Update scale' : 'Create scale'}
+                {saving ? 'Đang lưu...' : editingId ? 'Cập nhật thang điểm' : 'Tạo thang điểm'}
               </Button>
             </Box>
           </Stack>
         </Card>
 
-        <Card title="Existing scales" sx={{ mb: 3 }}>
+        <Card title="Thang điểm hiện có" sx={{ mb: 3 }}>
           {templates.length === 0 ? (
-            <Typography variant="body2">No scale defined yet.</Typography>
+            <Typography variant="body2">Chưa có thang điểm nào.</Typography>
           ) : (
             <Stack divider={<Divider />} spacing={2}>
               {templates.map((template) => (
@@ -515,42 +514,42 @@ export default function AssessmentTemplatesPage() {
                           {template.name}
                         </Typography>
                         <Chip
-                          label={template.status}
+                          label={TEMPLATE_STATUS_LABEL[template.status] ?? template.status}
                           size="small"
                           color={template.status === 'ACTIVE' ? 'success' : 'default'}
                         />
                         <Chip label={`v${template.version}`} size="small" variant="outlined" />
                       </Stack>
                       <Typography variant="body2">
-                        {template.groups.length} groups ·{' '}
+                        {template.groups.length} nhóm ·{' '}
                         {template.groups.reduce(
                           (sum, group) => sum + group.questions.length,
                           0,
                         )}{' '}
-                        questions
+                        câu hỏi
                       </Typography>
                     </Box>
                     <Stack direction="row" spacing={1}>
                       <Button size="small" onClick={() => startEdit(template)}>
-                        Edit
+                        Sửa
                       </Button>
                       <Button size="small" onClick={() => handleActivate(template)}>
-                        {template.status === 'ACTIVE' ? 'Set draft' : 'Activate'}
+                        {template.status === 'ACTIVE' ? 'Đưa về nháp' : 'Kích hoạt'}
                       </Button>
                       <Button
                         size="sm"
                         color="error"
                         onClick={() =>
                           ask({
-                            title: 'Delete template',
-                            description: `Remove “${template.name}”? If it is in use it will be archived instead.`,
-                            confirmLabel: 'Delete',
+                            title: 'Xóa thang điểm',
+                            description: `Xóa “${template.name}”? Nếu đang dùng sẽ được lưu trữ thay vì xóa.`,
+                            confirmLabel: 'Xóa',
                             danger: true,
                             onConfirm: () => handleDelete(template),
                           })
                         }
                       >
-                        Delete
+                        Xóa
                       </Button>
                     </Stack>
                   </Box>
@@ -560,22 +559,22 @@ export default function AssessmentTemplatesPage() {
           )}
         </Card>
 
-        <Card title="Assessment cycles">
+        <Card title="Kỳ đánh giá">
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={1.5}
             sx={{ mb: 2.5 }}
           >
             <TextField
-              label="Cycle name"
-              placeholder="September check-in"
+              label="Tên kỳ"
+              placeholder="Tự đánh giá tháng 9"
               value={cycleName}
               onChange={(e) => setCycleName(e.target.value)}
               size="small"
               fullWidth
             />
             <TextField
-              label="Period"
+              label="Kỳ"
               type="month"
               value={cyclePeriod}
               onChange={(e) => setCyclePeriod(e.target.value)}
@@ -585,7 +584,7 @@ export default function AssessmentTemplatesPage() {
             />
             <TextField
               select
-              label="Scale"
+              label="Thang điểm"
               value={cycleTemplateId}
               onChange={(e) => setCycleTemplateId(e.target.value)}
               size="small"
@@ -603,13 +602,13 @@ export default function AssessmentTemplatesPage() {
                 onClick={handleCreateCycle}
                 disabled={saving || templates.length === 0}
               >
-                Open cycle
+                Mở kỳ
               </Button>
             </Box>
           </Stack>
 
           {cycles.length === 0 ? (
-            <Typography variant="body2">No cycle opened yet.</Typography>
+            <Typography variant="body2">Chưa mở kỳ nào.</Typography>
           ) : (
             <Stack divider={<Divider />} spacing={1.5}>
               {cycles.map((cycle) => (
@@ -629,18 +628,18 @@ export default function AssessmentTemplatesPage() {
                       {cycle.name} · {cycle.period}
                     </Typography>
                     <Typography variant="body2">
-                      {cycle.template?.name ?? 'Unknown scale'} ·{' '}
-                      {cycle._count?.assessments ?? 0} assessments
+                      {cycle.template?.name ?? 'Thang điểm không rõ'} ·{' '}
+                      {cycle._count?.assessments ?? 0} bài đánh giá
                     </Typography>
                   </Box>
                   <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                     <Chip
-                      label={cycle.status}
+                      label={CYCLE_STATUS_LABEL[cycle.status] ?? cycle.status}
                       size="small"
                       color={cycle.status === 'OPEN' ? 'success' : 'default'}
                     />
                     <Button size="small" onClick={() => handleToggleCycle(cycle)}>
-                      {cycle.status === 'OPEN' ? 'Close' : 'Reopen'}
+                      {cycle.status === 'OPEN' ? 'Đóng' : 'Mở lại'}
                     </Button>
                   </Stack>
                 </Box>
@@ -651,7 +650,6 @@ export default function AssessmentTemplatesPage() {
           </>
         )}
         {dialog}
-      </PageContainer>
-    </AppShell>
+    </PageContainer>
   );
 }

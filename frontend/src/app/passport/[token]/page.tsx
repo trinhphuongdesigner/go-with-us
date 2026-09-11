@@ -39,7 +39,7 @@ export default function SharedPassportPage() {
           setError(
             err instanceof ApiError
               ? err.message
-              : 'This share link is no longer valid',
+              : 'Liên kết chia sẻ này không còn hiệu lực',
           );
         }
       } finally {
@@ -55,9 +55,9 @@ export default function SharedPassportPage() {
     <Box sx={{ minHeight: '100vh', backgroundColor: colorTokens.bg }}>
       <PageContainer>
         <PageHeader
-          title="Career Passport"
-          subtitle="Shared read-only record — employment history, approved assessments and achievements."
-          actions={<Chip label="Shared view" color="primary" variant="outlined" />}
+          title="Hộ chiếu nghề nghiệp"
+          subtitle="Bản xem chia sẻ chỉ đọc — lịch sử làm việc, đánh giá đã duyệt và thành tích."
+          actions={<Chip label="Bản chia sẻ" color="primary" variant="outlined" />}
         />
 
         {error ? (
@@ -76,8 +76,8 @@ export default function SharedPassportPage() {
             variant="body2"
             sx={{ mt: 4, textAlign: 'center' }}
           >
-            Shared by {passport.user.name} via CareerMate. Only assessments the
-            employer approved are shown.
+            Được chia sẻ bởi {passport.user.name} qua CareerMate. Chỉ hiện đánh giá
+            mà công ty đã duyệt.
           </Typography>
         ) : null}
       </PageContainer>

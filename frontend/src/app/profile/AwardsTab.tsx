@@ -85,7 +85,7 @@ export default function AwardsTab({
 
   const handleSave = async () => {
     if (!form.title.trim()) {
-      setError('A title is required.');
+      setError('Cần có tiêu đề.');
       return;
     }
 
@@ -111,7 +111,7 @@ export default function AwardsTab({
       setOpen(false);
       onChanged();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to save award');
+      setError(err instanceof ApiError ? err.message : 'Không lưu được thành tích');
     } finally {
       setSaving(false);
     }
@@ -122,7 +122,7 @@ export default function AwardsTab({
       await deleteAward(id);
       onChanged();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to delete award');
+      setError(err instanceof ApiError ? err.message : 'Không xóa được thành tích');
     }
   };
 
@@ -130,7 +130,7 @@ export default function AwardsTab({
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Button startIcon={<AddIcon />} variant="outlined" onClick={openCreate}>
-          Add achievement
+          Thêm thành tích
         </Button>
       </Box>
 
@@ -142,8 +142,8 @@ export default function AwardsTab({
 
       {awards.length === 0 ? (
         <Typography variant="body2">
-          Nothing recorded yet. Both work achievements (best staff, internal
-          hackathon) and personal ones (sport, volunteering) belong here.
+          Chưa có thành tích. Cả công việc (nhân viên xuất sắc, hackathon nội bộ)
+          và cá nhân (thể thao, tình nguyện) đều ghi ở đây.
         </Typography>
       ) : (
         <Stack divider={<Divider />} spacing={2}>
@@ -164,7 +164,7 @@ export default function AwardsTab({
                     {award.title}
                   </Typography>
                   <Chip
-                    label={award.category === 'WORK' ? 'Work' : 'Personal'}
+                    label={award.category === 'WORK' ? 'Công việc' : 'Cá nhân'}
                     size="small"
                     color={award.category === 'WORK' ? 'primary' : 'default'}
                     variant="outlined"
@@ -172,7 +172,7 @@ export default function AwardsTab({
                   />
                 </Stack>
                 <Typography variant="body2">
-                  {award.issuer ?? 'Self-reported'}
+                  {award.issuer ?? 'Tự ghi nhận'}
                   {award.awardedAt ? ` · ${toInputDate(award.awardedAt)}` : ''}
                 </Typography>
                 {award.description ? (
@@ -187,28 +187,28 @@ export default function AwardsTab({
                     rel="noopener"
                     variant="body2"
                   >
-                    View evidence
+                    Xem minh chứng
                   </Link>
                 ) : null}
               </Box>
               <Stack direction="row" spacing={1}>
                 <Button size="sm" onClick={() => openEdit(award)}>
-                  Edit
+                  Sửa
                 </Button>
                 <Button
                   size="sm"
                   color="error"
                   onClick={() =>
                     ask({
-                      title: 'Delete achievement',
-                      description: `Remove “${award.title}”? This cannot be undone.`,
-                      confirmLabel: 'Delete',
+                      title: 'Xóa thành tích',
+                      description: `Xóa “${award.title}”? Hành động này không thể hoàn tác.`,
+                      confirmLabel: 'Xóa',
                       danger: true,
                       onConfirm: () => handleDelete(award.id),
                     })
                   }
                 >
-                  Delete
+                  Xóa
                 </Button>
               </Stack>
             </Box>
@@ -219,14 +219,14 @@ export default function AwardsTab({
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
-        title={editingId ? 'Edit achievement' : 'Add achievement'}
+        title={editingId ? 'Sửa thành tích' : 'Thêm thành tích'}
         actions={
           <>
             <Button variant="text" onClick={() => setOpen(false)}>
-              Cancel
+              Hủy
             </Button>
             <Button variant="contained" onClick={handleSave} disabled={saving}>
-              {saving ? 'Saving...' : 'Save'}
+              {saving ? 'Đang lưu...' : 'Lưu'}
             </Button>
           </>
         }
@@ -238,7 +238,7 @@ export default function AwardsTab({
           ) : null}
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
-              label="Title"
+              label="Tiêu đề"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               required
@@ -247,18 +247,18 @@ export default function AwardsTab({
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               <TextField
                 select
-                label="Category"
+                label="Danh mục"
                 value={form.category}
                 onChange={(e) =>
                   setForm({ ...form, category: e.target.value as LifeCategory })
                 }
                 fullWidth
               >
-                <MenuItem value="WORK">Work</MenuItem>
-                <MenuItem value="PERSONAL">Personal</MenuItem>
+                <MenuItem value="WORK">Công việc</MenuItem>
+                <MenuItem value="PERSONAL">Cá nhân</MenuItem>
               </TextField>
               <TextField
-                label="Awarded at"
+                label="Ngày nhận"
                 type="date"
                 value={form.awardedAt}
                 onChange={(e) => setForm({ ...form, awardedAt: e.target.value })}
@@ -267,13 +267,13 @@ export default function AwardsTab({
               />
             </Stack>
             <TextField
-              label="Issuer"
+              label="Đơn vị trao"
               value={form.issuer}
               onChange={(e) => setForm({ ...form, issuer: e.target.value })}
               fullWidth
             />
             <TextField
-              label="Description"
+              label="Mô tả"
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               fullWidth
@@ -281,8 +281,8 @@ export default function AwardsTab({
               minRows={2}
             />
             <TextField
-              label="Evidence URL"
-              helperText="Link to a photo or certificate"
+              label="URL minh chứng"
+              helperText="Link ảnh hoặc giấy chứng nhận"
               value={form.evidenceUrl}
               onChange={(e) => setForm({ ...form, evidenceUrl: e.target.value })}
               fullWidth

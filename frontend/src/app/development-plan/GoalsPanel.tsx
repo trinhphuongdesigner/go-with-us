@@ -32,18 +32,18 @@ import { colorTokens } from '@/theme/theme';
 
 const STATUS_OPTIONS: GoalStatus[] = ['NOT_STARTED', 'IN_PROGRESS', 'ACHIEVED'];
 const STATUS_LABEL: Record<GoalStatus, string> = {
-  NOT_STARTED: 'Not started',
-  IN_PROGRESS: 'In progress',
-  ACHIEVED: 'Achieved',
+  NOT_STARTED: 'Chưa bắt đầu',
+  IN_PROGRESS: 'Đang thực hiện',
+  ACHIEVED: 'Đã đạt',
 };
 const TABS: LifeCategory[] = ['WORK', 'PERSONAL'];
 const TAB_LABEL: Record<LifeCategory, string> = {
-  WORK: 'Work',
-  PERSONAL: 'Personal',
+  WORK: 'Công việc',
+  PERSONAL: 'Cá nhân',
 };
 const TAB_HINT: Record<LifeCategory, string> = {
-  WORK: 'Skills, certifications and anything serving the job.',
-  PERSONAL: "Health, sport, volunteering — doesn't serve the job directly, but gives context.",
+  WORK: 'Kỹ năng, chứng chỉ và những gì phục vụ công việc.',
+  PERSONAL: 'Sức khỏe, thể thao, tình nguyện — không trực tiếp phục vụ việc, nhưng cho ngữ cảnh.',
 };
 
 interface FormState {
@@ -89,7 +89,7 @@ export default function GoalsPanel({
       setOpen(false);
       onChanged();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to add goal');
+      setError(err instanceof ApiError ? err.message : 'Không thêm được mục tiêu');
     } finally {
       setSaving(false);
     }
@@ -109,7 +109,7 @@ export default function GoalsPanel({
       onChanged();
       void updated;
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to update progress');
+      setError(err instanceof ApiError ? err.message : 'Không cập nhật được tiến độ');
     }
   };
 
@@ -118,7 +118,7 @@ export default function GoalsPanel({
       await updateGoal(goal.id, { status });
       onChanged();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to update goal');
+      setError(err instanceof ApiError ? err.message : 'Không cập nhật được mục tiêu');
     }
   };
 
@@ -127,7 +127,7 @@ export default function GoalsPanel({
       await deleteGoal(id);
       onChanged();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to delete goal');
+      setError(err instanceof ApiError ? err.message : 'Không xóa được mục tiêu');
     }
   };
 
@@ -143,7 +143,7 @@ export default function GoalsPanel({
           ))}
         </Tabs>
         <Button startIcon={<AddIcon />} size="sm" onClick={() => setOpen(true)}>
-          Add goal
+          Thêm mục tiêu
         </Button>
       </Stack>
       <Typography variant="body2" sx={{ fontSize: 12.5, mb: 2 }}>
@@ -158,7 +158,7 @@ export default function GoalsPanel({
 
       {visible.length === 0 ? (
         <Typography variant="body2">
-          No {TAB_LABEL[tab].toLowerCase()} goals yet.
+          Chưa có mục tiêu {TAB_LABEL[tab].toLowerCase()}.
         </Typography>
       ) : (
         <Stack divider={<Divider />} spacing={2}>
@@ -177,7 +177,7 @@ export default function GoalsPanel({
                         variant="body2"
                         sx={{ ml: 1, fontSize: 11, color: colorTokens.accentInk }}
                       >
-                        AI-suggested
+                        AI gợi ý
                       </Typography>
                     ) : null}
                   </Typography>
@@ -186,7 +186,7 @@ export default function GoalsPanel({
                   ) : null}
                   {goal.dueDate ? (
                     <Typography variant="body2" sx={{ fontSize: 12 }}>
-                      Due {new Date(goal.dueDate).toLocaleDateString()}
+                      Hạn {new Date(goal.dueDate).toLocaleDateString('vi-VN')}
                     </Typography>
                   ) : null}
                 </Box>
@@ -210,12 +210,12 @@ export default function GoalsPanel({
                   />
                   <IconButton
                     size="sm"
-                    aria-label="Delete goal"
+                    aria-label="Xóa mục tiêu"
                     onClick={() =>
                       ask({
-                        title: 'Delete goal',
-                        description: `Remove “${goal.title}”? This cannot be undone.`,
-                        confirmLabel: 'Delete',
+                        title: 'Xóa mục tiêu',
+                        description: `Xóa “${goal.title}”? Hành động này không thể hoàn tác.`,
+                        confirmLabel: 'Xóa',
                         danger: true,
                         onConfirm: () => handleDelete(goal.id),
                       })
@@ -258,28 +258,28 @@ export default function GoalsPanel({
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
-        title={`Add ${TAB_LABEL[tab].toLowerCase()} goal`}
+        title={`Thêm mục tiêu ${TAB_LABEL[tab].toLowerCase()}`}
         actions={
           <>
             <Button variant="text" onClick={() => setOpen(false)}>
-              Cancel
+              Hủy
             </Button>
             <Button variant="contained" onClick={handleAdd} disabled={saving}>
-              {saving ? 'Adding...' : 'Add'}
+              {saving ? 'Đang thêm...' : 'Thêm'}
             </Button>
           </>
         }
       >
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
-              label="Title"
+              label="Tiêu đề"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               required
               fullWidth
             />
             <TextField
-              label="Description"
+              label="Mô tả"
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               fullWidth
@@ -287,7 +287,7 @@ export default function GoalsPanel({
               minRows={2}
             />
             <TextField
-              label="Due date"
+              label="Hạn"
               type="date"
               value={form.dueDate}
               onChange={(e) => setForm({ ...form, dueDate: e.target.value })}

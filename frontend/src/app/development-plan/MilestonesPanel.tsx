@@ -23,9 +23,9 @@ import {
 } from '@/lib/api/developmentPlansApi';
 
 const STATUS_LABEL: Record<string, string> = {
-  NOT_STARTED: 'Not started',
-  IN_PROGRESS: 'In progress',
-  DONE: 'Done',
+  NOT_STARTED: 'Chưa bắt đầu',
+  IN_PROGRESS: 'Đang thực hiện',
+  DONE: 'Hoàn thành',
 };
 
 /**
@@ -49,7 +49,7 @@ export default function MilestonesPanel({
       await updateTask(taskId, { done });
       onChanged();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to update task');
+      setError(err instanceof ApiError ? err.message : 'Không cập nhật được nhiệm vụ');
     }
   };
 
@@ -61,7 +61,7 @@ export default function MilestonesPanel({
       setNewTaskTitle((prev) => ({ ...prev, [milestoneId]: '' }));
       onChanged();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to add task');
+      setError(err instanceof ApiError ? err.message : 'Không thêm được nhiệm vụ');
     }
   };
 
@@ -70,7 +70,7 @@ export default function MilestonesPanel({
       await deleteTask(taskId);
       onChanged();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to delete task');
+      setError(err instanceof ApiError ? err.message : 'Không xóa được nhiệm vụ');
     }
   };
 
@@ -79,15 +79,14 @@ export default function MilestonesPanel({
       await deleteMilestone(id);
       onChanged();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to delete milestone');
+      setError(err instanceof ApiError ? err.message : 'Không xóa được cột mốc');
     }
   };
 
   if (milestones.length === 0) {
     return (
       <Typography variant="body2">
-        No roadmap milestones yet — build one with the AI assistant below, or
-        it stays purely as the markdown plan.
+        Chưa có cột mốc — dựng bằng trợ lý AI bên dưới, hoặc chỉ dùng kế hoạch markdown.
       </Typography>
     );
   }
@@ -116,7 +115,7 @@ export default function MilestonesPanel({
                 ) : null}
                 {milestone.dueDate ? (
                   <Typography variant="body2" sx={{ fontSize: 12 }}>
-                    Due {new Date(milestone.dueDate).toLocaleDateString()}
+                    Hạn {new Date(milestone.dueDate).toLocaleDateString('vi-VN')}
                   </Typography>
                 ) : null}
               </Box>
@@ -124,12 +123,12 @@ export default function MilestonesPanel({
                 <StatusChip label={STATUS_LABEL[milestone.status] ?? milestone.status} />
                 <IconButton
                   size="sm"
-                  aria-label="Delete milestone"
+                  aria-label="Xóa cột mốc"
                   onClick={() =>
                     ask({
-                      title: 'Delete milestone',
-                      description: `Remove “${milestone.title}” and its tasks?`,
-                      confirmLabel: 'Delete',
+                      title: 'Xóa cột mốc',
+                      description: `Xóa “${milestone.title}” và các nhiệm vụ?`,
+                      confirmLabel: 'Xóa',
                       danger: true,
                       onConfirm: () => handleDeleteMilestone(milestone.id),
                     })
@@ -166,12 +165,12 @@ export default function MilestonesPanel({
                   </Typography>
                   <IconButton
                     size="sm"
-                    aria-label="Delete task"
+                    aria-label="Xóa nhiệm vụ"
                     onClick={() =>
                       ask({
-                        title: 'Delete task',
-                        description: `Remove “${task.title}”?`,
-                        confirmLabel: 'Delete',
+                        title: 'Xóa nhiệm vụ',
+                        description: `Xóa “${task.title}”?`,
+                        confirmLabel: 'Xóa',
                         danger: true,
                         onConfirm: () => handleDeleteTask(task.id),
                       })
@@ -184,7 +183,7 @@ export default function MilestonesPanel({
 
               <Stack direction="row" spacing={1} sx={{ mt: 0.5 }}>
                 <TextField
-                  placeholder="Add a task"
+                  placeholder="Thêm nhiệm vụ"
                   size="small"
                   value={newTaskTitle[milestone.id] ?? ''}
                   onChange={(e) =>
@@ -199,7 +198,7 @@ export default function MilestonesPanel({
                   fullWidth
                 />
                 <Button size="small" onClick={() => handleAddTask(milestone.id)}>
-                  Add
+                  Thêm
                 </Button>
               </Stack>
             </Stack>

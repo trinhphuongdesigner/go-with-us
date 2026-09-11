@@ -17,7 +17,6 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
-import AppShell from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
@@ -86,7 +85,7 @@ export default function AssistantPage() {
       setReferenced([]);
     } catch (err) {
       setError(
-        err instanceof ApiError ? err.message : 'Failed to open conversation',
+        err instanceof ApiError ? err.message : 'Không mở được cuộc trò chuyện',
       );
     }
   };
@@ -124,7 +123,7 @@ export default function AssistantPage() {
     } catch (err) {
       setMessages((prev) => prev.filter((m) => m.id !== pending.id));
       setQuestion(value);
-      setError(err instanceof ApiError ? err.message : 'The assistant failed');
+      setError(err instanceof ApiError ? err.message : 'Trợ lý không trả lời được');
     } finally {
       setBusy(false);
     }
@@ -140,7 +139,7 @@ export default function AssistantPage() {
       }
       await loadConversations();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to delete');
+      setError(err instanceof ApiError ? err.message : 'Không xóa được');
     }
   };
 
@@ -149,7 +148,7 @@ export default function AssistantPage() {
       await updateConversation(conversation.id, { pinned: !conversation.pinned });
       await loadConversations();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to update pin');
+      setError(err instanceof ApiError ? err.message : 'Không cập nhật được ghim');
     }
   };
 
@@ -163,18 +162,17 @@ export default function AssistantPage() {
   const suggestions = isAdmin ? ADMIN_PROMPTS : EMPLOYEE_PROMPTS;
 
   return (
-    <AppShell>
-      <PageContainer>
+    <PageContainer>
         <PageHeader
-          title="AI Assistant"
+          title="Trợ lý AI"
           subtitle={
             isAdmin
-              ? 'Ask in plain language who fits a project — answers come from real competency profiles.'
-              : 'Your personal career companion — grounded in your own record.'
+              ? 'Hỏi bằng ngôn ngữ thường ai phù hợp dự án — câu trả lời dựa trên hồ sơ năng lực thật.'
+              : 'Người đồng hành nghề nghiệp — chỉ dựa trên hồ sơ của bạn.'
           }
           actions={
             <Button variant="outlined" onClick={startNew}>
-              New conversation
+              Cuộc trò chuyện mới
             </Button>
           }
         />
@@ -191,7 +189,7 @@ export default function AssistantPage() {
               {messages.length === 0 ? (
                 <Box sx={{ py: 2 }}>
                   <Typography variant="body2" sx={{ mb: 2 }}>
-                    Try one of these:
+                    Thử một trong các câu này:
                   </Typography>
                   <Stack spacing={1}>
                     {suggestions.map((prompt) => (
@@ -249,7 +247,7 @@ export default function AssistantPage() {
 
               <Stack direction="row" spacing={1.5} sx={{ mt: 2.5 }}>
                 <TextField
-                  placeholder="Ask anything..."
+                  placeholder="Hỏi bất cứ điều gì..."
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
                   onKeyDown={(e) => {
@@ -270,14 +268,14 @@ export default function AssistantPage() {
                     onClick={() => handleAsk()}
                     disabled={busy || !question.trim()}
                   >
-                    Ask
+                    Hỏi
                   </Button>
                 </Box>
               </Stack>
             </Card>
 
             {referenced.length > 0 ? (
-              <Card title="People mentioned">
+              <Card title="Người được nhắc">
                 <Stack spacing={1.5}>
                   {referenced.map((person) => (
                     <Box
@@ -299,7 +297,7 @@ export default function AssistantPage() {
                           {person.name}
                         </Typography>
                         <Typography variant="body2" sx={{ fontSize: 12.5 }}>
-                          {person.jobTitle ?? 'No title'}
+                          {person.jobTitle ?? 'Chưa có chức danh'}
                         </Typography>
                       </Box>
                       <Button
@@ -307,14 +305,14 @@ export default function AssistantPage() {
                         href={`/employees/${person.id}`}
                         size="small"
                       >
-                        Profile
+                        Hồ sơ
                       </Button>
                       <Button
                         component={NextLink}
                         href={`/employees/${person.id}/passport`}
                         size="small"
                       >
-                        Passport
+                        Hộ chiếu
                       </Button>
                     </Box>
                   ))}
@@ -324,9 +322,9 @@ export default function AssistantPage() {
           </Box>
 
           <Box sx={{ width: { xs: '100%', md: 280 }, flexShrink: 0 }}>
-            <Card title="History">
+            <Card title="Lịch sử">
               {conversations.length === 0 ? (
-                <Typography variant="body2">No conversation yet.</Typography>
+                <Typography variant="body2">Chưa có cuộc trò chuyện nào.</Typography>
               ) : (
                 <Stack spacing={0.5}>
                   {conversations.map((conversation) => (
@@ -364,12 +362,12 @@ export default function AssistantPage() {
                       </IconButton>
                       <IconButton
                         size="sm"
-                        aria-label="Delete conversation"
-                        onClick={() =>
-                          ask({
-                            title: 'Delete conversation',
-                            description: `Remove “${conversation.title}”? This cannot be undone.`,
-                            confirmLabel: 'Delete',
+                    aria-label="Xóa cuộc trò chuyện"
+                    onClick={() =>
+                      ask({
+                        title: 'Xóa cuộc trò chuyện',
+                        description: `Xóa “${conversation.title}”? Hành động này không thể hoàn tác.`,
+                        confirmLabel: 'Xóa',
                             danger: true,
                             onConfirm: () => handleDelete(conversation.id),
                           })
@@ -383,7 +381,7 @@ export default function AssistantPage() {
               )}
               {conversationId ? (
                 <Chip
-                  label="Continuing this thread"
+                  label="Đang tiếp tục hội thoại này"
                   size="small"
                   color="primary"
                   variant="outlined"
@@ -394,7 +392,6 @@ export default function AssistantPage() {
           </Box>
         </Stack>
         {dialog}
-      </PageContainer>
-    </AppShell>
+    </PageContainer>
   );
 }

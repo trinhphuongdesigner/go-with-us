@@ -97,7 +97,7 @@ export default function MarkdownSplitEditor({
       <Box sx={{ width: `${100 - splitPct}%`, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         {onExpand ? (
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 0.5 }}>
-            <Tooltip title="Expand">
+            <Tooltip title="Mở rộng">
               <IconButton size="small" onClick={onExpand}>
                 <OpenInFullIcon fontSize="small" />
               </IconButton>

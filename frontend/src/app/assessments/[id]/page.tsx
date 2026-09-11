@@ -15,7 +15,6 @@ import Slider from '@mui/material/Slider';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import AppShell from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
@@ -29,14 +28,15 @@ import {
   updateAssessment,
   type AssessmentDetail,
 } from '@/lib/api/assessmentsApi';
+import { ASSESSMENT_STATUS_LABEL, ASSESSMENT_TYPE_LABEL } from '@/lib/labels';
 import { colorTokens } from '@/theme/theme';
 
 const MOODS = [
-  'Energised',
-  'Steady',
-  'Stretched',
-  'Tired',
-  'Frustrated',
+  { value: 'Energised', label: 'Tràn năng lượng' },
+  { value: 'Steady', label: 'Ổn định' },
+  { value: 'Stretched', label: 'Căng sức' },
+  { value: 'Tired', label: 'Mệt' },
+  { value: 'Frustrated', label: 'Bức bối' },
 ] as const;
 
 /**
@@ -82,7 +82,7 @@ export default function AssessmentDetailPage() {
       );
     } catch (err) {
       setError(
-        err instanceof ApiError ? err.message : 'Failed to load this assessment',
+        err instanceof ApiError ? err.message : 'Không tải được bài đánh giá này',
       );
     } finally {
       setLoading(false);
@@ -124,10 +124,10 @@ export default function AssessmentDetailPage() {
     setError(null);
     try {
       await updateAssessment(assessment.id, buildPayload());
-      setNotice('Draft saved.');
+      setNotice('Đã lưu bản nháp.');
       await load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to save');
+      setError(err instanceof ApiError ? err.message : 'Không lưu được');
     } finally {
       setBusy(false);
     }
@@ -136,17 +136,17 @@ export default function AssessmentDetailPage() {
   const handleSubmit = async () => {
     if (!assessment) return;
     if (answeredCount === 0) {
-      setError('Score at least one criterion before submitting.');
+      setError('Chấm ít nhất một tiêu chí trước khi gửi.');
       return;
     }
     setBusy(true);
     setError(null);
     try {
       await submitAssessment(assessment.id, buildPayload());
-      setNotice('Submitted for approval.');
+      setNotice('Đã gửi chờ duyệt.');
       await load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to submit');
+      setError(err instanceof ApiError ? err.message : 'Không gửi được');
     } finally {
       setBusy(false);
     }
@@ -158,10 +158,10 @@ export default function AssessmentDetailPage() {
     setError(null);
     try {
       await approveAssessment(assessment.id);
-      setNotice('Approved — this is now part of the permanent record.');
+      setNotice('Đã duyệt — bài này giờ nằm trong hồ sơ lâu dài.');
       await load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to approve');
+      setError(err instanceof ApiError ? err.message : 'Không duyệt được');
     } finally {
       setBusy(false);
     }
@@ -173,34 +173,33 @@ export default function AssessmentDetailPage() {
     setError(null);
     try {
       await rejectAssessment(assessment.id, comment || undefined);
-      setNotice('Sent back to the author.');
+      setNotice('Đã gửi lại cho người viết.');
       await load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to reject');
+      setError(err instanceof ApiError ? err.message : 'Không từ chối được');
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <AppShell>
-      <PageContainer>
+    <PageContainer>
         <PageHeader
           title={
             assessment
               ? assessment.type === 'SELF'
-                ? 'My monthly check-in'
-                : `Assessment of ${assessment.reviewee.name}`
-              : 'Assessment'
+                ? 'Tự đánh giá hàng tháng'
+                : `Đánh giá ${assessment.reviewee.name}`
+              : 'Đánh giá'
           }
           subtitle={
             assessment?.cycle
-              ? `${assessment.cycle.name} · ${assessment.cycle.period} · scale: ${assessment.template.name}`
+              ? `${assessment.cycle.name} · ${assessment.cycle.period} · thang điểm: ${assessment.template.name}`
               : undefined
           }
           actions={
             <Button component={NextLink} href="/assessments" variant="outlined">
-              Back
+              Quay lại
             </Button>
           }
         />
@@ -225,45 +224,45 @@ export default function AssessmentDetailPage() {
                 spacing={1.5}
                 sx={{ flexWrap: 'wrap', gap: 1.5, alignItems: 'center' }}
               >
-                <Chip label={assessment.status} color="primary" />
-                <Chip label={assessment.type} variant="outlined" />
+                <Chip label={ASSESSMENT_STATUS_LABEL[assessment.status] ?? assessment.status} color="primary" />
+                <Chip label={ASSESSMENT_TYPE_LABEL[assessment.type] ?? assessment.type} variant="outlined" />
                 {assessment.totalScore !== null ? (
                   <Chip
-                    label={`Weighted score ${assessment.totalScore}/10`}
+                    label={`Điểm có trọng số ${assessment.totalScore}/10`}
                     color="success"
                   />
                 ) : null}
                 <Typography variant="body2">
-                  {answeredCount}/{questions.length} criteria scored
+                  {answeredCount}/{questions.length} tiêu chí đã chấm
                 </Typography>
                 {assessment.approvedBy ? (
                   <Typography variant="body2">
-                    Approved by {assessment.approvedBy.name}
+                    Duyệt bởi {assessment.approvedBy.name}
                   </Typography>
                 ) : null}
               </Stack>
             </Card>
 
             {assessment.type === 'SELF' ? (
-              <Card title="How was this month?" sx={{ mb: 3 }}>
+              <Card title="Tháng này của bạn thế nào?" sx={{ mb: 3 }}>
                 <Stack spacing={2}>
                   <TextField
                     select
-                    label="Mood"
+                    label="Tâm trạng"
                     value={mood}
                     onChange={(e) => setMood(e.target.value)}
                     disabled={!editable}
                     sx={{ maxWidth: 280 }}
                   >
                     {MOODS.map((option) => (
-                      <MenuItem key={option} value={option}>
-                        {option}
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
                       </MenuItem>
                     ))}
                   </TextField>
                   <TextField
-                    label="Highlights"
-                    helperText="What stood out about you this month?"
+                    label="Điểm nổi bật"
+                    helperText="Tháng này điều gì nổi bật ở bạn?"
                     value={highlights}
                     onChange={(e) => setHighlights(e.target.value)}
                     disabled={!editable}
@@ -282,7 +281,7 @@ export default function AssessmentDetailPage() {
                 sx={{ mb: 3 }}
                 actions={
                   <Chip
-                    label={`weight ${group.weight}`}
+                    label={`trọng số ${group.weight}`}
                     size="small"
                     variant="outlined"
                   />
@@ -337,7 +336,7 @@ export default function AssessmentDetailPage() {
                       </Stack>
 
                       <TextField
-                        label="Comment"
+                        label="Nhận xét"
                         value={comments[question.id] ?? ''}
                         onChange={(e) =>
                           setComments({
@@ -356,7 +355,7 @@ export default function AssessmentDetailPage() {
               </Card>
             ))}
 
-            <Card title="Overall comment" sx={{ mb: 3 }}>
+            <Card title="Nhận xét chung" sx={{ mb: 3 }}>
               <TextField
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
@@ -366,7 +365,7 @@ export default function AssessmentDetailPage() {
                 minRows={3}
                 helperText={
                   canReview
-                    ? 'If you send this back, this comment tells the author what to fix.'
+                    ? 'Nếu gửi lại, nhận xét này sẽ cho người viết biết cần sửa gì.'
                     : undefined
                 }
               />
@@ -382,14 +381,14 @@ export default function AssessmentDetailPage() {
                     onClick={handleSaveDraft}
                     disabled={busy}
                   >
-                    Save draft
+                    Lưu nháp
                   </Button>
                   <Button
                     variant="contained"
                     onClick={handleSubmit}
                     disabled={busy}
                   >
-                    Submit for approval
+                    Gửi duyệt
                   </Button>
                 </>
               ) : null}
@@ -402,7 +401,7 @@ export default function AssessmentDetailPage() {
                     onClick={handleApprove}
                     disabled={busy}
                   >
-                    Approve
+                    Duyệt
                   </Button>
                   <Button
                     variant="outlined"
@@ -410,7 +409,7 @@ export default function AssessmentDetailPage() {
                     onClick={handleReject}
                     disabled={busy}
                   >
-                    Send back
+                    Gửi lại
                   </Button>
                 </>
               ) : null}
@@ -426,13 +425,12 @@ export default function AssessmentDetailPage() {
                     )
                   }
                 >
-                  View career passport
+                  Xem hộ chiếu nghề nghiệp
                 </Button>
               ) : null}
             </Stack>
           </>
         ) : null}
-      </PageContainer>
-    </AppShell>
+    </PageContainer>
   );
 }

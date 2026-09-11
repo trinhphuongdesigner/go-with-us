@@ -32,6 +32,7 @@ import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import MenuOutlinedIcon from '@mui/icons-material/MenuOutlined';
 import MenuOpenOutlinedIcon from '@mui/icons-material/MenuOpenOutlined';
 import { RequireAuth, useAuth } from '@/contexts/AuthContext';
+import { ROLE_LABEL } from '@/lib/labels';
 import { colorTokens, radiusTokens } from '@/theme/theme';
 import type { Role } from '@/types';
 
@@ -47,44 +48,44 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', href: '/', icon: <DashboardOutlinedIcon fontSize="small" /> },
+  { label: 'Trang chủ', href: '/', icon: <DashboardOutlinedIcon fontSize="small" /> },
   {
-    label: 'Companies',
+    label: 'Công ty',
     href: '/companies',
     icon: <ApartmentOutlinedIcon fontSize="small" />,
     roles: ['SUPER_ADMIN'],
   },
   {
-    label: 'Employees',
+    label: 'Nhân sự',
     href: '/employees',
     icon: <GroupsOutlinedIcon fontSize="small" />,
     roles: ['COMPANY_ADMIN'],
   },
   {
-    label: 'Job Requirements',
+    label: 'Yêu cầu công việc',
     href: '/job-requirements',
     icon: <WorkOutlineOutlinedIcon fontSize="small" />,
     roles: ['COMPANY_ADMIN', 'SUPER_ADMIN'],
   },
-  { label: 'AI Assistant', href: '/assistant', icon: <AutoAwesomeOutlinedIcon fontSize="small" /> },
+  { label: 'Trợ lý AI', href: '/assistant', icon: <AutoAwesomeOutlinedIcon fontSize="small" /> },
   {
-    label: 'My Profile',
+    label: 'Hồ sơ của tôi',
     href: '/profile',
     icon: <PersonOutlineIcon fontSize="small" />,
   },
   {
-    label: 'Cross Assessment',
+    label: 'Đánh giá chéo',
     href: '/assessments',
     icon: <FactCheckOutlinedIcon fontSize="small" />,
   },
-  { label: 'Activity Log', href: '/activity-log', icon: <EventNoteOutlinedIcon fontSize="small" /> },
-  { label: 'Peer Reviews', href: '/peer-reviews', icon: <RateReviewOutlinedIcon fontSize="small" /> },
+  { label: 'Nhật ký hoạt động', href: '/activity-log', icon: <EventNoteOutlinedIcon fontSize="small" /> },
+  { label: 'Đánh giá đồng nghiệp', href: '/peer-reviews', icon: <RateReviewOutlinedIcon fontSize="small" /> },
   {
-    label: 'Development Plan',
+    label: 'Lộ trình phát triển',
     href: '/development-plan',
     icon: <TrendingUpOutlinedIcon fontSize="small" />,
   },
-  { label: 'Settings', href: '/settings', icon: <SettingsOutlinedIcon fontSize="small" /> },
+  { label: 'Cài đặt', href: '/settings', icon: <SettingsOutlinedIcon fontSize="small" /> },
 ];
 
 /**
@@ -211,7 +212,7 @@ function TopBar({ sidebarCollapsed, onToggleSidebar }: TopBarProps) {
         borderBottom: `1px solid ${colorTokens.divider}`,
       }}
     >
-      <Tooltip title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+      <Tooltip title={sidebarCollapsed ? 'Mở rộng menu' : 'Thu gọn menu'}>
         <IconButton onClick={onToggleSidebar} sx={{ color: colorTokens.neutral400 }}>
           {sidebarCollapsed ? <MenuOutlinedIcon fontSize="small" /> : <MenuOpenOutlinedIcon fontSize="small" />}
         </IconButton>
@@ -222,7 +223,7 @@ function TopBar({ sidebarCollapsed, onToggleSidebar }: TopBarProps) {
             {user?.name}
           </Typography>
           <Typography variant="caption" noWrap sx={{ display: 'block', lineHeight: 1.3 }}>
-            {user?.role}
+            {user ? ROLE_LABEL[user.role] : ''}
           </Typography>
         </Box>
         <IconButton onClick={(event) => setAnchorEl(event.currentTarget)} sx={{ p: 0.5 }}>
@@ -240,7 +241,7 @@ function TopBar({ sidebarCollapsed, onToggleSidebar }: TopBarProps) {
             <ListItemIcon>
               <LogoutOutlinedIcon fontSize="small" />
             </ListItemIcon>
-            Log out
+            Đăng xuất
           </MenuItem>
         </Menu>
       </Box>
@@ -248,18 +249,23 @@ function TopBar({ sidebarCollapsed, onToggleSidebar }: TopBarProps) {
   );
 }
 
+function isPublicPath(pathname: string | null) {
+  return pathname === '/login' || Boolean(pathname?.startsWith('/passport/'));
+}
+
 /**
- * Bolts sidebar + content together for every authenticated page, edge-to-edge
- * across the full viewport. Sidebar is a compact icon-only rail up to tablet
- * widths and a full icon+label sidebar from laptop/desktop (`lg`) up — see
- * Sidebar() above. A toggle at the start of the header (TopBar) can force
- * that same compact rail at `lg`+ widths too — it never hides the sidebar
- * entirely. User avatar/logout live in a top-right menu. Wraps children in
- * RequireAuth, so any page rendering AppShell gets the redirect-to-/login
- * gate for free.
+ * Persistent chrome for authenticated routes — mounted from `app/layout.tsx`
+ * so the sidebar / top bar stay mounted across in-app navigations. Only the
+ * `{children}` page slot remounts. `/login` and the public passport share
+ * skip the chrome (and the auth gate) entirely.
  */
 export default function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+
+  if (isPublicPath(pathname)) {
+    return <>{children}</>;
+  }
 
   return (
     <RequireAuth>

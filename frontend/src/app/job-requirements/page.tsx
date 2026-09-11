@@ -12,7 +12,6 @@ import Divider from '@mui/material/Divider';
 import LinearProgress from '@mui/material/LinearProgress';
 import PageSkeleton from '@/components/ui/PageSkeleton';
 import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
-import AppShell from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
@@ -27,6 +26,7 @@ import {
   type CandidateMatch,
   type JobRequirement,
 } from '@/lib/api/jobRequirementsApi';
+import { JOB_STATUS_LABEL } from '@/lib/labels';
 
 const STATUS_TONE: Record<string, 'default' | 'success' | 'warning'> = {
   open: 'success',
@@ -63,7 +63,7 @@ export default function JobRequirementsPage() {
       const data = await listJobRequirements(companyId);
       setRequirements(data);
     } catch (err) {
-      setListError(err instanceof ApiError ? err.message : 'Failed to load job requirements');
+      setListError(err instanceof ApiError ? err.message : 'Không tải được yêu cầu công việc');
     } finally {
       setLoading(false);
     }
@@ -85,7 +85,7 @@ export default function JobRequirementsPage() {
       .filter(Boolean);
 
     if (!title.trim() || !description.trim() || requiredSkills.length === 0) {
-      setFormError('Title, description, and at least one required skill are needed.');
+      setFormError('Cần có tiêu đề, mô tả và ít nhất một kỹ năng yêu cầu.');
       return;
     }
 
@@ -97,7 +97,7 @@ export default function JobRequirementsPage() {
       setSkillsInput('');
       await loadRequirements();
     } catch (err) {
-      setFormError(err instanceof ApiError ? err.message : 'Failed to create job requirement');
+      setFormError(err instanceof ApiError ? err.message : 'Không tạo được yêu cầu công việc');
     } finally {
       setCreating(false);
     }
@@ -131,7 +131,7 @@ export default function JobRequirementsPage() {
     } catch (err) {
       setMatchError((prev) => ({
         ...prev,
-        [id]: err instanceof ApiError ? err.message : 'Failed to find matching candidates',
+        [id]: err instanceof ApiError ? err.message : 'Không tìm được ứng viên phù hợp',
       }));
     } finally {
       setMatchingId(null);
@@ -139,15 +139,14 @@ export default function JobRequirementsPage() {
   };
 
   return (
-    <AppShell>
-      <PageContainer>
+    <PageContainer>
         <PageHeader
-          title="Job Requirements"
-          subtitle="Define what a project needs, then let AI suggest which employees fit."
+          title="Yêu cầu công việc"
+          subtitle="Mô tả nhu cầu dự án, rồi để AI gợi ý nhân sự phù hợp."
         />
 
         {canManage ? (
-          <Card title="New requirement" sx={{ mb: 3 }}>
+          <Card title="Yêu cầu mới" sx={{ mb: 3 }}>
             {formError ? (
               <Alert severity="error" sx={{ mb: 2 }}>
                 {formError}
@@ -155,14 +154,14 @@ export default function JobRequirementsPage() {
             ) : null}
             <Box component="form" onSubmit={handleCreate} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <TextField
-                label="Title"
+                label="Tiêu đề"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
                 fullWidth
               />
               <TextField
-                label="Description"
+                label="Mô tả"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 required
@@ -171,8 +170,8 @@ export default function JobRequirementsPage() {
                 minRows={3}
               />
               <TextField
-                label="Required skills"
-                helperText="Comma-separated, e.g. React, Node.js, SQL"
+                label="Kỹ năng yêu cầu"
+                helperText="Cách nhau bằng dấu phẩy, ví dụ React, Node.js, SQL"
                 value={skillsInput}
                 onChange={(e) => setSkillsInput(e.target.value)}
                 required
@@ -180,19 +179,19 @@ export default function JobRequirementsPage() {
               />
               <Box>
                 <Button type="submit" variant="contained" disabled={creating}>
-                  {creating ? 'Creating...' : 'Create requirement'}
+                  {creating ? 'Đang tạo...' : 'Tạo yêu cầu'}
                 </Button>
               </Box>
             </Box>
           </Card>
         ) : null}
 
-        <Card title="Current requirements">
+        <Card title="Yêu cầu hiện có">
           {listError ? <Alert severity="error">{listError}</Alert> : null}
           {loading ? (
             <PageSkeleton variant="list" rows={4} embedded />
           ) : requirements.length === 0 ? (
-            <Typography variant="body2">No job requirements yet.</Typography>
+            <Typography variant="body2">Chưa có yêu cầu công việc nào.</Typography>
           ) : (
             <Stack divider={<Divider />} spacing={2}>
               {requirements.map((req) => {
@@ -216,7 +215,7 @@ export default function JobRequirementsPage() {
                         </Typography>
                       </Box>
                       <Chip
-                        label={req.status}
+                        label={JOB_STATUS_LABEL[req.status] ?? req.status}
                         color={STATUS_TONE[req.status] ?? 'default'}
                         size="small"
                       />
@@ -235,12 +234,12 @@ export default function JobRequirementsPage() {
                         onClick={() => handleMatch(req.id)}
                         disabled={matchingId === req.id}
                       >
-                        {matchingId === req.id ? 'Finding matches...' : 'Find matching candidates'}
+                        {matchingId === req.id ? 'Đang tìm...' : 'Tìm ứng viên phù hợp'}
                       </Button>
                       {canManage ? (
                         <>
                           <Button variant="text" size="small" onClick={() => handleToggleStatus(req)}>
-                            {req.status === 'open' ? 'Mark closed' : 'Reopen'}
+                            {req.status === 'open' ? 'Đóng' : 'Mở lại'}
                           </Button>
                           <Button
                             variant="text"
@@ -248,15 +247,15 @@ export default function JobRequirementsPage() {
                             color="error"
                             onClick={() =>
                               ask({
-                                title: 'Delete requirement',
-                                description: `Remove “${req.title}”? This cannot be undone.`,
-                                confirmLabel: 'Delete',
+                                title: 'Xóa yêu cầu',
+                                description: `Xóa “${req.title}”? Hành động này không thể hoàn tác.`,
+                                confirmLabel: 'Xóa',
                                 danger: true,
                                 onConfirm: () => handleDelete(req.id),
                               })
                             }
                           >
-                            Delete
+                            Xóa
                           </Button>
                         </>
                       ) : null}
@@ -278,7 +277,7 @@ export default function JobRequirementsPage() {
                           </Typography>
                         ) : null}
                         {result.matches.length === 0 ? (
-                          <Typography variant="body2">No strong candidate matches found.</Typography>
+                          <Typography variant="body2">Không tìm thấy ứng viên phù hợp rõ.</Typography>
                         ) : (
                           <Stack spacing={1.5}>
                             {result.matches.map((match) => (
@@ -318,7 +317,6 @@ export default function JobRequirementsPage() {
           )}
         </Card>
         {dialog}
-      </PageContainer>
-    </AppShell>
+    </PageContainer>
   );
 }

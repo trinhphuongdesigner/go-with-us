@@ -165,7 +165,7 @@ export default function Loading({
   minHeight,
 }: LoadingProps) {
   const px = resolveSize(size);
-  const accessibleLabel = typeof label === 'string' && label.trim() ? label : 'Loading';
+  const accessibleLabel = typeof label === 'string' && label.trim() ? label : 'Đang tải';
 
   const content = (
     <Box

@@ -30,29 +30,29 @@ const ROLE_TONE: Record<DemoRole, StatusTone> = {
 };
 
 const ACCOUNT_GROUPS: Array<{ label: string; accounts: DemoAccount[] }> = [
-  { label: 'Employees', accounts: DEMO_ACCOUNTS.filter((account) => account.role === 'EMPLOYEE') },
+  { label: 'Nhân sự', accounts: DEMO_ACCOUNTS.filter((account) => account.role === 'EMPLOYEE') },
   {
-    label: 'Company',
+    label: 'Công ty',
     accounts: DEMO_ACCOUNTS.filter((account) => account.role === 'COMPANY_ADMIN'),
   },
   {
-    label: 'Platform',
+    label: 'Nền tảng',
     accounts: DEMO_ACCOUNTS.filter((account) => account.role === 'SUPER_ADMIN'),
   },
 ];
 
 const PITCH_POINTS = [
   {
-    title: 'History that outlives a manager',
-    body: 'Projects, skills, and monthly notes stay on the record when a PM leaves mid-cycle.',
+    title: 'Hồ sơ còn lại khi quản lý đã đi',
+    body: 'Dự án, kỹ năng và ghi nhận hàng tháng vẫn nằm trên hệ thống khi PM nghỉ giữa kỳ.',
   },
   {
-    title: 'Two-way assessment',
-    body: 'Your company sets the rubric. Employees record their own work — not only top-down scores.',
+    title: 'Đánh giá hai chiều',
+    body: 'Công ty tự dựng bộ tiêu chí. Nhân sự tự ghi nhận công việc — không chỉ điểm từ trên xuống.',
   },
   {
-    title: 'Ask for people in plain language',
-    body: '“Who has React and a real-estate domain?” instead of asking a DC lead, then every PM.',
+    title: 'Tìm người bằng ngôn ngữ tự nhiên',
+    body: '“Ai có React và từng làm domain bất động sản?” thay vì hỏi DC lead rồi từng PM.',
   },
 ];
 
@@ -136,7 +136,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
-      setError('Choose an account to continue.');
+      setError('Chọn một tài khoản để tiếp tục.');
       return;
     }
     setError(null);
@@ -145,7 +145,7 @@ export default function LoginPage() {
       await login(email, DEMO_PASSWORD);
       router.replace('/');
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Login failed');
+      setError(err instanceof ApiError ? err.message : 'Đăng nhập thất bại');
     } finally {
       setSubmitting(false);
     }
@@ -258,11 +258,11 @@ export default function LoginPage() {
                 maxWidth: 420,
               }}
             >
-              The record that stays when people move on.
+              Hồ sơ còn lại khi người đã chuyển đi.
             </Typography>
             <Typography variant="body2" sx={{ maxWidth: 400, color: colorTokens.text }}>
-              HR sees the whole journey. Employees keep their own history. Staffing a project
-              takes a sentence, not a chain of pings.
+              HR nhìn trọn hành trình. Nhân sự giữ lịch sử của mình. Tìm người cho dự án
+              chỉ cần một câu, không phải hỏi vòng vo.
             </Typography>
           </Box>
 
@@ -309,10 +309,10 @@ export default function LoginPage() {
           }}
         >
           <Typography variant="h2" sx={{ mb: 0.5 }}>
-            Sign in
+            Đăng nhập
           </Typography>
           <Typography variant="body2" sx={{ mb: 3 }}>
-            Choose a demo account. Password is applied automatically — you do not type it.
+            Chọn tài khoản demo. Mật khẩu được điền sẵn — bạn không cần nhập.
           </Typography>
 
           {error ? (
@@ -339,7 +339,7 @@ export default function LoginPage() {
                   mb: 0.75,
                 }}
               >
-                Account
+                Tài khoản
               </Typography>
               <Select
                 id="demo-account"
@@ -352,7 +352,7 @@ export default function LoginPage() {
                   if (!account) {
                     return (
                       <Typography variant="body2" sx={{ py: 0.5 }}>
-                        Choose who to sign in as
+                        Chọn người muốn đăng nhập
                       </Typography>
                     );
                   }
@@ -408,12 +408,12 @@ export default function LoginPage() {
             ) : null}
 
             <Button type="submit" variant="contained" disabled={submitting || !email} fullWidth>
-              {submitting ? 'Signing in…' : 'Sign in'}
+              {submitting ? 'Đang đăng nhập…' : 'Đăng nhập'}
             </Button>
           </Box>
 
           <Typography variant="body2" sx={{ mt: 'auto', pt: 4 }}>
-            Demo workspace. Same password for every seeded user.
+            Không gian demo. Mọi tài khoản seed dùng chung một mật khẩu.
           </Typography>
         </Box>
       </Box>

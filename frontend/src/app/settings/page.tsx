@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import AppShell from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
@@ -32,20 +31,19 @@ export default function SettingsPage() {
   }, [user]);
 
   return (
-    <AppShell>
-      <PageContainer>
-        <PageHeader title="Settings" subtitle="Platform-level configuration." />
+    <PageContainer>
+        <PageHeader title="Cài đặt" subtitle="Cấu hình cấp nền tảng." />
 
         {user?.role !== 'SUPER_ADMIN' ? (
-          <Card title="API Keys & Connections">
+          <Card title="API Key & kết nối">
             <Typography variant="body1">
-              Only Super Admins can manage AI provider connections.
+              Chỉ quản trị nền tảng mới quản lý được kết nối nhà cung cấp AI.
             </Typography>
           </Card>
         ) : !settings ? (
           <PageSkeleton variant="form" />
         ) : (
-          <Card title="API Keys & Connections">
+          <Card title="API Key & kết nối">
             {PROVIDER_ORDER.map((provider) => (
               <ProviderConnectionRow
                 key={provider}
@@ -57,7 +55,6 @@ export default function SettingsPage() {
             ))}
           </Card>
         )}
-      </PageContainer>
-    </AppShell>
+    </PageContainer>
   );
 }

@@ -20,43 +20,43 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
     email: 'alice@acme.dev',
     name: 'Alice Nguyen',
     role: 'EMPLOYEE',
-    jobTitle: 'Frontend Engineer',
+    jobTitle: 'Kỹ sư Frontend',
     company: 'Acme Corp',
   },
   {
     email: 'admin@acme.dev',
     name: 'Acme Admin',
     role: 'COMPANY_ADMIN',
-    jobTitle: 'HR Manager',
+    jobTitle: 'Quản lý nhân sự',
     company: 'Acme Corp',
   },
   {
     email: 'bob@acme.dev',
     name: 'Bob Tran',
     role: 'EMPLOYEE',
-    jobTitle: 'Backend Engineer',
+    jobTitle: 'Kỹ sư Backend',
     company: 'Acme Corp',
   },
   {
     email: 'carol@acme.dev',
     name: 'Carol Le',
     role: 'EMPLOYEE',
-    jobTitle: 'Product Designer',
+    jobTitle: 'Nhà thiết kế sản phẩm',
     company: 'Acme Corp',
   },
   {
     email: 'superadmin@careermate.dev',
     name: 'Super Admin',
     role: 'SUPER_ADMIN',
-    jobTitle: 'Platform',
+    jobTitle: 'Nền tảng',
     company: null,
   },
 ];
 
 export const ROLE_LABEL: Record<DemoRole, string> = {
-  SUPER_ADMIN: 'Super Admin',
-  COMPANY_ADMIN: 'Company Admin',
-  EMPLOYEE: 'Employee',
+  SUPER_ADMIN: 'Quản trị nền tảng',
+  COMPANY_ADMIN: 'Quản trị công ty',
+  EMPLOYEE: 'Nhân sự',
 };
 
 export function initialsOf(name: string): string {

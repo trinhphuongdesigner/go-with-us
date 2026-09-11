@@ -74,8 +74,8 @@ export function useAuth(): AuthContextValue {
 
 /**
  * Gates children behind an authenticated session — redirects to /login
- * once loading settles with no user. Used by AppShell so every
- * authenticated route gets this for free just by rendering inside it.
+ * once loading settles with no user. Used by AppShell (mounted once from
+ * the root layout) so every authenticated route gets this for free.
  */
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();

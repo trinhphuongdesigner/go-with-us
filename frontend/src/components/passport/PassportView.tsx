@@ -11,14 +11,7 @@ import Card from '@/components/ui/Card';
 import MarkdownBlock from '@/components/ui/MarkdownBlock';
 import { colorTokens } from '@/theme/theme';
 import type { CareerPassport, PassportPeriod } from '@/lib/api/careerPassportApi';
-
-const formatMonth = (value: string | null) =>
-  value
-    ? new Date(value).toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-      })
-    : 'now';
+import { ASSESSMENT_TYPE_LABEL, EMPLOYMENT_STATUS_LABEL, formatMonth } from '@/lib/labels';
 
 /**
  * The read-only career record — the same view whether it is the owner, an
@@ -50,20 +43,20 @@ export default function PassportView({
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography variant="h2">{passport.user.name}</Typography>
             <Typography variant="body2" sx={{ mt: 0.25 }}>
-              {passport.user.jobTitle ?? 'No current title'}
+              {passport.user.jobTitle ?? 'Chưa có chức danh'}
               {passport.user.company ? ` @ ${passport.user.company.name}` : ''}
             </Typography>
           </Box>
           <Stack direction="row" spacing={3}>
-            <Stat label="Positions" value={passport.periods.length} />
+            <Stat label="Vị trí" value={passport.periods.length} />
             <Stat
-              label="Assessments"
+              label="Đánh giá"
               value={passport.periods.reduce(
                 (sum, period) => sum + period.assessments.length,
                 0,
               )}
             />
-            <Stat label="Certificates" value={passport.certifications.length} />
+            <Stat label="Chứng chỉ" value={passport.certifications.length} />
           </Stack>
         </Stack>
 
@@ -86,15 +79,15 @@ export default function PassportView({
       </Card>
 
       {passport.overallSummary ? (
-        <Card title="Career summary" sx={{ mb: 3 }}>
+        <Card title="Tóm tắt sự nghiệp" sx={{ mb: 3 }}>
           <MarkdownBlock source={passport.overallSummary.content} />
         </Card>
       ) : null}
 
       {passport.periods.length === 0 ? (
-        <Card title="Employment history">
+        <Card title="Lịch sử làm việc">
           <Typography variant="body2">
-            No employment period recorded yet.
+            Chưa có kỳ làm việc nào được ghi nhận.
           </Typography>
         </Card>
       ) : (
@@ -107,13 +100,13 @@ export default function PassportView({
               <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                 {period.averageScore !== null ? (
                   <Chip
-                    label={`avg ${period.averageScore}/10`}
+                    label={`TB ${period.averageScore}/10`}
                     size="small"
                     color="success"
                   />
                 ) : null}
                 <Chip
-                  label={period.status}
+                  label={EMPLOYMENT_STATUS_LABEL[period.status] ?? period.status}
                   size="small"
                   color={period.status === 'ACTIVE' ? 'primary' : 'default'}
                 />
@@ -169,7 +162,7 @@ export default function PassportView({
             {period.projectExperiences.length > 0 ? (
               <Box sx={{ mb: 2 }}>
                 <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-                  Projects
+                  Dự án
                 </Typography>
                 <Stack spacing={1}>
                   {period.projectExperiences.map((project) => (
@@ -190,7 +183,7 @@ export default function PassportView({
             {period.assessments.length > 0 ? (
               <Box>
                 <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-                  Approved assessments
+                  Đánh giá đã duyệt
                 </Typography>
                 <Stack divider={<Divider />} spacing={1}>
                   {period.assessments.map((assessment) => (
@@ -206,7 +199,7 @@ export default function PassportView({
                     >
                       <Box sx={{ minWidth: 0 }}>
                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {assessment.cycle?.period ?? 'n/a'} · {assessment.type}
+                          {assessment.cycle?.period ?? 'n/a'} · {ASSESSMENT_TYPE_LABEL[assessment.type] ?? assessment.type}
                         </Typography>
                         {assessment.highlights ? (
                           <Typography variant="body2" sx={{ fontSize: 12.5 }}>
@@ -237,7 +230,7 @@ export default function PassportView({
       )}
 
       {passport.certifications.length > 0 || passport.awards.length > 0 ? (
-        <Card title="Certificates & achievements">
+        <Card title="Chứng chỉ & thành tích">
           <Stack spacing={1.5}>
             {passport.certifications.map((certification) => (
               <Typography key={certification.id} variant="body2">
@@ -250,7 +243,7 @@ export default function PassportView({
               <Typography key={award.id} variant="body2">
                 🏆 {award.title}
                 {award.issuer ? ` · ${award.issuer}` : ''}
-                {award.category === 'PERSONAL' ? ' · personal' : ''}
+                {award.category === 'PERSONAL' ? ' · cá nhân' : ''}
               </Typography>
             ))}
           </Stack>

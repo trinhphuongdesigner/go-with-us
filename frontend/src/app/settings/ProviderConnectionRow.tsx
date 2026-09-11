@@ -40,7 +40,7 @@ export default function ProviderConnectionRow({
 
   const handleSave = async () => {
     if (!apiKey.trim()) {
-      setError('API key is required to save a connection');
+      setError('Cần API key để lưu kết nối');
       return;
     }
     setError(null);
@@ -54,7 +54,7 @@ export default function ProviderConnectionRow({
       onChanged(updated);
       setApiKey('');
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to save connection');
+      setError(err instanceof ApiError ? err.message : 'Không lưu được kết nối');
     } finally {
       setSaving(false);
     }
@@ -70,7 +70,7 @@ export default function ProviderConnectionRow({
       setBaseUrl('');
       setModel('');
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to disconnect');
+      setError(err instanceof ApiError ? err.message : 'Không ngắt được kết nối');
     } finally {
       setSaving(false);
     }
@@ -90,27 +90,27 @@ export default function ProviderConnectionRow({
     >
       <Box sx={{ flex: { md: '0 0 200px' } }}>
         <Typography sx={{ fontSize: 14, fontWeight: 500, mb: 0.75 }}>{label}</Typography>
-        <StatusChip label={setting.hasKey ? 'Connected' : 'Not connected'} tone={setting.hasKey ? 'success' : 'neutral'} />
+        <StatusChip label={setting.hasKey ? 'Đã kết nối' : 'Chưa kết nối'} tone={setting.hasKey ? 'success' : 'neutral'} />
       </Box>
 
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }}>
         <TextField
           type="password"
-          placeholder={setting.hasKey ? 'Leave blank to keep current key' : 'API key (e.g. sk-...)'}
+          placeholder={setting.hasKey ? 'Để trống nếu giữ key hiện tại' : 'API key (ví dụ sk-...)'}
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
           fullWidth
           size="small"
         />
         <TextField
-          placeholder="Base URL (optional)"
+          placeholder="Base URL (tuỳ chọn)"
           value={baseUrl}
           onChange={(e) => setBaseUrl(e.target.value)}
           fullWidth
           size="small"
         />
         <TextField
-          placeholder="Model (optional)"
+          placeholder="Model (tuỳ chọn)"
           value={model}
           onChange={(e) => setModel(e.target.value)}
           fullWidth
@@ -125,10 +125,10 @@ export default function ProviderConnectionRow({
 
       <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
         <Button variant="contained" size="small" onClick={handleSave} disabled={saving}>
-          Save
+          Lưu
         </Button>
         <Button variant="outlined" size="small" onClick={handleDisconnect} disabled={saving || !setting.hasKey}>
-          Disconnect
+          Ngắt kết nối
         </Button>
       </Box>
     </Box>

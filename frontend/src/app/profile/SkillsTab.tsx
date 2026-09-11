@@ -47,7 +47,7 @@ export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
       try {
         await Promise.all([loadCatalog(), loadMySkills(user.id)]);
       } catch (err) {
-        setError(err instanceof ApiError ? err.message : 'Failed to load skills');
+        setError(err instanceof ApiError ? err.message : 'Không tải được kỹ năng');
       }
     })();
   }, [user, loadCatalog, loadMySkills]);
@@ -68,7 +68,7 @@ export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
     if (!user) return;
     const trimmedName = skillName.trim();
     if (!trimmedName) {
-      setError('Skill name is required');
+      setError('Cần có tên kỹ năng');
       return;
     }
     setError(null);
@@ -82,7 +82,7 @@ export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
       resetForm();
       onChanged();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to save skill');
+      setError(err instanceof ApiError ? err.message : 'Không lưu được kỹ năng');
     } finally {
       setSaving(false);
     }
@@ -103,16 +103,16 @@ export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
             onInputChange={(_e, value) => setSkillName(value)}
             sx={{ minWidth: 260, flex: 1 }}
             renderInput={(params) => (
-              <TextField {...params} label="Skill name" placeholder="e.g. TypeScript" size="small" />
+              <TextField {...params} label="Tên kỹ năng" placeholder="ví dụ TypeScript" size="small" />
             )}
           />
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="body2">Level</Typography>
+            <Typography variant="body2">Cấp độ</Typography>
             <Rating value={level} max={5} onChange={(_e, value) => setLevel(value ?? 1)} />
           </Box>
         </Stack>
         <TextField
-          label="Note (optional)"
+          label="Ghi chú (tuỳ chọn)"
           value={note}
           onChange={(e) => setNote(e.target.value)}
           multiline
@@ -127,7 +127,7 @@ export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
         ) : null}
         <Box>
           <Button variant="contained" onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving...' : 'Save skill'}
+            {saving ? 'Đang lưu...' : 'Lưu kỹ năng'}
           </Button>
         </Box>
       </Stack>
@@ -135,15 +135,15 @@ export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
       {!mySkills ? (
         <PageSkeleton variant="table" rows={4} embedded />
       ) : mySkills.length === 0 ? (
-        <Typography variant="body1">No skills logged yet — add one above.</Typography>
+        <Typography variant="body1">Chưa có kỹ năng nào — thêm ở trên.</Typography>
       ) : (
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Skill</TableCell>
-              <TableCell>Level</TableCell>
-              <TableCell>Note</TableCell>
-              <TableCell align="right">Edit</TableCell>
+              <TableCell>Kỹ năng</TableCell>
+              <TableCell>Cấp độ</TableCell>
+              <TableCell>Ghi chú</TableCell>
+              <TableCell align="right">Sửa</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>

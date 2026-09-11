@@ -23,11 +23,11 @@ import {
 import { colorTokens } from '@/theme/theme';
 
 const DIMENSION_LABEL: Record<string, string> = {
-  attendance: 'Attendance',
-  proactiveness: 'Proactiveness',
-  knowledge: 'Knowledge',
-  skill: 'Skill',
-  activityParticipation: 'Activity participation',
+  attendance: 'Chuyên cần',
+  proactiveness: 'Chủ động',
+  knowledge: 'Kiến thức',
+  skill: 'Kỹ năng',
+  activityParticipation: 'Tham gia hoạt động',
 };
 
 /**
@@ -57,7 +57,7 @@ export default function OffboardingQueue() {
       });
     } catch (err) {
       setError(
-        err instanceof ApiError ? err.message : 'Failed to load offboarding queue',
+        err instanceof ApiError ? err.message : 'Không tải được hàng chờ nghỉ việc',
       );
     }
   }, []);
@@ -77,7 +77,7 @@ export default function OffboardingQueue() {
       await load();
     } catch (err) {
       setError(
-        err instanceof ApiError ? err.message : 'Failed to generate the summary',
+        err instanceof ApiError ? err.message : 'Không tạo được tóm tắt',
       );
     } finally {
       setBusyId(null);
@@ -93,7 +93,7 @@ export default function OffboardingQueue() {
       await updateOffboardingSummary(id, content);
       await load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to save edits');
+      setError(err instanceof ApiError ? err.message : 'Không lưu được chỉnh sửa');
     } finally {
       setBusyId(null);
     }
@@ -106,7 +106,7 @@ export default function OffboardingQueue() {
       await approveOffboardingSummary(id);
       await load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to approve');
+      setError(err instanceof ApiError ? err.message : 'Không duyệt được');
     } finally {
       setBusyId(null);
     }
@@ -114,14 +114,14 @@ export default function OffboardingQueue() {
 
   if (!items) {
     return (
-      <Card title="Offboarding requests">
+      <Card title="Yêu cầu nghỉ việc">
         <PageSkeleton variant="list" rows={3} embedded />
       </Card>
     );
   }
 
   return (
-    <Card title={`Offboarding requests (${items.length})`} sx={{ mb: 3 }}>
+    <Card title={`Yêu cầu nghỉ việc (${items.length})`} sx={{ mb: 3 }}>
       {error ? (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
           {error}
@@ -129,7 +129,7 @@ export default function OffboardingQueue() {
       ) : null}
 
       {items.length === 0 ? (
-        <Typography variant="body2">Nothing waiting on you right now.</Typography>
+        <Typography variant="body2">Hiện không có yêu cầu nào chờ bạn.</Typography>
       ) : (
         <Stack divider={<Divider />} spacing={3}>
           {items.map((item) => (
@@ -145,11 +145,11 @@ export default function OffboardingQueue() {
                   <Typography variant="body2" sx={{ fontSize: 12.5 }}>
                     {item.employment
                       ? `${item.employment.jobTitle} @ ${item.employment.company.name}`
-                      : 'No employment on record'}
+                      : 'Chưa có kỳ làm việc'}
                   </Typography>
                 </Box>
                 <Chip
-                  label={item.generatedAt ? 'Ready for review' : 'Requested'}
+                  label={item.generatedAt ? 'Sẵn sàng xem' : 'Đã yêu cầu'}
                   size="small"
                   color={item.generatedAt ? 'warning' : 'default'}
                 />
@@ -163,18 +163,18 @@ export default function OffboardingQueue() {
                   onClick={() => handleTrigger(item.id)}
                   disabled={busyId === item.id}
                 >
-                  {busyId === item.id ? 'Writing...' : 'Trigger AI summary'}
+                  {busyId === item.id ? 'Đang viết...' : 'Kích hoạt tóm tắt AI'}
                 </Button>
               ) : (
                 <>
                   <Alert severity="info" sx={{ mb: 1.5 }}>
-                    You may edit the narrative below (project/client names are
-                    already redacted). The evaluation and scores come straight
-                    from approved assessments and can&apos;t be edited here.
+                    Bạn có thể sửa phần tường thuật bên dưới (tên dự án/khách hàng
+                    đã được ẩn). Phần đánh giá và điểm lấy từ bài đã duyệt, không
+                    sửa được ở đây.
                   </Alert>
 
                   <TextField
-                    label="Narrative (editable)"
+                    label="Tường thuật (có thể sửa)"
                     value={drafts[item.id] ?? ''}
                     onChange={(e) =>
                       setDrafts((prev) => ({ ...prev, [item.id]: e.target.value }))
@@ -196,7 +196,7 @@ export default function OffboardingQueue() {
                       }}
                     >
                       <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                        Evaluation (locked)
+                        Đánh giá (khóa)
                       </Typography>
                       <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
                         {item.evaluation}
@@ -227,7 +227,7 @@ export default function OffboardingQueue() {
                       onClick={() => handleSaveNarrative(item.id)}
                       disabled={busyId === item.id}
                     >
-                      Save narrative edits
+                      Lưu chỉnh sửa tường thuật
                     </Button>
                     <Button
                       size="small"
@@ -236,7 +236,7 @@ export default function OffboardingQueue() {
                       onClick={() => handleApprove(item.id)}
                       disabled={busyId === item.id}
                     >
-                      Approve
+                      Duyệt
                     </Button>
                   </Stack>
                 </>

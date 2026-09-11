@@ -16,7 +16,6 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined';
-import AppShell from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
@@ -39,12 +38,12 @@ import CareerPassportTab from './CareerPassportTab';
 // from their own nav entries — index-based routing would break if the tab
 // order ever changes.
 const TABS = [
-  { key: 'timeline', label: 'Timeline' },
-  { key: 'skills', label: 'Skills' },
-  { key: 'projects', label: 'Projects' },
-  { key: 'certifications', label: 'Certifications' },
-  { key: 'awards', label: 'Awards' },
-  { key: 'passport', label: 'Career Passport' },
+  { key: 'timeline', label: 'Dòng thời gian' },
+  { key: 'skills', label: 'Kỹ năng' },
+  { key: 'projects', label: 'Dự án' },
+  { key: 'certifications', label: 'Chứng chỉ' },
+  { key: 'awards', label: 'Thành tích' },
+  { key: 'passport', label: 'Hộ chiếu nghề nghiệp' },
 ] as const;
 
 /**
@@ -79,7 +78,7 @@ function ProfilePageContent() {
     try {
       setProfile(await getCompetencyProfile());
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to load profile');
+      setError(err instanceof ApiError ? err.message : 'Không tải được hồ sơ');
     } finally {
       setLoading(false);
     }
@@ -99,11 +98,10 @@ function ProfilePageContent() {
   );
 
   return (
-    <AppShell>
-      <PageContainer>
+    <PageContainer>
         <PageHeader
-          title="My Profile"
-          subtitle="Your full competency record — skills, projects, certifications and achievements."
+          title="Hồ sơ của tôi"
+          subtitle="Hồ sơ năng lực đầy đủ — kỹ năng, dự án, chứng chỉ và thành tích."
           actions={
             <Button
               component={NextLink}
@@ -111,7 +109,7 @@ function ProfilePageContent() {
               variant="contained"
               startIcon={<UploadFileOutlinedIcon />}
             >
-              Import CV
+              Nhập CV
             </Button>
           }
         />
@@ -145,20 +143,20 @@ function ProfilePageContent() {
                       ? `${currentEmployment.jobTitle}${currentEmployment.level ? ` · ${currentEmployment.level}` : ''} @ ${currentEmployment.company.name}`
                       : (profile.user.jobTitle ??
                         profile.user.company?.name ??
-                        'No current position on record')}
+                        'Chưa có vị trí hiện tại')}
                   </Typography>
                   <Typography variant="caption" sx={{ display: 'block', mt: 0.25 }}>
                     {profile.user.email}
                   </Typography>
                 </Box>
                 <Stack direction="row" spacing={3} sx={{ pr: 1 }}>
-                  <Stat label="Skills" value={profile.skills.length} />
-                  <Stat label="Projects" value={profile.projects.length} />
+                  <Stat label="Kỹ năng" value={profile.skills.length} />
+                  <Stat label="Dự án" value={profile.projects.length} />
                   <Stat
-                    label="Certificates"
+                    label="Chứng chỉ"
                     value={profile.certifications.length}
                   />
-                  <Stat label="Awards" value={profile.awards.length} />
+                  <Stat label="Thành tích" value={profile.awards.length} />
                 </Stack>
               </Stack>
 
@@ -219,8 +217,7 @@ function ProfilePageContent() {
             </Card>
           </>
         ) : null}
-      </PageContainer>
-    </AppShell>
+    </PageContainer>
   );
 }
 

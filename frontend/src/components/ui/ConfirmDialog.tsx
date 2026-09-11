@@ -22,8 +22,8 @@ export default function ConfirmDialog({
   open,
   title,
   description,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmLabel = 'Xác nhận',
+  cancelLabel = 'Hủy',
   danger = false,
   confirming = false,
   onConfirm,
@@ -46,7 +46,7 @@ export default function ConfirmDialog({
             onClick={() => void onConfirm()}
             disabled={confirming}
           >
-            {confirming ? 'Working…' : confirmLabel}
+            {confirming ? 'Đang xử lý…' : confirmLabel}
           </Button>
         </>
       }

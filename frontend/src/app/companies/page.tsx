@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import AppShell from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
@@ -46,7 +45,7 @@ export default function CompaniesPage() {
       .listCompanies()
       .then(setCompanies)
       .catch((err) => {
-        setError(err instanceof ApiError ? err.message : 'Failed to load companies');
+        setError(err instanceof ApiError ? err.message : 'Không tải được danh sách công ty');
       });
   }, []);
 
@@ -73,7 +72,7 @@ export default function CompaniesPage() {
       setFormOpen(false);
       refresh();
     } catch (err) {
-      setFormError(err instanceof ApiError ? err.message : 'Failed to create company');
+      setFormError(err instanceof ApiError ? err.message : 'Không tạo được công ty');
     } finally {
       setSubmitting(false);
     }
@@ -84,39 +83,38 @@ export default function CompaniesPage() {
       await companiesApi.deleteCompany(id);
       refresh();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to delete company');
+      setError(err instanceof ApiError ? err.message : 'Không xóa được công ty');
     }
   };
 
   return (
-    <AppShell>
-      <PageContainer>
+    <PageContainer>
         <PageHeader
-          title="Companies"
-          subtitle="Every company on the platform."
+          title="Công ty"
+          subtitle="Mọi công ty trên nền tảng."
           actions={
             <Button
               variant="contained"
               startIcon={<AddOutlinedIcon />}
               onClick={() => setFormOpen((v) => !v)}
             >
-              New company
+              Công ty mới
             </Button>
           }
         />
 
         {formOpen ? (
-          <Card title="Create a company" sx={{ mb: 3 }}>
+          <Card title="Tạo công ty" sx={{ mb: 3 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 480 }}>
-              <TextField label="Company name" value={form.name} onChange={handleField('name')} size="small" />
-              <TextField label="Industry (optional)" value={form.industry} onChange={handleField('industry')} size="small" />
+              <TextField label="Tên công ty" value={form.name} onChange={handleField('name')} size="small" />
+              <TextField label="Ngành (tuỳ chọn)" value={form.industry} onChange={handleField('industry')} size="small" />
               <Typography variant="body2" sx={{ mt: 1 }}>
-                Company Admin account
+                Tài khoản quản trị công ty
               </Typography>
-              <TextField label="Admin name" value={form.adminName} onChange={handleField('adminName')} size="small" />
-              <TextField label="Admin email" value={form.adminEmail} onChange={handleField('adminEmail')} size="small" />
+              <TextField label="Tên quản trị" value={form.adminName} onChange={handleField('adminName')} size="small" />
+              <TextField label="Email quản trị" value={form.adminEmail} onChange={handleField('adminEmail')} size="small" />
               <TextField
-                label="Admin password"
+                label="Mật khẩu quản trị"
                 type="password"
                 value={form.adminPassword}
                 onChange={handleField('adminPassword')}
@@ -133,17 +131,17 @@ export default function CompaniesPage() {
                   disabled={submitting || !form.name || !form.adminName || !form.adminEmail || !form.adminPassword}
                   onClick={handleCreate}
                 >
-                  Create
+                  Tạo
                 </Button>
                 <Button variant="text" onClick={() => setFormOpen(false)}>
-                  Cancel
+                  Hủy
                 </Button>
               </Box>
             </Box>
           </Card>
         ) : null}
 
-        <Card title="Companies">
+        <Card title="Công ty">
           {error ? (
             <Typography variant="body2" sx={{ color: 'error.main' }}>
               {error}
@@ -151,15 +149,15 @@ export default function CompaniesPage() {
           ) : !companies ? (
             <PageSkeleton variant="table" rows={5} embedded />
           ) : companies.length === 0 ? (
-            <Typography variant="body1">No companies yet.</Typography>
+            <Typography variant="body1">Chưa có công ty nào.</Typography>
           ) : (
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Industry</TableCell>
-                  <TableCell>Created</TableCell>
-                  <TableCell align="right">Actions</TableCell>
+                  <TableCell>Tên</TableCell>
+                  <TableCell>Ngành</TableCell>
+                  <TableCell>Ngày tạo</TableCell>
+                  <TableCell align="right">Thao tác</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -167,17 +165,17 @@ export default function CompaniesPage() {
                   <TableRow key={company.id} hover>
                     <TableCell>{company.name}</TableCell>
                     <TableCell>{company.industry ?? '—'}</TableCell>
-                    <TableCell>{new Date(company.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>{new Date(company.createdAt).toLocaleDateString('vi-VN')}</TableCell>
                     <TableCell align="right">
-                      <Tooltip title="Delete company">
+                      <Tooltip title="Xóa công ty">
                         <IconButton
                           size="sm"
-                          aria-label="Delete company"
+                          aria-label="Xóa công ty"
                           onClick={() =>
                             ask({
-                              title: 'Delete company',
-                              description: `Delete “${company.name}” and its admin account? This cannot be undone.`,
-                              confirmLabel: 'Delete',
+                              title: 'Xóa công ty',
+                              description: `Xóa “${company.name}” và tài khoản quản trị? Hành động này không thể hoàn tác.`,
+                              confirmLabel: 'Xóa',
                               danger: true,
                               onConfirm: () => handleDelete(company.id),
                             })
@@ -194,7 +192,6 @@ export default function CompaniesPage() {
           )}
         </Card>
         {dialog}
-      </PageContainer>
-    </AppShell>
+    </PageContainer>
   );
 }

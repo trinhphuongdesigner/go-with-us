@@ -18,39 +18,39 @@ const KIND_META: Record<
   { label: string; icon: React.ReactNode; color: string }
 > = {
   EMPLOYMENT: {
-    label: 'Employment',
+    label: 'Làm việc',
     icon: <WorkOutlineOutlinedIcon fontSize="small" />,
     color: colorTokens.accentInk,
   },
   PROJECT: {
-    label: 'Project',
+    label: 'Dự án',
     icon: <FolderOutlinedIcon fontSize="small" />,
     color: '#4C8DF6',
   },
   CERTIFICATION: {
-    label: 'Certification',
+    label: 'Chứng chỉ',
     icon: <SchoolOutlinedIcon fontSize="small" />,
     color: '#8E7CF0',
   },
   AWARD: {
-    label: 'Award',
+    label: 'Thành tích',
     icon: <EmojiEventsOutlinedIcon fontSize="small" />,
     color: '#E0A32E',
   },
   ACTIVITY: {
-    label: 'Activity',
+    label: 'Hoạt động',
     icon: <EventNoteOutlinedIcon fontSize="small" />,
     color: '#5FAE8C',
   },
 };
 
 function formatRange(date: string, endDate: string | null) {
-  const start = new Date(date).toLocaleDateString(undefined, {
+  const start = new Date(date).toLocaleDateString('vi-VN', {
     year: 'numeric',
     month: 'short',
   });
   if (!endDate) return start;
-  const end = new Date(endDate).toLocaleDateString(undefined, {
+  const end = new Date(endDate).toLocaleDateString('vi-VN', {
     year: 'numeric',
     month: 'short',
   });
@@ -69,8 +69,7 @@ export default function ProfileTimeline({
   if (entries.length === 0) {
     return (
       <Typography variant="body2">
-        Nothing on the timeline yet. Add a project or import your CV to get
-        started.
+        Chưa có gì trên dòng thời gian. Thêm dự án hoặc nhập CV để bắt đầu.
       </Typography>
     );
   }
@@ -148,7 +147,7 @@ export default function ProfileTimeline({
               ) : null}
               {typeof entry.meta.score === 'string' && entry.meta.score ? (
                 <Typography variant="body2" sx={{ mt: 0.5 }}>
-                  Score: {entry.meta.score}
+                  Điểm: {entry.meta.score}
                 </Typography>
               ) : null}
 

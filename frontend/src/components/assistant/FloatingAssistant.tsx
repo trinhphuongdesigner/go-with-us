@@ -82,7 +82,7 @@ export default function FloatingAssistant() {
       setHistoryOpen(false);
       setPanelOpen(true);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to open conversation');
+      setError(err instanceof ApiError ? err.message : 'Không mở được cuộc trò chuyện');
     }
   };
 
@@ -125,7 +125,7 @@ export default function FloatingAssistant() {
     } catch (err) {
       setMessages((prev) => prev.filter((m) => m.id !== pending.id));
       setQuestion(value);
-      setError(err instanceof ApiError ? err.message : 'The assistant failed');
+      setError(err instanceof ApiError ? err.message : 'Trợ lý không trả lời được');
     } finally {
       setBusy(false);
     }
@@ -140,7 +140,7 @@ export default function FloatingAssistant() {
       }
       await loadConversations();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to delete');
+      setError(err instanceof ApiError ? err.message : 'Không xóa được');
     }
   };
 
@@ -149,7 +149,7 @@ export default function FloatingAssistant() {
       await updateConversation(conversation.id, { pinned: !conversation.pinned });
       await loadConversations();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to update pin');
+      setError(err instanceof ApiError ? err.message : 'Không cập nhật được ghim');
     }
   };
 
@@ -162,7 +162,7 @@ export default function FloatingAssistant() {
   return (
     <>
       {!panelOpen ? (
-        <Tooltip title="AI Assistant" placement="left">
+        <Tooltip title="Trợ lý AI" placement="left">
           <Fab
             onClick={() => setPanelOpen(true)}
             sx={{
@@ -206,20 +206,20 @@ export default function FloatingAssistant() {
               borderBottom: `1px solid ${colorTokens.divider}`,
             }}
           >
-            <Tooltip title="History">
+            <Tooltip title="Lịch sử">
               <IconButton size="small" onClick={openHistory}>
                 <MenuOutlinedIcon fontSize="small" />
               </IconButton>
             </Tooltip>
             <Typography sx={{ flex: 1, fontWeight: 600, fontSize: 14.5, color: colorTokens.text }}>
-              AI Assistant
+              Trợ lý AI
             </Typography>
-            <Tooltip title="New chat">
+            <Tooltip title="Chat mới">
               <IconButton size="small" onClick={handleNewChat}>
                 <AddCommentOutlinedIcon fontSize="small" />
               </IconButton>
             </Tooltip>
-            <Tooltip title="Close">
+            <Tooltip title="Đóng">
               <IconButton size="small" onClick={() => setPanelOpen(false)}>
                 <CloseIcon fontSize="small" />
               </IconButton>
@@ -235,7 +235,7 @@ export default function FloatingAssistant() {
 
             {messages.length === 0 ? (
               <Stack spacing={1}>
-                <Typography variant="body2">Try one of these:</Typography>
+                <Typography variant="body2">Thử một trong các câu này:</Typography>
                 {suggestions.map((prompt) => (
                   <Button
                     key={prompt}
@@ -288,7 +288,7 @@ export default function FloatingAssistant() {
             sx={{ p: 1.5, borderTop: `1px solid ${colorTokens.divider}` }}
           >
             <TextField
-              placeholder="Ask anything..."
+              placeholder="Hỏi bất cứ điều gì..."
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               onKeyDown={(e) => {
@@ -323,7 +323,7 @@ export default function FloatingAssistant() {
               borderBottom: `1px solid ${colorTokens.divider}`,
             }}
           >
-            <Typography sx={{ flex: 1, fontWeight: 600 }}>History</Typography>
+            <Typography sx={{ flex: 1, fontWeight: 600 }}>Lịch sử</Typography>
             <IconButton size="small" onClick={() => setHistoryOpen(false)}>
               <CloseIcon fontSize="small" />
             </IconButton>
@@ -337,14 +337,14 @@ export default function FloatingAssistant() {
               onClick={handleNewChat}
               sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
             >
-              New chat
+              Chat mới
             </Button>
           </Box>
 
           <Stack spacing={0.5} sx={{ flex: 1, overflowY: 'auto', px: 1.5, pb: 1.5 }}>
             {conversations.length === 0 ? (
               <Typography variant="body2" sx={{ px: 0.5 }}>
-                No conversation yet.
+                Chưa có cuộc trò chuyện nào.
               </Typography>
             ) : (
               conversations.map((conversation) => (
@@ -365,7 +365,7 @@ export default function FloatingAssistant() {
                       {conversation.title}
                     </Typography>
                     <Typography variant="body2" noWrap sx={{ fontSize: 11, color: colorTokens.neutral400 }}>
-                      {new Date(conversation.updatedAt).toLocaleString()}
+                      {new Date(conversation.updatedAt).toLocaleString('vi-VN')}
                     </Typography>
                   </Button>
                   <IconButton size="small" onClick={() => handleTogglePin(conversation)}>
@@ -377,12 +377,12 @@ export default function FloatingAssistant() {
                   </IconButton>
                   <IconButton
                     size="sm"
-                    aria-label="Delete conversation"
+                    aria-label="Xóa cuộc trò chuyện"
                     onClick={() =>
                       ask({
-                        title: 'Delete conversation',
-                        description: `Remove “${conversation.title}”? This cannot be undone.`,
-                        confirmLabel: 'Delete',
+                        title: 'Xóa cuộc trò chuyện',
+                        description: `Xóa “${conversation.title}”? Hành động này không thể hoàn tác.`,
+                        confirmLabel: 'Xóa',
                         danger: true,
                         onConfirm: () => handleDelete(conversation.id),
                       })
