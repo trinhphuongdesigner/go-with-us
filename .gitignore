@@ -27,6 +27,9 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Agent worktrees used while building feature slices in parallel
+.claude/
+
 # Testing
 coverage/
 
