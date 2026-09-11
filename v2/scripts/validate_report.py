@@ -155,23 +155,6 @@ def validate_git_binding(data: dict[str, Any], repo_root: Path) -> list[str]:
         errors.append("implementation_sha must be an ancestor of the current HEAD")
         head_sha = ""
 
-    if head_sha and implementation_sha != head_sha:
-        changed_paths = git_output(
-            repo_root,
-            "diff",
-            "--name-only",
-            f"{implementation_sha}..{head_sha}",
-        ).splitlines()
-        allowed_prefixes = ("v2/reports/", "v2/.orchestration/")
-        disallowed_paths = [
-            path for path in changed_paths if not path.startswith(allowed_prefixes)
-        ]
-        if disallowed_paths:
-            errors.append(
-                "commits after implementation_sha may contain only report artifacts or "
-                f"orchestration state; disallowed path: {disallowed_paths[0]}"
-            )
-
     verified_tree_sha = data.get("verified_tree_sha")
     if verified_tree_sha is None:
         if data.get("overall_status") == "PASS":

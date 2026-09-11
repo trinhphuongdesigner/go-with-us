@@ -183,7 +183,7 @@ class TestValidateReport(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
 
-    def test_descendant_source_change_invalidates_historical_report(self):
+    def test_descendant_source_change_preserves_historical_report(self):
         with tempfile.TemporaryDirectory() as td:
             repo_root = Path(td)
             self._git(repo_root, "init", "-b", "main")
@@ -218,8 +218,49 @@ class TestValidateReport(unittest.TestCase):
             source = self._valid_source(repo_root, implementation_sha)
             result = self._run(self._write_report(repo_root, source), repo_root)
 
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_historical_report_still_rejects_wrong_implementation_tree(self):
+        with tempfile.TemporaryDirectory() as td:
+            repo_root = Path(td)
+            self._git(repo_root, "init", "-b", "main")
+            source_file = repo_root / "v2" / "backend" / "app.py"
+            source_file.parent.mkdir(parents=True)
+            source_file.write_text("version = 1\n", encoding="utf-8")
+            self._git(repo_root, "add", str(source_file.relative_to(repo_root)))
+            self._git(
+                repo_root,
+                "-c",
+                "user.name=CareerMate Test",
+                "-c",
+                "user.email=test@careermate.invalid",
+                "commit",
+                "-m",
+                "implementation",
+            )
+            implementation_sha = self._git(repo_root, "rev-parse", "HEAD")
+            source_file.write_text("version = 2\n", encoding="utf-8")
+            self._git(repo_root, "add", str(source_file.relative_to(repo_root)))
+            self._git(
+                repo_root,
+                "-c",
+                "user.name=CareerMate Test",
+                "-c",
+                "user.email=test@careermate.invalid",
+                "commit",
+                "-m",
+                "next feature",
+            )
+
+            source = self._valid_source(repo_root, implementation_sha)
+            source["verified_tree_sha"] = self._git(repo_root, "rev-parse", "HEAD^{tree}")
+            result = self._run(self._write_report(repo_root, source), repo_root)
+
         self.assertEqual(result.returncode, 1)
-        self.assertIn("disallowed path: v2/backend/app.py", result.stderr)
+        self.assertIn(
+            "verified_tree_sha must match the implementation commit tree",
+            result.stderr,
+        )
 
     def test_non_ancestor_implementation_commit_fails(self):
         with tempfile.TemporaryDirectory() as td:
