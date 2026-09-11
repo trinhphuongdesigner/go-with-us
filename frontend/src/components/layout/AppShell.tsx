@@ -17,6 +17,7 @@ import Tooltip from '@mui/material/Tooltip';
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 import ApartmentOutlinedIcon from '@mui/icons-material/ApartmentOutlined';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
+import WorkOutlineOutlinedIcon from '@mui/icons-material/WorkOutlineOutlined';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutlineOutlined';
 import PsychologyOutlinedIcon from '@mui/icons-material/PsychologyOutlined';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
@@ -51,6 +52,12 @@ const NAV_ITEMS: NavItem[] = [
     href: '/employees',
     icon: <GroupsOutlinedIcon fontSize="small" />,
     roles: ['COMPANY_ADMIN'],
+  },
+  {
+    label: 'Job Requirements',
+    href: '/job-requirements',
+    icon: <WorkOutlineOutlinedIcon fontSize="small" />,
+    roles: ['COMPANY_ADMIN', 'SUPER_ADMIN'],
   },
   { label: 'My Profile', href: '/profile', icon: <PersonOutlineIcon fontSize="small" /> },
   { label: 'My Skills', href: '/skills', icon: <PsychologyOutlinedIcon fontSize="small" /> },

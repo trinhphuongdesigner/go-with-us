@@ -9,6 +9,11 @@ export interface CreateCompanyPayload {
   adminPassword: string;
 }
 
+export interface UpdateCompanyPayload {
+  name?: string;
+  industry?: string;
+}
+
 export function listCompanies() {
   return apiRequest<Company[]>('/companies');
 }
@@ -21,7 +26,7 @@ export function createCompany(payload: CreateCompanyPayload) {
   return apiRequest<Company>('/companies', { method: 'POST', body: payload });
 }
 
-export function updateCompany(id: string, payload: Partial<Pick<Company, 'name' | 'industry'>>) {
+export function updateCompany(id: string, payload: UpdateCompanyPayload) {
   return apiRequest<Company>(`/companies/${id}`, { method: 'PATCH', body: payload });
 }
 
