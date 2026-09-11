@@ -1,22 +1,72 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { JobRequirementsService } from './job-requirements.service';
+import { CreateJobRequirementDto } from './dto/create-job-requirement.dto';
+import { UpdateJobRequirementDto } from './dto/update-job-requirement.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/jwt.strategy';
 
 /**
- * Stub module — real controller/service TBD in a later phase (Prisma model
- * for this domain already exists in schema.prisma). Wired into
- * AppModule.imports now so future feature-slice work only needs to fill in
- * this file, never touch app.module.ts again.
+ * Job Requirements & AI Candidate Matching — see
+ * D:\Coding\AI_Tool\docs\skills.md's conventions for the "match" AI skill's
+ * shape (proposal-only, no persistence step — this one is read-only
+ * analysis, so it's returned straight to the frontend, unlike every skill
+ * in that reference doc which has an explicit confirm/save step).
  */
 @Controller('job-requirements')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class JobRequirementsController {
   constructor(
     private readonly jobRequirementsService: JobRequirementsService,
   ) {}
 
   @Get()
-  status() {
-    return this.jobRequirementsService.status();
+  findAll(
+    @CurrentUser() caller: AuthenticatedUser,
+    @Query('companyId') companyId?: string,
+  ) {
+    return this.jobRequirementsService.findAll(caller, companyId);
+  }
+
+  @Post()
+  @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  create(
+    @Body() dto: CreateJobRequirementDto,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
+    return this.jobRequirementsService.create(dto, caller);
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateJobRequirementDto,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
+    return this.jobRequirementsService.update(id, dto, caller);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string, @CurrentUser() caller: AuthenticatedUser) {
+    return this.jobRequirementsService.remove(id, caller);
+  }
+
+  @Post(':id/match')
+  @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
+  match(@Param('id') id: string, @CurrentUser() caller: AuthenticatedUser) {
+    return this.jobRequirementsService.match(id, caller);
   }
 }
