@@ -214,33 +214,28 @@ function Sidebar({
           borderBottom: `1px solid ${colorTokens.border}`,
         }}
       >
-        <Avatar
+        <Box
+          component="img"
+          src="/mark-black.svg"
+          alt={isFull ? undefined : 'CareerMate'}
           sx={{
-            width: 40,
-            height: 40,
-            bgcolor: colorTokens.primary,
-            color: '#ffffff',
-            fontWeight: 600,
-            fontSize: 16,
+            width: 36,
+            height: 36,
             flexShrink: 0,
+            display: isFull ? 'none' : 'block',
           }}
-        >
-          C
-        </Avatar>
-        <Typography
+        />
+        <Box
+          component="img"
+          src="/lockup-black.svg"
+          alt="CareerMate"
           sx={{
-            fontWeight: 700,
-            fontSize: 16,
-            color: colorTokens.heading,
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            opacity: isFull ? 1 : 0,
-            maxWidth: isFull ? 160 : 0,
-            transition: isFull ? 'opacity 0.15s ease 0.08s, max-width 0.2s ease' : 'opacity 0.1s ease, max-width 0.2s ease',
+            height: 28,
+            width: 'auto',
+            flexShrink: 0,
+            display: isFull ? 'block' : 'none',
           }}
-        >
-          CareerMate
-        </Typography>
+        />
       </Box>
       {companyScopeId ? (
         <Box
