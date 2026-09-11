@@ -1,7 +1,6 @@
 /**
  * Seeded demo users from `backend/prisma/seed.ts`.
- * Login is a picker over this list — password is the shared seed secret,
- * not something the user types.
+ * The login picker fills these credentials; manual sign-in stays available.
  */
 export const DEMO_PASSWORD = 'Password123!';
 
@@ -18,14 +17,15 @@ export interface DemoAccount {
 export const DEMO_ACCOUNTS: DemoAccount[] = [
   {
     email: 'alice@acme.dev',
-    name: 'Alice Nguyen',
+    // Requested demo label; the authenticated profile still uses the API name.
+    name: 'Alice Tran',
     role: 'EMPLOYEE',
     jobTitle: 'Frontend Engineer',
     company: 'Acme Corp',
   },
   {
     email: 'admin@acme.dev',
-    name: 'Acme Admin',
+    name: 'Admin Acme',
     role: 'COMPANY_ADMIN',
     jobTitle: 'HR Manager',
     company: 'Acme Corp',
@@ -46,7 +46,7 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
   },
   {
     email: 'superadmin@careermate.dev',
-    name: 'Super Admin',
+    name: 'SuperAdmin',
     role: 'SUPER_ADMIN',
     jobTitle: 'Platform',
     company: null,

@@ -9,6 +9,7 @@ import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import MenuItem from '@mui/material/MenuItem';
 import Select, { type SelectChangeEvent } from '@mui/material/Select';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useAuth } from '@/contexts/AuthContext';
 import { ApiError } from '@/lib/api/client';
@@ -119,6 +120,8 @@ export default function LoginPage() {
   const { login, user, loading } = useAuth();
   const router = useRouter();
   const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [demoEmail, setDemoEmail] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
 
@@ -129,20 +132,24 @@ export default function LoginPage() {
   }, [loading, user, router]);
 
   const handleAccountChange = (event: SelectChangeEvent<string>) => {
-    setEmail(event.target.value);
+    const account = DEMO_ACCOUNTS.find((item) => item.email === event.target.value);
+    setDemoEmail(account?.email ?? '');
+    setEmail(account?.email ?? '');
+    setPassword(account ? DEMO_PASSWORD : '');
     setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) {
-      setError('Choose an account to continue.');
+    if (submitting || loading) return;
+    if (!email.trim() || !password) {
+      setError('Enter your email and password, or choose a demo account.');
       return;
     }
     setError(null);
     setSubmitting(true);
     try {
-      await login(email, DEMO_PASSWORD);
+      await login(email.trim(), password);
       router.replace('/');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Login failed');
@@ -150,8 +157,6 @@ export default function LoginPage() {
       setSubmitting(false);
     }
   };
-
-  const selected = DEMO_ACCOUNTS.find((account) => account.email === email);
 
   return (
     <Box
@@ -261,8 +266,8 @@ export default function LoginPage() {
               The record that stays when people move on.
             </Typography>
             <Typography variant="body2" sx={{ maxWidth: 400, color: colorTokens.text }}>
-              HR sees the whole journey. Employees keep their own history. Staffing a project
-              takes a sentence, not a chain of pings.
+              HR sees the whole journey. Employees keep their own history. Staffing a project takes
+              a sentence, not a chain of pings.
             </Typography>
           </Box>
 
@@ -312,7 +317,7 @@ export default function LoginPage() {
             Sign in
           </Typography>
           <Typography variant="body2" sx={{ mb: 3 }}>
-            Choose a demo account. Password is applied automatically — you do not type it.
+            Choose a demo account to fill your credentials, or sign in with your own.
           </Typography>
 
           {error ? (
@@ -324,12 +329,12 @@ export default function LoginPage() {
           <Box
             component="form"
             onSubmit={handleSubmit}
-            autoComplete="off"
             sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
           >
             <Box>
               <Typography
                 component="label"
+                id="demo-account-label"
                 htmlFor="demo-account"
                 sx={{
                   display: 'block',
@@ -339,13 +344,15 @@ export default function LoginPage() {
                   mb: 0.75,
                 }}
               >
-                Account
+                Demo account
               </Typography>
               <Select
                 id="demo-account"
+                labelId="demo-account-label"
                 fullWidth
                 displayEmpty
-                value={email}
+                value={demoEmail}
+                disabled={submitting || loading}
                 onChange={handleAccountChange}
                 renderValue={(value) => {
                   const account = DEMO_ACCOUNTS.find((item) => item.email === value);
@@ -371,6 +378,7 @@ export default function LoginPage() {
                   },
                 }}
               >
+                <MenuItem value="">Use my own account</MenuItem>
                 {ACCOUNT_GROUPS.flatMap((group, groupIndex) => [
                   <MenuItem
                     key={`label-${group.label}`}
@@ -384,18 +392,13 @@ export default function LoginPage() {
                       color: colorTokens.neutral500,
                       minHeight: 32,
                       mt: groupIndex === 0 ? 0 : 0.5,
-                      borderTop:
-                        groupIndex === 0 ? 'none' : `1px solid ${colorTokens.divider}`,
+                      borderTop: groupIndex === 0 ? 'none' : `1px solid ${colorTokens.divider}`,
                     }}
                   >
                     {group.label}
                   </MenuItem>,
                   ...group.accounts.map((account) => (
-                    <MenuItem
-                      key={account.email}
-                      value={account.email}
-                      sx={{ py: 1.25, px: 1.5 }}
-                    >
+                    <MenuItem key={account.email} value={account.email} sx={{ py: 1.25, px: 1.5 }}>
                       <AccountRow account={account} />
                     </MenuItem>
                   )),
@@ -403,11 +406,43 @@ export default function LoginPage() {
               </Select>
             </Box>
 
-            {selected ? (
-              <Typography variant="body2">{selected.email}</Typography>
-            ) : null}
+            <TextField
+              label="Email"
+              name="email"
+              type="email"
+              autoComplete="username"
+              required
+              fullWidth
+              value={email}
+              disabled={submitting || loading}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                setDemoEmail('');
+                setError(null);
+              }}
+            />
+            <TextField
+              label="Password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              fullWidth
+              value={password}
+              disabled={submitting || loading}
+              onChange={(event) => {
+                setPassword(event.target.value);
+                setDemoEmail('');
+                setError(null);
+              }}
+            />
 
-            <Button type="submit" variant="contained" disabled={submitting || !email} fullWidth>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={loading || submitting || !email.trim() || !password}
+              fullWidth
+            >
               {submitting ? 'Signing in…' : 'Sign in'}
             </Button>
           </Box>
