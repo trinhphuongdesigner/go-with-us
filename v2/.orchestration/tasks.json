@@ -3,8 +3,8 @@
   "branch": "feat/v2-rebuild",
   "status": "IN_PROGRESS",
   "waves": [
-    {"id": "W0", "name": "Foundation, Auth, AI boundary", "status": "IN_PROGRESS"},
-    {"id": "W1", "name": "Employee 360 and import", "status": "PENDING", "depends_on": ["W0"]},
+    {"id": "W0", "name": "Foundation, Auth, AI boundary", "status": "PASS", "implementation_sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6"},
+    {"id": "W1", "name": "Employee 360 and import", "status": "IN_PROGRESS", "depends_on": ["W0"]},
     {"id": "W2", "name": "Goals and Milo roadmap", "status": "PENDING", "depends_on": ["W1"]},
     {"id": "W3", "name": "Cross Assessment", "status": "PENDING", "depends_on": ["W0", "W1"]},
     {"id": "W4", "name": "Passport and offboarding", "status": "PENDING", "depends_on": ["W1", "W3"]},
@@ -12,8 +12,8 @@
     {"id": "W6", "name": "Migration and hardening", "status": "PENDING", "depends_on": ["W1", "W2", "W3", "W4", "W5"]}
   ],
   "active_assignments": [
-    {"owner": "pi-desktop", "worktree": "v2-integration", "scope": "v2/backend and v2/contracts", "mode": "writer"},
-    {"owner": "codex-subagent", "worktree": "v2-frontend", "scope": "v2/frontend", "mode": "writer"},
+    {"owner": "pi-desktop", "worktree": "v2-integration", "scope": "Wave 1 contract freeze, sau đó Employee 360 backend theo slice", "mode": "writer"},
+    {"owner": "codex-subagent", "worktree": "v2-integration", "scope": "read-only audit và review độc lập theo slice", "mode": "read-only"},
     {"owner": "antigravity", "worktree": "v2-integration", "scope": "UI and UX persona review", "mode": "read-only"},
     {"owner": "codex", "worktree": "v2-integration", "scope": "orchestration, integration and quality gates", "mode": "manager"}
   ]

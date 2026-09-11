@@ -17,3 +17,11 @@
 - Chạy `git status --short`; chỉ thao tác dưới `v2/`.
 - Đọc kết quả Pi/subagent, nhưng chạy lại lệnh kiểm thử trước khi ghi PASS.
 - Không đưa giá trị env hoặc credential vào transcript/report.
+
+## Trạng thái hiện tại
+
+- Wave 0 PASS tại SHA `01e1e87838d9cd4473a0e661b6dd75291b5119e6`; report chuẩn ở `../reports/00-foundation/qa-report.json`.
+- Toàn dự án vẫn IN_PROGRESS; không diễn giải Wave 0 PASS thành full rebuild hoàn tất.
+- Wave 1 bắt đầu bằng contract freeze: đúng ba role; HR/BOD legacy map sang COMPANY_ADMIN cộng permission rõ.
+- Mọi endpoint v2 dùng `/api/v2`; inventory v1 chỉ là evidence, không phải executable contract.
+- File intake phải kiểm tra MIME/size/malware/hash cho PDF, DOCX, ảnh, text, CSV và XLSX; parse không tự persist; selective apply dùng transaction, version, idempotency và rollback.

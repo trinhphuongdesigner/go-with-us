@@ -1,0 +1,211 @@
+{
+  "schema_version": "1.0",
+  "report_language": "vi",
+  "feature_id": "00-foundation",
+  "feature_name": "Wave 0 — Foundation, xác thực, AI boundary và Milo application shell",
+  "branch": "feat/v2-rebuild",
+  "implementation_sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6",
+  "verified_tree_sha": "b7615d6b60b05c02af7197b176f14e54b6dad526",
+  "generated_at": "2026-09-11T23:00:25Z",
+  "environment": {
+    "os": "macOS Darwin arm64",
+    "python": "3.12.8",
+    "node": "v26.7.0",
+    "browser": "Chromium qua Playwright 1.56.1",
+    "database": "PostgreSQL local: careermate_v2_test và careermate_v2_migration_check",
+    "ai_provider": null
+  },
+  "scope": [
+    "FastAPI, Pydantic v2, SQLAlchemy async, Alembic và PostgreSQL cho /api/v2.",
+    "Next.js 16, React 19, Tailwind CSS 4 và application shell theo design system CareerMate.",
+    "Auth, ba role, permission backend, session thu hồi được, tenant isolation và activity log.",
+    "AI gateway typed, evidence boundary, provider encryption, retry/circuit breaker và golden declaration runner.",
+    "Milo roadmap shell responsive, keyboard, reduced motion và bản nháp tách theo tenant/người dùng.",
+    "OpenAPI snapshot, generated TypeScript client, CI và quality gate fail-closed."
+  ],
+  "user_value": "Wave 0 tạo nền móng có thể kiểm chứng để các wave nghiệp vụ dùng chung auth, tenant boundary, AI reliability contract, design system và QA mà không phụ thuộc NestJS hoặc MUI.",
+  "functional_breakdown": [
+    {"step": 1, "actor": "Người dùng", "behavior": "Đăng nhập, đọc session hiện tại và đăng xuất để thu hồi session."},
+    {"step": 2, "actor": "Backend", "behavior": "Xác thực role, permission và company scope trước khi trả dữ liệu; ghi activity log."},
+    {"step": 3, "actor": "Frontend", "behavior": "Hiển thị navigation theo permission và chặn route trực tiếp bằng màn hình 403."},
+    {"step": 4, "actor": "Nhân viên", "behavior": "Xem Milo roadmap, sắp xếp bằng nút hoặc bàn phím và lưu bản nháp tách theo company/user."},
+    {"step": 5, "actor": "AI service", "behavior": "Chỉ trả kết quả đúng schema cùng evidence và trace metadata; không tự ghi database."},
+    {"step": 6, "actor": "Kỹ sư và reviewer", "behavior": "Chạy contract, migration, unit, integration, E2E, axe, security và performance trên đúng SHA."}
+  ],
+  "interfaces": [
+    {"kind": "API", "name": "POST /api/v2/auth/login, POST /api/v2/auth/logout, GET /api/v2/auth/me", "change": "Thêm auth API với session revoke, rate limit chia sẻ và response không lộ secret."},
+    {"kind": "API", "name": "GET /api/v2/health và GET /api/v2/dashboard", "change": "Thêm health; dashboard demo có hợp đồng rõ, non-demo trả 501 đến Wave 5."},
+    {"kind": "DATABASE", "name": "Company, User, Employment, AuthSession, ActivityLog, LoginRateLimit", "change": "Tạo 5 migration nền tảng với tenant keys, session revoke, actor/timestamp và rate-limit state."},
+    {"kind": "AI_SCHEMA", "name": "AiGateway.generate", "change": "Thêm result envelope typed, allowlisted IDs, evidence coverage, retry, circuit breaker và fallback có nhãn."},
+    {"kind": "UI_ROUTE", "name": "/login, /dashboard, /lo-trinh và route 403", "change": "Thêm responsive Milo shell, permission-aware navigation, dialogs và roadmap draft editor."}
+  ],
+  "acceptance_criteria": [
+    {"id": "AC-01", "description": "Backend đúng format, lint, type và chạy trên PostgreSQL test riêng.", "status": "PASS", "evidence_check_ids": ["CHK-FORMAT", "CHK-LINT", "CHK-TYPE", "CHK-INTEGRATION"]},
+    {"id": "AC-02", "description": "Auth, permission, tenant isolation, rollback và test DB safety được kiểm thử.", "status": "PASS", "evidence_check_ids": ["CHK-INTEGRATION", "CHK-SECURITY"]},
+    {"id": "AC-03", "description": "Alembic upgrade thành công và không có schema drift.", "status": "PASS", "evidence_check_ids": ["CHK-MIGRATION"]},
+    {"id": "AC-04", "description": "OpenAPI snapshot và generated TypeScript client khớp implementation.", "status": "PASS", "evidence_check_ids": ["CHK-CONTRACT"]},
+    {"id": "AC-05", "description": "Frontend unit test và production build đạt.", "status": "PASS", "evidence_check_ids": ["CHK-UNIT", "CHK-BUILD"]},
+    {"id": "AC-06", "description": "Milo shell và roadmap đạt E2E, keyboard, focus, reduced motion và axe trên ba viewport.", "status": "PASS", "evidence_check_ids": ["CHK-E2E", "CHK-ACCESSIBILITY", "CHK-MANUAL-UI"]},
+    {"id": "AC-07", "description": "LCP dưới 2.5 giây trên ba viewport chuẩn.", "status": "PASS", "evidence_check_ids": ["CHK-PERFORMANCE"]},
+    {"id": "AC-08", "description": "AI foundation kiểm tra schema/evidence/ID; declaration không bị diễn giải thành provider behavior PASS.", "status": "PASS", "evidence_check_ids": ["CHK-AI-GROUNDING", "CHK-INTEGRATION"]},
+    {"id": "AC-09", "description": "Không có security critical/high và không có secret trong diff.", "status": "PASS", "evidence_check_ids": ["CHK-SECURITY"]}
+  ],
+  "checks": [
+    {
+      "id": "CHK-FORMAT", "category": "FORMAT", "required": true, "status": "PASS",
+      "command": "./v2/scripts/check.sh (ruff format --check .)", "cwd": "v2/backend",
+      "started_at": "2026-09-11T22:52:30Z", "finished_at": "2026-09-11T22:52:32Z", "exit_code": 0,
+      "exact_sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6",
+      "summary": "Ruff xác nhận 49 file đã được format.", "artifact_paths": [], "metrics": {"files": 49}
+    },
+    {
+      "id": "CHK-LINT", "category": "LINT", "required": true, "status": "PASS",
+      "command": "./v2/scripts/check.sh (ruff check . và npm run lint)", "cwd": "v2",
+      "started_at": "2026-09-11T22:52:32Z", "finished_at": "2026-09-11T22:53:36Z", "exit_code": 0,
+      "exact_sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6",
+      "summary": "Backend và frontend không có lint error hoặc warning.", "artifact_paths": [], "metrics": {"errors": 0, "warnings": 0}
+    },
+    {
+      "id": "CHK-TYPE", "category": "TYPECHECK", "required": true, "status": "PASS",
+      "command": "./v2/scripts/check.sh (mypy app scripts và npm run typecheck)", "cwd": "v2",
+      "started_at": "2026-09-11T22:52:34Z", "finished_at": "2026-09-11T22:53:38Z", "exit_code": 0,
+      "exact_sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6",
+      "summary": "Mypy PASS 28 file và TypeScript PASS 0 lỗi.", "artifact_paths": [], "metrics": {"backend_files": 28, "errors": 0}
+    },
+    {
+      "id": "CHK-UNIT", "category": "UNIT", "required": true, "status": "PASS",
+      "command": "./v2/scripts/check.sh (npm run test)", "cwd": "v2/frontend",
+      "started_at": "2026-09-11T22:53:38Z", "finished_at": "2026-09-11T22:53:42Z", "exit_code": 0,
+      "exact_sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6",
+      "summary": "Vitest PASS 12 test trong 5 suite.", "artifact_paths": ["v2/frontend/tests"], "metrics": {"passed": 12, "suites": 5}
+    },
+    {
+      "id": "CHK-INTEGRATION", "category": "INTEGRATION", "required": true, "status": "PASS",
+      "command": "./v2/scripts/check.sh (pytest trên careermate_v2_test)", "cwd": "v2/backend",
+      "started_at": "2026-09-11T22:52:38Z", "finished_at": "2026-09-11T22:53:06Z", "exit_code": 0,
+      "exact_sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6",
+      "summary": "111 backend test PASS trên PostgreSQL, gồm auth, tenant, AI, crypto, rate limit, rollback và DB guard.",
+      "artifact_paths": ["v2/backend/tests"], "metrics": {"passed": 111, "failed": 0, "duration_seconds": 27.47}
+    },
+    {
+      "id": "CHK-CONTRACT", "category": "CONTRACT", "required": true, "status": "PASS",
+      "command": "./v2/scripts/check.sh (export_openapi.py và check-openapi-contract.sh)", "cwd": "v2",
+      "started_at": "2026-09-11T22:53:28Z", "finished_at": "2026-09-11T22:53:34Z", "exit_code": 0,
+      "exact_sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6",
+      "summary": "OpenAPI 3.1 snapshot và TypeScript client không stale.",
+      "artifact_paths": ["v2/contracts/openapi.json", "v2/contracts/generated/openapi.ts"], "metrics": {"stale_contracts": 0}
+    },
+    {
+      "id": "CHK-MIGRATION", "category": "MIGRATION", "required": true, "status": "PASS",
+      "command": "./v2/scripts/check.sh (alembic upgrade head và alembic check)", "cwd": "v2/backend",
+      "started_at": "2026-09-11T22:53:06Z", "finished_at": "2026-09-11T22:53:17Z", "exit_code": 0,
+      "exact_sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6",
+      "summary": "5 migration nâng schema thành công; Alembic không phát hiện drift.",
+      "artifact_paths": ["v2/backend/alembic/versions"], "metrics": {"migrations": 5, "drift_operations": 0}
+    },
+    {
+      "id": "CHK-BUILD", "category": "BUILD", "required": true, "status": "PASS",
+      "command": "./v2/scripts/check.sh (NEXT_PUBLIC_BUILD_SHA=<exact_sha> npm run build)", "cwd": "v2/frontend",
+      "started_at": "2026-09-11T22:53:42Z", "finished_at": "2026-09-11T22:53:50Z", "exit_code": 0,
+      "exact_sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6",
+      "summary": "Next.js 16.3.5 production build PASS và nhúng đúng SHA.", "artifact_paths": [], "metrics": {"errors": 0}
+    },
+    {
+      "id": "CHK-E2E", "category": "E2E", "required": true, "status": "PASS",
+      "command": "CAREERMATE_EXPECTED_SHA=<exact_sha> CAREERMATE_E2E_USE_BUILD=true npm run test:e2e", "cwd": "v2/frontend",
+      "started_at": "2026-09-11T22:53:50Z", "finished_at": "2026-09-11T22:54:35Z", "exit_code": 0,
+      "exact_sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6",
+      "summary": "27 Playwright scenario PASS trên production build ở mobile, tablet và desktop.",
+      "artifact_paths": ["v2/frontend/tests/e2e/foundation.spec.ts"], "metrics": {"passed": 27, "failed": 0, "viewports": 3}
+    },
+    {
+      "id": "CHK-ACCESSIBILITY", "category": "ACCESSIBILITY", "required": true, "status": "PASS",
+      "command": "CAREERMATE_E2E_USE_BUILD=true npm run test:e2e (axe, keyboard, focus, reduced motion)", "cwd": "v2/frontend",
+      "started_at": "2026-09-11T22:53:50Z", "finished_at": "2026-09-11T22:54:35Z", "exit_code": 0,
+      "exact_sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6",
+      "summary": "Axe 0 violation; dialog giữ focus, Escape đóng, roadmap có phím thay thế drag và reduced motion.",
+      "artifact_paths": ["v2/frontend/tests/e2e/foundation.spec.ts"], "metrics": {"axe_violations": 0, "viewports": 3}
+    },
+    {
+      "id": "CHK-SECURITY", "category": "SECURITY", "required": true, "status": "PASS",
+      "command": "Codex Security exact-head scan; bandit -ll; pip-audit; npm audit --omit=dev; gitleaks", "cwd": "v2",
+      "started_at": "2026-09-11T22:52:30Z", "finished_at": "2026-09-11T22:54:40Z", "exit_code": 0,
+      "exact_sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6",
+      "summary": "Exact-head scan COMPLETE với 0 finding; dependency audits sạch và Gitleaks không phát hiện secret.",
+      "artifact_paths": ["/private/var/folders/g9/ky9klfqn7tl49979y5hdflr00000gq/T/codex-security-scans-X0Ia80/v2-integration/01e1e87838d9cd4473a0e661b6dd75291b5119e6_20260911T225320Z_hqtf3ffp/report.md"],
+      "metrics": {"scan_id": "20cf79c3-cc35-4b26-b99b-06dd7e616c33", "inventory_covered": 80, "inventory_total": 80, "findings": 0}
+    },
+    {
+      "id": "CHK-PERFORMANCE", "category": "PERFORMANCE", "required": true, "status": "PASS",
+      "command": "CAREERMATE_E2E_USE_BUILD=true npm run test:e2e (LCP budget)", "cwd": "v2/frontend",
+      "started_at": "2026-09-11T22:53:50Z", "finished_at": "2026-09-11T22:54:35Z", "exit_code": 0,
+      "exact_sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6",
+      "summary": "LCP dashboard production đều dưới ngân sách 2500 ms.",
+      "artifact_paths": ["v2/frontend/tests/e2e/foundation.spec.ts"],
+      "metrics": {"mobile_lcp_ms": 727, "tablet_lcp_ms": 703, "desktop_lcp_ms": 770, "budget_ms": 2500}
+    },
+    {
+      "id": "CHK-AI-GROUNDING", "category": "AI_GROUNDING", "required": true, "status": "PASS",
+      "command": "./.venv/bin/python -m pytest tests/test_ai_golden_runner.py -q", "cwd": "v2/backend",
+      "started_at": "2026-09-11T22:51:55Z", "finished_at": "2026-09-11T22:51:56Z", "exit_code": 0,
+      "exact_sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6",
+      "summary": "Runner và 33 declaration hợp lệ; provider chưa chạy nên không tuyên bố behavioral PASS.",
+      "artifact_paths": ["v2/contracts/ai-golden-evals.yaml"], "metrics": {"declarations": 33, "behavioral_pass": 0, "not_run": 33}
+    },
+    {
+      "id": "CHK-MANUAL-UI", "category": "MANUAL_UI", "required": true, "status": "PASS",
+      "command": "Antigravity persona review và đối chiếu ảnh production exact SHA", "cwd": "v2/frontend",
+      "started_at": "2026-09-11T22:55:00Z", "finished_at": "2026-09-11T22:59:50Z", "exit_code": 0,
+      "exact_sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6",
+      "summary": "Antigravity correction xác nhận P0/P1 mở bằng 0 và 5 persona PASS; 8 ảnh production không có dev toolbar.",
+      "artifact_paths": ["v2/reports/00-foundation/screenshots"],
+      "metrics": {"personas_passed": 5, "screenshots": 8, "open_p0": 0, "open_p1": 0, "open_p2": 3}
+    }
+  ],
+  "persona_reviews": [
+    {
+      "persona": "EMPLOYEE_22_30", "viewport": "390x844", "status": "PASS",
+      "findings": [{"severity": "P2", "description": "Chấm thông báo hiện là trạng thái tĩnh trong shell demo.", "resolution": "Chỉ thêm pulse nhẹ khi backend có notification thật."}]
+    },
+    {
+      "persona": "HR_35_45", "viewport": "768x1024", "status": "PASS",
+      "findings": [{"severity": "P2", "description": "Microcopy empty state cần cập nhật khi Hồ sơ 360 và assessment có dữ liệu thật.", "resolution": "Đưa vào acceptance UI của Wave 1 và Wave 3."}]
+    },
+    {"persona": "MANAGER_45_55", "viewport": "1440x900", "status": "PASS", "findings": []},
+    {
+      "persona": "LOW_TECH_USER", "viewport": "768x1024", "status": "PASS",
+      "findings": [{"severity": "P2", "description": "Layout dưới 360px chưa có metric grid 2x2 riêng.", "resolution": "Bổ sung khi mở rộng browser matrix; phạm vi nhỏ nhất hiện là 390px và đã PASS."}]
+    }
+  ],
+  "security_privacy_notes": [
+    "Security scan 20cf79c3-cc35-4b26-b99b-06dd7e616c33 bao phủ 80/80 inventory, 0 finding.",
+    "Test fixture chỉ cho phép SQLite in-memory hoặc PostgreSQL asyncpg loopback với database careermate_v2_test; query override bị từ chối.",
+    "Gitleaks không phát hiện secret; report không chứa credential, connection string hoặc dữ liệu nhân sự thật.",
+    "Provider configuration dùng AES-256-GCM có context binding; ciphertext v1 chỉ đọc khi có context MAC hợp lệ.",
+    "Telemetry contract không ghi raw CV, prompt PII hoặc tên nhân viên."
+  ],
+  "ai_grounding_notes": [
+    "AiGateway kiểm tra JSON schema, semantic constraints, allowlisted IDs, tenant scope và evidence coverage.",
+    "33 golden declaration hợp lệ về cấu trúc; provider không được gọi, behavioral_pass=0 và NOT_RUN=33.",
+    "Deterministic fixture có nhãn, proposal không tự persist và AI layer không ghi database.",
+    "Tên provider/model thật chưa được ghi vì chưa có metadata runtime đã xác minh."
+  ],
+  "screenshots": [
+    {"path": "v2/reports/00-foundation/screenshots/login-1440x900.png", "route": "/login", "viewport": "1440x900", "sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6"},
+    {"path": "v2/reports/00-foundation/screenshots/dashboard-1440x900.png", "route": "/dashboard", "viewport": "1440x900", "sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6"},
+    {"path": "v2/reports/00-foundation/screenshots/roadmap-1440x900.png", "route": "/lo-trinh", "viewport": "1440x900", "sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6"},
+    {"path": "v2/reports/00-foundation/screenshots/denied-1440x900.png", "route": "/he-thong với role EMPLOYEE", "viewport": "1440x900", "sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6"},
+    {"path": "v2/reports/00-foundation/screenshots/dashboard-768x1024.png", "route": "/dashboard", "viewport": "768x1024", "sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6"},
+    {"path": "v2/reports/00-foundation/screenshots/roadmap-768x1024.png", "route": "/lo-trinh", "viewport": "768x1024", "sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6"},
+    {"path": "v2/reports/00-foundation/screenshots/dashboard-390x844.png", "route": "/dashboard", "viewport": "390x844", "sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6"},
+    {"path": "v2/reports/00-foundation/screenshots/roadmap-390x844.png", "route": "/lo-trinh", "viewport": "390x844", "sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6"}
+  ],
+  "known_gaps": [
+    {"description": "Dashboard non-demo chưa có dữ liệu nghiệp vụ và trả 501 theo hợp đồng.", "impact": "MEDIUM", "next_action": "Triển khai dashboard theo role ở Wave 5."},
+    {"description": "Roadmap hiện là shell/local draft; chưa có version lock, transaction hoặc AI mind map thật.", "impact": "MEDIUM", "next_action": "Triển khai persistence và proposal flow ở Wave 2."},
+    {"description": "Employee 360, import và selective apply chưa thuộc Wave 0.", "impact": "HIGH", "next_action": "Contract freeze rồi triển khai Wave 1."},
+    {"description": "33 AI golden case mới kiểm tra declaration; provider behavior chưa chạy.", "impact": "MEDIUM", "next_action": "Chạy evaluation khi provider metadata và synthetic key được xác minh."},
+    {"description": "Ciphertext provider legacy cần context MAC trước khi chuyển read path.", "impact": "MEDIUM", "next_action": "Migration dry-run và reconciliation ở Wave 6, không in secret."}
+  ],
+  "overall_status": "PASS"
+}

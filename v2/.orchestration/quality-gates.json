@@ -1,23 +1,19 @@
 {
   "schema_version": "1.0",
-  "overall_status": "NOT_RUN",
-  "required": [
-    "backend_format",
-    "backend_lint",
-    "backend_typecheck",
-    "backend_tests",
-    "migration_check",
-    "openapi_contract",
-    "frontend_lint",
-    "frontend_typecheck",
-    "frontend_tests",
-    "frontend_build",
-    "playwright_390",
-    "playwright_768",
-    "playwright_1440",
-    "accessibility",
-    "security",
-    "independent_review"
+  "overall_status": "IN_PROGRESS",
+  "latest_completed_wave": "W0",
+  "implementation_sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6",
+  "wave0_status": "PASS",
+  "checks": [
+    {"id": "backend", "status": "PASS", "evidence": "111 PostgreSQL tests; Ruff and mypy PASS"},
+    {"id": "migration", "status": "PASS", "evidence": "Alembic upgrade head and check: no drift"},
+    {"id": "contracts", "status": "PASS", "evidence": "OpenAPI snapshot and generated TypeScript client current"},
+    {"id": "frontend", "status": "PASS", "evidence": "12 Vitest; lint, typecheck and production build PASS"},
+    {"id": "e2e-accessibility", "status": "PASS", "evidence": "27 Playwright tests, 3 viewports, axe 0 violation"},
+    {"id": "performance", "status": "PASS", "evidence": "LCP 727/703/770 ms, budget 2500 ms"},
+    {"id": "security", "status": "PASS", "evidence": "scan 20cf79c3-cc35-4b26-b99b-06dd7e616c33, 0 findings; no secret leaks"},
+    {"id": "independent-review", "status": "PASS", "evidence": "Antigravity exact-SHA correction: P0=0, P1=0, five personas PASS"},
+    {"id": "report", "status": "PASS", "evidence": "qa-report.json bound to implementation SHA and tree"}
   ],
-  "checks": []
+  "next_gate": "Wave 1 contract freeze and Employee 360/import slice"
 }
