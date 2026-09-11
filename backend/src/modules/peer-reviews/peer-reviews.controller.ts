@@ -1,20 +1,33 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { PeerReviewsService } from './peer-reviews.service';
+import { CreatePeerReviewDto } from './dto/create-peer-review.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/jwt.strategy';
 
-/**
- * Stub module — real controller/service TBD in a later phase (Prisma model
- * for this domain already exists in schema.prisma). Wired into
- * AppModule.imports now so future feature-slice work only needs to fill in
- * this file, never touch app.module.ts again.
- */
 @Controller('peer-reviews')
 @UseGuards(JwtAuthGuard)
 export class PeerReviewsController {
   constructor(private readonly peerReviewsService: PeerReviewsService) {}
 
-  @Get()
-  status() {
-    return this.peerReviewsService.status();
+  @Get('given')
+  findGiven(@CurrentUser() caller: AuthenticatedUser) {
+    return this.peerReviewsService.findGiven(caller);
+  }
+
+  @Get('received')
+  findReceived(
+    @CurrentUser() caller: AuthenticatedUser,
+    @Query('userId') userId?: string,
+  ) {
+    return this.peerReviewsService.findReceived(caller, userId);
+  }
+
+  @Post()
+  create(
+    @Body() dto: CreatePeerReviewDto,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
+    return this.peerReviewsService.create(dto, caller);
   }
 }
