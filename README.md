@@ -19,9 +19,8 @@ An AI personal assistant is threaded through both Admin and Employee sides
 (helps employees build a roadmap from existing skills; helps admins pick
 candidates for a job requirement).
 
-This repo is the **foundation** pass only — schema, shell, auth, and
-settings that every feature slice builds on top of. Feature pages beyond
-navigable stubs are phase 2.
+See `CLAUDE.md` for the full architecture/conventions reference and an
+up-to-date "where things stand" breakdown.
 
 ## Stack
 
@@ -76,15 +75,9 @@ in order Anthropic → OpenAI → Gemini unless a specific one is requested.
 
 ## Where things stand
 
-- **Real, backend-backed:** Auth (login/register-bootstrap/me), Companies
-  (CRUD), Users (role-scoped CRUD), AI Settings, and the shared AI Chat
-  adapter layer.
-- **Stub only (wired into `app.module.ts`, not yet implemented):**
-  `skills-competency`, `activity-logs`, `peer-reviews`,
-  `development-plans`, `job-requirements` — each has a Prisma model
-  already in `schema.prisma` and a placeholder NestJS module/controller
-  returning `{ status: 'not-implemented' }`.
-- **Frontend stub pages** (`AppShell` + `PageContainer` + `PageHeader` +
-  a "Coming soon" `Card`): `/companies`, `/employees`, `/profile`,
-  `/skills`, `/activity-log`, `/peer-reviews`, `/development-plan`. `/` is
-  a placeholder Dashboard, `/login` and `/settings` are fully real.
+See `CLAUDE.md`'s "Where things stand" section for the current, detailed
+breakdown — short version: Auth, Companies, Users, AI Settings, Skills &
+Competency, Activity Log, Peer Reviews, Development Plan (AI-assisted),
+and Job Requirements (AI matching) are all real and backend-backed. The
+employee UI "concept" switcher, a cross-cutting AI assistant widget, and
+the `/` Dashboard / `/profile` pages are still open.
