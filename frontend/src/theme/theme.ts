@@ -1,4 +1,5 @@
 import { createTheme } from '@mui/material/styles';
+import { buttonSizes, iconSizes, loadingSizes } from './tokens';
 
 /**
  * DEFAULT theme — always used for the Admin side (Super Admin + Company
@@ -7,34 +8,31 @@ import { createTheme } from '@mui/material/styles';
  * GATHER_TOWN — only ANIME/FILM/GATHER_TOWN reskin the Employee UI).
  *
  * Radius/shadow scale and component shape still follow
- * D:\Coding\AI_Tool\docs\style-concept.md; the color tokens below are this
- * project's own earthy green/brown palette (swapped in from the original
- * purple reference) — see `accentInk` note for why text/icon color on the
- * accent family isn't just `accent`/`accent300` everywhere.
+ * docs/style-concept.md; the color tokens below are CareerMate's steel-blue
+ * / seafoam / cream palette. `#3368A0` is dark enough for text on white
+ * (~5.9:1), so `accentInk` aliases it — still prefer `accentInk` over
+ * `accent` whenever the color is a `color:`/icon foreground, not a fill.
  */
 
 export const colorTokens = {
-  bg: '#d4dcc8',
-  canvas: '#d4dcc8',
+  bg: '#F2EFE7',
+  canvas: '#F2EFE7',
   surface: '#ffffff',
-  text: '#1a1a1a',
-  neutral400: '#75765f',
-  neutral500: '#75765f',
-  divider: '#d4dcc8',
-  accent: '#9bce2d',
-  accent300: '#8fb73c',
-  accent700: '#abc385',
-  accent900: '#d4dcc8',
-  // None of the greens above are dark/saturated enough to read as text or a
-  // small icon glyph against a white/accent900 background (fails contrast).
-  // Use this instead of `accent`/`accent300` wherever the color is applied
-  // as `color:`/text/icon foreground rather than a fill or border.
-  accentInk: '#a8603a',
-  warning: '#d5871e',
-  success: '#8fb73c',
-  danger: '#a8603a',
-  // Unused elsewhere in the given swatch set — kept for future status/tint work.
-  tint: '#f8c885',
+  text: '#1c2836',
+  neutral400: '#5a6f80',
+  neutral500: '#6d8190',
+  divider: '#C8DFDB',
+  accent: '#3368A0',
+  accent300: '#285480',
+  accent700: '#66A3BF',
+  accent900: '#C8DFDB',
+  accentInk: '#3368A0',
+  // White (or near-white) sitting on an `accent` fill — avatars, logo mark.
+  accentContrast: '#ffffff',
+  warning: '#c47d1a',
+  success: '#2d8a6e',
+  danger: '#c44b4b',
+  tint: '#66A3BF',
 } as const;
 
 export const radiusTokens = {
@@ -44,16 +42,15 @@ export const radiusTokens = {
 } as const;
 
 export const shadowTokens = {
-  card: '0 1px 2px rgba(28,27,46,.04), 0 8px 22px rgba(28,27,46,.07)',
-  md: '0 4px 16px rgba(28,27,46,.14)',
-  lg: '0 24px 60px rgba(28,27,46,.18)',
+  card: '0 1px 2px rgba(28,40,54,.04), 0 8px 22px rgba(28,40,54,.07)',
+  md: '0 4px 16px rgba(28,40,54,.14)',
+  lg: '0 24px 60px rgba(28,40,54,.18)',
 } as const;
 
-// Body copy default; `h1`/`h2`/`h3`/`button` below override to the heading/UI
-// fonts — see `--font-*` tokens in globals.css.
-const fontFamily = 'var(--font-body), system-ui, sans-serif';
-const headingFontFamily = 'var(--font-heading), system-ui, sans-serif';
-const uiFontFamily = 'var(--font-ui), system-ui, sans-serif';
+export { buttonSizes, iconSizes, loadingSizes };
+
+// One sans family for title, body, button, caption — see agent.md §6.
+const fontFamily = 'var(--font-sans), system-ui, sans-serif';
 
 export const theme = createTheme({
   palette: {
@@ -86,31 +83,38 @@ export const theme = createTheme({
   typography: {
     fontFamily,
     h1: {
-      fontFamily: headingFontFamily,
+      fontFamily,
       fontSize: 32,
       fontWeight: 500,
       letterSpacing: '-0.01em',
     },
     h2: {
-      fontFamily: headingFontFamily,
+      fontFamily,
       fontSize: 22,
       fontWeight: 500,
     },
     h3: {
-      fontFamily: headingFontFamily,
+      fontFamily,
       fontSize: 19,
       fontWeight: 500,
     },
     body1: {
+      fontFamily,
       fontSize: 15,
       lineHeight: 1.55,
     },
     body2: {
+      fontFamily,
       fontSize: 14,
       color: colorTokens.neutral400,
     },
+    caption: {
+      fontFamily,
+      fontSize: 12,
+      color: colorTokens.neutral400,
+    },
     button: {
-      fontFamily: uiFontFamily,
+      fontFamily,
       textTransform: 'none',
       fontWeight: 500,
     },
@@ -120,6 +124,7 @@ export const theme = createTheme({
       styleOverrides: {
         body: {
           backgroundColor: colorTokens.canvas,
+          fontFamily,
         },
         '*::-webkit-scrollbar': {
           width: 9,
@@ -129,25 +134,87 @@ export const theme = createTheme({
           background: 'transparent',
         },
         '*::-webkit-scrollbar-thumb': {
-          background: '#c9c8d6',
+          background: colorTokens.accent700,
           borderRadius: 8,
         },
       },
     },
+    MuiTypography: {
+      defaultProps: {
+        variantMapping: {
+          h1: 'h1',
+          h2: 'h2',
+          h3: 'h3',
+        },
+      },
+      styleOverrides: {
+        root: {
+          fontFamily,
+        },
+      },
+    },
     MuiButton: {
+      defaultProps: {
+        disableElevation: true,
+        size: 'medium',
+      },
       styleOverrides: {
         root: {
           borderRadius: radiusTokens.md,
-          minHeight: 44,
-          padding: '10px 18px',
-          fontSize: 14.5,
           fontWeight: 500,
           textTransform: 'none',
+          whiteSpace: 'nowrap',
+          flexShrink: 0,
           boxShadow: 'none',
           '&:hover': {
             boxShadow: 'none',
           },
         },
+        sizeMedium: {
+          minHeight: buttonSizes.md.minHeight,
+          padding: buttonSizes.md.padding,
+          fontSize: buttonSizes.md.fontSize,
+        },
+        sizeSmall: {
+          minHeight: buttonSizes.sm.minHeight,
+          padding: buttonSizes.sm.padding,
+          fontSize: buttonSizes.sm.fontSize,
+          '& .MuiButton-startIcon > *:nth-of-type(1), & .MuiButton-endIcon > *:nth-of-type(1)': {
+            fontSize: iconSizes.sm,
+          },
+        },
+        startIcon: {
+          '& > *:nth-of-type(1)': { fontSize: iconSizes.md },
+        },
+        endIcon: {
+          '& > *:nth-of-type(1)': { fontSize: iconSizes.md },
+        },
+      },
+    },
+    MuiIconButton: {
+      defaultProps: {
+        size: 'small',
+      },
+      styleOverrides: {
+        sizeSmall: {
+          width: 36,
+          height: 36,
+        },
+        sizeMedium: {
+          width: 40,
+          height: 40,
+        },
+      },
+    },
+    MuiSvgIcon: {
+      defaultProps: {
+        fontSize: 'small',
+      },
+      styleOverrides: {
+        fontSizeSmall: { fontSize: iconSizes.md },
+        fontSizeMedium: { fontSize: iconSizes.md },
+        fontSizeLarge: { fontSize: iconSizes.lg },
+        fontSizeInherit: { fontSize: 'inherit' },
       },
     },
     MuiCard: {
@@ -176,14 +243,15 @@ export const theme = createTheme({
             borderColor: colorTokens.divider,
           },
           '&:hover .MuiOutlinedInput-notchedOutline': {
-            borderColor: '#a8a6ba',
+            borderColor: colorTokens.accent700,
           },
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
             borderColor: colorTokens.accent,
-            boxShadow: '0 0 0 3px rgba(109,91,208,.14)',
+            boxShadow: '0 0 0 3px rgba(51,104,160,.18)',
           },
         },
         input: {
+          fontFamily,
           fontSize: 14,
         },
       },
@@ -191,9 +259,10 @@ export const theme = createTheme({
     MuiInputLabel: {
       styleOverrides: {
         root: {
+          fontFamily,
           fontSize: 12,
           fontWeight: 500,
-          color: 'rgba(28,27,46,.65)',
+          color: 'rgba(28,40,54,.65)',
         },
       },
     },
@@ -203,11 +272,15 @@ export const theme = createTheme({
           borderRadius: 10,
           fontWeight: 500,
           fontSize: 12,
+          fontFamily,
         },
       },
     },
     MuiTableCell: {
       styleOverrides: {
+        root: {
+          fontFamily,
+        },
         head: {
           fontSize: 11,
           textTransform: 'uppercase',
@@ -234,6 +307,7 @@ export const theme = createTheme({
           marginLeft: 6,
           marginRight: 6,
           fontSize: 13.5,
+          fontFamily,
         },
       },
     },
@@ -247,6 +321,7 @@ export const theme = createTheme({
           backgroundColor: colorTokens.text,
           color: '#ffffff',
           borderRadius: 8,
+          fontFamily,
         },
         arrow: {
           color: colorTokens.text,
@@ -258,6 +333,26 @@ export const theme = createTheme({
         paper: {
           borderRadius: radiusTokens.lg,
           boxShadow: shadowTokens.lg,
+        },
+      },
+    },
+    MuiDialogTitle: {
+      styleOverrides: {
+        root: {
+          fontFamily,
+          fontSize: 22,
+          fontWeight: 500,
+          padding: '24px 24px 8px',
+        },
+      },
+    },
+    MuiTab: {
+      styleOverrides: {
+        root: {
+          fontFamily,
+          textTransform: 'none',
+          fontWeight: 500,
+          whiteSpace: 'nowrap',
         },
       },
     },

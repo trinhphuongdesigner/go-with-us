@@ -4,8 +4,8 @@ import * as React from 'react';
 import NextLink from 'next/link';
 import { useParams } from 'next/navigation';
 import Alert from '@mui/material/Alert';
-import Button from '@mui/material/Button';
-import LinearProgress from '@mui/material/LinearProgress';
+import Button from '@/components/ui/Button';
+import PageSkeleton from '@/components/ui/PageSkeleton';
 import AppShell from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
@@ -75,9 +75,11 @@ export default function EmployeePassportPage() {
             {error}
           </Alert>
         ) : null}
-        {loading ? <LinearProgress sx={{ mb: 3 }} /> : null}
-
-        {passport ? <PassportView passport={passport} /> : null}
+        {loading ? (
+          <PageSkeleton variant="profile" />
+        ) : passport ? (
+          <PassportView passport={passport} />
+        ) : null}
       </PageContainer>
     </AppShell>
   );

@@ -3,12 +3,10 @@
 import * as React from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
+import Dialog from '@/components/ui/Dialog';
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import Chip from '@mui/material/Chip';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
 import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
@@ -62,6 +60,7 @@ export default function ProjectsTab({
   employments: EmploymentEntry[];
   onChanged: () => void;
 }) {
+  const { ask, dialog } = useConfirmDialog();
   const [open, setOpen] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [form, setForm] = React.useState<FormState>(EMPTY);
@@ -182,13 +181,21 @@ export default function ProjectsTab({
                   </Typography>
                 </Box>
                 <Stack direction="row" spacing={1}>
-                  <Button size="small" onClick={() => openEdit(project)}>
+                  <Button size="sm" onClick={() => openEdit(project)}>
                     Edit
                   </Button>
                   <Button
-                    size="small"
+                    size="sm"
                     color="error"
-                    onClick={() => handleDelete(project.id)}
+                    onClick={() =>
+                      ask({
+                        title: 'Delete project',
+                        description: `Remove “${project.name}” from your profile? This cannot be undone.`,
+                        confirmLabel: 'Delete',
+                        danger: true,
+                        onConfirm: () => handleDelete(project.id),
+                      })
+                    }
                   >
                     Delete
                   </Button>
@@ -217,9 +224,21 @@ export default function ProjectsTab({
         </Stack>
       )}
 
-      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{editingId ? 'Edit project' : 'Add project'}</DialogTitle>
-        <DialogContent>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title={editingId ? 'Edit project' : 'Add project'}
+        actions={
+          <>
+            <Button variant="text" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="contained" onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving...' : 'Save'}
+            </Button>
+          </>
+        }
+      >
           {error ? (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
@@ -304,14 +323,8 @@ export default function ProjectsTab({
               </TextField>
             ) : null}
           </Stack>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving...' : 'Save'}
-          </Button>
-        </DialogActions>
       </Dialog>
+      {dialog}
     </Box>
   );
 }

@@ -10,11 +10,11 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import Alert from '@mui/material/Alert';
-import CircularProgress from '@mui/material/CircularProgress';
+import PageSkeleton from '@/components/ui/PageSkeleton';
 import Avatar from '@mui/material/Avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { listUsers } from '@/lib/api/usersApi';
@@ -234,7 +234,7 @@ export default function PeerReviewsPage() {
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Card title="Reviews I've written">
               {listsLoading ? (
-                <CircularProgress size={24} />
+                <PageSkeleton variant="list" rows={3} embedded />
               ) : givenReviews.length === 0 ? (
                 <Typography variant="body2">You haven&apos;t written any reviews yet.</Typography>
               ) : (
@@ -268,7 +268,7 @@ export default function PeerReviewsPage() {
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Card title="Reviews about me">
               {listsLoading ? (
-                <CircularProgress size={24} />
+                <PageSkeleton variant="list" rows={3} embedded />
               ) : receivedReviews.length === 0 ? (
                 <Typography variant="body2">No one has reviewed you yet.</Typography>
               ) : (

@@ -3,12 +3,10 @@
 import * as React from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
+import Dialog from '@/components/ui/Dialog';
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import Chip from '@mui/material/Chip';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
 import Divider from '@mui/material/Divider';
 import Link from '@mui/material/Link';
 import MenuItem from '@mui/material/MenuItem';
@@ -62,6 +60,7 @@ export default function CertificationsTab({
   certifications: Certification[];
   onChanged: () => void;
 }) {
+  const { ask, dialog } = useConfirmDialog();
   const [open, setOpen] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [form, setForm] = React.useState<FormState>(EMPTY);
@@ -201,13 +200,21 @@ export default function CertificationsTab({
                 ) : null}
               </Box>
               <Stack direction="row" spacing={1}>
-                <Button size="small" onClick={() => openEdit(certification)}>
+                <Button size="sm" onClick={() => openEdit(certification)}>
                   Edit
                 </Button>
                 <Button
-                  size="small"
+                  size="sm"
                   color="error"
-                  onClick={() => handleDelete(certification.id)}
+                  onClick={() =>
+                    ask({
+                      title: 'Delete certificate',
+                      description: `Remove “${certification.name}”? This cannot be undone.`,
+                      confirmLabel: 'Delete',
+                      danger: true,
+                      onConfirm: () => handleDelete(certification.id),
+                    })
+                  }
                 >
                   Delete
                 </Button>
@@ -217,11 +224,21 @@ export default function CertificationsTab({
         </Stack>
       )}
 
-      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>
-          {editingId ? 'Edit certificate' : 'Add certificate'}
-        </DialogTitle>
-        <DialogContent>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title={editingId ? 'Edit certificate' : 'Add certificate'}
+        actions={
+          <>
+            <Button variant="text" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="contained" onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving...' : 'Save'}
+            </Button>
+          </>
+        }
+      >
           {error ? (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
@@ -292,14 +309,8 @@ export default function CertificationsTab({
               fullWidth
             />
           </Stack>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving...' : 'Save'}
-          </Button>
-        </DialogActions>
       </Dialog>
+      {dialog}
     </Box>
   );
 }

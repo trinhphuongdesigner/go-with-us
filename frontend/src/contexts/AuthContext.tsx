@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import * as authApi from '@/lib/api/authApi';
 import { getStoredToken, setStoredToken, ApiError } from '@/lib/api/client';
 import type { User } from '@/types';
+import Loading from '@/components/ui/Loading';
 
 interface AuthContextValue {
   user: User | null;
@@ -87,7 +88,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   }, [loading, user, router]);
 
   if (loading || !user) {
-    return null;
+    return <Loading variant="fullscreen" size="lg" />;
   }
 
   return <>{children}</>;

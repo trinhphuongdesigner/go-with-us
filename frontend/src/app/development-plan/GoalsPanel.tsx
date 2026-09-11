@@ -3,13 +3,11 @@
 import * as React from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
+import Button from '@/components/ui/Button';
+import Dialog from '@/components/ui/Dialog';
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
+import IconButton from '@/components/ui/IconButton';
 import LinearProgress from '@mui/material/LinearProgress';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
@@ -67,6 +65,7 @@ export default function GoalsPanel({
   goals: DevelopmentGoal[];
   onChanged: () => void;
 }) {
+  const { ask, dialog } = useConfirmDialog();
   const [tab, setTab] = React.useState<LifeCategory>('WORK');
   const [open, setOpen] = React.useState(false);
   const [form, setForm] = React.useState<FormState>(EMPTY_FORM);
@@ -143,7 +142,7 @@ export default function GoalsPanel({
             <Tab key={t} value={t} label={TAB_LABEL[t]} />
           ))}
         </Tabs>
-        <Button startIcon={<AddIcon />} size="small" onClick={() => setOpen(true)}>
+        <Button startIcon={<AddIcon />} size="sm" onClick={() => setOpen(true)}>
           Add goal
         </Button>
       </Stack>
@@ -209,8 +208,20 @@ export default function GoalsPanel({
                     label={STATUS_LABEL[goal.status]}
                     tone={toneForStatus(goal.status)}
                   />
-                  <IconButton size="small" onClick={() => handleDelete(goal.id)}>
-                    <DeleteOutlineIcon fontSize="small" />
+                  <IconButton
+                    size="sm"
+                    aria-label="Delete goal"
+                    onClick={() =>
+                      ask({
+                        title: 'Delete goal',
+                        description: `Remove “${goal.title}”? This cannot be undone.`,
+                        confirmLabel: 'Delete',
+                        danger: true,
+                        onConfirm: () => handleDelete(goal.id),
+                      })
+                    }
+                  >
+                    <DeleteOutlineIcon />
                   </IconButton>
                 </Stack>
               </Stack>
@@ -244,9 +255,21 @@ export default function GoalsPanel({
         </Stack>
       )}
 
-      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Add {TAB_LABEL[tab].toLowerCase()} goal</DialogTitle>
-        <DialogContent>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title={`Add ${TAB_LABEL[tab].toLowerCase()} goal`}
+        actions={
+          <>
+            <Button variant="text" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="contained" onClick={handleAdd} disabled={saving}>
+              {saving ? 'Adding...' : 'Add'}
+            </Button>
+          </>
+        }
+      >
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
               label="Title"
@@ -272,14 +295,8 @@ export default function GoalsPanel({
               fullWidth
             />
           </Stack>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleAdd} disabled={saving}>
-            {saving ? 'Adding...' : 'Add'}
-          </Button>
-        </DialogActions>
       </Dialog>
+      {dialog}
     </Box>
   );
 }

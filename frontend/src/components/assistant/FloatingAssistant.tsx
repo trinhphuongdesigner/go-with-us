@@ -2,15 +2,16 @@
 
 import * as React from 'react';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import Drawer from '@mui/material/Drawer';
 import Fab from '@mui/material/Fab';
-import IconButton from '@mui/material/IconButton';
+import IconButton from '@/components/ui/IconButton';
 import LinearProgress from '@mui/material/LinearProgress';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import AddCommentOutlinedIcon from '@mui/icons-material/AddCommentOutlined';
 import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined';
 import CloseIcon from '@mui/icons-material/Close';
@@ -44,6 +45,7 @@ const PANEL_Z_INDEX = 1200;
  * fresh session, same as clicking "New chat".
  */
 export default function FloatingAssistant() {
+  const { ask, dialog } = useConfirmDialog();
   const { user, loading } = useAuth();
   const isAdmin = user?.role === 'COMPANY_ADMIN' || user?.role === 'SUPER_ADMIN';
 
@@ -373,8 +375,20 @@ export default function FloatingAssistant() {
                       <PushPinOutlinedIcon fontSize="small" />
                     )}
                   </IconButton>
-                  <IconButton size="small" onClick={() => handleDelete(conversation.id)}>
-                    <DeleteOutlineIcon fontSize="small" />
+                  <IconButton
+                    size="sm"
+                    aria-label="Delete conversation"
+                    onClick={() =>
+                      ask({
+                        title: 'Delete conversation',
+                        description: `Remove “${conversation.title}”? This cannot be undone.`,
+                        confirmLabel: 'Delete',
+                        danger: true,
+                        onConfirm: () => handleDelete(conversation.id),
+                      })
+                    }
+                  >
+                    <DeleteOutlineIcon />
                   </IconButton>
                 </Box>
               ))
@@ -382,6 +396,7 @@ export default function FloatingAssistant() {
           </Stack>
         </Box>
       </Drawer>
+      {dialog}
     </>
   );
 }

@@ -4,12 +4,14 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import Alert from '@mui/material/Alert';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Divider from '@mui/material/Divider';
 import LinearProgress from '@mui/material/LinearProgress';
+import PageSkeleton from '@/components/ui/PageSkeleton';
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import AppShell from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
@@ -33,6 +35,7 @@ const STATUS_TONE: Record<string, 'default' | 'success' | 'warning'> = {
 
 export default function JobRequirementsPage() {
   const { user } = useAuth();
+  const { ask, dialog } = useConfirmDialog();
 
   const [requirements, setRequirements] = React.useState<JobRequirement[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -187,7 +190,7 @@ export default function JobRequirementsPage() {
         <Card title="Current requirements">
           {listError ? <Alert severity="error">{listError}</Alert> : null}
           {loading ? (
-            <Typography variant="body2">Loading...</Typography>
+            <PageSkeleton variant="list" rows={4} embedded />
           ) : requirements.length === 0 ? (
             <Typography variant="body2">No job requirements yet.</Typography>
           ) : (
@@ -239,7 +242,20 @@ export default function JobRequirementsPage() {
                           <Button variant="text" size="small" onClick={() => handleToggleStatus(req)}>
                             {req.status === 'open' ? 'Mark closed' : 'Reopen'}
                           </Button>
-                          <Button variant="text" size="small" color="error" onClick={() => handleDelete(req.id)}>
+                          <Button
+                            variant="text"
+                            size="sm"
+                            color="error"
+                            onClick={() =>
+                              ask({
+                                title: 'Delete requirement',
+                                description: `Remove “${req.title}”? This cannot be undone.`,
+                                confirmLabel: 'Delete',
+                                danger: true,
+                                onConfirm: () => handleDelete(req.id),
+                              })
+                            }
+                          >
                             Delete
                           </Button>
                         </>
@@ -301,6 +317,7 @@ export default function JobRequirementsPage() {
             </Stack>
           )}
         </Card>
+        {dialog}
       </PageContainer>
     </AppShell>
   );

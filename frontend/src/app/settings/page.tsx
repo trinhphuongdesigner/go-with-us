@@ -6,8 +6,7 @@ import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
 import Typography from '@mui/material/Typography';
-import CircularProgress from '@mui/material/CircularProgress';
-import Box from '@mui/material/Box';
+import PageSkeleton from '@/components/ui/PageSkeleton';
 import ProviderConnectionRow from './ProviderConnectionRow';
 import * as aiSettingsApi from '@/lib/api/aiSettingsApi';
 import { useAuth } from '@/contexts/AuthContext';
@@ -44,9 +43,7 @@ export default function SettingsPage() {
             </Typography>
           </Card>
         ) : !settings ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-            <CircularProgress size={28} />
-          </Box>
+          <PageSkeleton variant="form" />
         ) : (
           <Card title="API Keys & Connections">
             {PROVIDER_ORDER.map((provider) => (

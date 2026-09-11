@@ -43,7 +43,7 @@ export default function PassportView({
         >
           <Avatar
             src={passport.user.avatarUrl ?? undefined}
-            sx={{ width: 64, height: 64, bgcolor: colorTokens.accent, color: colorTokens.text }}
+            sx={{ width: 64, height: 64, bgcolor: colorTokens.accent, color: colorTokens.accentContrast }}
           >
             {passport.user.name?.[0]?.toUpperCase() ?? '?'}
           </Avatar>

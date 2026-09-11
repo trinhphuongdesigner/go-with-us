@@ -3,10 +3,10 @@
 import * as React from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
-import LinearProgress from '@mui/material/LinearProgress';
+import PageSkeleton from '@/components/ui/PageSkeleton';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -115,7 +115,7 @@ export default function OffboardingQueue() {
   if (!items) {
     return (
       <Card title="Offboarding requests">
-        <LinearProgress />
+        <PageSkeleton variant="list" rows={3} embedded />
       </Card>
     );
   }

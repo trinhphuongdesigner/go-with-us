@@ -27,7 +27,9 @@ export default function PageHeader({ title, subtitle, actions }: PageHeaderProps
           </Typography>
         ) : null}
       </Box>
-      {actions ? <Box sx={{ display: 'flex', gap: 1.5 }}>{actions}</Box> : null}
+      {actions ? (
+        <Box sx={{ display: 'flex', gap: 1.5, flexShrink: 0, flexWrap: 'nowrap' }}>{actions}</Box>
+      ) : null}
     </Box>
   );
 }

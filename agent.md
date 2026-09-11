@@ -161,6 +161,16 @@ Pattern: `development-plans/generate` → save; import `parse` → `apply`; job-
 
 Layout: `AppShell` + `PageContainer` + `PageHeader` + `Card`.
 
+### Shared UI system (bắt buộc)
+
+Mọi màn authenticated dùng đúng component trong `frontend/src/components/ui/`. Không import `@mui/material/Button` hay `@mui/material/Dialog` trực tiếp — theme override không thay thế component dùng chung.
+
+1. **Button — một dòng.** Label không được xuống 2 hàng (`whiteSpace: nowrap`). Size chỉ `sm` (hàng bảng / action phụ, 36px) hoặc `md` (mặc định, 44px). Dùng `components/ui/Button`. Không set `minHeight` / `padding` / `fontSize` tay trên từng nút.
+2. **Typography — một font.** Title (`h1`/`h2`/`h3`), body, button, caption cùng một font family (`--font-sans` = Be Vietnam Pro). Không mix Space Grotesk / serif. `JetBrains Mono` chỉ cho code / markdown source.
+3. **Icon — size đồng bộ.** Token `iconSizes`: `sm=18` (trong button `sm`), `md=20` (mặc định — nav, IconButton, startIcon `md`), `lg=24` (empty/featured). Không set `fontSize={16}` / `22` lẻ. IconButton dùng `components/ui/IconButton`.
+4. **Loading + skeleton.** Route/auth gate dùng `components/ui/Loading` (fullscreen). Mọi trang / tab **fetch data** dùng `PageSkeleton` (table / list / form / profile / cards) — không spinner MUI trần, không text “Loading…”, không `LinearProgress` làm placeholder chính. `LinearProgress` chỉ cho hành động đang chạy (generate / match).
+5. **Dialog dùng chung.** Form modal → `components/ui/Dialog` (`title` + `children` + `actions`). Xóa / revoke / hành động phá hủy → `ConfirmDialog` (hoặc `useConfirmDialog`). Cấm xóa ngay không hỏi. Cấm `window.confirm`.
+
 ---
 
 ## 7. MVP demo
@@ -208,4 +218,5 @@ Chưa cần GTM / doanh thu. **Cần tầm nhìn**. Slide có thể do AI làm �
 - [ ] Luồng HR ↔ Employee ↔ người staffing khép kín trên cùng hồ sơ.
 - [ ] AI: proposal → confirm; tiền/hậu xử lý; model theo độ khó; không paste raw.
 - [ ] UI lean, timeline/dự án/điểm tháng nhìn được, nhìn vào biết xài.
+- [ ] Button 1 dòng, size `sm`/`md`; 1 font sans; icon `sm`/`md`/`lg`; trang fetch có `PageSkeleton`; form dùng `Dialog`, xóa dùng `ConfirmDialog`.
 - [ ] Demo 3 bước đầu mục 7 chạy trên seed: Alice/Bob + admin Acme.

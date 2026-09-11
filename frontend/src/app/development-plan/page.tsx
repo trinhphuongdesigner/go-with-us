@@ -7,11 +7,10 @@ import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
 import MarkdownSplitEditor from '@/components/ui/MarkdownSplitEditor';
 import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
+import Button from '@/components/ui/Button';
+import PageSkeleton from '@/components/ui/PageSkeleton';
 import { colorTokens } from '@/theme/theme';
 import * as developmentPlansApi from '@/lib/api/developmentPlansApi';
 import type {
@@ -136,9 +135,7 @@ export default function DevelopmentPlanPage() {
             </Typography>
           ) : null}
           {!goals ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress size={24} />
-            </Box>
+            <PageSkeleton variant="list" rows={3} embedded />
           ) : (
             <GoalsPanel goals={goals} onChanged={loadGoals} />
           )}
@@ -151,9 +148,7 @@ export default function DevelopmentPlanPage() {
             </Typography>
           ) : null}
           {!milestones ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress size={24} />
-            </Box>
+            <PageSkeleton variant="list" rows={3} embedded />
           ) : (
             <MilestonesPanel milestones={milestones} onChanged={loadMilestones} />
           )}
@@ -196,9 +191,7 @@ export default function DevelopmentPlanPage() {
           ) : null}
 
           {planLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-              <CircularProgress size={28} />
-            </Box>
+            <PageSkeleton variant="form" embedded />
           ) : (
             <MarkdownSplitEditor
               value={planMd}

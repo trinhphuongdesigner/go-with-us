@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import Chip from '@mui/material/Chip';
 import MenuItem from '@mui/material/MenuItem';
 import Select, { type SelectChangeEvent } from '@mui/material/Select';
@@ -226,7 +226,7 @@ export default function LoginPage() {
                 height: 48,
                 borderRadius: `${radiusTokens.md}px`,
                 backgroundColor: colorTokens.accent,
-                color: colorTokens.text,
+                color: colorTokens.accentContrast,
                 display: 'grid',
                 placeItems: 'center',
                 fontSize: 15,
@@ -335,7 +335,7 @@ export default function LoginPage() {
                   display: 'block',
                   fontSize: 12,
                   fontWeight: 500,
-                  color: 'rgba(28,27,46,.65)',
+                  color: 'rgba(28,40,54,.65)',
                   mb: 0.75,
                 }}
               >

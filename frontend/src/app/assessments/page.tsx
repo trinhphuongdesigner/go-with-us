@@ -5,10 +5,10 @@ import NextLink from 'next/link';
 import { useRouter } from 'next/navigation';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
-import LinearProgress from '@mui/material/LinearProgress';
+import PageSkeleton from '@/components/ui/PageSkeleton';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
@@ -153,8 +153,10 @@ export default function AssessmentsPage() {
             {error}
           </Alert>
         ) : null}
-        {loading ? <LinearProgress sx={{ mb: 3 }} /> : null}
-
+        {loading ? (
+          <PageSkeleton variant="cards" />
+        ) : (
+          <>
         <Card title="Current cycle" sx={{ mb: 3 }}>
           {!cycle ? (
             <Typography variant="body2">
@@ -269,6 +271,8 @@ export default function AssessmentsPage() {
             }
           />
         </Card>
+          </>
+        )}
       </PageContainer>
     </AppShell>
   );

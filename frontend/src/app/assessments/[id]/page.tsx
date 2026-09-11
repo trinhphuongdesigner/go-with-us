@@ -5,10 +5,11 @@ import NextLink from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import LinearProgress from '@mui/material/LinearProgress';
+import PageSkeleton from '@/components/ui/PageSkeleton';
 import MenuItem from '@mui/material/MenuItem';
 import Slider from '@mui/material/Slider';
 import Stack from '@mui/material/Stack';
@@ -214,9 +215,9 @@ export default function AssessmentDetailPage() {
             {notice}
           </Alert>
         ) : null}
-        {loading ? <LinearProgress sx={{ mb: 3 }} /> : null}
-
-        {assessment ? (
+        {loading ? (
+          <PageSkeleton variant="cards" />
+        ) : assessment ? (
           <>
             <Card sx={{ mb: 3 }}>
               <Stack

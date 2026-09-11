@@ -3,14 +3,12 @@
 import * as React from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
+import Dialog from '@/components/ui/Dialog';
+import PageSkeleton from '@/components/ui/PageSkeleton';
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import Chip from '@mui/material/Chip';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
 import Divider from '@mui/material/Divider';
-import LinearProgress from '@mui/material/LinearProgress';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -48,6 +46,7 @@ import OffboardingQueue from './OffboardingQueue';
  */
 export default function CareerPassportTab() {
   const { user } = useAuth();
+  const { ask, dialog } = useConfirmDialog();
 
   const [passport, setPassport] = React.useState<CareerPassport | null>(null);
   const [shares, setShares] = React.useState<PassportShare[]>([]);
@@ -255,8 +254,10 @@ export default function CareerPassportTab() {
           {notice}
         </Alert>
       ) : null}
-      {loading ? <LinearProgress sx={{ mb: 3 }} /> : null}
-
+      {loading ? (
+        <PageSkeleton variant="cards" />
+      ) : (
+        <>
       {user?.role === 'COMPANY_ADMIN' || user?.role === 'SUPER_ADMIN' ? (
         <OffboardingQueue />
       ) : null}
@@ -430,9 +431,17 @@ export default function CareerPassportTab() {
                   </Button>
                   {!share.revokedAt ? (
                     <Button
-                      size="small"
+                      size="sm"
                       color="error"
-                      onClick={() => handleRevoke(share.id)}
+                      onClick={() =>
+                        ask({
+                          title: 'Revoke share link',
+                          description: 'Anyone with this link will lose access immediately.',
+                          confirmLabel: 'Revoke',
+                          danger: true,
+                          onConfirm: () => handleRevoke(share.id),
+                        })
+                      }
                     >
                       Revoke
                     </Button>
@@ -443,15 +452,24 @@ export default function CareerPassportTab() {
           </Stack>
         )}
       </Card>
+        </>
+      )}
 
       <Dialog
         open={employmentOpen}
         onClose={() => setEmploymentOpen(false)}
-        fullWidth
-        maxWidth="sm"
+        title="Add employment period"
+        actions={
+          <>
+            <Button variant="text" onClick={() => setEmploymentOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="contained" onClick={handleAddEmployment} disabled={busy}>
+              {busy ? 'Saving...' : 'Add'}
+            </Button>
+          </>
+        }
       >
-        <DialogTitle>Add employment period</DialogTitle>
-        <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
               label="Job title"
@@ -485,14 +503,8 @@ export default function CareerPassportTab() {
               fullWidth
             />
           </Stack>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setEmploymentOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleAddEmployment} disabled={busy}>
-            {busy ? 'Saving...' : 'Add'}
-          </Button>
-        </DialogActions>
       </Dialog>
+      {dialog}
     </Box>
   );
 }

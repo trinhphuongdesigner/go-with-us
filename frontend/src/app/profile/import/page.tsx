@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import Checkbox from '@mui/material/Checkbox';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';

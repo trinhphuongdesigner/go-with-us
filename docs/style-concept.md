@@ -12,36 +12,42 @@ nguyên trừ khi có lý do khác.
 
 | Token | Giá trị | Vai trò |
 |---|---|---|
-| `bg` | `#fafafc` | Nền trang (body) |
-| `canvas` | `#e9e7f2` | Nền ngoài cùng quanh app shell (tím rất nhạt) |
+| `bg` | `#F2EFE7` | Nền trang (body) — cream |
+| `canvas` | `#F2EFE7` | Nền ngoài cùng quanh app shell |
 | `surface` | `#ffffff` | Nền Card/Paper/Input |
-| `text` | `#1c1b2e` | Chữ chính |
-| `neutral400` | `#6e6c87` | Chữ phụ (`body2`, label mờ) |
-| `neutral500` | `#8b899f` | Chữ phụ hơn nữa (table head uppercase) |
-| `divider` | `#e8e7f0` | Viền/đường phân cách |
-| `accent` | `#6d5bd0` | Primary (tím) |
-| `accent300` | `#5847be` | Primary dark (hover/pressed) |
-| `accent700` | `#8577de` | Primary light |
-| `accent900` | `#efebfa` | Nền tint nhạt cho badge/hover accent |
-| `success` | `#1c9c6b` | Trạng thái thành công/done |
-| `danger` | `#d34848` | Trạng thái lỗi/xoá |
+| `text` | `#1c2836` | Chữ chính (navy ink) |
+| `neutral400` | `#5a6f80` | Chữ phụ (`body2`, label mờ) |
+| `neutral500` | `#6d8190` | Chữ phụ hơn nữa (table head uppercase) |
+| `divider` | `#C8DFDB` | Viền/đường phân cách (seafoam) |
+| `accent` | `#3368A0` | Primary (steel blue) |
+| `accent300` | `#285480` | Primary dark (hover/pressed) |
+| `accent700` | `#66A3BF` | Primary light |
+| `accent900` | `#C8DFDB` | Nền tint nhạt cho badge/hover accent |
+| `accentInk` | `#3368A0` | Chữ/icon trên nền trắng hoặc `accent900` |
+| `accentContrast` | `#ffffff` | Chữ/icon trên fill `accent` (avatar, logo mark) |
+| `success` | `#2d8a6e` | Trạng thái thành công/done |
+| `danger` | `#c44b4b` | Trạng thái lỗi/xoá |
 
-Một màu accent duy nhất (tím), không dùng nhiều màu thương hiệu — các trạng
-thái khác (success/danger) chỉ xuất hiện ở chip/badge, không lấn sang
-button chính.
+Một màu accent duy nhất (steel blue `#3368A0`), không dùng nhiều màu thương
+hiệu — các trạng thái khác (success/danger) chỉ xuất hiện ở chip/badge,
+không lấn sang button chính. Bộ swatch phụ (`#66A3BF`, `#C8DFDB`, `#F2EFE7`)
+chỉ dùng cho light / tint / nền trang, không phải accent thứ hai.
 
 ## 2. Typography
 
-- Font: `var(--font-google-sans), system-ui, sans-serif` — 1 font family
-  duy nhất cho toàn app, không mix serif/mono trừ khi hiển thị code.
+- Font: `var(--font-sans), system-ui, sans-serif` — **1 font family**
+  (Be Vietnam Pro) cho title, body, button, caption. Không mix heading/UI
+  font khác. Mono (`--font-mono`) chỉ khi hiển thị code.
 - `h1`: 32px / weight 500 / letter-spacing -0.01em — dùng cho tiêu đề trang
   lớn, không phải heading nội dung.
 - `h2`: 22px / weight 500 — tiêu đề section/card.
 - `h3`: 19px / weight 500 — tiêu đề phụ nhỏ hơn.
 - `body1`: 15px / line-height 1.55 — nội dung chính.
-- `body2`: 14px, màu `neutral400` — text phụ, caption, mô tả dưới tiêu đề.
-- `button`: không viết hoa (`textTransform: none`), weight 500 — khác mặc
-  định MUI (mặc định uppercase).
+- `body2`: 14px, màu `neutral400` — text phụ, mô tả dưới tiêu đề.
+- `caption`: 12px, màu `neutral400` — meta nhỏ; không set `fontSize: 12`
+  tay trên `body2`.
+- `button`: không viết hoa (`textTransform: none`), weight 500, **1 dòng**
+  (`whiteSpace: nowrap`) — khác mặc định MUI (uppercase + được wrap).
 - Table head: 11px, uppercase, letter-spacing 0.08em, weight 600, màu
   `neutral500` — điểm ngoại lệ duy nhất được phép uppercase.
 
@@ -89,15 +95,18 @@ button chính.
 
 | Component | Điểm khác mặc định MUI |
 |---|---|
-| `MuiButton` | radius 14, minHeight 44, padding `10px 18px`, font 14.5/500, không uppercase, không shadow kể cả hover |
+| `MuiButton` | radius 14; `md` minHeight 44 / padding `10px 18px` / font 14.5; `sm` minHeight 36 / padding `6px 12px` / font 13.5; nowrap; không uppercase; không shadow kể cả hover. Dùng `components/ui/Button`. |
+| Icon | `sm=18` / `md=20` / `lg=24`. `MuiSvgIcon` mặc định `md`. Dùng `components/ui/IconButton`. |
+| Dialog | radius `lg`, shadow `lg`. Form → `components/ui/Dialog`. Xóa → `ConfirmDialog`. |
+| Loading | Trang fetch dùng `PageSkeleton` (table / list / form / profile / cards / page). Không spinner trần / “Loading…” / LinearProgress làm placeholder chính. |
 | `MuiCard` | radius 14, border `1px solid divider`, shadow = token `card` |
-| `MuiOutlinedInput` | radius 14, nền `surface`, viền `divider`; focus: viền `accent` + ring `0 0 0 3px rgba(109,91,208,.14)` |
+| `MuiOutlinedInput` | radius 14, nền `surface`, viền `divider`; focus: viền `accent` + ring `0 0 0 3px rgba(51,104,160,.18)` |
 | `MuiInputLabel` | 12px/500, màu `rgba(28,27,46,.65)` — nhạt hơn text chính |
 | `MuiChip` | radius 10, weight 500, size 12 |
 | `MuiTableCell` head | 11px uppercase letter-spacing 0.08em, màu `neutral500`, không có border-top |
 | `MuiMenu` paper | radius 10, border `divider`, shadow token `md` |
 | `MuiTooltip` | nền `text` (tối), chữ trắng, radius 8, luôn có `arrow`, `enterDelay: 300` |
-| Scrollbar | custom 9px, thumb `#c9c8d6` radius 8, track trong suốt |
+| Scrollbar | custom 9px, thumb `accent700` (`#66A3BF`) radius 8, track trong suốt |
 
 ## 6. Interaction conventions
 

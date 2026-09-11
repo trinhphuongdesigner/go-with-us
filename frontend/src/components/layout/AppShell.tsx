@@ -9,7 +9,7 @@ import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import Typography from '@mui/material/Typography';
 import Avatar from '@mui/material/Avatar';
-import IconButton from '@mui/material/IconButton';
+import IconButton from '@/components/ui/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
@@ -134,7 +134,7 @@ function Sidebar({ collapsed }: { collapsed: boolean }) {
             width: 40,
             height: 40,
             bgcolor: colorTokens.accent,
-            color: colorTokens.text,
+            color: colorTokens.accentContrast,
             fontWeight: 600,
             fontSize: 16,
             flexShrink: 0,
@@ -221,12 +221,12 @@ function TopBar({ sidebarCollapsed, onToggleSidebar }: TopBarProps) {
           <Typography variant="body2" noWrap sx={{ color: colorTokens.text, fontWeight: 500, lineHeight: 1.3 }}>
             {user?.name}
           </Typography>
-          <Typography variant="body2" noWrap sx={{ fontSize: 12, lineHeight: 1.3 }}>
+          <Typography variant="caption" noWrap sx={{ display: 'block', lineHeight: 1.3 }}>
             {user?.role}
           </Typography>
         </Box>
         <IconButton onClick={(event) => setAnchorEl(event.currentTarget)} sx={{ p: 0.5 }}>
-          <Avatar sx={{ width: 36, height: 36, bgcolor: colorTokens.accent, color: colorTokens.text }}>
+          <Avatar sx={{ width: 36, height: 36, bgcolor: colorTokens.accent, color: colorTokens.accentContrast }}>
             {user?.name?.[0]?.toUpperCase() ?? '?'}
           </Avatar>
         </IconButton>
@@ -263,7 +263,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <RequireAuth>
-      <Box sx={{ minHeight: '100vh', display: 'flex', bgcolor: colorTokens.surface }}>
+      <Box sx={{ minHeight: '100vh', display: 'flex', bgcolor: colorTokens.bg }}>
         <Sidebar collapsed={sidebarCollapsed} />
         <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
           <TopBar sidebarCollapsed={sidebarCollapsed} onToggleSidebar={() => setSidebarCollapsed((prev) => !prev)} />

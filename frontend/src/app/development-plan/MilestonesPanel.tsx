@@ -3,15 +3,16 @@
 import * as React from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import Checkbox from '@mui/material/Checkbox';
 import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
+import IconButton from '@/components/ui/IconButton';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import StatusChip from '@/components/ui/StatusChip';
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ApiError } from '@/lib/api/client';
 import {
   createTask,
@@ -39,6 +40,7 @@ export default function MilestonesPanel({
   milestones: DevelopmentMilestone[];
   onChanged: () => void;
 }) {
+  const { ask, dialog } = useConfirmDialog();
   const [error, setError] = React.useState<string | null>(null);
   const [newTaskTitle, setNewTaskTitle] = React.useState<Record<string, string>>({});
 
@@ -121,10 +123,19 @@ export default function MilestonesPanel({
               <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                 <StatusChip label={STATUS_LABEL[milestone.status] ?? milestone.status} />
                 <IconButton
-                  size="small"
-                  onClick={() => handleDeleteMilestone(milestone.id)}
+                  size="sm"
+                  aria-label="Delete milestone"
+                  onClick={() =>
+                    ask({
+                      title: 'Delete milestone',
+                      description: `Remove “${milestone.title}” and its tasks?`,
+                      confirmLabel: 'Delete',
+                      danger: true,
+                      onConfirm: () => handleDeleteMilestone(milestone.id),
+                    })
+                  }
                 >
-                  <DeleteOutlineIcon fontSize="small" />
+                  <DeleteOutlineIcon />
                 </IconButton>
               </Stack>
             </Stack>
@@ -153,8 +164,20 @@ export default function MilestonesPanel({
                     {task.title}
                     {task.metric ? ` — ${task.metric}` : ''}
                   </Typography>
-                  <IconButton size="small" onClick={() => handleDeleteTask(task.id)}>
-                    <DeleteOutlineIcon fontSize="small" />
+                  <IconButton
+                    size="sm"
+                    aria-label="Delete task"
+                    onClick={() =>
+                      ask({
+                        title: 'Delete task',
+                        description: `Remove “${task.title}”?`,
+                        confirmLabel: 'Delete',
+                        danger: true,
+                        onConfirm: () => handleDeleteTask(task.id),
+                      })
+                    }
+                  >
+                    <DeleteOutlineIcon />
                   </IconButton>
                 </Stack>
               ))}
@@ -184,6 +207,7 @@ export default function MilestonesPanel({
           </Box>
         ))}
       </Stack>
+      {dialog}
     </Box>
   );
 }

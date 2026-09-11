@@ -2,19 +2,19 @@
 
 import * as React from 'react';
 import Typography from '@mui/material/Typography';
-import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
+import PageSkeleton from '@/components/ui/PageSkeleton';
 import Stack from '@mui/material/Stack';
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import Rating from '@mui/material/Rating';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import Table from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
-import IconButton from '@mui/material/IconButton';
+import IconButton from '@/components/ui/IconButton';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { useAuth } from '@/contexts/AuthContext';
 import { ApiError } from '@/lib/api/client';
@@ -133,9 +133,7 @@ export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
       </Stack>
 
       {!mySkills ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-          <CircularProgress size={28} />
-        </Box>
+        <PageSkeleton variant="table" rows={4} embedded />
       ) : mySkills.length === 0 ? (
         <Typography variant="body1">No skills logged yet — add one above.</Typography>
       ) : (

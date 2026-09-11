@@ -5,9 +5,9 @@ import NextLink from 'next/link';
 import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import Chip from '@mui/material/Chip';
-import IconButton from '@mui/material/IconButton';
+import IconButton from '@/components/ui/IconButton';
 import LinearProgress from '@mui/material/LinearProgress';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
@@ -16,6 +16,7 @@ import SendIcon from '@mui/icons-material/Send';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import AppShell from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
@@ -42,6 +43,7 @@ import { colorTokens } from '@/theme/theme';
  * their own record (the backend decides which, from the caller's role).
  */
 export default function AssistantPage() {
+  const { ask, dialog } = useConfirmDialog();
   const { user } = useAuth();
   const isAdmin = user?.role === 'COMPANY_ADMIN' || user?.role === 'SUPER_ADMIN';
 
@@ -288,7 +290,7 @@ export default function AssistantPage() {
                     >
                       <Avatar
                         src={person.avatarUrl ?? undefined}
-                        sx={{ width: 36, height: 36, bgcolor: colorTokens.accent, color: colorTokens.text }}
+                        sx={{ width: 36, height: 36, bgcolor: colorTokens.accent, color: colorTokens.accentContrast }}
                       >
                         {person.name?.[0]?.toUpperCase() ?? '?'}
                       </Avatar>
@@ -361,10 +363,19 @@ export default function AssistantPage() {
                         )}
                       </IconButton>
                       <IconButton
-                        size="small"
-                        onClick={() => handleDelete(conversation.id)}
+                        size="sm"
+                        aria-label="Delete conversation"
+                        onClick={() =>
+                          ask({
+                            title: 'Delete conversation',
+                            description: `Remove “${conversation.title}”? This cannot be undone.`,
+                            confirmLabel: 'Delete',
+                            danger: true,
+                            onConfirm: () => handleDelete(conversation.id),
+                          })
+                        }
                       >
-                        <DeleteOutlineIcon fontSize="small" />
+                        <DeleteOutlineIcon />
                       </IconButton>
                     </Box>
                   ))}
@@ -382,6 +393,7 @@ export default function AssistantPage() {
             </Card>
           </Box>
         </Stack>
+        {dialog}
       </PageContainer>
     </AppShell>
   );

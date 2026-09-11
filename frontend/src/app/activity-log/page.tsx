@@ -10,11 +10,13 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
+import IconButton from '@/components/ui/IconButton';
 import Divider from '@mui/material/Divider';
 import Alert from '@mui/material/Alert';
+import PageSkeleton from '@/components/ui/PageSkeleton';
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import {
@@ -56,6 +58,7 @@ const EMPTY_FORM: FormState = {
 };
 
 export default function ActivityLogPage() {
+  const { ask, dialog } = useConfirmDialog();
   const [logs, setLogs] = React.useState<ActivityLog[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -224,7 +227,7 @@ export default function ActivityLogPage() {
             </Alert>
           ) : null}
           {loading ? (
-            <Typography variant="body2">Loading…</Typography>
+            <PageSkeleton variant="list" rows={4} embedded />
           ) : logs.length === 0 ? (
             <Typography variant="body2">No activities logged yet — add your first one above.</Typography>
           ) : (
@@ -251,11 +254,23 @@ export default function ActivityLogPage() {
                     ) : null}
                   </Box>
                   <Stack direction="row" spacing={0.5}>
-                    <IconButton size="small" onClick={() => handleEdit(log)} aria-label="Edit activity">
-                      <EditOutlinedIcon fontSize="small" />
+                    <IconButton size="sm" onClick={() => handleEdit(log)} aria-label="Edit activity">
+                      <EditOutlinedIcon />
                     </IconButton>
-                    <IconButton size="small" onClick={() => void handleDelete(log.id)} aria-label="Delete activity">
-                      <DeleteOutlineIcon fontSize="small" />
+                    <IconButton
+                      size="sm"
+                      aria-label="Delete activity"
+                      onClick={() =>
+                        ask({
+                          title: 'Delete activity',
+                          description: `Remove “${log.title}”? This cannot be undone.`,
+                          confirmLabel: 'Delete',
+                          danger: true,
+                          onConfirm: () => handleDelete(log.id),
+                        })
+                      }
+                    >
+                      <DeleteOutlineIcon />
                     </IconButton>
                   </Stack>
                 </Box>
@@ -263,6 +278,7 @@ export default function ActivityLogPage() {
             </Stack>
           )}
         </Card>
+        {dialog}
       </PageContainer>
     </AppShell>
   );

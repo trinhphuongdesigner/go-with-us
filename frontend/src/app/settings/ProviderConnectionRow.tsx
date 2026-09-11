@@ -4,7 +4,7 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import StatusChip from '@/components/ui/StatusChip';
 import * as aiSettingsApi from '@/lib/api/aiSettingsApi';
 import { ApiError } from '@/lib/api/client';

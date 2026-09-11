@@ -3,13 +3,11 @@ import { colorTokens } from '@/theme/theme';
 export type StatusTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
 
 export const TONE_COLORS: Record<StatusTone, { bg: string; fg: string }> = {
-  neutral: { bg: '#f1f0f6', fg: colorTokens.neutral400 },
-  // `accent`/`accent300` aren't dark enough to read as text on `accent900` —
-  // see the `accentInk` note in theme.ts.
+  neutral: { bg: colorTokens.bg, fg: colorTokens.neutral400 },
   info: { bg: colorTokens.accent900, fg: colorTokens.accentInk },
-  success: { bg: '#e4f6ee', fg: colorTokens.text },
-  warning: { bg: '#fdf3e0', fg: colorTokens.warning },
-  danger: { bg: '#fbe9e9', fg: colorTokens.danger },
+  success: { bg: '#dceee6', fg: colorTokens.success },
+  warning: { bg: '#f7ecd6', fg: colorTokens.warning },
+  danger: { bg: '#f6e4e4', fg: colorTokens.danger },
 };
 
 /**

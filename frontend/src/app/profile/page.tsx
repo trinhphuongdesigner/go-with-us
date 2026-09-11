@@ -7,10 +7,10 @@ import { useSearchParams } from 'next/navigation';
 import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
-import LinearProgress from '@mui/material/LinearProgress';
+import PageSkeleton from '@/components/ui/PageSkeleton';
 import Stack from '@mui/material/Stack';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -54,7 +54,7 @@ const TABS = [
  */
 export default function ProfilePage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<PageSkeleton variant="profile" />}>
       <ProfilePageContent />
     </Suspense>
   );
@@ -122,9 +122,9 @@ function ProfilePageContent() {
           </Alert>
         ) : null}
 
-        {loading ? <LinearProgress sx={{ mb: 3 }} /> : null}
-
-        {profile ? (
+        {loading ? (
+          <PageSkeleton variant="profile" />
+        ) : profile ? (
           <>
             <Card sx={{ mb: 3 }}>
               <Stack
@@ -134,7 +134,7 @@ function ProfilePageContent() {
               >
                 <Avatar
                   src={profile.user.avatarUrl ?? undefined}
-                  sx={{ width: 64, height: 64, bgcolor: colorTokens.accent, color: colorTokens.text }}
+                  sx={{ width: 64, height: 64, bgcolor: colorTokens.accent, color: colorTokens.accentContrast }}
                 >
                   {profile.user.name?.[0]?.toUpperCase() ?? '?'}
                 </Avatar>
@@ -147,7 +147,7 @@ function ProfilePageContent() {
                         profile.user.company?.name ??
                         'No current position on record')}
                   </Typography>
-                  <Typography variant="body2" sx={{ fontSize: 12.5, mt: 0.25 }}>
+                  <Typography variant="caption" sx={{ display: 'block', mt: 0.25 }}>
                     {profile.user.email}
                   </Typography>
                 </Box>
@@ -230,9 +230,7 @@ function Stat({ label, value }: { label: string; value: number }) {
       <Typography variant="h2" sx={{ lineHeight: 1.2 }}>
         {value}
       </Typography>
-      <Typography variant="body2" sx={{ fontSize: 12 }}>
-        {label}
-      </Typography>
+      <Typography variant="caption">{label}</Typography>
     </Box>
   );
 }

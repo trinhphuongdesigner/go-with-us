@@ -6,9 +6,8 @@ import AppShell from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
+import PageSkeleton from '@/components/ui/PageSkeleton';
 import Typography from '@mui/material/Typography';
-import CircularProgress from '@mui/material/CircularProgress';
-import Box from '@mui/material/Box';
 import Table from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
@@ -42,9 +41,7 @@ export default function EmployeesPage() {
               {error}
             </Typography>
           ) : !employees ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress size={28} />
-            </Box>
+            <PageSkeleton variant="table" rows={5} embedded />
           ) : employees.length === 0 ? (
             <Typography variant="body1">No employees yet.</Typography>
           ) : (

@@ -3,11 +3,12 @@
 import * as React from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
-import LinearProgress from '@mui/material/LinearProgress';
+import IconButton from '@/components/ui/IconButton';
+import PageSkeleton from '@/components/ui/PageSkeleton';
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
@@ -85,6 +86,7 @@ const currentPeriod = () => new Date().toISOString().slice(0, 7);
  */
 export default function AssessmentTemplatesPage() {
   const { user } = useAuth();
+  const { ask, dialog } = useConfirmDialog();
 
   const [templates, setTemplates] = React.useState<AssessmentTemplate[]>([]);
   const [cycles, setCycles] = React.useState<AssessmentCycle[]>([]);
@@ -299,8 +301,10 @@ export default function AssessmentTemplatesPage() {
             {notice}
           </Alert>
         ) : null}
-        {loading ? <LinearProgress sx={{ mb: 3 }} /> : null}
-
+        {loading ? (
+          <PageSkeleton variant="cards" />
+        ) : (
+          <>
         <Card
           title={editingId ? 'Edit scale' : 'New scale'}
           sx={{ mb: 3 }}
@@ -534,9 +538,17 @@ export default function AssessmentTemplatesPage() {
                         {template.status === 'ACTIVE' ? 'Set draft' : 'Activate'}
                       </Button>
                       <Button
-                        size="small"
+                        size="sm"
                         color="error"
-                        onClick={() => handleDelete(template)}
+                        onClick={() =>
+                          ask({
+                            title: 'Delete template',
+                            description: `Remove “${template.name}”? If it is in use it will be archived instead.`,
+                            confirmLabel: 'Delete',
+                            danger: true,
+                            onConfirm: () => handleDelete(template),
+                          })
+                        }
                       >
                         Delete
                       </Button>
@@ -636,6 +648,9 @@ export default function AssessmentTemplatesPage() {
             </Stack>
           )}
         </Card>
+          </>
+        )}
+        {dialog}
       </PageContainer>
     </AppShell>
   );

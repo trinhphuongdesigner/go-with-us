@@ -5,17 +5,18 @@ import AppShell from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
+import PageSkeleton from '@/components/ui/PageSkeleton';
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import Typography from '@mui/material/Typography';
-import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Table from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import TextField from '@mui/material/TextField';
-import IconButton from '@mui/material/IconButton';
+import IconButton from '@/components/ui/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
@@ -32,6 +33,7 @@ const EMPTY_FORM = {
 };
 
 export default function CompaniesPage() {
+  const { ask, dialog } = useConfirmDialog();
   const [companies, setCompanies] = React.useState<Company[] | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [formOpen, setFormOpen] = React.useState(false);
@@ -147,9 +149,7 @@ export default function CompaniesPage() {
               {error}
             </Typography>
           ) : !companies ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress size={28} />
-            </Box>
+            <PageSkeleton variant="table" rows={5} embedded />
           ) : companies.length === 0 ? (
             <Typography variant="body1">No companies yet.</Typography>
           ) : (
@@ -170,8 +170,20 @@ export default function CompaniesPage() {
                     <TableCell>{new Date(company.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell align="right">
                       <Tooltip title="Delete company">
-                        <IconButton size="small" onClick={() => handleDelete(company.id)}>
-                          <DeleteOutlineOutlinedIcon fontSize="small" />
+                        <IconButton
+                          size="sm"
+                          aria-label="Delete company"
+                          onClick={() =>
+                            ask({
+                              title: 'Delete company',
+                              description: `Delete “${company.name}” and its admin account? This cannot be undone.`,
+                              confirmLabel: 'Delete',
+                              danger: true,
+                              onConfirm: () => handleDelete(company.id),
+                            })
+                          }
+                        >
+                          <DeleteOutlineOutlinedIcon />
                         </IconButton>
                       </Tooltip>
                     </TableCell>
@@ -181,6 +193,7 @@ export default function CompaniesPage() {
             </Table>
           )}
         </Card>
+        {dialog}
       </PageContainer>
     </AppShell>
   );

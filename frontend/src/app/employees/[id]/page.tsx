@@ -8,11 +8,11 @@ import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
 import StatusChip from '@/components/ui/StatusChip';
 import Typography from '@mui/material/Typography';
-import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
+import PageSkeleton from '@/components/ui/PageSkeleton';
 import Stack from '@mui/material/Stack';
 import Rating from '@mui/material/Rating';
-import Button from '@mui/material/Button';
+import Button from '@/components/ui/Button';
 import Table from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
@@ -81,9 +81,7 @@ export default function EmployeeInsightPage() {
             </Typography>
           </Card>
         ) : !insight ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-            <CircularProgress size={28} />
-          </Box>
+          <PageSkeleton variant="cards" />
         ) : (
           <Stack spacing={3}>
             <Card title="Profile & scores">

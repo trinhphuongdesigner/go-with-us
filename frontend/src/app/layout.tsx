@@ -1,21 +1,14 @@
 import type { Metadata } from 'next';
-import { Space_Grotesk, Be_Vietnam_Pro, JetBrains_Mono } from 'next/font/google';
+import { Be_Vietnam_Pro, JetBrains_Mono } from 'next/font/google';
 import ThemeRegistry from '@/theme/ThemeRegistry';
 import { AuthProvider } from '@/contexts/AuthContext';
 import FloatingAssistant from '@/components/assistant/FloatingAssistant';
 import './globals.css';
 
-// System font stack — see `--font-ui` / `--font-body` / `--font-heading` /
-// `--font-mono` in globals.css for how these get composed with their
-// fallback chains, and theme.ts for where each one is applied.
-const spaceGrotesk = Space_Grotesk({
-  variable: '--font-space-grotesk',
-  subsets: ['latin'],
-});
-
+// One sans family for title/body/button (agent.md §6). Mono is code-only.
 const beVietnamPro = Be_Vietnam_Pro({
   variable: '--font-be-vietnam-pro',
-  subsets: ['latin'],
+  subsets: ['latin', 'vietnamese'],
   weight: ['400', '500', '600', '700'],
 });
 
@@ -33,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${spaceGrotesk.variable} ${beVietnamPro.variable} ${jetbrainsMono.variable}`}
+      className={`${beVietnamPro.variable} ${jetbrainsMono.variable}`}
     >
       <body>
         <ThemeRegistry>

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
+import IconButton from '@/components/ui/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
 import { mdToHtml } from '@/lib/markdown';
