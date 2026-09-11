@@ -23,6 +23,9 @@ import PsychologyOutlinedIcon from '@mui/icons-material/PsychologyOutlined';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
 import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined';
 import TrendingUpOutlinedIcon from '@mui/icons-material/TrendingUpOutlined';
+import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined';
+import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined';
+import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import { RequireAuth, useAuth } from '@/contexts/AuthContext';
@@ -59,8 +62,19 @@ const NAV_ITEMS: NavItem[] = [
     icon: <WorkOutlineOutlinedIcon fontSize="small" />,
     roles: ['COMPANY_ADMIN', 'SUPER_ADMIN'],
   },
+  { label: 'AI Assistant', href: '/assistant', icon: <AutoAwesomeOutlinedIcon fontSize="small" /> },
   { label: 'My Profile', href: '/profile', icon: <PersonOutlineIcon fontSize="small" /> },
+  {
+    label: 'Career Passport',
+    href: '/career-passport',
+    icon: <BadgeOutlinedIcon fontSize="small" />,
+  },
   { label: 'My Skills', href: '/skills', icon: <PsychologyOutlinedIcon fontSize="small" /> },
+  {
+    label: 'Cross Assessment',
+    href: '/assessments',
+    icon: <FactCheckOutlinedIcon fontSize="small" />,
+  },
   { label: 'Activity Log', href: '/activity-log', icon: <EventNoteOutlinedIcon fontSize="small" /> },
   { label: 'Peer Reviews', href: '/peer-reviews', icon: <RateReviewOutlinedIcon fontSize="small" /> },
   {

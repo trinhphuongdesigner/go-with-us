@@ -36,6 +36,73 @@ enum GoalStatus {
   ACHIEVED
 }
 
+/// Work vs. personal — the idea doc splits goals/awards into these two
+/// buckets: personal ones don't serve the job directly but give the AI and
+/// the organisation extra context about the person.
+enum LifeCategory {
+  WORK
+  PERSONAL
+}
+
+/// A person's account outlives any single company, so an employment period
+/// is its own record — see docs/careermate-scope.md section 2.3.
+enum EmploymentStatus {
+  ACTIVE
+  ENDED
+}
+
+enum CertificationType {
+  DEGREE
+  LANGUAGE
+  PROFESSIONAL
+  OTHER
+}
+
+enum MilestoneStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  DONE
+}
+
+enum TemplateStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum CycleStatus {
+  OPEN
+  CLOSED
+}
+
+/// Who is filling an assessment in. SELF is the monthly mood/highlight
+/// check-in; PEER/MANAGER are the cross-assessment side of it.
+enum AssessmentType {
+  SELF
+  PEER
+  MANAGER
+}
+
+enum AssessmentStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+enum ImportSourceType {
+  CV_TEXT
+  CV_FILE
+  LINKEDIN_URL
+}
+
+enum ImportStatus {
+  PENDING
+  PARSED
+  APPLIED
+  FAILED
+}
+
 model Company {
   id        String   @id @default(cuid())
   name      String
@@ -45,16 +112,26 @@ model Company {
 
   users           User[]
   jobRequirements JobRequirement[]
+
+  employments         Employment[]
+  assessmentTemplates AssessmentTemplate[]
+  assessmentCycles    AssessmentCycle[]
+  projectExperiences  ProjectExperience[]
+  passportShares      CareerPassportShare[]
 }
 
 model User {
-  id       String  @id @default(cuid())
-  email    String  @unique
+  id           String   @id @default(cuid())
+  email        String   @unique
   passwordHash String
-  name     String
-  role     Role
-  companyId String?
-  company  Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name         String
+  role         Role
+  // Pointer to the CURRENT employer only — history lives in Employment[].
+  // Goes null when the person leaves; their assessment record survives via
+  // Employment (docs/careermate-scope.md section 2.3). SetNull rather than
+  // Cascade so deleting a company never destroys a person's career record.
+  companyId    String?
+  company      Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
 
   avatarUrl String?
   jobTitle  String?
@@ -76,11 +153,25 @@ model User {
   reviewsGiven           PeerReview[]      @relation("reviewer")
   reviewsReceived        PeerReview[]      @relation("reviewee")
   jobRequirementsCreated JobRequirement[]
+
+  // CareerMate additions — see docs/careermate-scope.md.
+  employments                Employment[]
+  certifications             Certification[]
+  projectExperiences         ProjectExperience[]
+  awards                     Award[]
+  profileImports             ProfileImport[]
+  careerSummaries            CareerSummary[]
+  passportShares             CareerPassportShare[]
+  assistantConversations     AssistantConversation[]
+  assessmentsReceived        Assessment[]            @relation("assessmentReviewee")
+  assessmentsGiven           Assessment[]            @relation("assessmentReviewer")
+  assessmentsApproved        Assessment[]            @relation("assessmentApprover")
+  assessmentTemplatesCreated AssessmentTemplate[]
 }
 
 model Skill {
-  id       String @id @default(cuid())
-  name     String @unique
+  id       String  @id @default(cuid())
+  name     String  @unique
   category String?
 
   employeeSkills EmployeeSkill[]
@@ -112,17 +203,24 @@ model ActivityLog {
 }
 
 model DevelopmentGoal {
-  id           String     @id @default(cuid())
+  id           String       @id @default(cuid())
   userId       String
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   title        String
+  description  String?
+  // WORK = skills/certifications serving the job; PERSONAL = health, sport,
+  // volunteering — context for the AI, not direct job output.
+  category     LifeCategory @default(WORK)
   metric       String?
   targetValue  Float?
   currentValue Float?
-  status       GoalStatus @default(NOT_STARTED)
+  progress     Int          @default(0) // 0-100, user-maintained
+  dueDate      DateTime?
+  status       GoalStatus   @default(NOT_STARTED)
   aiScore      Float?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  aiSuggested  Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 }
 
 model DevelopmentPlan {
@@ -135,7 +233,8 @@ model DevelopmentPlan {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  versions DevelopmentPlanVersion[]
+  versions   DevelopmentPlanVersion[]
+  milestones DevelopmentMilestone[]
 }
 
 model DevelopmentPlanVersion {
@@ -159,16 +258,371 @@ model PeerReview {
 }
 
 model JobRequirement {
-  id              String   @id @default(cuid())
-  companyId       String
-  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  createdById     String
-  createdBy       User     @relation(fields: [createdById], references: [id])
-  title           String
-  description     String
-  requiredSkills  String[]
-  status          String   @default("open")
-  createdAt       DateTime @default(now())
+  id             String   @id @default(cuid())
+  companyId      String
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdById    String
+  createdBy      User     @relation(fields: [createdById], references: [id])
+  title          String
+  description    String
+  requiredSkills String[]
+  status         String   @default("open")
+  createdAt      DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// CareerMate — portable career record (docs/careermate-scope.md section 2.3)
+// ---------------------------------------------------------------------------
+
+/// One stint at one company. This is what every assessment, project and
+/// career summary hangs off, so the record keeps its "which company, which
+/// period, which position" context even after the person leaves and
+/// User.companyId goes null.
+model Employment {
+  id         String           @id @default(cuid())
+  userId     String
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId  String
+  company    Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  jobTitle   String
+  level      String? // Junior / Middle / Senior — free text, company-defined
+  department String?
+  startDate  DateTime
+  endDate    DateTime?
+  status     EmploymentStatus @default(ACTIVE)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  assessments        Assessment[]
+  projectExperiences ProjectExperience[]
+  careerSummaries    CareerSummary[]
+
+  @@index([userId])
+  @@index([companyId])
+}
+
+/// AI-written recap of one employment period (attitude, competency at that
+/// position, growth over time). Generated as a proposal, saved explicitly —
+/// same convention as DevelopmentPlan.
+model CareerSummary {
+  id           String      @id @default(cuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employmentId String?
+  employment   Employment? @relation(fields: [employmentId], references: [id], onDelete: SetNull)
+  content      String // markdown
+  strengths    String[]
+  growthAreas  String[]
+  aiGenerated  Boolean     @default(true)
+  periodStart  DateTime?
+  periodEnd    DateTime?
+  createdAt    DateTime    @default(now())
+
+  @@index([userId])
+}
+
+/// Owner-created read-only link so a prospective employer can review the
+/// career record. Revocable and expirable — the owner stays in control.
+model CareerPassportShare {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String    @unique
+  label     String? // e.g. "Applying to FPT Software"
+  /// Optional: the company this was issued for, when it exists on-platform.
+  companyId String?
+  company   Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  expiresAt DateTime?
+  revokedAt DateTime?
+  viewCount Int       @default(0)
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// CareerMate — competency profile (M1) + CV/LinkedIn import (M2)
+// ---------------------------------------------------------------------------
+
+model Certification {
+  id            String            @id @default(cuid())
+  userId        String
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  issuer        String?
+  type          CertificationType @default(PROFESSIONAL)
+  /// Free text so "IELTS 7.0" and "TOEIC 600" both fit.
+  score         String?
+  issuedAt      DateTime?
+  expiresAt     DateTime?
+  credentialUrl String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([userId])
+}
+
+/// The "lịch sử dự án tham gia" section of the profile — real experience,
+/// not just a list of project names.
+model ProjectExperience {
+  id           String      @id @default(cuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Null for projects done before joining any company on the platform.
+  companyId    String?
+  company      Company?    @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  employmentId String?
+  employment   Employment? @relation(fields: [employmentId], references: [id], onDelete: SetNull)
+  name         String
+  role         String
+  domain       String?
+  techStack    String[]
+  contribution String? // đóng góp / kết quả nổi bật
+  startDate    DateTime
+  endDate      DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([userId])
+}
+
+/// Awards and competitions — both work (best staff, internal hackathon) and
+/// personal (sport, volunteering), self-reportable with evidence.
+model Award {
+  id           String       @id @default(cuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title        String
+  category     LifeCategory @default(WORK)
+  issuer       String?
+  description  String?
+  /// Link to a certificate/photo — no object storage in this project, so we
+  /// keep a URL the user supplies rather than hosting the file.
+  evidenceUrl  String?
+  awardedAt    DateTime?
+  selfReported Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+
+  @@index([userId])
+}
+
+/// A CV paste / uploaded CV text / LinkedIn URL that the AI turns into
+/// structured profile data. Proposal-only: parsedData is shown to the user,
+/// and nothing lands in the profile until they apply it.
+model ProfileImport {
+  id         String           @id @default(cuid())
+  userId     String
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceType ImportSourceType
+  sourceName String? // original file name or LinkedIn URL
+  /// Extracted plain text — no object storage, per CLAUDE.md.
+  rawText    String
+  /// AI proposal: { profile, skills[], certifications[], projects[], awards[] }
+  parsedData Json?
+  status     ImportStatus     @default(PENDING)
+  error      String?
+  appliedAt  DateTime?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// CareerMate — Cross Assessment, company-configurable (M3)
+// ---------------------------------------------------------------------------
+
+/// A company's own competency scale: groups → questions, each weighted.
+model AssessmentTemplate {
+  id          String         @id @default(cuid())
+  companyId   String
+  company     Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdById String
+  createdBy   User           @relation(fields: [createdById], references: [id])
+  name        String
+  description String?
+  status      TemplateStatus @default(DRAFT)
+  version     Int            @default(1)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  groups      AssessmentGroup[]
+  cycles      AssessmentCycle[]
+  assessments Assessment[]
+
+  @@index([companyId])
+}
+
+model AssessmentGroup {
+  id          String             @id @default(cuid())
+  templateId  String
+  template    AssessmentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  /// Relative weight of this group within the template.
+  weight      Float              @default(1)
+  order       Int                @default(0)
+
+  questions AssessmentQuestion[]
+
+  @@index([templateId])
+}
+
+model AssessmentQuestion {
+  id       String          @id @default(cuid())
+  groupId  String
+  group    AssessmentGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  text     String
+  /// "mô tả expand" — what this criterion means / how to score it.
+  guidance String?
+  weight   Float           @default(1)
+  maxScore Int             @default(10)
+  order    Int             @default(0)
+
+  answers AssessmentAnswer[]
+
+  @@index([groupId])
+}
+
+/// A round of assessment, normally one per month per company.
+model AssessmentCycle {
+  id         String             @id @default(cuid())
+  companyId  String
+  company    Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  templateId String
+  template   AssessmentTemplate @relation(fields: [templateId], references: [id])
+  name       String
+  /// "YYYY-MM" — the month this cycle covers.
+  period     String
+  status     CycleStatus        @default(OPEN)
+  dueDate    DateTime?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  assessments Assessment[]
+
+  @@unique([companyId, period])
+  @@index([companyId])
+}
+
+/// One filled-in assessment. Survives the reviewee leaving the company
+/// because it points at Employment, and keeps templateSnapshot so later
+/// edits to the company's template never rewrite approved history.
+model Assessment {
+  id               String             @id @default(cuid())
+  cycleId          String?
+  cycle            AssessmentCycle?   @relation(fields: [cycleId], references: [id], onDelete: SetNull)
+  templateId       String
+  template         AssessmentTemplate @relation(fields: [templateId], references: [id])
+  revieweeId       String
+  reviewee         User               @relation("assessmentReviewee", fields: [revieweeId], references: [id], onDelete: Cascade)
+  reviewerId       String
+  reviewer         User               @relation("assessmentReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  employmentId     String?
+  employment       Employment?        @relation(fields: [employmentId], references: [id], onDelete: SetNull)
+  type             AssessmentType
+  /// Monthly self check-in fields (SELF only).
+  mood             String?
+  highlights       String?
+  comment          String?
+  /// Weighted total, computed on submit from the answers.
+  totalScore       Float?
+  status           AssessmentStatus   @default(DRAFT)
+  submittedAt      DateTime?
+  approvedById     String?
+  approvedBy       User?              @relation("assessmentApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvedAt       DateTime?
+  /// Frozen copy of the template (groups/weights/questions) taken at
+  /// approval — this is what makes an approved assessment immutable history.
+  templateSnapshot Json?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  answers AssessmentAnswer[]
+
+  @@index([revieweeId])
+  @@index([reviewerId])
+  @@index([cycleId])
+}
+
+model AssessmentAnswer {
+  id           String             @id @default(cuid())
+  assessmentId String
+  assessment   Assessment         @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  questionId   String
+  question     AssessmentQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  score        Int // 1-10 against the question's maxScore
+  comment      String?
+
+  @@unique([assessmentId, questionId])
+  @@index([assessmentId])
+}
+
+// ---------------------------------------------------------------------------
+// CareerMate — development roadmap milestones (M6)
+// ---------------------------------------------------------------------------
+
+/// Measurable checkpoints under a DevelopmentPlan — the markdown plan stays
+/// the narrative, these are the trackable parts of it.
+model DevelopmentMilestone {
+  id          String          @id @default(cuid())
+  planId      String
+  plan        DevelopmentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  dueDate     DateTime?
+  status      MilestoneStatus @default(NOT_STARTED)
+  order       Int             @default(0)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  tasks DevelopmentTask[]
+
+  @@index([planId])
+}
+
+model DevelopmentTask {
+  id          String               @id @default(cuid())
+  milestoneId String
+  milestone   DevelopmentMilestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  title       String
+  /// How completion is measured, e.g. "ship 2 features as tech lead".
+  metric      String?
+  done        Boolean              @default(false)
+  order       Int                  @default(0)
+
+  @@index([milestoneId])
+}
+
+// ---------------------------------------------------------------------------
+// CareerMate — cross-cutting AI assistant (M5)
+// ---------------------------------------------------------------------------
+
+model AssistantConversation {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages AssistantMessage[]
+
+  @@index([userId])
+}
+
+model AssistantMessage {
+  id                String                @id @default(cuid())
+  conversationId    String
+  conversation      AssistantConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  /// "user" | "assistant"
+  role              String
+  content           String
+  /// Employee ids the assistant surfaced, so the UI can link to profiles.
+  referencedUserIds String[]
+  createdAt         DateTime              @default(now())
+
+  @@index([conversationId])
 }
 
 model AiProviderConfig {

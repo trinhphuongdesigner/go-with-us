@@ -54,14 +54,23 @@ export default function EmployeeInsightPage() {
           title={insight ? insight.profile.name : 'Employee insight'}
           subtitle={insight?.profile.jobTitle ?? undefined}
           actions={
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<ArrowBackOutlinedIcon fontSize="small" />}
-              onClick={() => router.push('/employees')}
-            >
-              Back to employees
-            </Button>
+            <>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<ArrowBackOutlinedIcon fontSize="small" />}
+                onClick={() => router.push('/employees')}
+              >
+                Back to employees
+              </Button>
+              <Button
+                variant="contained"
+                size="small"
+                onClick={() => router.push(`/employees/${params.id}/passport`)}
+              >
+                Career passport
+              </Button>
+            </>
           }
         />
 

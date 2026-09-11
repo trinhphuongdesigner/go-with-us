@@ -84,6 +84,135 @@ async function main() {
     ),
   );
 
+  // --- CareerMate demo data (docs/careermate-scope.md) ---------------------
+
+  // Employment periods — the backbone the career record hangs off, so the
+  // assessment history keeps its context after someone leaves.
+  await Promise.all(
+    employees.map((employee, index) =>
+      prisma.employment.upsert({
+        where: { id: `demo-employment-${index}` },
+        update: {},
+        create: {
+          id: `demo-employment-${index}`,
+          userId: employee.id,
+          companyId: company.id,
+          jobTitle: employee.jobTitle ?? 'Engineer',
+          level: ['Middle', 'Senior', 'Middle'][index],
+          department: ['Product', 'Platform', 'Design'][index],
+          startDate: new Date(`${2022 + index}-03-01`),
+        },
+      }),
+    ),
+  );
+
+  // A company-defined competency scale: groups carry weights, questions carry
+  // their own weight and are scored 1-10.
+  const existingTemplate = await prisma.assessmentTemplate.findFirst({
+    where: { companyId: company.id },
+  });
+
+  const template =
+    existingTemplate ??
+    (await prisma.assessmentTemplate.create({
+      data: {
+        companyId: company.id,
+        createdById: companyAdmin.id,
+        name: 'Acme monthly competency scale',
+        description:
+          'Default cross-assessment scale — adjust the groups and weights to match each period goal.',
+        status: 'ACTIVE',
+        groups: {
+          create: [
+            {
+              name: 'Professional competency',
+              description: 'Technical depth and delivery quality.',
+              weight: 3,
+              order: 0,
+              questions: {
+                create: [
+                  {
+                    text: 'Delivers work at the quality expected for their level',
+                    guidance:
+                      '1-3 needs close review, 4-6 meets expectations with guidance, 7-10 consistently ships without rework.',
+                    weight: 2,
+                    maxScore: 10,
+                    order: 0,
+                  },
+                  {
+                    text: 'Solves problems independently',
+                    guidance:
+                      'How far can they take an ambiguous task before needing help?',
+                    weight: 1,
+                    maxScore: 10,
+                    order: 1,
+                  },
+                ],
+              },
+            },
+            {
+              name: 'Attitude & collaboration',
+              description: 'How they work with the people around them.',
+              weight: 2,
+              order: 1,
+              questions: {
+                create: [
+                  {
+                    text: 'Communicates proactively with the team',
+                    guidance:
+                      'Raises blockers early, keeps others informed without being asked.',
+                    weight: 1,
+                    maxScore: 10,
+                    order: 0,
+                  },
+                  {
+                    text: 'Supports colleagues and shares knowledge',
+                    guidance: 'Reviews, mentoring, internal sharing sessions.',
+                    weight: 1,
+                    maxScore: 10,
+                    order: 1,
+                  },
+                ],
+              },
+            },
+            {
+              name: 'Growth',
+              description: 'Progress against their own development plan.',
+              weight: 1,
+              order: 2,
+              questions: {
+                create: [
+                  {
+                    text: 'Made visible progress on their development goals',
+                    guidance:
+                      'Measured against the goals they set, not against other people.',
+                    weight: 1,
+                    maxScore: 10,
+                    order: 0,
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    }));
+
+  // One open cycle for the current month, so employees can check in
+  // immediately after seeding.
+  const period = new Date().toISOString().slice(0, 7);
+  await prisma.assessmentCycle.upsert({
+    where: { companyId_period: { companyId: company.id, period } },
+    update: {},
+    create: {
+      companyId: company.id,
+      templateId: template.id,
+      name: `Check-in ${period}`,
+      period,
+      status: 'OPEN',
+    },
+  });
+
   console.log('\nSeed complete. Demo login credentials (all use the same password):\n');
   console.log(`  Password for every seeded user: ${DEMO_PASSWORD}\n`);
   console.log(`  SUPER_ADMIN   -> ${superAdmin.email}`);

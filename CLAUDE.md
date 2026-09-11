@@ -110,7 +110,43 @@ merge:**
   above). Frontend: `/job-requirements` (linked in `AppShell`'s nav for
   `COMPANY_ADMIN`/`SUPER_ADMIN`).
 
+**CareerMate slice** — scope agreed in `docs/careermate-scope.md` (read it
+before touching any of these; it holds the four architectural decisions,
+most importantly why the career record must outlive an employment):
+- **Competency profile** (`backend/src/modules/competency-profile/`) —
+  `Certification`, `ProjectExperience`, `Award` owner-scoped CRUD plus a
+  merged-timeline aggregate. Frontend: `/profile` (tabs + timeline).
+- **CV/LinkedIn import** (`backend/src/modules/profile-imports/`) — AI
+  parses pasted CV text into structured data as a *proposal*
+  (`POST /profile-imports/:id/parse`), user picks what to keep, then
+  `POST /profile-imports/:id/apply` writes it. Frontend: `/profile/import`.
+  No file is ever stored — only extracted text, per the no-object-storage
+  rule above.
+- **Cross Assessment** (`backend/src/modules/assessments/`) — each company
+  builds its own scale (`AssessmentTemplate` → `AssessmentGroup` →
+  `AssessmentQuestion`, weighted, scored 1-10), runs monthly
+  `AssessmentCycle`s, and an admin approves each `Assessment`. **Approving
+  snapshots the whole template onto the record** (`templateSnapshot`) so
+  editing the live scale never rewrites approved history. Frontend:
+  `/assessments`, `/assessments/[id]`, `/settings/assessment-templates`.
+- **Career Passport** (`backend/src/modules/career-passport/`) —
+  `Employment` periods are what assessments/projects hang off, so the record
+  survives `User.companyId` going null when someone leaves. AI writes a
+  `CareerSummary` per period (proposal → explicit save), and
+  `CareerPassportShare` issues a revocable token a new employer reads via
+  the **unguarded** `GET /api/passport/:token`. Frontend:
+  `/career-passport`, `/employees/[id]/passport`, public `/passport/[token]`.
+- **AI Assistant** (`backend/src/modules/assistant/`) — one endpoint, two
+  audiences: admins get natural-language roster search grounded in the
+  company's competency profiles, employees get a companion limited to their
+  own record. Frontend: `/assistant`.
+
 **Not yet built (fair game for new work, nothing to migrate away from):**
+- **Development roadmap milestones & goal categories** — `DevelopmentMilestone`,
+  `DevelopmentTask` and `DevelopmentGoal.category`/`dueDate`/`progress` exist
+  in the schema (M6/M7 of `docs/careermate-scope.md`) but
+  `backend/src/modules/development-plans/` does not expose them yet and
+  `/development-plan` still renders only the markdown plan.
 - **Employee UI "concept" switcher** (default/anime/film/gather-town-pixel)
   — `User.themeConcept` exists in the schema and is settable via
   `PATCH /api/users/:id`, but nothing on the frontend reads it yet; the

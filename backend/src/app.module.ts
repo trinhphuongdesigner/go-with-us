@@ -14,6 +14,11 @@ import { ActivityLogsModule } from './modules/activity-logs/activity-logs.module
 import { PeerReviewsModule } from './modules/peer-reviews/peer-reviews.module';
 import { DevelopmentPlansModule } from './modules/development-plans/development-plans.module';
 import { JobRequirementsModule } from './modules/job-requirements/job-requirements.module';
+import { CompetencyProfileModule } from './modules/competency-profile/competency-profile.module';
+import { ProfileImportsModule } from './modules/profile-imports/profile-imports.module';
+import { AssessmentsModule } from './modules/assessments/assessments.module';
+import { CareerPassportModule } from './modules/career-passport/career-passport.module';
+import { AssistantModule } from './modules/assistant/assistant.module';
 
 @Module({
   imports: [
@@ -33,6 +38,12 @@ import { JobRequirementsModule } from './modules/job-requirements/job-requiremen
     PeerReviewsModule,
     DevelopmentPlansModule,
     JobRequirementsModule,
+    // CareerMate slice — see docs/careermate-scope.md for what each covers.
+    CompetencyProfileModule,
+    ProfileImportsModule,
+    AssessmentsModule,
+    CareerPassportModule,
+    AssistantModule,
   ],
   controllers: [AppController],
   providers: [AppService],
