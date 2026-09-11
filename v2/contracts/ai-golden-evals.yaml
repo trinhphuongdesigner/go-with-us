@@ -400,7 +400,7 @@ cases:
       fallback_id: roadmap-template-v1
     expect:
       http_status: 200
-      ai_status: degraded
+      ai_status: ok
       persisted: false
       warning_codes: [FALLBACK_USED]
       assertions:
@@ -652,7 +652,7 @@ cases:
       postgres_fts_available: true
     expect:
       http_status: 200
-      ai_status: degraded
+      ai_status: ok
       warning_codes: [FALLBACK_USED]
       retrieval_mode: STRUCTURED_PLUS_FTS
       assertions:
@@ -669,7 +669,7 @@ cases:
       deterministic_ranked_candidate_ids: [fb2b3e24-4a35-59a8-8478-0108d56ac576]
     expect:
       http_status: 200
-      ai_status: degraded
+      ai_status: ok
       warning_codes: [FALLBACK_USED]
       assertions:
         - candidate_score_breakdown_returned_without_generated_prose

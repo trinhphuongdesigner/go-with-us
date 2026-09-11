@@ -42,7 +42,6 @@ class AiStatus(StrEnum):
     OK = "ok"
     NEEDS_CLARIFICATION = "needs_clarification"
     INSUFFICIENT_EVIDENCE = "insufficient_evidence"
-    DEGRADED = "degraded"
     FAILED = "failed"
 
 
@@ -150,7 +149,7 @@ class AiResult[T: AiOutputModel](StrictModel):
         elif self.status in {AiStatus.INSUFFICIENT_EVIDENCE, AiStatus.FAILED}:
             if self.data is not None:
                 raise ValueError(f"{self.status} must not expose usable data")
-        elif self.status in {AiStatus.OK, AiStatus.DEGRADED} and self.data is None:
+        elif self.status == AiStatus.OK and self.data is None:
             raise ValueError(f"{self.status} requires data")
         return self
 
@@ -262,7 +261,7 @@ class AiGateway:
         trace_id: uuid.UUID,
         response: ProviderResponse,
         *,
-        status: Literal[AiStatus.OK, AiStatus.DEGRADED],
+        status: Literal[AiStatus.OK],
         extra_warnings: tuple[str, ...] = (),
     ) -> AiResult[TResult]:
         try:
@@ -332,8 +331,8 @@ class AiGateway:
             evidence_index,
             trace_id,
             response,
-            status=AiStatus.DEGRADED,
-            extra_warnings=(f"fallback_used:{fallback.fallback_id}",),
+            status=AiStatus.OK,
+            extra_warnings=(f"FALLBACK_USED:{fallback.fallback_id}",),
         )
 
     def _needs_clarification[TResult: AiOutputModel](

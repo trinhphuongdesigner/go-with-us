@@ -40,3 +40,12 @@ def test_runner_enforces_release_gate_values(tmp_path: Path) -> None:
 
     with pytest.raises(GoldenSuiteError, match="cross_tenant_exposure_count"):
         GoldenContractRunner.from_yaml(mutated).run()
+
+
+def test_runner_rejects_ai_status_outside_public_envelope(tmp_path: Path) -> None:
+    mutated = tmp_path / "mutated-status.yaml"
+    text = GOLDEN_PATH.read_text()
+    mutated.write_text(text.replace("ai_status: ok", "ai_status: degraded", 1))
+
+    with pytest.raises(GoldenSuiteError, match="unsupported ai_status"):
+        GoldenContractRunner.from_yaml(mutated).run()

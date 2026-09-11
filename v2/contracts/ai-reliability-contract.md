@@ -15,7 +15,7 @@ Data policy: examples and fixtures are synthetic; provider credentials never app
 7. **Tenant filtering happens before retrieval and after retrieval.** Every source, candidate, and citation must match the authorized tenant or explicit self-owned scope.
 8. **Secrets and raw HR content are excluded from telemetry by default.** Logs contain hashes, identifiers, counts, model metadata, timings, and validation outcomes only.
 9. **Every write endpoint is idempotent.** It requires an idempotency key, validates the current proposal/version, and records the acting user.
-10. **Provider failure cannot silently change semantics.** Fallbacks are labeled `DEGRADED` and remain proposals.
+10. **Provider failure cannot silently change semantics.** Fallbacks return `OK` with a required `FALLBACK_USED:<version>` warning and remain proposals.
 
 ## 2. Common Pydantic types
 
@@ -47,7 +47,6 @@ class AiStatus(str, Enum):
     OK = "ok"
     NEEDS_CLARIFICATION = "needs_clarification"
     INSUFFICIENT_EVIDENCE = "insufficient_evidence"
-    DEGRADED = "degraded"
     FAILED = "failed"
 
 
@@ -155,14 +154,14 @@ class AiResult(StrictModel, Generic[T]):
         if self.status in {AiStatus.INSUFFICIENT_EVIDENCE, AiStatus.FAILED}:
             if self.data is not None:
                 raise ValueError(f"{self.status} must not expose usable data")
-        if self.status in {AiStatus.OK, AiStatus.DEGRADED} and self.data is None:
+        if self.status == AiStatus.OK and self.data is None:
             raise ValueError(f"{self.status} requires data")
         return self
 ```
 
 ### Evidence validation
 
-Pydantic validates shape only. Before returning `OK` or `DEGRADED`, application code must:
+Pydantic validates shape only. Before returning `OK`, application code must:
 
 - load `SourceVersion` by `source_version_id` under the authorized tenant;
 - verify that `block_id` belongs to that version and is active;
@@ -240,8 +239,8 @@ Implementation requirements:
   transient failures and are never retried.
 - Non-empty `clarification_questions` return `needs_clarification` before provider invocation.
   Exhausted transient calls return `failed`, or invoke a registered deterministic fallback. A valid
-  fallback passes the same schema/evidence/tenant/entity validation, returns `degraded`, and carries
-  `fallback_used:<versioned-fallback-id>`.
+  fallback passes the same schema/evidence/tenant/entity validation, returns `ok`, and carries
+  `FALLBACK_USED:<versioned-fallback-id>`.
 - Record `AIInvocation` with hashes and metadata before/after the call. Do not store raw prompt, CV, assessment comments, API key, or provider authorization headers in traces.
 - Generation endpoints may store the validated proposal document as a draft and an audit row. `persisted` means domain persistence and must remain `false`.
 
@@ -404,7 +403,7 @@ Rules:
 - Every statement about current skills, gaps, experience, or goals requires evidence. Recommendations are labeled as suggestions and cite the facts that motivate them.
 - Deterministic validation enforces unique/order-contiguous milestones, nondecreasing dates, tasks no later than their milestone, measurable metrics, maximum sizes, and allowed subject ID.
 - Generation never saves milestones/tasks. UI edits local proposal state; a separate idempotent Save command persists the edited tree and records edited fields as user-authored.
-- Timeout fallback uses a versioned deterministic template generated from selected skill gaps; result is `DEGRADED` with `FALLBACK_USED`.
+- Timeout fallback uses a versioned deterministic template generated from selected skill gaps; result is `OK` with `FALLBACK_USED:<version>`.
 
 ## 7. Assessment and offboarding summary contract
 
@@ -450,7 +449,7 @@ Rules:
 | Valid proposal | 200 | `OK` | none |
 | Required context absent | 200 | `NEEDS_CLARIFICATION` | none |
 | No valid supporting evidence | 200 | `INSUFFICIENT_EVIDENCE` | none |
-| Deterministic fallback returned | 200 | `DEGRADED` | none |
+| Deterministic fallback returned | 200 | `OK` plus `FALLBACK_USED:<version>` | none |
 | Malformed/invalid provider output after bounded retry | 502 | `FAILED` | none |
 | Provider timeout with no fallback | 504 | `FAILED` | none |
 | Invented entity/source ID | 502 | `FAILED` | none |

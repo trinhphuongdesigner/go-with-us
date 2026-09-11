@@ -88,6 +88,8 @@ KNOWN_ASSERTIONS = frozenset(
     }
 )
 
+ALLOWED_AI_STATUSES = frozenset({"ok", "needs_clarification", "insufficient_evidence", "failed"})
+
 
 class GoldenSuiteError(ValueError):
     pass
@@ -199,16 +201,18 @@ class GoldenContractRunner:
 
         status = expected.get("ai_status")
         http_status = expected.get("http_status")
+        if status is not None and status not in ALLOWED_AI_STATUSES:
+            raise GoldenSuiteError(f"{case_id} has unsupported ai_status: {status}")
         if status == "failed" and (not isinstance(http_status, int) or http_status < 400):
             raise GoldenSuiteError(f"{case_id} exposes failed AI status without HTTP failure")
         if status in {"needs_clarification", "insufficient_evidence"}:
             if expected.get("data", None) is not None:
                 raise GoldenSuiteError(f"{case_id} safe outcome must not expose data")
             checks += 1
-        if status == "degraded":
-            warnings = expected.get("warning_codes", [])
-            if "FALLBACK_USED" not in warnings:
-                raise GoldenSuiteError(f"{case_id} degraded result is not labeled as fallback")
+        warnings = expected.get("warning_codes", [])
+        if "FALLBACK_USED" in warnings:
+            if status != "ok":
+                raise GoldenSuiteError(f"{case_id} fallback result must use the public ok status")
             checks += 1
         if "persisted" in expected:
             if expected["persisted"] is not False:

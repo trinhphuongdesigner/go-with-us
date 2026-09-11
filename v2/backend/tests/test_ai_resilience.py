@@ -277,9 +277,9 @@ async def test_timeout_uses_labeled_deterministic_fallback_after_bounded_attempt
         fallback=fallback,
     ).generate(AiTask.ROADMAP_PROPOSAL, Proposal, context())
 
-    assert result.status == AiStatus.DEGRADED
+    assert result.status == AiStatus.OK
     assert result.data is not None
-    assert result.warnings == ("fallback_used:roadmap-template-v1",)
+    assert result.warnings == ("FALLBACK_USED:roadmap-template-v1",)
     assert result.model == "fixture-v1"
     assert provider.call_count == 2
     assert fallback.call_count == 1

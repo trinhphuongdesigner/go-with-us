@@ -389,7 +389,6 @@ async def test_plural_entity_references_fail_closed(field_name: str) -> None:
     ("status", "data", "questions"),
     [
         (AiStatus.OK, None, ()),
-        (AiStatus.DEGRADED, None, ()),
         (AiStatus.FAILED, "data", ()),
         (AiStatus.INSUFFICIENT_EVIDENCE, "data", ()),
         (AiStatus.NEEDS_CLARIFICATION, None, ()),
@@ -411,6 +410,15 @@ def test_result_status_and_data_invariants(
 
     with pytest.raises(ValidationError):
         AiResult[SimpleOutput].model_validate(payload)
+
+
+def test_result_status_values_match_public_contract() -> None:
+    assert {status.value for status in AiStatus} == {
+        "ok",
+        "needs_clarification",
+        "insufficient_evidence",
+        "failed",
+    }
 
 
 def test_persisted_true_is_rejected_by_envelope() -> None:
