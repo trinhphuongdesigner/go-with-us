@@ -22,6 +22,7 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
+      include: { company: { select: { name: true } } },
     });
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -66,7 +67,10 @@ export class AuthService {
   }
 
   async me(userId: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { company: { select: { name: true } } },
+    });
     if (!user) {
       throw new UnauthorizedException('User no longer exists');
     }
@@ -83,6 +87,7 @@ export class AuthService {
     avatarUrl: string | null;
     jobTitle: string | null;
     themeConcept: string;
+    company?: { name: string } | null;
   }) {
     const payload = {
       sub: user.id,
@@ -106,6 +111,7 @@ export class AuthService {
     avatarUrl: string | null;
     jobTitle: string | null;
     themeConcept: string;
+    company?: { name: string } | null;
   }) {
     return {
       id: user.id,
@@ -113,6 +119,7 @@ export class AuthService {
       name: user.name,
       role: user.role,
       companyId: user.companyId,
+      companyName: user.company?.name ?? null,
       avatarUrl: user.avatarUrl,
       jobTitle: user.jobTitle,
       themeConcept: user.themeConcept,

@@ -7,7 +7,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  AdminPermission,
   AssessmentStatus,
   CareerSummarySource,
   CareerSummaryStatus,
@@ -15,7 +14,6 @@ import {
   Prisma,
   Role,
 } from '@prisma/client';
-import { assertAdminPermission } from '../../common/access/admin-permissions';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AiChatService } from '../ai-chat/ai-chat.service';
 import {
@@ -84,9 +82,6 @@ export class CareerPassportService {
 
   async createEmployment(dto: CreateEmploymentDto, caller: AuthenticatedUser) {
     const targetUserId = dto.userId ?? caller.id;
-    if (targetUserId !== caller.id) {
-      assertAdminPermission(caller, AdminPermission.COLLECT);
-    }
     if (targetUserId !== caller.id && caller.role === Role.EMPLOYEE) {
       throw new ForbiddenException(
         'Only an admin can record employment for someone else',
@@ -100,15 +95,6 @@ export class CareerPassportService {
     if (!target) {
       throw new NotFoundException(`User ${targetUserId} not found`);
     }
-    if (
-      targetUserId !== caller.id &&
-      caller.role === Role.COMPANY_ADMIN &&
-      (!caller.companyId || target.companyId !== caller.companyId)
-    ) {
-      throw new ForbiddenException(
-        'Not allowed to record employment for this user',
-      );
-    }
 
     const companyId = dto.companyId ?? target.companyId ?? caller.companyId;
     if (!companyId) {
@@ -116,7 +102,7 @@ export class CareerPassportService {
         'companyId is required when the user has no current company',
       );
     }
-    if (caller.role === Role.COMPANY_ADMIN && companyId !== caller.companyId) {
+    if (caller.role === Role.HR && companyId !== caller.companyId) {
       throw new ForbiddenException('Not allowed to write for another company');
     }
 
@@ -151,11 +137,9 @@ export class CareerPassportService {
       throw new NotFoundException(`Employment ${id} not found`);
     }
     const isOwner = employment.userId === caller.id;
-    if (!isOwner) assertAdminPermission(caller, AdminPermission.COLLECT);
-    const isCompanyAdmin =
-      caller.role === Role.COMPANY_ADMIN &&
-      caller.companyId === employment.companyId;
-    if (!isOwner && !isCompanyAdmin && caller.role !== Role.SUPER_ADMIN) {
+    const isCompanyHr =
+      caller.role === Role.HR && caller.companyId === employment.companyId;
+    if (!isOwner && !isCompanyHr && caller.role !== Role.SUPER_ADMIN) {
       throw new ForbiddenException('Not allowed to edit this employment');
     }
 
@@ -526,7 +510,6 @@ export class CareerPassportService {
     caller: AuthenticatedUser,
     companyId?: string,
   ) {
-    assertAdminPermission(caller, AdminPermission.APPROVE);
     const scope =
       caller.role === Role.SUPER_ADMIN
         ? companyId
@@ -560,7 +543,6 @@ export class CareerPassportService {
    * names) so what an admin might still need to fix by hand is minimal.
    */
   async triggerOffboardingSummary(id: string, caller: AuthenticatedUser) {
-    assertAdminPermission(caller, AdminPermission.APPROVE);
     const summary = await this.loadOffboardingDraft(id, caller);
     if (summary.generatedAt) {
       throw new BadRequestException(
@@ -673,7 +655,6 @@ export class CareerPassportService {
     dto: UpdateOffboardingSummaryDto,
     caller: AuthenticatedUser,
   ) {
-    assertAdminPermission(caller, AdminPermission.EDIT);
     const summary = await this.loadOffboardingDraft(id, caller);
     if (!summary.generatedAt) {
       throw new BadRequestException('Trigger the AI summary before editing it');
@@ -694,7 +675,6 @@ export class CareerPassportService {
   }
 
   async approveOffboardingSummary(id: string, caller: AuthenticatedUser) {
-    assertAdminPermission(caller, AdminPermission.APPROVE);
     const summary = await this.loadOffboardingDraft(id, caller);
     if (!summary.generatedAt) {
       throw new BadRequestException(
@@ -740,10 +720,13 @@ export class CareerPassportService {
       throw new BadRequestException('This summary has already been approved');
     }
 
+    // Which of HR/BOD may call this is already narrowed per-endpoint by the
+    // controller's @Roles — trigger/approve are BOD, the narrative edit is
+    // HR — so this only needs to confirm same-company scope.
     const companyId = summary.employment?.companyId;
     if (caller.role === Role.SUPER_ADMIN) {
       // allowed
-    } else if (caller.role === Role.COMPANY_ADMIN) {
+    } else if (caller.role === Role.HR || caller.role === Role.BOD) {
       if (!companyId || caller.companyId !== companyId) {
         throw new ForbiddenException(
           'Not allowed to manage this offboarding summary',

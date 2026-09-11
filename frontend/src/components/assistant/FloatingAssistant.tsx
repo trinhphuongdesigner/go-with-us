@@ -186,7 +186,8 @@ export default function FloatingAssistant() {
             right: 24,
             zIndex: PANEL_Z_INDEX,
             width: { xs: 'calc(100vw - 32px)', sm: 380 },
-            maxHeight: '70vh',
+            height: { xs: 'calc(100vh - 48px)', sm: 'min(640px, 85vh)' },
+            maxHeight: { xs: 'calc(100vh - 48px)', sm: '85vh' },
             display: 'flex',
             flexDirection: 'column',
             borderRadius: `${radiusTokens.lg}px`,
@@ -226,7 +227,7 @@ export default function FloatingAssistant() {
             </Tooltip>
           </Box>
 
-          <Box sx={{ flex: 1, overflowY: 'auto', px: 2, py: 1.5 }}>
+          <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', px: 2, py: 1.5 }}>
             {error ? (
               <Typography variant="body2" sx={{ color: colorTokens.danger, mb: 1.5 }}>
                 {error}
@@ -241,7 +242,14 @@ export default function FloatingAssistant() {
                     key={prompt}
                     variant="outlined"
                     size="small"
-                    sx={{ justifyContent: 'flex-start', textAlign: 'left', textTransform: 'none' }}
+                    fullWidth
+                    sx={{
+                      justifyContent: 'flex-start',
+                      textAlign: 'left',
+                      textTransform: 'none',
+                      whiteSpace: 'normal',
+                      wordBreak: 'break-word',
+                    }}
                     onClick={() => handleAsk(prompt)}
                     disabled={busy}
                   >
@@ -262,11 +270,14 @@ export default function FloatingAssistant() {
                     <Box
                       sx={{
                         maxWidth: '88%',
+                        minWidth: 0,
                         px: 1.5,
                         py: 1,
                         borderRadius: 2,
                         backgroundColor: message.role === 'user' ? colorTokens.accent900 : colorTokens.bg,
                         border: `1px solid ${colorTokens.divider}`,
+                        overflowWrap: 'break-word',
+                        wordBreak: 'break-word',
                       }}
                     >
                       {message.role === 'user' ? (

@@ -7,8 +7,7 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { AdminPermission, Role } from '@prisma/client';
-import { RequirePermission } from '../../common/decorators/require-permission.decorator';
+import { Role } from '@prisma/client';
 import { SkillsCompetencyService } from './skills-competency.service';
 import { UpsertSkillDto } from './dto/upsert-skill.dto';
 import { BulkUpsertEmployeeSkillsDto } from './dto/bulk-upsert-employee-skills.dto';
@@ -58,8 +57,7 @@ export class SkillsCompetencyController {
 
   @Get('insight/:userId')
   @UseGuards(RolesGuard)
-  @Roles(Role.COMPANY_ADMIN, Role.SUPER_ADMIN)
-  @RequirePermission(AdminPermission.VIEW)
+  @Roles(Role.HR, Role.BOD, Role.SUPER_ADMIN)
   getInsight(
     @Param('userId') userId: string,
     @CurrentUser() caller: AuthenticatedUser,

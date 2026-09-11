@@ -5,8 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { AdminPermission, Role } from '@prisma/client';
-import { assertAdminPermission } from '../../common/access/admin-permissions';
+import { Role } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AiChatService } from '../ai-chat/ai-chat.service';
 import { AuthenticatedUser } from '../auth/jwt.strategy';
@@ -72,7 +71,6 @@ export class JobRequirementsService {
   }
 
   async create(dto: CreateJobRequirementDto, caller: AuthenticatedUser) {
-    assertAdminPermission(caller, AdminPermission.COLLECT);
     let companyId: string;
     if (caller.role === Role.SUPER_ADMIN) {
       if (!dto.companyId) {
@@ -80,7 +78,7 @@ export class JobRequirementsService {
       }
       companyId = dto.companyId;
     } else {
-      // COMPANY_ADMIN — force their own company, ignore any client-supplied
+      // HR/BOD — force their own company, ignore any client-supplied
       // companyId (RolesGuard already keeps EMPLOYEE out of this handler).
       if (!caller.companyId) {
         throw new ForbiddenException('No company scope for this account');
@@ -104,7 +102,6 @@ export class JobRequirementsService {
     dto: UpdateJobRequirementDto,
     caller: AuthenticatedUser,
   ) {
-    assertAdminPermission(caller, AdminPermission.COLLECT);
     const requirement = await this.findOwned(id, caller);
 
     return this.prisma.jobRequirement.update({
@@ -123,7 +120,6 @@ export class JobRequirementsService {
   }
 
   async remove(id: string, caller: AuthenticatedUser) {
-    assertAdminPermission(caller, AdminPermission.COLLECT);
     const requirement = await this.findOwned(id, caller);
     await this.prisma.jobRequirement.delete({ where: { id: requirement.id } });
     return { id: requirement.id };
@@ -136,7 +132,6 @@ export class JobRequirementsService {
    * save step, so it's returned straight to the frontend.
    */
   async match(id: string, caller: AuthenticatedUser): Promise<MatchResult> {
-    assertAdminPermission(caller, AdminPermission.VIEW);
     const requirement = await this.findOwned(id, caller);
 
     const candidates = await this.prisma.user.findMany({
@@ -194,7 +189,7 @@ export class JobRequirementsService {
     return { matches, summary: parsed.summary };
   }
 
-  /** Loads a requirement and enforces creator/same-company-admin access. */
+  /** Loads a requirement and enforces creator/same-company HR-or-BOD access. */
   private async findOwned(id: string, caller: AuthenticatedUser) {
     const requirement = await this.prisma.jobRequirement.findUnique({
       where: { id },
@@ -204,12 +199,12 @@ export class JobRequirementsService {
     }
 
     const isCreator = requirement.createdById === caller.id;
-    const isSameCompanyAdmin =
-      caller.role === Role.COMPANY_ADMIN &&
+    const isSameCompanyManager =
+      (caller.role === Role.HR || caller.role === Role.BOD) &&
       caller.companyId === requirement.companyId;
     const isSuperAdmin = caller.role === Role.SUPER_ADMIN;
 
-    if (!isCreator && !isSameCompanyAdmin && !isSuperAdmin) {
+    if (!isCreator && !isSameCompanyManager && !isSuperAdmin) {
       throw new ForbiddenException(
         'Not allowed to manage this job requirement',
       );

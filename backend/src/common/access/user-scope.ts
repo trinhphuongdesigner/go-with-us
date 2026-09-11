@@ -1,16 +1,18 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
-import { AdminPermission, Role } from '@prisma/client';
-import { assertAdminPermission } from './admin-permissions';
+import { Role } from '@prisma/client';
 import type { PrismaService } from '../../prisma/prisma.service';
 import type { AuthenticatedUser } from '../../modules/auth/jwt.strategy';
+import { canManageRole } from './role-hierarchy';
 
 /**
  * "Can this caller look at that person's record?" — the same rule
  * ActivityLogsService/UsersService already apply, pulled out because every
  * CareerMate module (profile, assessments, passport) needs it.
  *
- * Self: always. SUPER_ADMIN: anyone. COMPANY_ADMIN: same-company only.
- * EMPLOYEE: nobody but themselves.
+ * Self: always. SUPER_ADMIN: anyone. Otherwise: same company AND the
+ * target's role sits below the caller's in the account-management
+ * hierarchy (see role-hierarchy.ts) — e.g. HR/BOD can view an EMPLOYEE's
+ * record, EMPLOYEE can view nobody but themselves.
  */
 export async function assertCanViewUser(
   prisma: PrismaService,
@@ -22,22 +24,20 @@ export async function assertCanViewUser(
 
   if (caller.role === Role.SUPER_ADMIN) return;
 
-  if (caller.role === Role.COMPANY_ADMIN) {
-    assertAdminPermission(caller, AdminPermission.VIEW);
-    const target = await prisma.user.findUnique({
-      where: { id: targetUserId },
-      select: { companyId: true },
-    });
-    if (!target) {
-      throw new NotFoundException(`User ${targetUserId} not found`);
-    }
-    if (!caller.companyId || caller.companyId !== target.companyId) {
-      throw new ForbiddenException(`Not allowed to view this user's ${what}`);
-    }
-    return;
+  const target = await prisma.user.findUnique({
+    where: { id: targetUserId },
+    select: { companyId: true, role: true },
+  });
+  if (!target) {
+    throw new NotFoundException(`User ${targetUserId} not found`);
   }
-
-  throw new ForbiddenException(`Not allowed to view this user's ${what}`);
+  if (
+    !caller.companyId ||
+    caller.companyId !== target.companyId ||
+    !canManageRole(caller.role, target.role)
+  ) {
+    throw new ForbiddenException(`Not allowed to view this user's ${what}`);
+  }
 }
 
 /**

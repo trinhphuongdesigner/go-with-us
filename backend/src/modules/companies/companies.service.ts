@@ -62,6 +62,14 @@ export class CompaniesService {
     return this.prisma.company.update({ where: { id }, data: dto });
   }
 
+  findOwn(companyId: string) {
+    return this.findOne(companyId);
+  }
+
+  updateOwn(companyId: string, dto: UpdateCompanyDto) {
+    return this.update(companyId, dto);
+  }
+
   async remove(id: string) {
     await this.findOne(id);
     await this.prisma.company.delete({ where: { id } });

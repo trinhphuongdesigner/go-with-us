@@ -35,9 +35,10 @@ export default function SettingsPage() {
         <PageHeader title="Cài đặt" subtitle="Cấu hình cấp nền tảng." />
 
         {user?.role !== 'SUPER_ADMIN' ? (
-          <Card title="API Key & kết nối">
+          <Card title="Không có quyền truy cập">
             <Typography variant="body1">
-              Chỉ quản trị nền tảng mới quản lý được kết nối nhà cung cấp AI.
+              Trang này chỉ dành cho quản trị nền tảng (Super Admin). Bạn không có quyền xem hoặc
+              chỉnh sửa cấu hình cấp nền tảng.
             </Typography>
           </Card>
         ) : !settings ? (

@@ -129,6 +129,22 @@ async function main() {
     ),
   );
 
+  // No-company account — a career record that outlived its employment
+  // (docs/careermate-scope.md), so company-scoped UI (nav gating,
+  // Cross Assessment, etc.) has something real to test against.
+  const unaffiliatedEmployee = await prisma.user.upsert({
+    where: { email: 'dana@careermate.dev' },
+    update: {},
+    create: {
+      email: 'dana@careermate.dev',
+      passwordHash,
+      name: 'Dana Pham',
+      role: Role.EMPLOYEE,
+      companyId: null,
+      jobTitle: 'Freelance Engineer',
+    },
+  });
+
   const skillNames: Array<{ name: string; category: string }> = [
     { name: 'JavaScript', category: 'Programming' },
     { name: 'TypeScript', category: 'Programming' },
@@ -296,6 +312,7 @@ async function main() {
   for (const emp of employees) {
     console.log(`  EMPLOYEE      -> ${emp.email}`);
   }
+  console.log(`  EMPLOYEE      -> ${unaffiliatedEmployee.email}  (no company)`);
   console.log('');
 }
 

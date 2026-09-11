@@ -11,7 +11,6 @@ import { AiSettingsModule } from './modules/ai-settings/ai-settings.module';
 import { AiChatModule } from './modules/ai-chat/ai-chat.module';
 import { SkillsCompetencyModule } from './modules/skills-competency/skills-competency.module';
 import { ActivityLogsModule } from './modules/activity-logs/activity-logs.module';
-import { PeerReviewsModule } from './modules/peer-reviews/peer-reviews.module';
 import { DevelopmentPlansModule } from './modules/development-plans/development-plans.module';
 import { JobRequirementsModule } from './modules/job-requirements/job-requirements.module';
 import { CompetencyProfileModule } from './modules/competency-profile/competency-profile.module';
@@ -35,7 +34,6 @@ import { AssistantModule } from './modules/assistant/assistant.module';
     // module's own controller for the "not-implemented" placeholder route.
     SkillsCompetencyModule,
     ActivityLogsModule,
-    PeerReviewsModule,
     DevelopmentPlansModule,
     JobRequirementsModule,
     // CareerMate slice — see docs/careermate-scope.md for what each covers.

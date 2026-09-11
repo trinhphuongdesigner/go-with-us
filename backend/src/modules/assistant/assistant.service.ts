@@ -140,7 +140,9 @@ export class AssistantService {
         });
 
     const canSearchRoster =
-      caller.role === Role.COMPANY_ADMIN || caller.role === Role.SUPER_ADMIN;
+      caller.role === Role.HR ||
+      caller.role === Role.BOD ||
+      caller.role === Role.SUPER_ADMIN;
 
     const { systemPrompt, knownUserIds } =
       conversation.focus === AssistantFocus.ROADMAP

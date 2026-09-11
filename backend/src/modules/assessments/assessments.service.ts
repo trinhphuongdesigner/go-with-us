@@ -5,8 +5,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  AdminPermission,
-  AssessmentScoreDimension,
   AssessmentStatus,
   AssessmentType,
   CycleStatus,
@@ -14,10 +12,6 @@ import {
   Role,
   TemplateStatus,
 } from '@prisma/client';
-import {
-  assertAdminPermission,
-  hasAdminPermission,
-} from '../../common/access/admin-permissions';
 import {
   computeAssessmentScores,
   roundScore,
@@ -57,7 +51,6 @@ export class AssessmentsService {
   // --- Templates -----------------------------------------------------------
 
   listTemplates(caller: AuthenticatedUser, companyId?: string) {
-    assertAdminPermission(caller, AdminPermission.CROSS_ASSESS);
     const scope = resolveCompanyScope(caller, companyId);
     return this.prisma.assessmentTemplate.findMany({
       where: { companyId: scope },
@@ -96,7 +89,6 @@ export class AssessmentsService {
     dto: CreateAssessmentTemplateDto,
     caller: AuthenticatedUser,
   ) {
-    assertAdminPermission(caller, AdminPermission.CROSS_ASSESS);
     const companyId = resolveCompanyScope(caller, dto.companyId);
     if (dto.groups.length === 0) {
       throw new BadRequestException('A template needs at least one group');
@@ -119,10 +111,11 @@ export class AssessmentsService {
     dto: UpdateAssessmentTemplateDto,
     caller: AuthenticatedUser,
   ) {
-    assertAdminPermission(caller, AdminPermission.CROSS_ASSESS);
+    // Replacing the tree bumps the version; approved assessments are
+    // unaffected because they hold their own templateSnapshot.
     return this.transaction(async (tx) => {
       const template = await this.getTemplate(id, caller, tx);
-      this.assertCanManageCompany(caller, template.companyId);
+      this.assertCanManageTemplates(caller, template.companyId);
       const usage = await tx.assessmentTemplate.findUniqueOrThrow({
         where: { id },
         select: { _count: { select: { cycles: true, assessments: true } } },
@@ -188,10 +181,9 @@ export class AssessmentsService {
   }
 
   async removeTemplate(id: string, caller: AuthenticatedUser) {
-    assertAdminPermission(caller, AdminPermission.CROSS_ASSESS);
     return this.transaction(async (tx) => {
       const template = await this.getTemplate(id, caller, tx);
-      this.assertCanManageCompany(caller, template.companyId);
+      this.assertCanManageTemplates(caller, template.companyId);
       const usage = await tx.assessmentTemplate.findUniqueOrThrow({
         where: { id },
         select: { _count: { select: { assessments: true, cycles: true } } },
@@ -211,7 +203,6 @@ export class AssessmentsService {
   // --- Cycles --------------------------------------------------------------
 
   listCycles(caller: AuthenticatedUser, companyId?: string) {
-    assertAdminPermission(caller, AdminPermission.CROSS_ASSESS);
     const scope = resolveCompanyScope(caller, companyId);
     return this.prisma.assessmentCycle.findMany({
       where: { companyId: scope },
@@ -224,7 +215,6 @@ export class AssessmentsService {
   }
 
   async createCycle(dto: CreateAssessmentCycleDto, caller: AuthenticatedUser) {
-    assertAdminPermission(caller, AdminPermission.CROSS_ASSESS);
     const companyId = resolveCompanyScope(caller, dto.companyId);
     const template = await this.getTemplate(dto.templateId, caller);
     if (template.companyId !== companyId) {
@@ -257,14 +247,13 @@ export class AssessmentsService {
     dto: UpdateAssessmentCycleDto,
     caller: AuthenticatedUser,
   ) {
-    assertAdminPermission(caller, AdminPermission.CROSS_ASSESS);
     const cycle = await this.prisma.assessmentCycle.findUnique({
       where: { id },
     });
     if (!cycle) {
       throw new NotFoundException(`Assessment cycle ${id} not found`);
     }
-    this.assertCanManageCompany(caller, cycle.companyId);
+    this.assertCanManageTemplates(caller, cycle.companyId);
 
     return this.prisma.assessmentCycle.update({
       where: { id },
@@ -319,7 +308,6 @@ export class AssessmentsService {
 
   /** Everything waiting for this admin to approve. */
   listPendingApproval(caller: AuthenticatedUser, companyId?: string) {
-    assertAdminPermission(caller, AdminPermission.APPROVE);
     const scope =
       caller.role === Role.SUPER_ADMIN
         ? companyId
@@ -358,13 +346,13 @@ export class AssessmentsService {
       assessment.reviewerId === caller.id ||
       assessment.revieweeId === caller.id;
     if (!isParticipant) {
-      const permission = hasAdminPermission(caller, AdminPermission.VIEW)
-        ? AdminPermission.VIEW
-        : hasAdminPermission(caller, AdminPermission.APPROVE)
-          ? AdminPermission.APPROVE
-          : AdminPermission.EDIT;
-      assertAdminPermission(caller, permission);
-      this.assertCanManageCompany(caller, assessment.template.companyId);
+      const canManage =
+        caller.role === Role.SUPER_ADMIN ||
+        (caller.role !== Role.EMPLOYEE &&
+          caller.companyId === assessment.template.companyId);
+      if (!canManage) {
+        throw new ForbiddenException('Not allowed to view this assessment');
+      }
     }
 
     return assessment;
@@ -421,11 +409,10 @@ export class AssessmentsService {
         'The assessment cycle must belong to the reviewee company',
       );
     }
-    if (caller.role === Role.COMPANY_ADMIN && revieweeId !== caller.id) {
-      assertAdminPermission(caller, AdminPermission.CROSS_ASSESS);
-    }
-    if (dto.type === AssessmentType.MANAGER) {
-      assertAdminPermission(caller, AdminPermission.CROSS_ASSESS);
+    if (dto.type === AssessmentType.MANAGER && caller.role === Role.EMPLOYEE) {
+      throw new ForbiddenException(
+        'Only an admin can create a manager assessment',
+      );
     }
     const template = await this.getTemplate(cycle.templateId, caller);
     validateAnswers(template, dto.answers ?? []);
@@ -538,7 +525,6 @@ export class AssessmentsService {
 
   /** Freeze criteria, recompute scores and update the profile atomically. */
   async approveAssessment(id: string, caller: AuthenticatedUser) {
-    assertAdminPermission(caller, AdminPermission.APPROVE);
     return this.transaction(async (tx) => {
       const assessment = await this.loadForApproval(id, caller, tx);
       const template = await this.getTemplate(
@@ -591,7 +577,6 @@ export class AssessmentsService {
     dto: ReviewAssessmentDto,
     caller: AuthenticatedUser,
   ) {
-    assertAdminPermission(caller, AdminPermission.APPROVE);
     return this.transaction(async (tx) => {
       const assessment = await this.loadForApproval(id, caller, tx);
       return tx.assessment.update({
@@ -625,8 +610,7 @@ export class AssessmentsService {
       name: group.name,
       description: group.description,
       weight: group.weight ?? 1,
-      scoreDimension:
-        group.scoreDimension ?? AssessmentScoreDimension.CONTRIBUTION,
+      scoreDimension: group.scoreDimension ?? 'CONTRIBUTION',
       order: groupIndex,
       questions: {
         create: group.questions.map((question, questionIndex) => ({
@@ -640,9 +624,10 @@ export class AssessmentsService {
     }));
   }
 
-  private assertCanManageCompany(caller: AuthenticatedUser, companyId: string) {
+  /** HR builds/owns the scale — templates and cycles are their tool. */
+  private assertCanManageTemplates(caller: AuthenticatedUser, companyId: string) {
     if (caller.role === Role.SUPER_ADMIN) return;
-    if (caller.role === Role.COMPANY_ADMIN && caller.companyId === companyId) {
+    if (caller.role === Role.HR && caller.companyId === companyId) {
       return;
     }
     throw new ForbiddenException(
@@ -650,7 +635,16 @@ export class AssessmentsService {
     );
   }
 
-  /** Drafts belong to their author. Submitted edits require EDIT; approved history is immutable. */
+  /** BOD does the final review/approve sign-off on a submitted assessment. */
+  private assertCanApprove(caller: AuthenticatedUser, companyId: string) {
+    if (caller.role === Role.SUPER_ADMIN) return;
+    if (caller.role === Role.BOD && caller.companyId === companyId) {
+      return;
+    }
+    throw new ForbiddenException('Not allowed to approve this assessment');
+  }
+
+  /** Drafts belong to their author. Submitted edits require HR; approved history is immutable. */
   private async findEditable(
     id: string,
     caller: AuthenticatedUser,
@@ -663,8 +657,7 @@ export class AssessmentsService {
     });
     if (!assessment) throw new NotFoundException(`Assessment ${id} not found`);
     if (assessment.status === AssessmentStatus.SUBMITTED && allowSubmitted) {
-      assertAdminPermission(caller, AdminPermission.EDIT);
-      this.assertCanManageCompany(caller, assessment.template.companyId);
+      this.assertCanManageTemplates(caller, assessment.template.companyId);
       return assessment;
     }
     if (
@@ -690,12 +683,12 @@ export class AssessmentsService {
       include: { template: { select: { companyId: true } } },
     });
     if (!assessment) throw new NotFoundException(`Assessment ${id} not found`);
-    this.assertCanManageCompany(caller, assessment.template.companyId);
     if (assessment.status !== AssessmentStatus.SUBMITTED) {
       throw new BadRequestException(
         'Only a submitted assessment can be approved or rejected',
       );
     }
+    this.assertCanApprove(caller, assessment.template.companyId);
     return assessment;
   }
 

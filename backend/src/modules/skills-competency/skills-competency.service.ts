@@ -3,12 +3,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { AdminPermission, Role } from '@prisma/client';
-import { assertAdminPermission } from '../../common/access/admin-permissions';
+import { Role } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UpsertSkillDto } from './dto/upsert-skill.dto';
 import { EmployeeSkillItemDto } from './dto/employee-skill-item.dto';
 import type { AuthenticatedUser } from '../auth/jwt.strategy';
+import { assertCanViewUser } from '../../common/access/user-scope';
+import { canManageRole } from '../../common/access/role-hierarchy';
 
 @Injectable()
 export class SkillsCompetencyService {
@@ -39,18 +40,11 @@ export class SkillsCompetencyService {
   }
 
   /**
-   * Visibility: self, or a COMPANY_ADMIN whose companyId matches the
-   * target user's companyId, or SUPER_ADMIN.
+   * Visibility: self, SUPER_ADMIN, or same-company and within the caller's
+   * account-management hierarchy (role-hierarchy.ts via assertCanViewUser).
    */
   async listUserSkills(userId: string, caller: AuthenticatedUser) {
-    const target = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, companyId: true },
-    });
-    if (!target) {
-      throw new NotFoundException(`User ${userId} not found`);
-    }
-    this.assertSameCompanyOrSelfOrSuperAdmin(target, caller);
+    await assertCanViewUser(this.prisma, caller, userId, 'skills');
 
     return this.prisma.employeeSkill.findMany({
       where: { userId },
@@ -101,13 +95,12 @@ export class SkillsCompetencyService {
   }
 
   /**
-   * Company-admin-facing aggregated view — restricted to COMPANY_ADMIN
-   * (same company as the target) or SUPER_ADMIN at the controller
-   * (@Roles), plus the same-company check re-asserted here since @Roles
-   * alone doesn't know about companyId scoping.
+   * HR/BOD-facing aggregated view — the controller's @Roles already narrows
+   * callers to HR/BOD/SUPER_ADMIN; this re-asserts same-company scope plus
+   * the account-management hierarchy (role-hierarchy.ts) since @Roles alone
+   * doesn't know about companyId or which tier the target belongs to.
    */
   async getInsight(userId: string, caller: AuthenticatedUser) {
-    assertAdminPermission(caller, AdminPermission.VIEW);
     const target = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -117,21 +110,21 @@ export class SkillsCompetencyService {
         contributionScore: true,
         attitudeScore: true,
         companyId: true,
+        role: true,
       },
     });
     if (!target) {
       throw new NotFoundException(`User ${userId} not found`);
     }
 
-    const isSameCompanyAdmin =
-      caller.role === Role.COMPANY_ADMIN &&
-      !!caller.companyId &&
-      caller.companyId === target.companyId;
-    if (caller.role !== Role.SUPER_ADMIN && !isSameCompanyAdmin) {
+    const canManage =
+      caller.companyId === target.companyId &&
+      canManageRole(caller.role, target.role);
+    if (caller.role !== Role.SUPER_ADMIN && !canManage) {
       throw new ForbiddenException('Not allowed to view this insight');
     }
 
-    const [skills, goalGroups, activityCount, peerReviewReceivedCount] =
+    const [skills, goalGroups, activityCount, assessmentsReceivedCount] =
       await Promise.all([
         this.prisma.employeeSkill.findMany({
           where: { userId },
@@ -144,7 +137,7 @@ export class SkillsCompetencyService {
           _count: { _all: true },
         }),
         this.prisma.activityLog.count({ where: { userId } }),
-        this.prisma.peerReview.count({ where: { revieweeId: userId } }),
+        this.prisma.assessment.count({ where: { revieweeId: userId } }),
       ]);
 
     const goalStatusCounts = goalGroups.reduce<Record<string, number>>(
@@ -166,24 +159,7 @@ export class SkillsCompetencyService {
       skills,
       goalStatusCounts,
       activityCount,
-      peerReviewReceivedCount,
+      assessmentsReceivedCount,
     };
-  }
-
-  private assertSameCompanyOrSelfOrSuperAdmin(
-    target: { id: string; companyId: string | null },
-    caller: AuthenticatedUser,
-  ) {
-    if (caller.role === Role.SUPER_ADMIN) return;
-    if (caller.id === target.id) return;
-    assertAdminPermission(caller, AdminPermission.VIEW);
-    if (
-      caller.role === Role.COMPANY_ADMIN &&
-      caller.companyId &&
-      caller.companyId === target.companyId
-    ) {
-      return;
-    }
-    throw new ForbiddenException("Not allowed to view this user's skills");
   }
 }

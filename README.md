@@ -8,9 +8,9 @@ A competency / HR profile management platform, two sides:
   competency profiles, gets an "insight" view of any employee at any time,
   and searches/matches employees against a project's required skills
   (AI-assisted).
-- **Employee** (single flat tier — peers can review each other, no
+- **Employee** (single flat tier — peers assess each other, no
   sub-hierarchy) — updates own experience/competency/skills, logs life
-  activities, peer-reviews colleagues, sets personal development goals, and
+  activities, cross-assesses colleagues, sets personal development goals, and
   gets an AI-suggested development plan. Employees can also pick a UI
   "concept" (default / anime / film / gather-town-pixel) that reskins their
   own UI — the Admin side always stays on the default look.
@@ -77,7 +77,7 @@ in order Anthropic → OpenAI → Gemini unless a specific one is requested.
 
 See `CLAUDE.md`'s "Where things stand" section for the current, detailed
 breakdown — short version: Auth, Companies, Users, AI Settings, Skills &
-Competency, Activity Log, Peer Reviews, Development Plan (AI-assisted),
+Competency, Activity Log, Cross Assessment, Development Plan (AI-assisted),
 and Job Requirements (AI matching) are all real and backend-backed. The
 employee UI "concept" switcher, a cross-cutting AI assistant widget, and
 the `/` Dashboard / `/profile` pages are still open.

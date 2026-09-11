@@ -15,11 +15,19 @@ export interface User {
   name: string;
   role: Role;
   companyId: string | null;
+  companyName?: string | null;
   avatarUrl: string | null;
   jobTitle: string | null;
   themeConcept: ThemeConcept;
   contributionScore?: number | null;
   attitudeScore?: number | null;
+  phone?: string | null;
+  dateOfBirth?: string | null;
+  idNumber?: string | null;
+  gender?: string | null;
+  onboardDate?: string | null;
+  emergencyContactName?: string | null;
+  emergencyContactPhone?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }

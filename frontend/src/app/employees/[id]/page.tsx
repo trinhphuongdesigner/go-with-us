@@ -92,8 +92,8 @@ export default function EmployeeInsightPage() {
                   <Typography variant="h2">{insight.activityCount}</Typography>
                 </Box>
                 <Box>
-                  <Typography variant="body2">Đánh giá đồng nghiệp nhận được</Typography>
-                  <Typography variant="h2">{insight.peerReviewReceivedCount}</Typography>
+                  <Typography variant="body2">Đánh giá đã nhận</Typography>
+                  <Typography variant="h2">{insight.assessmentsReceivedCount}</Typography>
                 </Box>
               </Stack>
             </Card>

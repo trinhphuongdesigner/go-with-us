@@ -2,18 +2,13 @@
 
 import * as React from 'react';
 import Box from '@mui/material/Box';
-import AppShell from '@/components/layout/AppShell';
-import PageContainer from '@/components/layout/PageContainer';
-import PageHeader from '@/components/layout/PageHeader';
-import Card from '@/components/ui/Card';
-import MarkdownSplitEditor from '@/components/ui/MarkdownSplitEditor';
 import Alert from '@mui/material/Alert';
-import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
-import { useAuth } from '@/contexts/AuthContext';
+import Button from '@/components/ui/Button';
+import Card from '@/components/ui/Card';
+import PageSkeleton from '@/components/ui/PageSkeleton';
+import MarkdownSplitEditor from '@/components/ui/MarkdownSplitEditor';
 import * as developmentPlansApi from '@/lib/api/developmentPlansApi';
 import type { DevelopmentGoal, DevelopmentMilestone } from '@/lib/api/developmentPlansApi';
 import GoalsPanel from './GoalsPanel';
@@ -21,7 +16,7 @@ import MilestonesPanel from './MilestonesPanel';
 import RoadmapAssistant from './RoadmapAssistant';
 import RoadmapJourney from './RoadmapJourney';
 
-function DevelopmentPlanContent() {
+export default function DevelopmentPlanTab() {
   const [goals, setGoals] = React.useState<DevelopmentGoal[] | null>(null);
   const [goalsError, setGoalsError] = React.useState<string | null>(null);
   const [milestones, setMilestones] = React.useState<DevelopmentMilestone[] | null>(null);
@@ -130,12 +125,25 @@ function DevelopmentPlanContent() {
   };
 
   return (
-    <PageContainer>
-      <PageHeader
-        title="Development Plan"
-        subtitle="Turn your next career step into milestones you can measure."
-      />
-      <Card title="Your growth roadmap" sx={{ mb: 3, minWidth: 0 }}>
+    <Box>
+      <Card title="Mục tiêu" sx={{ mb: 3 }}>
+        {goalsError ? (
+          <Alert
+            severity="error"
+            sx={{ mb: 2 }}
+            action={<Button color="inherit" onClick={() => void loadGoals()}>Thử lại</Button>}
+          >
+            {goalsError}
+          </Alert>
+        ) : null}
+        {goals ? (
+          <GoalsPanel goals={goals} onChanged={loadGoals} />
+        ) : !goalsError ? (
+          <PageSkeleton variant="list" rows={3} embedded />
+        ) : null}
+      </Card>
+
+      <Card title="Cột mốc lộ trình" sx={{ mb: 3, minWidth: 0 }}>
         {milestones ? <RoadmapJourney milestones={milestones} goals={goals ?? []} /> : null}
         {milestonesError ? (
           <Alert
@@ -144,11 +152,9 @@ function DevelopmentPlanContent() {
             action={
               <Button
                 color="inherit"
-                onClick={() => {
-                  void loadMilestones().catch(() => undefined);
-                }}
+                onClick={() => void loadMilestones().catch(() => undefined)}
               >
-                Retry
+                Thử lại
               </Button>
             }
           >
@@ -158,12 +164,11 @@ function DevelopmentPlanContent() {
         {milestones ? (
           <MilestonesPanel milestones={milestones} onChanged={loadMilestones} />
         ) : !milestonesError ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress aria-label="Loading roadmap" size={24} />
-          </Box>
+          <PageSkeleton variant="list" rows={3} embedded />
         ) : null}
       </Card>
-      <Card title="Build your next steps with AI" sx={{ mb: 3, minWidth: 0 }}>
+
+      <Card title="Dựng lộ trình bằng AI" sx={{ mb: 3, minWidth: 0 }}>
         <RoadmapAssistant
           existingMilestones={milestonesError ? null : milestones}
           onSaved={(saved) => {
@@ -172,114 +177,58 @@ function DevelopmentPlanContent() {
           }}
         />
       </Card>
-      <Card title="Goals" sx={{ mb: 3 }}>
-        {goalsError ? (
-          <Alert
-            severity="error"
-            sx={{ mb: 2 }}
-            action={
-              <Button
-                color="inherit"
-                onClick={() => {
-                  void loadGoals();
-                }}
-              >
-                Retry
-              </Button>
-            }
-          >
-            {goalsError}
-          </Alert>
-        ) : null}
-        {goals ? (
-          <GoalsPanel goals={goals} onChanged={loadGoals} />
-        ) : !goalsError ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress aria-label="Loading goals" size={24} />
-          </Box>
-        ) : null}
-      </Card>
-      <Card>
-        <Box component="details">
-          <Typography component="summary" variant="h2" sx={{ cursor: 'pointer', py: 0.5 }}>
-            Plan notes
-          </Typography>
-          <Typography variant="body2" sx={{ my: 2 }}>
-            Keep a longer narrative alongside your roadmap. Review generated notes in the preview
-            before saving.
-          </Typography>
-          <TextField
-            label="Hướng dẫn (tuỳ chọn)"
-            placeholder="ví dụ Tập trung kỹ năng lãnh đạo trong quý tới"
-            size="small"
-            fullWidth
-            value={instruction}
-            onChange={(e) => setInstruction(e.target.value)}
-            disabled={planLoading || generating || saving}
-            sx={{ mb: 2 }}
-          />
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mb: 2 }}>
-            <Button
-              variant="outlined"
-              onClick={() => void handleGenerate()}
-              disabled={planLoading || generating || saving || planMd !== savedPlanMd}
-            >
-              {generating ? 'Generating…' : 'Suggest plan notes'}
-            </Button>
-            <Button
-              variant="contained"
-              onClick={() => void handleSavePlan()}
-              disabled={
-                planLoading || saving || generating || !planMd.trim() || planMd === savedPlanMd
-              }
-            >
-              {saving ? 'Saving…' : 'Save reviewed notes'}
-            </Button>
-          </Stack>
-          {planError ? (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {planError}
-            </Alert>
-          ) : null}
-          {planSaved ? (
-            <Alert severity="success" sx={{ mb: 2 }}>
-              Plan notes saved.
-            </Alert>
-          ) : null}
-          {lastSummary ? (
-            <Alert severity="info" sx={{ mb: 2 }}>
-              {lastSummary}
-            </Alert>
-          ) : null}
-          {planLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress size={24} />
-            </Box>
-          ) : (
-            <Box
-              component="fieldset"
-              disabled={saving || generating}
-              sx={{ border: 0, p: 0, m: 0, minWidth: 0 }}
-            >
-              <MarkdownSplitEditor
-                value={planMd}
-                onChange={(value) => {
-                  setPlanMd(value);
-                  setDraftIsAiGenerated(false);
-                  setLastSummary(null);
-                  setPlanSaved(false);
-                }}
-                height={420}
-              />
-            </Box>
-          )}
-        </Box>
-      </Card>
-    </PageContainer>
-  );
-}
 
-export default function DevelopmentPlanPage() {
-  const { user } = useAuth();
-  return <AppShell>{user ? <DevelopmentPlanContent key={user.id} /> : null}</AppShell>;
+      <Card title="Kế hoạch phát triển">
+        <TextField
+          label="Hướng dẫn (tuỳ chọn)"
+          placeholder="ví dụ Tập trung kỹ năng lãnh đạo trong quý tới"
+          size="small"
+          fullWidth
+          value={instruction}
+          onChange={(e) => setInstruction(e.target.value)}
+          disabled={planLoading || generating || saving}
+          sx={{ mb: 2 }}
+        />
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mb: 2 }}>
+          <Button
+            variant="contained"
+            onClick={() => void handleGenerate()}
+            disabled={planLoading || generating || saving || planMd !== savedPlanMd}
+          >
+            {generating ? 'Đang tạo…' : savedPlanMd ? 'Tạo lại' : 'Tạo'}
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => void handleSavePlan()}
+            disabled={planLoading || saving || generating || !planMd.trim() || planMd === savedPlanMd}
+          >
+            {saving ? 'Đang lưu…' : 'Lưu'}
+          </Button>
+        </Stack>
+        {planError ? <Alert severity="error" sx={{ mb: 2 }}>{planError}</Alert> : null}
+        {planSaved ? <Alert severity="success" sx={{ mb: 2 }}>Đã lưu kế hoạch.</Alert> : null}
+        {lastSummary ? <Alert severity="info" sx={{ mb: 2 }}>{lastSummary}</Alert> : null}
+        {planLoading ? (
+          <PageSkeleton variant="form" embedded />
+        ) : (
+          <Box
+            component="fieldset"
+            disabled={saving || generating}
+            sx={{ border: 0, p: 0, m: 0, minWidth: 0 }}
+          >
+            <MarkdownSplitEditor
+              value={planMd}
+              onChange={(value) => {
+                setPlanMd(value);
+                setDraftIsAiGenerated(false);
+                setLastSummary(null);
+                setPlanSaved(false);
+              }}
+              height={480}
+            />
+          </Box>
+        )}
+      </Card>
+    </Box>
+  );
 }

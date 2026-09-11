@@ -1,0 +1,48 @@
+{
+  "figmaFileKey": "1VWq6SA4aANBTPKznNIT5Z",
+  "pageId": "1:2",
+  "screens": [
+    {
+      "id": "6:89",
+      "name": "01 · Lộ trình phát triển",
+      "texts": 60,
+      "instances": 8,
+      "autoLayout": 21
+    },
+    {
+      "id": "6:247",
+      "name": "02 · Sơ đồ chi tiết — Đề xuất AI",
+      "texts": 61,
+      "instances": 9,
+      "autoLayout": 23
+    },
+    {
+      "id": "6:398",
+      "name": "03 · Tùy chỉnh lộ trình — Bản nháp",
+      "texts": 74,
+      "instances": 14,
+      "autoLayout": 30
+    },
+    {
+      "id": "6:582",
+      "name": "04 · Tổng quan cá nhân",
+      "texts": 64,
+      "instances": 8,
+      "autoLayout": 22
+    }
+  ],
+  "frameSize": {
+    "width": 1586,
+    "height": 992
+  },
+  "variables": 36,
+  "textStyles": 11,
+  "componentMasters": 9,
+  "componentSets": 4,
+  "textOverflowAfterFix": 0,
+  "visualCheck": "All 4 native Figma PNG exports viewed in Scripter; final fixes to mascot composition, label bounds and semantic text contrast.",
+  "exportSettings": [
+    "PNG 2x",
+    "SVG with text preserved"
+  ]
+}
