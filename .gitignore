@@ -39,3 +39,5 @@ next-env.d.ts
 
 # TypeScript build info
 *.tsbuildinfo
+
+.playwright-mcp

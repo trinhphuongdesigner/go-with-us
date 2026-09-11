@@ -78,7 +78,7 @@ export default function MarkdownSplitEditor({
           outline: 'none',
           resize: 'none',
           p: 2,
-          fontFamily: 'ui-monospace, SFMono-Regular, monospace',
+          fontFamily: 'var(--font-mono), ui-monospace, SFMono-Regular, monospace',
           fontSize: 13,
           lineHeight: 1.6,
           backgroundColor: colorTokens.surface,

@@ -4,9 +4,11 @@ export type StatusTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
 
 export const TONE_COLORS: Record<StatusTone, { bg: string; fg: string }> = {
   neutral: { bg: '#f1f0f6', fg: colorTokens.neutral400 },
-  info: { bg: colorTokens.accent900, fg: colorTokens.accent300 },
-  success: { bg: '#e4f6ee', fg: colorTokens.success },
-  warning: { bg: '#fdf3e0', fg: '#b9791f' },
+  // `accent`/`accent300` aren't dark enough to read as text on `accent900` —
+  // see the `accentInk` note in theme.ts.
+  info: { bg: colorTokens.accent900, fg: colorTokens.accentInk },
+  success: { bg: '#e4f6ee', fg: colorTokens.text },
+  warning: { bg: '#fdf3e0', fg: colorTokens.warning },
   danger: { bg: '#fbe9e9', fg: colorTokens.danger },
 };
 

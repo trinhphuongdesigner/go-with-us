@@ -6,24 +6,35 @@ import { createTheme } from '@mui/material/styles';
  * ThemeConcept in the backend Prisma schema: DEFAULT/ANIME/FILM/
  * GATHER_TOWN — only ANIME/FILM/GATHER_TOWN reskin the Employee UI).
  *
- * Implements D:\Coding\AI_Tool\docs\style-concept.md exactly — tokens,
- * typography, radius/shadow scale, and the MUI component override table.
+ * Radius/shadow scale and component shape still follow
+ * D:\Coding\AI_Tool\docs\style-concept.md; the color tokens below are this
+ * project's own earthy green/brown palette (swapped in from the original
+ * purple reference) — see `accentInk` note for why text/icon color on the
+ * accent family isn't just `accent`/`accent300` everywhere.
  */
 
 export const colorTokens = {
-  bg: '#fafafc',
-  canvas: '#e9e7f2',
+  bg: '#d4dcc8',
+  canvas: '#d4dcc8',
   surface: '#ffffff',
-  text: '#1c1b2e',
-  neutral400: '#6e6c87',
-  neutral500: '#8b899f',
-  divider: '#e8e7f0',
-  accent: '#6d5bd0',
-  accent300: '#5847be',
-  accent700: '#8577de',
-  accent900: '#efebfa',
-  success: '#1c9c6b',
-  danger: '#d34848',
+  text: '#1a1a1a',
+  neutral400: '#75765f',
+  neutral500: '#75765f',
+  divider: '#d4dcc8',
+  accent: '#9bce2d',
+  accent300: '#8fb73c',
+  accent700: '#abc385',
+  accent900: '#d4dcc8',
+  // None of the greens above are dark/saturated enough to read as text or a
+  // small icon glyph against a white/accent900 background (fails contrast).
+  // Use this instead of `accent`/`accent300` wherever the color is applied
+  // as `color:`/text/icon foreground rather than a fill or border.
+  accentInk: '#a8603a',
+  warning: '#d5871e',
+  success: '#8fb73c',
+  danger: '#a8603a',
+  // Unused elsewhere in the given swatch set — kept for future status/tint work.
+  tint: '#f8c885',
 } as const;
 
 export const radiusTokens = {
@@ -38,7 +49,11 @@ export const shadowTokens = {
   lg: '0 24px 60px rgba(28,27,46,.18)',
 } as const;
 
-const fontFamily = 'var(--font-google-sans), system-ui, sans-serif';
+// Body copy default; `h1`/`h2`/`h3`/`button` below override to the heading/UI
+// fonts — see `--font-*` tokens in globals.css.
+const fontFamily = 'var(--font-body), system-ui, sans-serif';
+const headingFontFamily = 'var(--font-heading), system-ui, sans-serif';
+const uiFontFamily = 'var(--font-ui), system-ui, sans-serif';
 
 export const theme = createTheme({
   palette: {
@@ -71,15 +86,18 @@ export const theme = createTheme({
   typography: {
     fontFamily,
     h1: {
+      fontFamily: headingFontFamily,
       fontSize: 32,
       fontWeight: 500,
       letterSpacing: '-0.01em',
     },
     h2: {
+      fontFamily: headingFontFamily,
       fontSize: 22,
       fontWeight: 500,
     },
     h3: {
+      fontFamily: headingFontFamily,
       fontSize: 19,
       fontWeight: 500,
     },
@@ -92,6 +110,7 @@ export const theme = createTheme({
       color: colorTokens.neutral400,
     },
     button: {
+      fontFamily: uiFontFamily,
       textTransform: 'none',
       fontWeight: 500,
     },
@@ -156,10 +175,16 @@ export const theme = createTheme({
           '& .MuiOutlinedInput-notchedOutline': {
             borderColor: colorTokens.divider,
           },
+          '&:hover .MuiOutlinedInput-notchedOutline': {
+            borderColor: '#a8a6ba',
+          },
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
             borderColor: colorTokens.accent,
             boxShadow: '0 0 0 3px rgba(109,91,208,.14)',
           },
+        },
+        input: {
+          fontSize: 14,
         },
       },
     },
@@ -199,6 +224,16 @@ export const theme = createTheme({
           borderRadius: 10,
           border: `1px solid ${colorTokens.divider}`,
           boxShadow: shadowTokens.md,
+        },
+      },
+    },
+    MuiMenuItem: {
+      styleOverrides: {
+        root: {
+          borderRadius: 6,
+          marginLeft: 6,
+          marginRight: 6,
+          fontSize: 13.5,
         },
       },
     },

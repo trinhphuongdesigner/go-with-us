@@ -20,7 +20,7 @@ const KIND_META: Record<
   EMPLOYMENT: {
     label: 'Employment',
     icon: <WorkOutlineOutlinedIcon fontSize="small" />,
-    color: colorTokens.accent,
+    color: colorTokens.accentInk,
   },
   PROJECT: {
     label: 'Project',

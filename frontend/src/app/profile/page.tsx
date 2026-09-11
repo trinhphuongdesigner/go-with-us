@@ -134,7 +134,7 @@ function ProfilePageContent() {
               >
                 <Avatar
                   src={profile.user.avatarUrl ?? undefined}
-                  sx={{ width: 64, height: 64, bgcolor: colorTokens.accent }}
+                  sx={{ width: 64, height: 64, bgcolor: colorTokens.accent, color: colorTokens.text }}
                 >
                   {profile.user.name?.[0]?.toUpperCase() ?? '?'}
                 </Avatar>

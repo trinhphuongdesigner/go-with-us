@@ -25,7 +25,7 @@ export default function MarkdownBlock({ source }: { source: string }) {
           px: 0.5,
           borderRadius: 1,
         },
-        '& a': { color: colorTokens.accent },
+        '& a': { color: colorTokens.accentInk },
         '& :first-of-type': { mt: 0 },
       }}
       dangerouslySetInnerHTML={{ __html: mdToHtml(source) }}

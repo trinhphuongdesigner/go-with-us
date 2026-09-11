@@ -226,7 +226,7 @@ export default function LoginPage() {
                 height: 48,
                 borderRadius: `${radiusTokens.md}px`,
                 backgroundColor: colorTokens.accent,
-                color: '#fff',
+                color: colorTokens.text,
                 display: 'grid',
                 placeItems: 'center',
                 fontSize: 15,
@@ -243,7 +243,7 @@ export default function LoginPage() {
                 fontWeight: 600,
                 letterSpacing: '0.08em',
                 textTransform: 'uppercase',
-                color: colorTokens.accent300,
+                color: colorTokens.accentInk,
                 mb: 1,
               }}
             >

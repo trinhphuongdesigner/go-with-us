@@ -7,6 +7,7 @@ export interface AssistantConversation {
   userId: string;
   title: string;
   focus: AssistantFocus;
+  pinned: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -67,6 +68,13 @@ export function getConversation(id: string) {
 export function deleteConversation(id: string) {
   return apiRequest<{ id: string }>(`/assistant/conversations/${id}`, {
     method: 'DELETE',
+  });
+}
+
+export function updateConversation(id: string, payload: { pinned: boolean }) {
+  return apiRequest<AssistantConversation>(`/assistant/conversations/${id}`, {
+    method: 'PATCH',
+    body: payload,
   });
 }
 

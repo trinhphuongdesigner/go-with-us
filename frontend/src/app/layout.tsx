@@ -1,16 +1,26 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Space_Grotesk, Be_Vietnam_Pro, JetBrains_Mono } from 'next/font/google';
 import ThemeRegistry from '@/theme/ThemeRegistry';
 import { AuthProvider } from '@/contexts/AuthContext';
+import FloatingAssistant from '@/components/assistant/FloatingAssistant';
 import './globals.css';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+// System font stack — see `--font-ui` / `--font-body` / `--font-heading` /
+// `--font-mono` in globals.css for how these get composed with their
+// fallback chains, and theme.ts for where each one is applied.
+const spaceGrotesk = Space_Grotesk({
+  variable: '--font-space-grotesk',
   subsets: ['latin'],
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const beVietnamPro = Be_Vietnam_Pro({
+  variable: '--font-be-vietnam-pro',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: '--font-jetbrains-mono',
   subsets: ['latin'],
 });
 
@@ -21,10 +31,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html
+      lang="en"
+      className={`${spaceGrotesk.variable} ${beVietnamPro.variable} ${jetbrainsMono.variable}`}
+    >
       <body>
         <ThemeRegistry>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            {children}
+            <FloatingAssistant />
+          </AuthProvider>
         </ThemeRegistry>
       </body>
     </html>

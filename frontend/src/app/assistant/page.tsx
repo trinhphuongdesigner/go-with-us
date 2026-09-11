@@ -14,6 +14,8 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import SendIcon from '@mui/icons-material/Send';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
+import PushPinIcon from '@mui/icons-material/PushPin';
+import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import AppShell from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
@@ -21,28 +23,18 @@ import Card from '@/components/ui/Card';
 import MarkdownBlock from '@/components/ui/MarkdownBlock';
 import { useAuth } from '@/contexts/AuthContext';
 import { ApiError } from '@/lib/api/client';
+import { ADMIN_PROMPTS, EMPLOYEE_PROMPTS } from '@/lib/assistantPrompts';
 import {
   askAssistant,
   deleteConversation,
   getConversation,
   listConversations,
+  updateConversation,
   type AssistantConversation,
   type AssistantMessage,
   type ReferencedPerson,
 } from '@/lib/api/assistantApi';
 import { colorTokens } from '@/theme/theme';
-
-const ADMIN_PROMPTS = [
-  'Ai có kinh nghiệm React trên 2 năm và từng làm domain bất động sản?',
-  'Who is the strongest backend candidate for a fintech project?',
-  'List people with an English certificate above TOEIC 600.',
-];
-
-const EMPLOYEE_PROMPTS = [
-  'Tôi nên trau dồi kỹ năng gì để lên Senior?',
-  'What should my next development goal be?',
-  'Summarise how I have grown this year.',
-];
 
 /**
  * M5 — one assistant, two audiences. Admins/sales get roster search grounded
@@ -147,6 +139,15 @@ export default function AssistantPage() {
       await loadConversations();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to delete');
+    }
+  };
+
+  const handleTogglePin = async (conversation: AssistantConversation) => {
+    try {
+      await updateConversation(conversation.id, { pinned: !conversation.pinned });
+      await loadConversations();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Failed to update pin');
     }
   };
 
@@ -287,7 +288,7 @@ export default function AssistantPage() {
                     >
                       <Avatar
                         src={person.avatarUrl ?? undefined}
-                        sx={{ width: 36, height: 36, bgcolor: colorTokens.accent }}
+                        sx={{ width: 36, height: 36, bgcolor: colorTokens.accent, color: colorTokens.text }}
                       >
                         {person.name?.[0]?.toUpperCase() ?? '?'}
                       </Avatar>
@@ -349,6 +350,16 @@ export default function AssistantPage() {
                           {conversation.title}
                         </Typography>
                       </Button>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleTogglePin(conversation)}
+                      >
+                        {conversation.pinned ? (
+                          <PushPinIcon fontSize="small" color="primary" />
+                        ) : (
+                          <PushPinOutlinedIcon fontSize="small" />
+                        )}
+                      </IconButton>
                       <IconButton
                         size="small"
                         onClick={() => handleDelete(conversation.id)}
