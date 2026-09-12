@@ -14,6 +14,7 @@ import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
 import PageSkeleton from '@/components/ui/PageSkeleton';
 import StatusChip from '@/components/ui/StatusChip';
+import { useAuth } from '@/contexts/AuthContext';
 import { ApiError } from '@/lib/api/client';
 import {
   listReceivedCompetencyRequests,
@@ -47,11 +48,15 @@ function snapshotDetail(request: CompetencyRequestWithSender): string {
 }
 
 /**
- * HR's inbox for competency requests — an employee asked HR to review a
- * certification/award and (optionally) award points. HR/BOD/COMPANY_ADMIN
- * only see requests sent directly to them (v1: no company-wide visibility).
+ * HR/BOD/COMPANY_ADMIN's inbox for competency requests — an employee asked
+ * a specific recipient to review a certification/award and (optionally)
+ * award points. Only requests sent directly to the viewer (v1: no
+ * company-wide visibility) — see competency-requests.service.ts listReceived.
  */
 export default function CompetencyRequestsPage() {
+  const { user } = useAuth();
+  const canView = user?.role === 'HR' || user?.role === 'BOD' || user?.role === 'COMPANY_ADMIN';
+
   const [requests, setRequests] = React.useState<CompetencyRequestWithSender[] | null>(null);
   const [filter, setFilter] = React.useState<CompetencyRequestStatus | undefined>('PENDING');
   const [error, setError] = React.useState<string | null>(null);
@@ -69,8 +74,13 @@ export default function CompetencyRequestsPage() {
   }, []);
 
   React.useEffect(() => {
+    if (!canView) return;
     load(filter);
-  }, [filter, load]);
+  }, [canView, filter, load]);
+
+  if (!canView) {
+    return null;
+  }
 
   const openReview = (request: CompetencyRequestWithSender, action: 'APPROVED' | 'REJECTED') => {
     setReviewing(request);
@@ -104,7 +114,7 @@ export default function CompetencyRequestsPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Yêu cầu năng lực"
+        title="Yêu cầu"
         subtitle="Nhân viên gửi yêu cầu xem xét chứng chỉ/thành tích để cộng điểm hoặc ghi nhận năng lực."
       />
 

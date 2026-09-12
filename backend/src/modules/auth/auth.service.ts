@@ -116,7 +116,9 @@ export class AuthService {
     // SUPER_ADMIN always gets FULL; others use the resolved permissions list
     // (populated from RoleDefinition in JwtStrategy, or legacy user.adminPermissions)
     const adminPermissions =
-      user.role === Role.SUPER_ADMIN ? [AdminPermission.FULL] : user.adminPermissions ?? [];
+      user.role === Role.SUPER_ADMIN
+        ? [AdminPermission.FULL]
+        : (user.adminPermissions ?? []);
 
     return {
       id: user.id,

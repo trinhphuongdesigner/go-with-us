@@ -345,7 +345,9 @@ Rules:
     });
 
     const certs = me.certifications.length
-      ? me.certifications.map((c) => `${c.name}${c.score ? ` (${c.score})` : ''}`).join(', ')
+      ? me.certifications
+          .map((c) => `${c.name}${c.score ? ` (${c.score})` : ''}`)
+          .join(', ')
       : 'none recorded';
     const projects = me.projectExperiences.length
       ? me.projectExperiences
@@ -402,7 +404,6 @@ Rules:
         goals: {
           select: {
             title: true,
-            category: true,
             status: true,
             progress: true,
             dueDate: true,

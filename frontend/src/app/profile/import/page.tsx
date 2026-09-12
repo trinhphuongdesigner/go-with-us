@@ -1030,22 +1030,13 @@ export default function ProfileImportPage() {
                         disabled={busy || !award.selected}
                         onChange={(e) => updateItem('awards', award.key, { issuer: e.target.value })}
                       />
-                      <Stack direction="row" spacing={1}>
-                        <TextField
-                          label="Loại (WORK/PERSONAL)"
-                          size="small"
-                          value={award.category ?? ''}
-                          disabled={busy || !award.selected}
-                          onChange={(e) => updateItem('awards', award.key, { category: e.target.value })}
-                        />
-                        <TextField
-                          label="Ngày (YYYY-MM-DD)"
-                          size="small"
-                          value={award.awardedAt ?? ''}
-                          disabled={busy || !award.selected}
-                          onChange={(e) => updateItem('awards', award.key, { awardedAt: e.target.value })}
-                        />
-                      </Stack>
+                      <TextField
+                        label="Ngày (YYYY-MM-DD)"
+                        size="small"
+                        value={award.awardedAt ?? ''}
+                        disabled={busy || !award.selected}
+                        onChange={(e) => updateItem('awards', award.key, { awardedAt: e.target.value })}
+                      />
                       <TextField
                         label="Mô tả"
                         size="small"
@@ -1196,22 +1187,13 @@ export default function ProfileImportPage() {
                         disabled={busy || !goal.selected}
                         onChange={(e) => updateItem('goals', goal.key, { title: e.target.value })}
                       />
-                      <Stack direction="row" spacing={1}>
-                        <TextField
-                          label="Hạn (YYYY-MM-DD)"
-                          size="small"
-                          value={goal.dueDate ?? ''}
-                          disabled={busy || !goal.selected}
-                          onChange={(e) => updateItem('goals', goal.key, { dueDate: e.target.value })}
-                        />
-                        <TextField
-                          label="Loại (WORK/PERSONAL)"
-                          size="small"
-                          value={goal.category ?? ''}
-                          disabled={busy || !goal.selected}
-                          onChange={(e) => updateItem('goals', goal.key, { category: e.target.value })}
-                        />
-                      </Stack>
+                      <TextField
+                        label="Hạn (YYYY-MM-DD)"
+                        size="small"
+                        value={goal.dueDate ?? ''}
+                        disabled={busy || !goal.selected}
+                        onChange={(e) => updateItem('goals', goal.key, { dueDate: e.target.value })}
+                      />
                       <TextField
                         label="Metric / Kết quả mong đợi"
                         size="small"

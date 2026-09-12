@@ -11,8 +11,6 @@ import IconButton from '@/components/ui/IconButton';
 import LinearProgress from '@mui/material/LinearProgress';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
-import Tab from '@mui/material/Tab';
-import Tabs from '@mui/material/Tabs';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
@@ -26,7 +24,6 @@ import {
   updateGoal,
   type DevelopmentGoal,
   type GoalStatus,
-  type LifeCategory,
 } from '@/lib/api/developmentPlansApi';
 import { colorTokens } from '@/theme/theme';
 
@@ -35,15 +32,6 @@ const STATUS_LABEL: Record<GoalStatus, string> = {
   NOT_STARTED: 'Chưa bắt đầu',
   IN_PROGRESS: 'Đang thực hiện',
   ACHIEVED: 'Đã đạt',
-};
-const TABS: LifeCategory[] = ['WORK', 'PERSONAL'];
-const TAB_LABEL: Record<LifeCategory, string> = {
-  WORK: 'Công việc',
-  PERSONAL: 'Cá nhân',
-};
-const TAB_HINT: Record<LifeCategory, string> = {
-  WORK: 'Kỹ năng, chứng chỉ và những gì phục vụ công việc.',
-  PERSONAL: 'Sức khỏe, thể thao, tình nguyện — không trực tiếp phục vụ việc, nhưng cho ngữ cảnh.',
 };
 
 interface FormState {
@@ -55,8 +43,8 @@ interface FormState {
 const EMPTY_FORM: FormState = { title: '', description: '', dueDate: '' };
 
 /**
- * Goal Tracker (M7) — the two buckets the idea doc calls for: WORK vs
- * PERSONAL, each with its own tab, add form, and inline progress tracking.
+ * Goal Tracker — personal development goals with an add form and inline
+ * progress tracking.
  */
 export default function GoalsPanel({
   goals,
@@ -66,13 +54,10 @@ export default function GoalsPanel({
   onChanged: () => void;
 }) {
   const { ask, dialog } = useConfirmDialog();
-  const [tab, setTab] = React.useState<LifeCategory>('WORK');
   const [open, setOpen] = React.useState(false);
   const [form, setForm] = React.useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-
-  const visible = goals.filter((g) => g.category === tab);
 
   const handleAdd = async () => {
     if (!form.title.trim()) return;
@@ -82,7 +67,6 @@ export default function GoalsPanel({
       await createGoal({
         title: form.title.trim(),
         description: form.description.trim() || undefined,
-        category: tab,
         dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : undefined,
       });
       setForm(EMPTY_FORM);
@@ -135,20 +119,12 @@ export default function GoalsPanel({
     <Box>
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
-        sx={{ justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 1, mb: 1 }}
+        sx={{ justifyContent: 'flex-end', alignItems: { xs: 'stretch', sm: 'center' }, gap: 1, mb: 2 }}
       >
-        <Tabs value={tab} onChange={(_, v: LifeCategory) => setTab(v)}>
-          {TABS.map((t) => (
-            <Tab key={t} value={t} label={TAB_LABEL[t]} />
-          ))}
-        </Tabs>
         <Button startIcon={<AddIcon />} size="sm" onClick={() => setOpen(true)}>
           Thêm mục tiêu
         </Button>
       </Stack>
-      <Typography variant="body2" sx={{ fontSize: 12.5, mb: 2 }}>
-        {TAB_HINT[tab]}
-      </Typography>
 
       {error ? (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -156,13 +132,13 @@ export default function GoalsPanel({
         </Alert>
       ) : null}
 
-      {visible.length === 0 ? (
+      {goals.length === 0 ? (
         <Typography variant="body2">
-          Chưa có mục tiêu {TAB_LABEL[tab].toLowerCase()}.
+          Chưa có mục tiêu.
         </Typography>
       ) : (
         <Stack divider={<Divider />} spacing={2}>
-          {visible.map((goal) => (
+          {goals.map((goal) => (
             <Box key={goal.id} sx={{ pt: 1 }}>
               <Stack
                 direction={{ xs: 'column', sm: 'row' }}
@@ -258,7 +234,7 @@ export default function GoalsPanel({
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
-        title={`Thêm mục tiêu ${TAB_LABEL[tab].toLowerCase()}`}
+        title="Thêm mục tiêu"
         actions={
           <>
             <Button variant="text" onClick={() => setOpen(false)}>

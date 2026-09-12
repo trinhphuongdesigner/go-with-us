@@ -51,6 +51,13 @@ export function deleteUser(id: string) {
   return apiRequest<{ id: string }>(`/users/${id}`, { method: 'DELETE' });
 }
 
+export function resetPassword(id: string, password: string) {
+  return apiRequest<{ id: string }>(`/users/${id}/password`, {
+    method: 'PATCH',
+    body: { password },
+  });
+}
+
 /** Upload avatar image for the current user. Returns updated User with new avatarUrl. */
 export async function uploadAvatar(file: File): Promise<User> {
   const form = new FormData();

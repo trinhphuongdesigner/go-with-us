@@ -12,8 +12,9 @@ export class CreateJobRequirementDto {
   @IsString({ each: true })
   requiredSkills!: string[];
 
-  // Ignored for COMPANY_ADMIN (forced to caller.companyId in the service);
-  // required in practice for SUPER_ADMIN, who has no company of their own.
+  // Resolved through resolveCompanyScope in the service: required for
+  // SUPER_ADMIN (who has no company of their own), optional for everyone
+  // else (defaults to caller.companyId, or an explicit CompanyMembership).
   @IsOptional()
   @IsString()
   companyId?: string;

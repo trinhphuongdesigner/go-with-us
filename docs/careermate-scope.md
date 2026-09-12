@@ -91,8 +91,8 @@ tính năng dưới đây.
 | M3 | Cross Assessment + bộ tiêu chí công ty tự config | 🔴 Mới | `AssessmentTemplate/Group/Question/Cycle/Assessment/Answer` |
 | M4 | Career Passport (kỳ làm việc + AI summary + share link) | 🔴 Mới | `Employment`, `CareerSummary`, `CareerPassportShare` |
 | M5 | Trợ lý hỏi-đáp (NLQ tìm nhân sự + đồng hành cá nhân) | 🟡 Nâng cấp | Đã có match theo requirement có cấu trúc; thêm chat tự do |
-| M6 | Lộ trình phát triển (cột mốc + nhiệm vụ đo lường được) | 🟡 Mở rộng | Đã có `DevelopmentPlan/Goal`; thêm `DevelopmentMilestone/Task` |
-| M7 | Goal Tracker 2 nhóm (công việc / cá nhân) | 🟡 Mở rộng | Thêm `category`, `dueDate` vào `DevelopmentGoal` |
+| M6 | Lộ trình phát triển (cột mốc + nhiệm vụ đo lường được, nhiều lộ trình song song) | 🟢 Xong | `DevelopmentPlan → DevelopmentRoadmap[] → DevelopmentMilestone[] → DevelopmentTask[]` |
+| M7 | Goal Tracker | 🟢 Xong | `DevelopmentGoal` với `progress`, `dueDate` — không còn phân nhóm công việc/cá nhân (`category` đã bỏ) |
 
 **Ngoài scope hiện tại** (định hướng sau cuộc thi): lịch sử đào tạo & đăng ký
 khóa học/điểm danh, đề xuất khóa học bằng AI, bài test đánh giá năng lực theo
@@ -112,8 +112,8 @@ User (tài khoản cả đời)
 │   └── CareerSummary                          # AI tóm tắt kỳ làm việc
 ├── EmployeeSkill[] / Certification[] / Award[]
 ├── ProfileImport[]                            # CV/LinkedIn đã parse
-├── DevelopmentPlan → DevelopmentMilestone[] → DevelopmentTask[]
-├── DevelopmentGoal[]  (category: WORK | PERSONAL)
+├── DevelopmentPlan → DevelopmentRoadmap[] → DevelopmentMilestone[] → DevelopmentTask[]
+├── DevelopmentGoal[]
 ├── CareerPassportShare[]                      # link chia sẻ hồ sơ
 └── AssistantConversation[] → AssistantMessage[]
 

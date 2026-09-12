@@ -106,10 +106,6 @@ export class ApplyAwardDto {
 
   @IsOptional()
   @IsString()
-  category?: string;
-
-  @IsOptional()
-  @IsString()
   issuer?: string;
 
   @IsOptional()
@@ -217,10 +213,6 @@ export class RichGoalDto {
   @IsOptional()
   @IsString()
   description?: string;
-
-  @IsOptional()
-  @IsString()
-  category?: 'WORK' | 'PERSONAL';
 
   @IsOptional()
   @IsString()

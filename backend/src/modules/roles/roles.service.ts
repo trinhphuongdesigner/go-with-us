@@ -7,7 +7,12 @@ import { resolveCompanyScope } from '../../common/access/user-scope';
 const HIDDEN_ROLES: Role[] = [Role.SUPER_ADMIN, Role.COMPANY_ADMIN];
 
 const DEFAULT_PERMISSIONS: Record<'HR' | 'BOD', AdminPermission[]> = {
-  HR: [AdminPermission.VIEW, AdminPermission.COLLECT, AdminPermission.CROSS_ASSESS, AdminPermission.EDIT],
+  HR: [
+    AdminPermission.VIEW,
+    AdminPermission.COLLECT,
+    AdminPermission.CROSS_ASSESS,
+    AdminPermission.EDIT,
+  ],
   BOD: [AdminPermission.VIEW, AdminPermission.APPROVE],
 };
 

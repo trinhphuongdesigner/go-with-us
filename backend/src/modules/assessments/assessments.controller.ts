@@ -105,8 +105,11 @@ export class AssessmentsController {
   }
 
   @Get('cycles/active')
-  getActiveCycle(@CurrentUser() caller: AuthenticatedUser) {
-    return this.service.getActiveCycle(caller);
+  getActiveCycle(
+    @CurrentUser() caller: AuthenticatedUser,
+    @Query('companyId') companyId?: string,
+  ) {
+    return this.service.getActiveCycle(caller, companyId);
   }
 
   @Post('cycles')

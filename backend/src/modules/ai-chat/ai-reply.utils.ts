@@ -8,7 +8,10 @@ import { BadGatewayException } from '@nestjs/common';
  * - anchored: true — only strip if the ENTIRE trimmed reply is one fence block. Use when the
  *   payload is free-form markdown, not JSON, so a ``` inside the body isn't mistaken for a wrapper.
  */
-export function stripJsonFence(raw: string, opts?: { anchored?: boolean }): string {
+export function stripJsonFence(
+  raw: string,
+  opts?: { anchored?: boolean },
+): string {
   const trimmed = raw.trim();
   const pattern = opts?.anchored
     ? /^```(?:json)?\s*([\s\S]*?)\s*```$/i
@@ -29,12 +32,16 @@ export function parseJsonReplyOrThrow<T>(
 ): T {
   const text = stripJsonFence(raw, opts);
   if (!text) {
-    throw new BadGatewayException(`AI provider returned an empty reply for ${featureLabel}`);
+    throw new BadGatewayException(
+      `AI provider returned an empty reply for ${featureLabel}`,
+    );
   }
   try {
     return JSON.parse(text) as T;
   } catch {
-    throw new BadGatewayException(`AI provider returned an unparseable reply for ${featureLabel}`);
+    throw new BadGatewayException(
+      `AI provider returned an unparseable reply for ${featureLabel}`,
+    );
   }
 }
 
@@ -47,7 +54,9 @@ export function asArray(v: unknown): unknown[] {
 }
 
 export function asStringArray(v: unknown): string[] {
-  return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+  return Array.isArray(v)
+    ? v.filter((x): x is string => typeof x === 'string')
+    : [];
 }
 
 /**

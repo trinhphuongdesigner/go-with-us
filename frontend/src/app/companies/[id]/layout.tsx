@@ -2,13 +2,12 @@
 
 import * as React from 'react';
 import { useParams } from 'next/navigation';
-import { CompanyScopeProvider } from './CompanyScopeContext';
+import { CompanyScopeProvider } from '@/contexts/CompanyScopeContext';
 
 /**
- * Tier-2 shell for Super Admin's per-company management area (see
- * companyNavItems in AppShell.tsx for the matching sidebar). Just data
- * scope — chrome stays in the root AppShell — so every tab (dashboard,
- * employees, assessments, requests, settings) shares one company fetch.
+ * Shell for Super Admin's single per-company screen (info + reassign/reset
+ * the Company Admin account) — chrome stays in the root AppShell, this just
+ * provides the company data fetch to the page below.
  */
 export default function CompanyDetailLayout({ children }: { children: React.ReactNode }) {
   const params = useParams<{ id: string }>();

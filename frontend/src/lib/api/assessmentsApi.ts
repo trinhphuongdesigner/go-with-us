@@ -133,6 +133,7 @@ export interface AnswerPayload {
 export interface CreateAssessmentPayload {
   cycleId?: string;
   revieweeId?: string;
+  companyId?: string;
   type: AssessmentType;
   mood?: string;
   highlights?: string;
@@ -186,8 +187,9 @@ export function listCycles(companyId?: string) {
   return apiRequest<AssessmentCycle[]>(`/assessments/cycles${query}`);
 }
 
-export function getActiveCycle() {
-  return apiRequest<ActiveCycle | null>('/assessments/cycles/active');
+export function getActiveCycle(companyId?: string) {
+  const query = companyId ? `?companyId=${encodeURIComponent(companyId)}` : '';
+  return apiRequest<ActiveCycle | null>(`/assessments/cycles/active${query}`);
 }
 
 export function createCycle(payload: CreateCyclePayload) {
@@ -218,8 +220,9 @@ export function listAssessments(
   return apiRequest<AssessmentListItem[]>(`/assessments?${params.toString()}`);
 }
 
-export function listPendingApproval() {
-  return apiRequest<AssessmentListItem[]>('/assessments/pending-approval');
+export function listPendingApproval(companyId?: string) {
+  const query = companyId ? `?companyId=${encodeURIComponent(companyId)}` : '';
+  return apiRequest<AssessmentListItem[]>(`/assessments/pending-approval${query}`);
 }
 
 export function getAssessment(id: string) {

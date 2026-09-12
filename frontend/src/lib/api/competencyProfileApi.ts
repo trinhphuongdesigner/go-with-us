@@ -1,7 +1,6 @@
 import { apiRequest, ApiError, getStoredToken } from './client';
 
 export type CertificationType = 'DEGREE' | 'LANGUAGE' | 'PROFESSIONAL' | 'OTHER';
-export type LifeCategory = 'WORK' | 'PERSONAL';
 
 export interface Certification {
   id: string;
@@ -33,7 +32,6 @@ export interface Award {
   id: string;
   userId: string;
   title: string;
-  category: LifeCategory;
   issuer: string | null;
   description: string | null;
   evidenceUrl: string | null;
@@ -119,7 +117,6 @@ export interface ProjectExperiencePayload {
 
 export interface AwardPayload {
   title: string;
-  category?: LifeCategory;
   issuer?: string;
   description?: string;
   evidenceUrl?: string;

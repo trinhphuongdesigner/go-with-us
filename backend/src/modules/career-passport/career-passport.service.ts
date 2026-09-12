@@ -16,7 +16,10 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AiChatService } from '../ai-chat/ai-chat.service';
-import { asStringArray, parseJsonReplyOrThrow } from '../ai-chat/ai-reply.utils';
+import {
+  asStringArray,
+  parseJsonReplyOrThrow,
+} from '../ai-chat/ai-reply.utils';
 import {
   assertCanViewUser,
   resolveCompanyScope,

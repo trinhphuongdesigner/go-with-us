@@ -16,6 +16,7 @@ import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompanyScope } from '@/contexts/CompanyScopeContext';
 import { ApiError } from '@/lib/api/client';
 import {
   createJobRequirement,
@@ -35,6 +36,7 @@ const STATUS_TONE: Record<string, 'default' | 'success' | 'warning'> = {
 
 export default function JobRequirementsPage() {
   const { user } = useAuth();
+  const { companyId } = useCompanyScope();
   const { ask, dialog } = useConfirmDialog();
 
   const [requirements, setRequirements] = React.useState<JobRequirement[]>([]);
@@ -53,13 +55,13 @@ export default function JobRequirementsPage() {
     Record<string, { matches: CandidateMatch[]; summary: string }>
   >({});
 
-  const canManage = user?.role === 'COMPANY_ADMIN' || user?.role === 'SUPER_ADMIN';
+  // Backend only allows HR/BOD/SUPER_ADMIN to create/toggle/delete; COMPANY_ADMIN can only view.
+  const canManage = user?.role === 'HR' || user?.role === 'BOD' || user?.role === 'SUPER_ADMIN';
 
   const loadRequirements = React.useCallback(async () => {
     setLoading(true);
     setListError(null);
     try {
-      const companyId = user?.role === 'SUPER_ADMIN' ? (user.companyId ?? undefined) : undefined;
       const data = await listJobRequirements(companyId);
       setRequirements(data);
     } catch (err) {
@@ -67,7 +69,7 @@ export default function JobRequirementsPage() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [companyId]);
 
   React.useEffect(() => {
     if (user) {
@@ -91,7 +93,7 @@ export default function JobRequirementsPage() {
 
     setCreating(true);
     try {
-      await createJobRequirement({ title: title.trim(), description: description.trim(), requiredSkills });
+      await createJobRequirement({ title: title.trim(), description: description.trim(), requiredSkills, companyId });
       setTitle('');
       setDescription('');
       setSkillsInput('');
@@ -141,7 +143,7 @@ export default function JobRequirementsPage() {
   return (
     <PageContainer>
         <PageHeader
-          title="Yêu cầu công việc"
+          title="Careers"
           subtitle="Mô tả nhu cầu dự án, rồi để AI gợi ý nhân sự phù hợp."
         />
 
@@ -248,7 +250,7 @@ export default function JobRequirementsPage() {
                             onClick={() =>
                               ask({
                                 title: 'Xóa yêu cầu',
-                                description: `Xóa “${req.title}”? Hành động này không thể hoàn tác.`,
+                                description: `Xóa "${req.title}"? Hành động này không thể hoàn tác.`,
                                 confirmLabel: 'Xóa',
                                 danger: true,
                                 onConfirm: () => handleDelete(req.id),
