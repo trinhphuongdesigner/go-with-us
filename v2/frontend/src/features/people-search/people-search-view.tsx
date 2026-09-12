@@ -1,7 +1,7 @@
 "use client";
 
-import { AlertTriangle, LayoutGrid, List, Search, Sparkles } from "lucide-react";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { AlertTriangle, LayoutGrid, List, MessageSquareText, Search, Send, SlidersHorizontal, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { listAvailableCompanies } from "@/lib/api";
@@ -23,6 +23,14 @@ import type { CanonicalSearchCandidate } from "./canonical-search-schema";
 import { SearchInterpretationPanel } from "./search-interpretation-panel";
 
 type ResultLayout = "cards" | "compact";
+type SearchMode = "criteria" | "assistant";
+type SearchState = {
+  status: "idle" | "loading" | "success" | "error";
+  mode?: SearchMode;
+  query?: string;
+  data?: PeopleSearchResponse;
+  error?: string;
+};
 
 const initialFilters: PeopleSearchFilters = {
   query: "",
@@ -32,6 +40,12 @@ const initialFilters: PeopleSearchFilters = {
   domains: "",
   availability: "",
 };
+
+const assistantPrompts = [
+  "Ai phù hợp để dẫn dắt dự án React trong 3 tháng tới?",
+  "Tìm nhân sự backend có kinh nghiệm Python và làm việc với dữ liệu.",
+  "Ai có thể tham gia dự án mới và đang sẵn sàng?",
+];
 
 function UnsupportedBanner({ reasons }: { reasons: string[] }) {
   if (reasons.length === 0) return null;
@@ -222,41 +236,87 @@ function ResultsBody({ data, onRetry, layout, onLayoutChange }: { data: PeopleSe
   );
 }
 
+function SearchFeedback({ state, mode, layout, onLayoutChange, onRetry }: { state: SearchState; mode: SearchMode; layout: ResultLayout; onLayoutChange: (layout: ResultLayout) => void; onRetry: () => void }) {
+  if (state.mode !== mode || state.status === "idle") return null;
+  const content = (
+    <>
+      {state.status === "loading" ? <LoadingState label={mode === "assistant" ? "Milo đang phân tích nhu cầu và đối chiếu nhân sự" : "Đang tìm kiếm nhân sự"} /> : null}
+      {state.status === "error" ? <ErrorState title="Không thể thực hiện tìm kiếm" description={state.error ?? "Kết nối dịch vụ tìm kiếm đang gián đoạn."} onRetry={onRetry} /> : null}
+      {state.status === "success" && state.data ? <><SearchInterpretationPanel interpretation={state.data.plan.interpretation} needsClarification={state.data.plan.needs_clarification} /><UnsupportedBanner reasons={state.data.unsupported_reasons} /><ResultsBody data={state.data} layout={layout} onLayoutChange={onLayoutChange} onRetry={onRetry} /></> : null}
+    </>
+  );
+
+  if (mode === "criteria") return <div className="mt-4">{content}</div>;
+  return (
+    <div className="mt-5 space-y-4" aria-live="polite">
+      {state.query ? <div className="ml-auto max-w-2xl rounded-2xl rounded-br-md bg-primary px-4 py-3 text-sm leading-6 text-white"><p className="sr-only">Câu hỏi của bạn:</p>{state.query}</div> : null}
+      <div className="max-w-4xl rounded-2xl rounded-tl-md border border-[#E5DFFF] bg-[#F8F6FF] p-4 sm:p-5">
+        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-violet-strong"><span className="grid size-8 place-items-center rounded-xl bg-white shadow-sm"><Sparkles size={16} aria-hidden="true" /></span>Milo People Intelligence</div>
+        {state.status === "success" ? <p className="text-sm leading-6 text-ink">Mình đã chuyển câu hỏi thành tiêu chí có cấu trúc và đối chiếu với dữ liệu nhân sự mà bạn được phép xem.</p> : null}
+        {content}
+      </div>
+    </div>
+  );
+}
+
 export function PeopleSearchView() {
   const { session } = useAuth();
   const params = useSearchParams();
-  const [companyId, setCompanyId] = useState(params.get("companyId") ?? "");
+  const [companyId, setCompanyId] = useState(params?.get("companyId") ?? "");
   const companies = useQuery({ queryKey: ["company-options", session?.user.id], queryFn: () => listAvailableCompanies(session!), enabled: session?.user.role === "SUPER_ADMIN" });
+  const [mode, setMode] = useState<SearchMode>("criteria");
   const [filters, setFilters] = useState(initialFilters);
+  const [assistantQuestion, setAssistantQuestion] = useState("");
   const [resultLayout, setResultLayout] = useState<ResultLayout>("cards");
-  const [state, setState] = useState<{ status: "idle" | "loading" | "success" | "error"; data?: PeopleSearchResponse; error?: string }>({ status: "idle" });
-  const lastRequest = useRef<string | null>(null);
+  const [state, setState] = useState<SearchState>({ status: "idle" });
+  const lastRequest = useRef<{ query: string; mode: SearchMode } | null>(null);
   const requestId = useRef(0);
   const controller = useRef<AbortController | null>(null);
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   useEffect(() => () => controller.current?.abort(), []);
 
-  const runSearch = async (query: string) => {
+  const runSearch = async (query: string, requestMode: SearchMode) => {
     if (!session) return;
     controller.current?.abort();
     const currentId = ++requestId.current;
     const nextController = new AbortController();
     controller.current = nextController;
-    lastRequest.current = query;
-    setState({ status: "loading" });
+    lastRequest.current = { query, mode: requestMode };
+    setState({ status: "loading", mode: requestMode, query });
     try {
       const data = await searchPeople({ query, accessToken: session.accessToken, signal: nextController.signal, companyId: session.user.role === "SUPER_ADMIN" ? companyId : undefined });
-      if (currentId === requestId.current) setState({ status: "success", data });
+      if (currentId === requestId.current) setState({ status: "success", mode: requestMode, query, data });
     } catch (error) {
       if (nextController.signal.aborted || currentId !== requestId.current) return;
-      setState({ status: "error", error: error instanceof Error ? error.message : "Không thể thực hiện tìm kiếm." });
+      setState({ status: "error", mode: requestMode, query, error: error instanceof Error ? error.message : "Không thể thực hiện tìm kiếm." });
     }
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const compiled = compileQuery(filters);
-    if (compiled) void runSearch(compiled);
+    if (compiled) void runSearch(compiled, "criteria");
+  };
+
+  const handleAssistantSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const question = assistantQuestion.trim();
+    if (question) void runSearch(question, "assistant");
+  };
+
+  const handleTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    event.preventDefault();
+    const nextIndex = (index + (event.key === "ArrowRight" ? 1 : -1) + 2) % 2;
+    const nextMode: SearchMode = nextIndex === 0 ? "criteria" : "assistant";
+    setMode(nextMode);
+    tabRefs.current[nextIndex]?.focus();
+  };
+
+  const retryLastRequest = () => {
+    const captured = lastRequest.current;
+    if (captured) void runSearch(captured.query, captured.mode);
   };
 
   const setFilter = (key: keyof PeopleSearchFilters, value: string) => setFilters((current) => ({ ...current, [key]: value }));
@@ -270,33 +330,56 @@ export function PeopleSearchView() {
       <header>
         <Badge tone="ai">People Intelligence</Badge>
         <h1 className="mt-3 text-balance text-2xl font-bold tracking-[-0.03em] text-ink sm:text-3xl">Tìm kiếm nhân sự</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">Mô tả nhu cầu và thêm bộ lọc có cấu trúc. Hệ thống chỉ xếp hạng theo dữ liệu có bằng chứng.</p>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">Tìm theo tiêu chí cụ thể hoặc hỏi AI bằng ngôn ngữ tự nhiên. Hệ thống chỉ xếp hạng theo dữ liệu có bằng chứng.</p>
         <p className="mt-3 max-w-2xl rounded-xl border border-border bg-background p-3 text-sm leading-6 text-muted">
           Bản tích hợp thử nghiệm: dữ liệu kỹ năng, lĩnh vực và mức độ sẵn sàng đã xác minh chưa được nối đầy đủ. Hệ thống sẽ báo thiếu dữ liệu thay vì tự suy đoán kết quả. Tìm kiếm AI cần cấu hình dịch vụ phía máy chủ.
         </p>
       </header>
 
-      <Card className="mt-6 p-4 sm:p-5">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="people-query" className="mb-1 block text-sm font-semibold text-ink">Mô tả yêu cầu</label>
-            <Input id="people-query" value={filters.query} onChange={(event) => setFilter("query", event.target.value)} placeholder="Ai có kinh nghiệm React trên 2 năm..." aria-label="Mô tả yêu cầu tìm kiếm nhân sự" />
-          </div>
-          <fieldset className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <legend className="mb-2 text-sm font-semibold text-ink">Bộ lọc có cấu trúc</legend>
-            <Input aria-label="Kỹ năng bắt buộc" value={filters.requiredSkills} onChange={(event) => setFilter("requiredSkills", event.target.value)} placeholder="Kỹ năng bắt buộc" />
-            <Input aria-label="Kỹ năng ưu tiên" value={filters.preferredSkills} onChange={(event) => setFilter("preferredSkills", event.target.value)} placeholder="Kỹ năng ưu tiên" />
-            <Input aria-label="Số năm kinh nghiệm tối thiểu" type="number" min="0" max="60" step="0.5" value={filters.minExperienceYears} onChange={(event) => setFilter("minExperienceYears", event.target.value)} placeholder="Số năm kinh nghiệm" />
-            <Input aria-label="Domain bắt buộc" value={filters.domains} onChange={(event) => setFilter("domains", event.target.value)} placeholder="Domain bắt buộc" />
-            <label className="text-sm text-ink"><span className="sr-only">Trạng thái sẵn sàng</span><select aria-label="Trạng thái sẵn sàng" className="h-12 w-full rounded-xl border border-border bg-white px-4" value={filters.availability} onChange={(event) => setFilter("availability", event.target.value)}><option value="">Mọi trạng thái sẵn sàng</option><option value="AVAILABLE">Sẵn sàng ngay</option><option value="AVAILABLE_SOON">Sắp sẵn sàng</option></select></label>
-          </fieldset>
-          <Button type="submit" disabled={state.status === "loading" || compileQuery(filters).length === 0}><Search size={16} aria-hidden="true" /> Tìm kiếm</Button>
-        </form>
-      </Card>
+      <div className="mt-6 border-b border-border">
+        <div role="tablist" aria-label="Cách tìm kiếm nhân sự" className="flex gap-6">
+          {([{ value: "criteria", label: "Tìm theo yêu cầu", icon: SlidersHorizontal }, { value: "assistant", label: "Hỏi AI", icon: MessageSquareText }] as const).map((tab, index) => {
+            const Icon = tab.icon;
+            const selected = mode === tab.value;
+            return <button key={tab.value} ref={(node) => { tabRefs.current[index] = node; }} type="button" role="tab" id={`people-search-tab-${tab.value}`} aria-controls={`people-search-panel-${tab.value}`} aria-selected={selected} tabIndex={selected ? 0 : -1} onClick={() => setMode(tab.value)} onKeyDown={(event) => handleTabKeyDown(event, index)} className={`relative flex min-h-12 items-center gap-2 px-1 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none ${selected ? "text-primary" : "text-muted hover:text-ink"}`}><Icon size={17} aria-hidden="true" />{tab.label}<span aria-hidden="true" className={`absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-primary transition-opacity motion-reduce:transition-none ${selected ? "opacity-100" : "opacity-0"}`} /></button>;
+          })}
+        </div>
+      </div>
 
-      {state.status === "loading" ? <div className="mt-4"><LoadingState label="Đang tìm kiếm nhân sự" /></div> : null}
-      {state.status === "error" ? <div className="mt-4"><ErrorState title="Không thể thực hiện tìm kiếm" description={state.error ?? "Kết nối dịch vụ tìm kiếm đang gián đoạn."} onRetry={() => { const captured = lastRequest.current; if (captured) void runSearch(captured); }} /></div> : null}
-      {state.status === "success" && state.data ? <><SearchInterpretationPanel interpretation={state.data.plan.interpretation} needsClarification={state.data.plan.needs_clarification} /><UnsupportedBanner reasons={state.data.unsupported_reasons} /><ResultsBody data={state.data} layout={resultLayout} onLayoutChange={setResultLayout} onRetry={() => { const captured = lastRequest.current; if (captured) void runSearch(captured); }} /></> : null}
+      {mode === "criteria" ? <section role="tabpanel" id="people-search-panel-criteria" aria-labelledby="people-search-tab-criteria">
+        <Card className="mt-6 p-4 sm:p-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="people-query" className="mb-1 block text-sm font-semibold text-ink">Mô tả yêu cầu</label>
+              <Input id="people-query" value={filters.query} onChange={(event) => setFilter("query", event.target.value)} placeholder="Ai có kinh nghiệm React trên 2 năm..." aria-label="Mô tả yêu cầu tìm kiếm nhân sự" />
+            </div>
+            <fieldset className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <legend className="mb-2 text-sm font-semibold text-ink">Bộ lọc có cấu trúc</legend>
+              <Input aria-label="Kỹ năng bắt buộc" value={filters.requiredSkills} onChange={(event) => setFilter("requiredSkills", event.target.value)} placeholder="Kỹ năng bắt buộc" />
+              <Input aria-label="Kỹ năng ưu tiên" value={filters.preferredSkills} onChange={(event) => setFilter("preferredSkills", event.target.value)} placeholder="Kỹ năng ưu tiên" />
+              <Input aria-label="Số năm kinh nghiệm tối thiểu" type="number" min="0" max="60" step="0.5" value={filters.minExperienceYears} onChange={(event) => setFilter("minExperienceYears", event.target.value)} placeholder="Số năm kinh nghiệm" />
+              <Input aria-label="Domain bắt buộc" value={filters.domains} onChange={(event) => setFilter("domains", event.target.value)} placeholder="Domain bắt buộc" />
+              <label className="text-sm text-ink"><span className="sr-only">Trạng thái sẵn sàng</span><select aria-label="Trạng thái sẵn sàng" className="h-12 w-full rounded-xl border border-border bg-white px-4" value={filters.availability} onChange={(event) => setFilter("availability", event.target.value)}><option value="">Mọi trạng thái sẵn sàng</option><option value="AVAILABLE">Sẵn sàng ngay</option><option value="AVAILABLE_SOON">Sắp sẵn sàng</option></select></label>
+            </fieldset>
+            <Button type="submit" disabled={state.status === "loading" || compileQuery(filters).length === 0}><Search size={16} aria-hidden="true" /> Tìm kiếm</Button>
+          </form>
+        </Card>
+        <SearchFeedback state={state} mode="criteria" layout={resultLayout} onLayoutChange={setResultLayout} onRetry={retryLastRequest} />
+      </section> : null}
+
+      {mode === "assistant" ? <section role="tabpanel" id="people-search-panel-assistant" aria-labelledby="people-search-tab-assistant" className="pt-6">
+        <Card className="overflow-hidden border-[#E5DFFF] p-0">
+          <div className="border-b border-[#E5DFFF] bg-[#F8F6FF] p-4 sm:p-5"><div className="flex items-start gap-3"><span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-white text-violet-strong shadow-sm"><Sparkles size={19} aria-hidden="true" /></span><div><h2 className="font-bold text-ink">Hỏi Milo để tìm đúng người</h2><p className="mt-1 max-w-2xl text-sm leading-6 text-muted">Mô tả công việc, kỹ năng hoặc thời điểm cần người. Milo sẽ làm rõ tiêu chí và trả về ứng viên dựa trên dữ liệu bạn được phép xem.</p></div></div></div>
+          <div className="p-4 sm:p-5">
+            {state.mode !== "assistant" || state.status === "idle" ? <div className="mb-5"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">Gợi ý câu hỏi</p><div className="mt-3 flex flex-wrap gap-2">{assistantPrompts.map((prompt) => <button key={prompt} type="button" onClick={() => setAssistantQuestion(prompt)} className="rounded-full border border-border bg-background px-3 py-2 text-left text-xs font-medium text-ink transition-colors hover:border-primary hover:bg-primary-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none">{prompt}</button>)}</div></div> : null}
+            <form onSubmit={handleAssistantSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <label htmlFor="people-ai-question" className="min-w-0 flex-1"><span className="mb-1 block text-sm font-semibold text-ink">Bạn đang cần tìm ai?</span><textarea id="people-ai-question" aria-label="Câu hỏi cho AI" rows={3} maxLength={1200} value={assistantQuestion} onChange={(event) => setAssistantQuestion(event.target.value)} placeholder="Ví dụ: Ai phù hợp dẫn dắt dự án React trong quý tới?" className="min-h-24 w-full resize-y rounded-2xl border border-border bg-white px-4 py-3 text-sm leading-6 text-ink outline-none transition-shadow placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 motion-reduce:transition-none" /></label>
+              <Button type="submit" disabled={state.status === "loading" || assistantQuestion.trim().length === 0} className="min-h-12 shrink-0 sm:mb-0.5"><Send size={16} aria-hidden="true" />Hỏi AI</Button>
+            </form>
+          </div>
+        </Card>
+        <SearchFeedback state={state} mode="assistant" layout={resultLayout} onLayoutChange={setResultLayout} onRetry={retryLastRequest} />
+      </section> : null}
     </div>
   );
 }

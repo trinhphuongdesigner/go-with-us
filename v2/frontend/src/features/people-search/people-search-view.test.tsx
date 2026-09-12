@@ -1,5 +1,7 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render as renderWithTestingLibrary, screen, waitFor, within } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
+import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { searchPeople, type PeopleSearchResponse } from "@/features/people-search/people-search-api";
@@ -35,6 +37,11 @@ const candidate: PeopleSearchResponse["candidates"][number] = {
   evidence: [{ type: "employment", user_id: null, employment_id: "e1", job_title: null, title: "Engineer", status: "ACTIVE", start_date: "2022-01-01", end_date: "" }],
 };
 
+function render(ui: ReactElement) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return renderWithTestingLibrary(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+}
+
 async function submit(query = "React trên 2 năm") {
   const user = userEvent.setup();
   await user.type(screen.getByLabelText("Mô tả yêu cầu tìm kiếm nhân sự"), query);
@@ -43,6 +50,38 @@ async function submit(query = "React trên 2 năm") {
 
 describe("PeopleSearchView", () => {
   beforeEach(() => vi.mocked(searchPeople).mockReset());
+
+  it("offers separate criteria and AI question tabs with keyboard navigation", async () => {
+    render(<PeopleSearchView />);
+    const criteriaTab = screen.getByRole("tab", { name: "Tìm theo yêu cầu" });
+    const assistantTab = screen.getByRole("tab", { name: "Hỏi AI" });
+    expect(criteriaTab).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByLabelText("Kỹ năng bắt buộc")).toBeVisible();
+
+    criteriaTab.focus();
+    await userEvent.setup().keyboard("{ArrowRight}");
+    expect(assistantTab).toHaveFocus();
+    expect(assistantTab).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByLabelText("Câu hỏi cho AI")).toBeVisible();
+    expect(screen.queryByLabelText("Kỹ năng bắt buộc")).not.toBeInTheDocument();
+
+    await userEvent.setup().keyboard("{ArrowLeft}");
+    expect(criteriaTab).toHaveFocus();
+    expect(criteriaTab).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("uses the evidence-backed people search API for an AI question", async () => {
+    vi.mocked(searchPeople).mockResolvedValue({ status: "empty", plan, candidates: [], unsupported_reasons: [], explanation: null, explanation_source: null });
+    render(<PeopleSearchView />);
+    await userEvent.setup().click(screen.getByRole("tab", { name: "Hỏi AI" }));
+    const question = "Ai phù hợp dẫn dắt dự án React trong quý tới?";
+    await userEvent.setup().type(screen.getByLabelText("Câu hỏi cho AI"), question);
+    await userEvent.setup().click(screen.getByRole("button", { name: "Hỏi AI" }));
+
+    await waitFor(() => expect(searchPeople).toHaveBeenCalledWith(expect.objectContaining({ accessToken: "actual-session-token", query: question, signal: expect.any(AbortSignal) })));
+    expect(await screen.findByText("Không tìm thấy nhân sự phù hợp")).toBeVisible();
+    expect(screen.getByText(question, { selector: "div" })).toBeVisible();
+  });
 
   it("shows interpreted strict skill years separately from overall experience", async () => {
     vi.mocked(searchPeople).mockResolvedValue({ ...canonicalSearchResponse, plan: { ...canonicalSearchResponse.plan, interpretation: searchInterpretation } });
