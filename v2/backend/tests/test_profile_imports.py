@@ -1009,6 +1009,10 @@ async def test_selective_apply_is_atomic_and_idempotent(
     persisted_import = await db_session.get(ProfileImport, import_id)
     assert persisted_user is not None and persisted_user.job_title == "Product Analyst"
     assert persisted_user.version == 2
+    profile = await client.get("/api/v2/profile/me", headers=headers)
+    assert profile.status_code == 200
+    assert profile.json()["jobTitle"] == "Product Analyst"
+    assert profile.json()["profileVersion"] == 2
     assert persisted_import is not None and persisted_import.status == ProfileImportStatus.APPLIED
     assert await db_session.scalar(select(func.count()).select_from(ProfileFieldProvenance)) == 1
     assert (

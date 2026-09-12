@@ -80,8 +80,10 @@ class User(TimestampMixin, Base):
             name="ck_users_role_company",
         ),
         CheckConstraint("email = lower(trim(email))", name="ck_users_email_canonical"),
+        CheckConstraint("version > 0", name="ck_users_version_positive"),
         UniqueConstraint("id", "company_id", name="uq_users_id_company_id"),
         Index("uq_users_email_lower", func.lower(email), unique=True),
+        Index("ix_users_roster_scope", "company_id", "role", "is_active", "name", "id"),
     )
 
 

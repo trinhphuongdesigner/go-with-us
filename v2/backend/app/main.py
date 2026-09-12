@@ -10,7 +10,7 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.responses import Response
 
 from app.ai.provider_runtime import build_profile_import_ai_gateway
-from app.api.v2 import auth_router, profile_imports_router
+from app.api.v2 import auth_router, people_router, profile_imports_router, profile_router
 from app.core.config import Settings, get_settings
 
 
@@ -90,6 +90,8 @@ async def attach_request_id(request: Request, call_next: RequestResponseEndpoint
 
 
 app.include_router(auth_router, prefix="/api/v2")
+app.include_router(profile_router, prefix="/api/v2")
+app.include_router(people_router, prefix="/api/v2")
 app.include_router(profile_imports_router, prefix="/api/v2")
 
 

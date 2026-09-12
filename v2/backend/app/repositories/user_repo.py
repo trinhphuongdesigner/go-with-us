@@ -1,10 +1,12 @@
 import uuid
 from collections.abc import Sequence
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlalchemy.sql.elements import ColumnElement
 
+from app.domain.enums import Role
 from app.domain.models import Company, Employment, User
 from app.repositories.base import BaseRepository
 
@@ -38,6 +40,83 @@ class UserRepository(BaseRepository[User]):
             select(User).where(User.company_id == company_id).order_by(User.email)
         )
         return result.scalars().all()
+
+    def _roster_filters(
+        self,
+        company_id: uuid.UUID,
+        *,
+        query: str | None,
+        active: bool | None,
+    ) -> list[ColumnElement[bool]]:
+        filters = [User.company_id == company_id, User.role == Role.EMPLOYEE]
+        if active is not None:
+            filters.append(User.is_active.is_(active))
+        if query:
+            escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            pattern = f"%{escaped}%"
+            filters.append(
+                or_(
+                    User.name.ilike(pattern, escape="\\"),
+                    User.job_title.ilike(pattern, escape="\\"),
+                )
+            )
+        return filters
+
+    async def count_roster(
+        self,
+        company_id: uuid.UUID,
+        *,
+        query: str | None,
+        active: bool | None,
+    ) -> int:
+        result = await self.session.scalar(
+            select(func.count())
+            .select_from(User)
+            .where(*self._roster_filters(company_id, query=query, active=active))
+        )
+        return int(result or 0)
+
+    async def list_roster(
+        self,
+        company_id: uuid.UUID,
+        *,
+        query: str | None,
+        active: bool | None,
+        offset: int,
+        limit: int,
+    ) -> Sequence[User]:
+        result = await self.session.execute(
+            select(User)
+            .where(*self._roster_filters(company_id, query=query, active=active))
+            .order_by(func.lower(User.name), User.id)
+            .offset(offset)
+            .limit(limit)
+        )
+        return result.scalars().all()
+
+    async def get_roster_person(self, user_id: uuid.UUID, company_id: uuid.UUID) -> User | None:
+        result = await self.session.execute(
+            select(User).where(
+                User.id == user_id,
+                User.company_id == company_id,
+                User.role == Role.EMPLOYEE,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def update_profile_if_version(
+        self,
+        user_id: uuid.UUID,
+        expected_version: int,
+        values: dict[str, object],
+    ) -> User | None:
+        result = await self.session.execute(
+            update(User)
+            .where(User.id == user_id, User.version == expected_version)
+            .values(**values, version=User.version + 1, updated_at=func.now())
+            .returning(User)
+        )
+        return result.scalar_one_or_none()
 
 
 class CompanyRepository(BaseRepository[Company]):
