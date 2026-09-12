@@ -49,7 +49,7 @@ export class CompaniesController {
 
   // Also registered ahead of ':id' — companies the caller belongs to.
   @Get('mine')
-  @Roles(Role.HR, Role.BOD, Role.EMPLOYEE)
+  @Roles(Role.COMPANY_ADMIN, Role.HR, Role.BOD, Role.EMPLOYEE)
   listMine(@CurrentUser() user: AuthenticatedUser) {
     return this.companiesService.listMine(user.id);
   }
