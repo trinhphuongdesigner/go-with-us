@@ -1,0 +1,60 @@
+.passport-print-surface {
+  display: none;
+}
+
+@page career-passport {
+  size: A4 portrait;
+  margin: 15mm;
+}
+
+@media print {
+  html:has(.passport-print-surface),
+  body:has(.passport-print-surface) {
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  body:has(> .passport-print-surface) > :not(.passport-print-surface) {
+    display: none !important;
+  }
+
+  .passport-print-surface {
+    display: block !important;
+    page: career-passport;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    color: #172033;
+    background: #fff;
+    font-size: 10pt;
+    line-height: 1.5;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .passport-print-surface article {
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  .passport-print-surface header,
+  .passport-print-surface section,
+  .passport-print-surface li {
+    break-inside: avoid;
+  }
+
+  .passport-print-surface h2,
+  .passport-print-surface h3 {
+    break-after: avoid;
+  }
+
+  .passport-print-surface p,
+  .passport-print-surface li {
+    overflow-wrap: anywhere;
+    orphans: 3;
+    widows: 3;
+  }
+}

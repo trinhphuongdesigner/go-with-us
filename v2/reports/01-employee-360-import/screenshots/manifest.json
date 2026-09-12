@@ -1,0 +1,64 @@
+{
+  "schema_version": "1.0",
+  "implementation_sha": "de246d8c74ec8425cec0172613012fc600811719",
+  "capture_mode": "production build, full-page screenshot from declared viewport",
+  "entries": [
+    {
+      "path": "import-390x844.png",
+      "route": "/ho-so/import",
+      "viewport": "390x844",
+      "rendered_size": "390x1554",
+      "persona": "EMPLOYEE_22_30",
+      "sha256": "3acf50d991c8c9dfe3cc3652b9a5232abc8e68e430c3005197ceee6826692c5e"
+    },
+    {
+      "path": "proposal-390x844.png",
+      "route": "/ho-so/import/:importId",
+      "viewport": "390x844",
+      "rendered_size": "390x1856",
+      "persona": "EMPLOYEE_22_30",
+      "sha256": "400a02006641e7b38a5c4babfbd885c80a63269d53f36ba72088a134520a9560"
+    },
+    {
+      "path": "import-768x1024.png",
+      "route": "/ho-so/import",
+      "viewport": "768x1024",
+      "rendered_size": "768x1350",
+      "persona": "LOW_TECH_USER",
+      "sha256": "c3b327c238678b92c027043fd5f3a9c63730c046ee10593697a2c2986a5eb070"
+    },
+    {
+      "path": "proposal-768x1024.png",
+      "route": "/ho-so/import/:importId",
+      "viewport": "768x1024",
+      "rendered_size": "768x1532",
+      "persona": "LOW_TECH_USER",
+      "sha256": "e3ec3f39741f969f745169dbef0a811adc36e1acad1c0027d4d0404c01f9ca8f"
+    },
+    {
+      "path": "import-1440x900.png",
+      "route": "/ho-so/import",
+      "viewport": "1440x900",
+      "rendered_size": "1440x988",
+      "persona": "EMPLOYEE_22_30",
+      "sha256": "6a61a1fbb5d7c4a2f20eeb5b46d51320a589b44e0724e9c3c2f62ab97e07d94c"
+    },
+    {
+      "path": "proposal-1440x900.png",
+      "route": "/ho-so/import/:importId",
+      "viewport": "1440x900",
+      "rendered_size": "1440x1132",
+      "persona": "MANAGER_45_55",
+      "sha256": "396010922fc3586e213e8dde84a29dd3ec8b8d3c07c53d7c841f284ddbcd1aef"
+    },
+    {
+      "path": "proposal-company-admin-1440x900.png",
+      "route": "/ho-so/import/:importId",
+      "viewport": "1440x900",
+      "rendered_size": "1440x1132",
+      "persona": "HR_35_45",
+      "role_mapping": "COMPANY_ADMIN đại diện quản lý và HR/BOD trong Wave 1",
+      "sha256": "6f76c22a3167e69aa0e4fbc632f31349a827f436c9ddab726ff847b5ca5d1238"
+    }
+  ]
+}

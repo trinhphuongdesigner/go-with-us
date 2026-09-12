@@ -1,0 +1,91 @@
+name: careermate-v2-qc
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: careermate_qc
+      POSTGRES_PASSWORD: ${QC_POSTGRES_PASSWORD:?Run bash v2/scripts/qc.sh up first}
+      POSTGRES_DB: careermate_v2_qc
+    ports:
+      - "127.0.0.1:${QC_DB_PORT:-55440}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U careermate_qc -d careermate_v2_qc"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - qc-postgres:/var/lib/postgresql/data
+
+  clamav:
+    image: clamav/clamav:stable
+    platform: linux/amd64
+    volumes:
+      - qc-clamav:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "clamdcheck.sh"]
+      interval: 10s
+      timeout: 10s
+      start_period: 180s
+      retries: 30
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.qc
+    environment:
+      CAREERMATE_ENVIRONMENT: local
+      CAREERMATE_DATABASE_URL: postgresql+asyncpg://careermate_qc:${QC_POSTGRES_PASSWORD}@db:5432/careermate_v2_qc
+      CAREERMATE_JWT_SECRET: ${QC_JWT_SECRET:?Missing QC_JWT_SECRET}
+      CAREERMATE_CORS_ORIGINS: http://localhost:${QC_WEB_PORT:-3140},http://127.0.0.1:${QC_WEB_PORT:-3140}
+      CAREERMATE_DEMO_SUPER_ADMIN_PASSWORD: ${QC_SUPER_ADMIN_PASSWORD:?Missing QC_SUPER_ADMIN_PASSWORD}
+      CAREERMATE_DEMO_COMPANY_ADMIN_PASSWORD: ${QC_COMPANY_ADMIN_PASSWORD:?Missing QC_COMPANY_ADMIN_PASSWORD}
+      CAREERMATE_DEMO_EMPLOYEE_PASSWORD: ${QC_EMPLOYEE_PASSWORD:?Missing QC_EMPLOYEE_PASSWORD}
+      CAREERMATE_DEMO_LOGIN_ENABLED: ${QC_DEMO_LOGIN_ENABLED:-true}
+      QC_BOD_PASSWORD: ${QC_BOD_PASSWORD:?Missing QC_BOD_PASSWORD}
+      QC_HR_PASSWORD: ${QC_HR_PASSWORD:?Missing QC_HR_PASSWORD}
+      CAREERMATE_MALWARE_SCANNER: clamav
+      CAREERMATE_CLAMAV_HOST: clamav
+      CAREERMATE_OCR_ENGINE: tesseract
+      CAREERMATE_UPLOAD_DIR: /app/uploads
+      CAREERMATE_AI_PROVIDER: ${CAREERMATE_AI_PROVIDER:-anthropic}
+      CAREERMATE_AI_BASE_URL: ${CAREERMATE_AI_BASE_URL:-https://api.anthropic.com}
+      CAREERMATE_AI_MODEL: ${CAREERMATE_AI_MODEL:-}
+      CAREERMATE_AI_API_KEY: ${CAREERMATE_AI_API_KEY:-}
+    volumes:
+      - qc-uploads:/app/uploads
+    ports:
+      - "127.0.0.1:${QC_API_PORT:-8140}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v2/health', timeout=5)"]
+      interval: 3s
+      timeout: 6s
+      start_period: 10s
+      retries: 30
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile.qc
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:${QC_API_PORT:-8140}/api/v2
+        NEXT_PUBLIC_QC_DEMO_LOGIN_ENABLED: ${QC_DEMO_LOGIN_ENABLED:-true}
+    ports:
+      - "127.0.0.1:${QC_WEB_PORT:-3140}:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/login').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 3s
+      timeout: 6s
+      start_period: 10s
+      retries: 30
+
+volumes:
+  qc-postgres:
+  qc-uploads:
+  qc-clamav:

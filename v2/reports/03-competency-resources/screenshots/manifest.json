@@ -1,0 +1,142 @@
+{
+  "schema_version": "1.0",
+  "exact_sha": "6e1eafdb2e4116277e2325ee143d919b3d6aaf2d",
+  "verified_tree_sha": "80eba804f461385cbdb3d269484a5d9fb0468acf",
+  "capture_mode": "Next.js production build; deterministic synthetic demo fixture; full-page screenshots",
+  "generated_at": "2026-09-12T05:27:34.264Z",
+  "entries": [
+    {
+      "file": "aggregate-390x844.png",
+      "route": "/ho-so",
+      "viewport": "390x844",
+      "rendered_size": "390x1616",
+      "state": "aggregate overview; experience tab; provenance and unified timeline",
+      "personas": [
+        "EMPLOYEE_22_30"
+      ],
+      "account": "employee-demo",
+      "build_meta_sha": "6e1eafdb2e4116277e2325ee143d919b3d6aaf2d",
+      "sha256": "333e6f65adac2e962e6e011a2cd5062f4488b2f85b0a4bdbf6e2f72151ea9c44"
+    },
+    {
+      "file": "aggregate-768x1024.png",
+      "route": "/ho-so",
+      "viewport": "768x1024",
+      "rendered_size": "768x1372",
+      "state": "aggregate overview; experience tab; provenance and unified timeline",
+      "personas": [
+        "LOW_TECH_USER"
+      ],
+      "account": "employee-demo",
+      "build_meta_sha": "6e1eafdb2e4116277e2325ee143d919b3d6aaf2d",
+      "sha256": "356a4c5f923524d256440360e555d2ec5da7f61c8da333c9cef25d845a81cc1f"
+    },
+    {
+      "file": "aggregate-1440x900.png",
+      "route": "/ho-so",
+      "viewport": "1440x900",
+      "rendered_size": "1440x1010",
+      "state": "aggregate overview; experience tab; provenance and unified timeline",
+      "personas": [
+        "HR_35_45",
+        "MANAGER_45_55"
+      ],
+      "account": "employee-demo",
+      "build_meta_sha": "6e1eafdb2e4116277e2325ee143d919b3d6aaf2d",
+      "sha256": "3fe3a49c6bcf4da583d39284a41522451d2f64a1ba543e63a5851aac1f717440"
+    },
+    {
+      "file": "create-project-390x844.png",
+      "route": "/ho-so",
+      "viewport": "390x844",
+      "rendered_size": "390x3302",
+      "state": "full create form; required fields first",
+      "personas": [
+        "EMPLOYEE_22_30"
+      ],
+      "account": "employee-demo",
+      "build_meta_sha": "6e1eafdb2e4116277e2325ee143d919b3d6aaf2d",
+      "sha256": "78517822c1b24e2038137376da8e612b52fcf452b0035b83312f06524532933a"
+    },
+    {
+      "file": "create-project-768x1024.png",
+      "route": "/ho-so",
+      "viewport": "768x1024",
+      "rendered_size": "768x2534",
+      "state": "full create form; required fields first",
+      "personas": [
+        "LOW_TECH_USER"
+      ],
+      "account": "employee-demo",
+      "build_meta_sha": "6e1eafdb2e4116277e2325ee143d919b3d6aaf2d",
+      "sha256": "06325f326f107343946ef551e09f11527f55e503713659e4856fc1fcef6aac4e"
+    },
+    {
+      "file": "create-project-1440x900.png",
+      "route": "/ho-so",
+      "viewport": "1440x900",
+      "rendered_size": "1440x2172",
+      "state": "full create form; required fields first",
+      "personas": [
+        "HR_35_45",
+        "MANAGER_45_55"
+      ],
+      "account": "employee-demo",
+      "build_meta_sha": "6e1eafdb2e4116277e2325ee143d919b3d6aaf2d",
+      "sha256": "cd3966c4c11c46181d9bb35c2eb50649c9235312ba221fcc367cceb33957574d"
+    },
+    {
+      "file": "edit-project-required-first-390x844.png",
+      "route": "/ho-so",
+      "viewport": "390x844",
+      "rendered_size": "390x2744",
+      "state": "edit form; Tên dự án and Vai trò before optional fields",
+      "personas": [
+        "EMPLOYEE_22_30"
+      ],
+      "account": "employee-demo",
+      "build_meta_sha": "6e1eafdb2e4116277e2325ee143d919b3d6aaf2d",
+      "sha256": "6609614499bfcd0e766f68a0c5720d4b6b31628d4c79712510eae94f2d85b341"
+    },
+    {
+      "file": "delete-confirmation-1440x900.png",
+      "route": "/ho-so",
+      "viewport": "1440x900",
+      "rendered_size": "1440x1010",
+      "state": "two-step delete confirmation with keyboard focus",
+      "personas": [
+        "HR_35_45",
+        "MANAGER_45_55"
+      ],
+      "account": "employee-demo",
+      "build_meta_sha": "6e1eafdb2e4116277e2325ee143d919b3d6aaf2d",
+      "sha256": "d1c48b060d4540e7a21e49b3c79531d895e6eff9218c8ef87eaeafa399c5a73e"
+    },
+    {
+      "file": "stale-lock-390x844.png",
+      "route": "/ho-so?state=stale",
+      "viewport": "390x844",
+      "rendered_size": "390x2186",
+      "state": "stale lock and reload action",
+      "personas": [
+        "EMPLOYEE_22_30"
+      ],
+      "account": "employee-demo",
+      "build_meta_sha": "6e1eafdb2e4116277e2325ee143d919b3d6aaf2d",
+      "sha256": "117b7a2f57581e34944b5a6b6a3dccfaa573da33441339dd6263ebe1e7c3cf9d"
+    },
+    {
+      "file": "typed-conflict-390x844.png",
+      "route": "/ho-so",
+      "viewport": "390x844",
+      "rendered_size": "390x3088",
+      "state": "typed 409 conflict after resource create",
+      "personas": [
+        "EMPLOYEE_22_30"
+      ],
+      "account": "employee-demo",
+      "build_meta_sha": "6e1eafdb2e4116277e2325ee143d919b3d6aaf2d",
+      "sha256": "6ba3e8b2a8e68a44b9bb38c9a4f240add9f576cec26aa92c389c030c6755e53d"
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "version": 2,
+  "character": "Milo",
+  "source": {
+    "type": "imagegen edit",
+    "reference": "CareerMate — Milo Reference v2 · UI handoff, node 6:201",
+    "figma_url": "https://www.figma.com/design/1VWq6SA4aANBTPKznNIT5Z/CareerMate-%E2%80%94-Milo-Reference-v2-%C2%B7-UI-handoff?node-id=6-201"
+  },
+  "prompt_summary": "Preserve the reference Milo identity and purple tablet outfit; isolate the full character on genuine alpha transparency with no border, shadow, text or watermark.",
+  "assets": [
+    {
+      "path": "milo-purple-tablet-1x.png",
+      "width": 384,
+      "height": 384,
+      "format": "png",
+      "alpha": true,
+      "use": "compact UI"
+    },
+    {
+      "path": "milo-purple-tablet-2x.png",
+      "width": 768,
+      "height": 768,
+      "format": "png",
+      "alpha": true,
+      "use": "retina UI"
+    },
+    {
+      "path": "milo-purple-tablet-4x.png",
+      "width": 1536,
+      "height": 1536,
+      "format": "png",
+      "alpha": true,
+      "use": "4x PNG handoff"
+    },
+    {
+      "path": "milo-purple-tablet.webp",
+      "width": 1254,
+      "height": 1254,
+      "format": "webp",
+      "alpha": true,
+      "use": "application default"
+    },
+    {
+      "path": "milo-celebrate.png",
+      "width": 1254,
+      "height": 1254,
+      "format": "png",
+      "alpha": true,
+      "use": "success and completion states",
+      "source": "origin/master frontend/public/characters"
+    },
+    {
+      "path": "milo-guide.png",
+      "width": 1254,
+      "height": 1254,
+      "format": "png",
+      "alpha": true,
+      "use": "roadmap guidance",
+      "source": "origin/master frontend/public/characters"
+    },
+    {
+      "path": "milo-standing.png",
+      "width": 1254,
+      "height": 1254,
+      "format": "png",
+      "alpha": true,
+      "use": "neutral empty and profile states",
+      "source": "origin/master frontend/public/characters"
+    },
+    {
+      "path": "milo-wave.png",
+      "width": 1254,
+      "height": 1254,
+      "format": "png",
+      "alpha": true,
+      "use": "welcome and onboarding",
+      "source": "origin/master frontend/public/characters"
+    }
+  ]
+}

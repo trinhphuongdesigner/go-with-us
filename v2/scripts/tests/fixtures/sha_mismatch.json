@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "report_language": "vi",
+  "feature_id": "sha-mismatch",
+  "feature_name": "SHA Mismatch",
+  "branch": "feat/v2-rebuild",
+  "implementation_sha": "0123456789abcdef0123456789abcdef01234567",
+  "generated_at": "2025-09-12T02:00:00Z",
+  "scope": ["x"],
+  "user_value": "x",
+  "functional_breakdown": [{"step":1,"actor":"D","behavior":"B"}],
+  "acceptance_criteria": [{"id":"AC-01","description":"d","status":"PASS","evidence_check_ids":["CHK-FMT-01"]}],
+  "checks": [{
+    "id": "CHK-FMT-01",
+    "category": "FORMAT",
+    "required": true,
+    "status": "PASS",
+    "command": "echo",
+    "cwd": ".",
+    "started_at": "2025-09-12T01:59:00Z",
+    "finished_at": "2025-09-12T01:59:01Z",
+    "exit_code": 0,
+    "exact_sha": "ffffffffffffffffffffffffffffffffffffffff",
+    "summary": "bad",
+    "artifact_paths": []
+  }],
+  "persona_reviews": [
+    {"persona":"EMPLOYEE_22_30","viewport":"1280x720","status":"PASS","findings":[]},
+    {"persona":"HR_35_45","viewport":"1280x720","status":"PASS","findings":[]},
+    {"persona":"MANAGER_45_55","viewport":"1280x720","status":"PASS","findings":[]},
+    {"persona":"LOW_TECH_USER","viewport":"1280x720","status":"PASS","findings":[]}
+  ],
+  "known_gaps": [],
+  "overall_status": "PASS"
+}

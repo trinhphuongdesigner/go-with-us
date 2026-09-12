@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+:root,
+[data-theme="bright-milo"] {
+  --background: #f6faf8;
+  --surface: #ffffff;
+  --ink: #18312a;
+  --muted: #52645d;
+  --border: #dce9e3;
+  --primary: #247a66;
+  --primary-strong: #1c6756;
+  --primary-subtle: #dbf4e7;
+  --sage: #5b7f65;
+  --sage-strong: #45644e;
+  --violet: #7867d9;
+  --violet-strong: #5e4eb8;
+  --amber: #c88a2b;
+  --milo: #e8873c;
+  --danger: #b42318;
+  --danger-soft: #fef3f2;
+  --shadow-soft: 0 18px 45px rgb(24 49 42 / 8%);
+}
+
+[data-theme="bright-sky"] {
+  --background: #f4f8fc;
+  --surface: #ffffff;
+  --ink: #122438;
+  --muted: #4e657d;
+  --border: #d4e3f0;
+  --primary: #1a6cb0;
+  --primary-strong: #13548a;
+  --primary-subtle: #dceefa;
+  --shadow-soft: 0 18px 45px rgb(18 36 56 / 8%);
+}
+
+[data-theme="bright-violet"] {
+  --background: #faf7fd;
+  --surface: #ffffff;
+  --ink: #241838;
+  --muted: #625675;
+  --border: #e7def3;
+  --primary: #6b47b8;
+  --primary-strong: #543398;
+  --primary-subtle: #efe9fc;
+  --shadow-soft: 0 18px 45px rgb(36 24 56 / 8%);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
+  --color-primary-subtle: var(--primary-subtle);
+  --color-sage: var(--sage);
+  --color-sage-strong: var(--sage-strong);
+  --color-violet: var(--violet);
+  --color-violet-strong: var(--violet-strong);
+  --color-amber: var(--amber);
+  --color-milo: var(--milo);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --font-sans: "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--background);
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background: var(--background);
+  color: var(--ink);
+  font-family: "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary) 70%, white);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--primary) 18%, white);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+}

@@ -1,0 +1,569 @@
+{
+  "schema_version": "1.0",
+  "report_language": "vi",
+  "feature_id": "02-core-profile-roster",
+  "feature_name": "Wave 1 — Hồ sơ năng lực cốt lõi và roster theo tenant",
+  "branch": "feat/v2-rebuild",
+  "implementation_sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+  "verified_tree_sha": "052b9d39877cfe584033bf2c574594495df79497",
+  "generated_at": "2026-09-12T04:01:02.578501Z",
+  "environment": {
+    "os": "macOS Darwin arm64",
+    "python": "3.12.8",
+    "node": "v26.7.0",
+    "browser": "Chromium qua Playwright 1.63.0",
+    "database": "PostgreSQL local: careermate_v2_test và careermate_v2_migration_check",
+    "ai_provider": null
+  },
+  "scope": [
+    "Cung cấp hồ sơ cá nhân có xem, sửa tên/chức danh, phiên bản lạc quan và activity log cùng transaction.",
+    "Cung cấp roster HR/BOD chỉ đọc, tìm tên/chức danh, phân trang server và detail nhân sự trong company scope.",
+    "Cho SUPER_ADMIN chọn tenant rõ ràng; COMPANY_ADMIN không thể ghi đè tenant bằng URL hoặc cache phía trình duyệt.",
+    "Đồng bộ OpenAPI/generated client, migration constraint/index và các trạng thái loading, empty, error, stale.",
+    "Áp dụng CareerMate design system, Milo theo ngữ cảnh, responsive, keyboard, reduced motion và touch target 44px."
+  ],
+  "user_value": "Nhân viên cập nhật hồ sơ cơ bản an toàn; HR và quản lý xem đúng đội ngũ của công ty với giao diện rõ ràng mà không làm lộ email, quyền quản trị hoặc dữ liệu tenant khác.",
+  "functional_breakdown": [
+    {
+      "step": 1,
+      "actor": "Nhân viên",
+      "behavior": "Mở hồ sơ 360 độ, xem timeline và kỹ năng hiện có, chỉnh tên hoặc chức danh rồi lưu bằng profileVersion."
+    },
+    {
+      "step": 2,
+      "actor": "Backend",
+      "behavior": "Dùng compare-and-swap trên version, ghi activity log trong cùng transaction và trả 409 typed khi bản ghi đã thay đổi."
+    },
+    {
+      "step": 3,
+      "actor": "Company admin hoặc HR",
+      "behavior": "Xem roster employee, tìm kiếm và chuyển trang; projection chỉ chứa dữ liệu nghề nghiệp tối thiểu."
+    },
+    {
+      "step": 4,
+      "actor": "Super admin",
+      "behavior": "Chọn một company active trước khi tải roster; scope được giữ khi mở detail và quay lại danh sách."
+    },
+    {
+      "step": 5,
+      "actor": "Frontend",
+      "behavior": "Khóa cache theo principal và tenant hiệu lực, không reuse dữ liệu khi đổi tenant hoặc đổi phiên trên cùng trình duyệt."
+    },
+    {
+      "step": 6,
+      "actor": "Người dùng bàn phím hoặc reduced motion",
+      "behavior": "Điều hướng bằng focus rõ, điều khiển tối thiểu 44px và không bị chuyển động dài."
+    }
+  ],
+  "interfaces": [
+    {
+      "kind": "API",
+      "name": "GET/PATCH /api/v2/profile/me",
+      "change": "Thêm self profile read/update với optimistic version và typed 409 conflict."
+    },
+    {
+      "kind": "API",
+      "name": "GET /api/v2/people và /people/{employeeId}",
+      "change": "Thêm roster/detail theo company scope, server search và pagination."
+    },
+    {
+      "kind": "API",
+      "name": "GET /api/v2/companies/options",
+      "change": "Thêm company selector chỉ cho quyền platform:manage."
+    },
+    {
+      "kind": "DATABASE",
+      "name": "User.version và ix_users_roster_scope",
+      "change": "Thêm invariant version dương và index theo company, role, lower(name), id."
+    },
+    {
+      "kind": "UI_ROUTE",
+      "name": "/ho-so, /nhan-su và /nhan-su/:employeeId",
+      "change": "Thêm profile editor, roster và read-only person detail responsive."
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "Profile update dùng optimistic locking và audit cùng transaction; stale write không ghi đè.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-INTEGRATION",
+        "CHK-SECURITY"
+      ]
+    },
+    {
+      "id": "AC-02",
+      "description": "Roster và detail áp dụng permission cùng tenant scope ở backend, không trả email hoặc quyền quản trị.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-INTEGRATION",
+        "CHK-SECURITY"
+      ]
+    },
+    {
+      "id": "AC-03",
+      "description": "Frontend không reuse cache detail/list giữa principal hoặc tenant và bỏ qua foreign companyId với company admin.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-UNIT",
+        "CHK-E2E"
+      ]
+    },
+    {
+      "id": "AC-04",
+      "description": "Search, pagination, lỗi nghiệp vụ và validation có contract thống nhất giữa API, demo và client.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-CONTRACT",
+        "CHK-UNIT",
+        "CHK-INTEGRATION"
+      ]
+    },
+    {
+      "id": "AC-05",
+      "description": "Migration/index và SQLAlchemy metadata không drift.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-MIGRATION"
+      ]
+    },
+    {
+      "id": "AC-06",
+      "description": "UI profile, roster và detail rõ ràng trên ba viewport, đạt keyboard, axe, reduced motion và touch target.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-E2E",
+        "CHK-ACCESSIBILITY",
+        "CHK-MANUAL-UI"
+      ]
+    },
+    {
+      "id": "AC-07",
+      "description": "Format, lint, typecheck, tests và production build đều đạt trên exact SHA.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-FORMAT",
+        "CHK-LINT",
+        "CHK-TYPE",
+        "CHK-UNIT",
+        "CHK-BUILD"
+      ]
+    },
+    {
+      "id": "AC-08",
+      "description": "Không có security critical/high, dependency vulnerability hoặc secret trong committed diff.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-SECURITY"
+      ]
+    },
+    {
+      "id": "AC-09",
+      "description": "Profile production build giữ LCP dưới 2.5 giây tại ba viewport chuẩn.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-PERFORMANCE"
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "id": "CHK-FORMAT",
+      "category": "FORMAT",
+      "required": true,
+      "status": "PASS",
+      "command": ".venv/bin/ruff format --check .",
+      "cwd": "v2/backend",
+      "started_at": "2026-09-12T03:56:20Z",
+      "finished_at": "2026-09-12T03:58:05Z",
+      "exit_code": 0,
+      "exact_sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+      "summary": "Ruff xác nhận 68 file Python đã được format.",
+      "artifact_paths": [],
+      "metrics": {
+        "files": 68
+      }
+    },
+    {
+      "id": "CHK-LINT",
+      "category": "LINT",
+      "required": true,
+      "status": "PASS",
+      "command": ".venv/bin/ruff check . và npm run lint",
+      "cwd": "v2",
+      "started_at": "2026-09-12T03:56:20Z",
+      "finished_at": "2026-09-12T03:58:05Z",
+      "exit_code": 0,
+      "exact_sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+      "summary": "Backend và frontend không có lint error hoặc warning.",
+      "artifact_paths": [],
+      "metrics": {
+        "errors": 0,
+        "warnings": 0
+      }
+    },
+    {
+      "id": "CHK-TYPE",
+      "category": "TYPECHECK",
+      "required": true,
+      "status": "PASS",
+      "command": ".venv/bin/mypy app scripts và npm run typecheck",
+      "cwd": "v2",
+      "started_at": "2026-09-12T03:56:20Z",
+      "finished_at": "2026-09-12T03:58:05Z",
+      "exit_code": 0,
+      "exact_sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+      "summary": "Mypy PASS 40 source file và TypeScript PASS 0 lỗi.",
+      "artifact_paths": [],
+      "metrics": {
+        "backend_files": 40,
+        "errors": 0
+      }
+    },
+    {
+      "id": "CHK-UNIT",
+      "category": "UNIT",
+      "required": true,
+      "status": "PASS",
+      "command": "npm test",
+      "cwd": "v2/frontend",
+      "started_at": "2026-09-12T03:56:20Z",
+      "finished_at": "2026-09-12T03:58:05Z",
+      "exit_code": 0,
+      "exact_sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+      "summary": "Vitest PASS 40 test trong 10 suite, gồm cache chéo phiên, tenant override, search parity và touch target contract.",
+      "artifact_paths": [
+        "v2/frontend/tests"
+      ],
+      "metrics": {
+        "passed": 40,
+        "failed": 0,
+        "suites": 10
+      }
+    },
+    {
+      "id": "CHK-INTEGRATION",
+      "category": "INTEGRATION",
+      "required": true,
+      "status": "PASS",
+      "command": "CAREERMATE_TEST_DATABASE_URL=postgresql+asyncpg://[REDACTED]/careermate_v2_test .venv/bin/pytest -q",
+      "cwd": "v2/backend",
+      "started_at": "2026-09-12T03:56:20Z",
+      "finished_at": "2026-09-12T03:58:05Z",
+      "exit_code": 0,
+      "exact_sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+      "summary": "212 backend test PASS trên PostgreSQL riêng; bao phủ quyền, cross-company 404/403, CAS version, transaction rollback, pagination và query validation.",
+      "artifact_paths": [
+        "v2/backend/tests",
+        "v2/reports/02-core-profile-roster/traces/exact-sha-evidence.json"
+      ],
+      "metrics": {
+        "postgresql_passed": 212,
+        "failed": 0,
+        "duration_seconds": 47.73
+      }
+    },
+    {
+      "id": "CHK-CONTRACT",
+      "category": "CONTRACT",
+      "required": true,
+      "status": "PASS",
+      "command": "python -m scripts.export_openapi --check và npm run contracts:check",
+      "cwd": "v2",
+      "started_at": "2026-09-12T03:56:20Z",
+      "finished_at": "2026-09-12T03:58:05Z",
+      "exit_code": 0,
+      "exact_sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+      "summary": "OpenAPI 3.1 snapshot và generated TypeScript contract hiện tại; business 400 tách khỏi validation 422 và page có maximum 10000.",
+      "artifact_paths": [
+        "v2/contracts/openapi.json",
+        "v2/contracts/generated/openapi.ts"
+      ],
+      "metrics": {
+        "stale_contracts": 0
+      }
+    },
+    {
+      "id": "CHK-MIGRATION",
+      "category": "MIGRATION",
+      "required": true,
+      "status": "PASS",
+      "command": "alembic upgrade head và alembic check trên careermate_v2_migration_check",
+      "cwd": "v2/backend",
+      "started_at": "2026-09-12T03:56:20Z",
+      "finished_at": "2026-09-12T03:58:05Z",
+      "exit_code": 0,
+      "exact_sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+      "summary": "Migration 0007 nâng schema thành công; functional roster index khớp lower(name), id và Alembic không phát hiện drift.",
+      "artifact_paths": [
+        "v2/backend/alembic/versions/0007_core_profile_roster.py"
+      ],
+      "metrics": {
+        "head_revision": "0007_core_profile_roster",
+        "drift_operations": 0
+      }
+    },
+    {
+      "id": "CHK-BUILD",
+      "category": "BUILD",
+      "required": true,
+      "status": "PASS",
+      "command": "NEXT_PUBLIC_DEMO_MODE=true NEXT_PUBLIC_BUILD_SHA=<exact_sha> npm run build",
+      "cwd": "v2/frontend",
+      "started_at": "2026-09-12T03:56:20Z",
+      "finished_at": "2026-09-12T03:58:05Z",
+      "exit_code": 0,
+      "exact_sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+      "summary": "Next.js 16.3.5 production build PASS và nhúng đúng implementation SHA.",
+      "artifact_paths": [],
+      "metrics": {
+        "errors": 0
+      }
+    },
+    {
+      "id": "CHK-E2E",
+      "category": "E2E",
+      "required": true,
+      "status": "PASS",
+      "command": "CAREERMATE_EXPECTED_SHA=<exact_sha> CAREERMATE_E2E_USE_BUILD=true npm run test:e2e",
+      "cwd": "v2/frontend",
+      "started_at": "2026-09-12T03:56:20Z",
+      "finished_at": "2026-09-12T03:58:05Z",
+      "exit_code": 0,
+      "exact_sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+      "summary": "60 Playwright scenario PASS trên production build ở 390x844, 768x1024 và 1440x900, gồm profile, roster, detail, permissions và recovery states.",
+      "artifact_paths": [
+        "v2/frontend/tests/e2e/profile-roster.spec.ts",
+        "v2/reports/02-core-profile-roster/screenshots/manifest.json"
+      ],
+      "metrics": {
+        "passed": 60,
+        "failed": 0,
+        "viewports": 3
+      }
+    },
+    {
+      "id": "CHK-ACCESSIBILITY",
+      "category": "ACCESSIBILITY",
+      "required": true,
+      "status": "PASS",
+      "command": "npm run test:e2e (axe, keyboard, focus, touch target và reduced motion)",
+      "cwd": "v2/frontend",
+      "started_at": "2026-09-12T03:56:20Z",
+      "finished_at": "2026-09-12T03:58:05Z",
+      "exit_code": 0,
+      "exact_sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+      "summary": "Axe 0 violation; keyboard focus, reduced motion và vùng chạm tối thiểu 44x44 được kiểm tra trên ba viewport.",
+      "artifact_paths": [
+        "v2/frontend/tests/e2e/profile-roster.spec.ts"
+      ],
+      "metrics": {
+        "axe_violations": 0,
+        "viewports": 3,
+        "keyboard": true,
+        "reduced_motion": true,
+        "touch_target_px": 44
+      }
+    },
+    {
+      "id": "CHK-SECURITY",
+      "category": "SECURITY",
+      "required": true,
+      "status": "PASS",
+      "command": "bandit -ll; pip-audit; npm audit --omit=dev; gitleaks git origin/master..HEAD",
+      "cwd": "v2",
+      "started_at": "2026-09-12T03:56:20Z",
+      "finished_at": "2026-09-12T03:58:05Z",
+      "exit_code": 0,
+      "exact_sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+      "summary": "Bandit có 0 medium/high; Python và npm production có 0 vulnerability; Gitleaks quét committed diff và không phát hiện secret.",
+      "artifact_paths": [
+        "v2/backend/app/services/profile_service.py",
+        "v2/frontend/tests/profile-roster.test.tsx"
+      ],
+      "metrics": {
+        "critical_high": 0,
+        "bandit_medium_high": 0,
+        "dependency_vulnerabilities": 0,
+        "gitleaks_findings": 0
+      }
+    },
+    {
+      "id": "CHK-PERFORMANCE",
+      "category": "PERFORMANCE",
+      "required": true,
+      "status": "PASS",
+      "command": "npm run test:e2e (profile LCP budget)",
+      "cwd": "v2/frontend",
+      "started_at": "2026-09-12T03:56:20Z",
+      "finished_at": "2026-09-12T03:58:05Z",
+      "exit_code": 0,
+      "exact_sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+      "summary": "Trang hồ sơ trên production build đạt ngân sách LCP dưới 2500 ms trong cả ba viewport kiểm tra.",
+      "artifact_paths": [
+        "v2/frontend/tests/e2e/profile-roster.spec.ts"
+      ],
+      "metrics": {
+        "scenarios_under_budget": 3,
+        "budget_ms": 2500
+      }
+    },
+    {
+      "id": "CHK-MANUAL-UI",
+      "category": "MANUAL_UI",
+      "required": true,
+      "status": "PASS",
+      "command": "Independent exact-SHA persona review và đối chiếu 8 ảnh production/checksum",
+      "cwd": "v2/frontend",
+      "started_at": "2026-09-12T03:56:20Z",
+      "finished_at": "2026-09-12T03:58:05Z",
+      "exit_code": 0,
+      "exact_sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+      "summary": "Independent review xác nhận profile/roster/detail rõ ràng, responsive, một nút xóa tìm kiếm, Milo đúng ngữ cảnh và không còn P0/P1/P2 UI.",
+      "artifact_paths": [
+        "v2/reports/02-core-profile-roster/screenshots",
+        "v2/reports/02-core-profile-roster/screenshots/manifest.json"
+      ],
+      "metrics": {
+        "personas_passed": 5,
+        "screenshots": 8,
+        "checksum_mismatches": 0,
+        "open_p0": 0,
+        "open_p1": 0,
+        "open_p2_ui": 0
+      }
+    }
+  ],
+  "persona_reviews": [
+    {
+      "persona": "EMPLOYEE_22_30",
+      "viewport": "390x844",
+      "status": "PASS",
+      "findings": [
+        {
+          "severity": "P2",
+          "description": "Hành động hồ sơ cần rõ trên màn hình hẹp.",
+          "resolution": "Hai CTA được xếp dọc, giữ nhãn đầy đủ và Milo đặt sau nội dung chính."
+        }
+      ]
+    },
+    {
+      "persona": "HR_35_45",
+      "viewport": "1440x900",
+      "status": "PASS",
+      "findings": [
+        {
+          "severity": "P1",
+          "description": "Cache detail từng có thể gắn dữ liệu tenant cũ vào tenant mới trên trình duyệt dùng chung.",
+          "resolution": "Cache key nay chứa principal và tenant hiệu lực; regression A sang B xác nhận dữ liệu cũ không xuất hiện."
+        }
+      ]
+    },
+    {
+      "persona": "MANAGER_45_55",
+      "viewport": "1440x900",
+      "status": "PASS",
+      "findings": [
+        {
+          "severity": "P2",
+          "description": "Roster cần ưu tiên tên, chức danh và phòng ban để quét nhanh.",
+          "resolution": "Card giữ thứ bậc rõ, action chỉ đọc duy nhất và khoảng trắng ổn định."
+        }
+      ]
+    },
+    {
+      "persona": "LOW_TECH_USER",
+      "viewport": "768x1024",
+      "status": "PASS",
+      "findings": [
+        {
+          "severity": "P2",
+          "description": "Nút xóa tìm kiếm 40px và native Chromium X từng gây khó hiểu.",
+          "resolution": "Giữ một nút tùy biến 44x44, nhãn truy cập rõ và bàn phím tìm kiếm trên mobile."
+        }
+      ]
+    }
+  ],
+  "security_privacy_notes": [
+    "Backend bắt buộc people:read và company scope; cross-tenant detail trả 404, foreign tenant list trả 403.",
+    "Roster projection không trả email, password hash, token hoặc admin permissions.",
+    "Query cache list/detail chứa principal và tenant hiệu lực để ngăn dữ liệu riêng tư sống qua phiên khác.",
+    "Profile compare-and-swap và activity log commit hoặc rollback cùng nhau; log chỉ chứa tên trường và version.",
+    "Report, screenshot và committed diff chỉ dùng dữ liệu demo, không chứa secret hoặc dữ liệu nhân sự thật."
+  ],
+  "ai_grounding_notes": [],
+  "screenshots": [
+    {
+      "path": "v2/reports/02-core-profile-roster/screenshots/profile-390x844.png",
+      "route": "/ho-so",
+      "viewport": "390x844",
+      "sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115"
+    },
+    {
+      "path": "v2/reports/02-core-profile-roster/screenshots/profile-768x1024.png",
+      "route": "/ho-so",
+      "viewport": "768x1024",
+      "sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115"
+    },
+    {
+      "path": "v2/reports/02-core-profile-roster/screenshots/profile-1440x900.png",
+      "route": "/ho-so",
+      "viewport": "1440x900",
+      "sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115"
+    },
+    {
+      "path": "v2/reports/02-core-profile-roster/screenshots/roster-390x844.png",
+      "route": "/nhan-su",
+      "viewport": "390x844",
+      "sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115"
+    },
+    {
+      "path": "v2/reports/02-core-profile-roster/screenshots/roster-768x1024.png",
+      "route": "/nhan-su",
+      "viewport": "768x1024",
+      "sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115"
+    },
+    {
+      "path": "v2/reports/02-core-profile-roster/screenshots/roster-1440x900.png",
+      "route": "/nhan-su",
+      "viewport": "1440x900",
+      "sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115"
+    },
+    {
+      "path": "v2/reports/02-core-profile-roster/screenshots/roster-super-admin-1440x900.png",
+      "route": "/nhan-su",
+      "viewport": "1440x900",
+      "sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115"
+    },
+    {
+      "path": "v2/reports/02-core-profile-roster/screenshots/person-detail-1440x900.png",
+      "route": "/nhan-su/demo-employee",
+      "viewport": "1440x900",
+      "sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115"
+    }
+  ],
+  "known_gaps": [
+    {
+      "description": "Kỹ năng, kinh nghiệm, dự án, chứng chỉ, giải thưởng và aggregate timeline hiện mới đọc dữ liệu sẵn có; CRUD resource đầy đủ thuộc slice tiếp theo.",
+      "impact": "HIGH",
+      "next_action": "Triển khai profile resource aggregate và provenance trong Wave 1 kế tiếp; giữ toàn Wave 1 ở IN_PROGRESS."
+    },
+    {
+      "description": "Company options cho SUPER_ADMIN chưa có search/phân trang và hiện tải toàn bộ company active.",
+      "impact": "MEDIUM",
+      "next_action": "Thêm combobox server search và pagination trước khi dùng với dữ liệu platform lớn."
+    },
+    {
+      "description": "E2E và screenshot dùng deterministic demo fixture; live API wiring có unit test nhưng chưa có browser E2E với backend thật.",
+      "impact": "MEDIUM",
+      "next_action": "Thêm full-stack browser lane sau khi resource aggregate ổn định."
+    },
+    {
+      "description": "Chưa có load benchmark p95 cho non-AI API trên demo dataset.",
+      "impact": "MEDIUM",
+      "next_action": "Đo và lưu trace p95 trong Wave 6 hardening."
+    }
+  ],
+  "overall_status": "PASS"
+}

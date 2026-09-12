@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "character": "An",
+  "source": "origin/master frontend/public/characters/an-welcome.png",
+  "assets": [
+    {
+      "path": "an-welcome.png",
+      "width": 1254,
+      "height": 1254,
+      "format": "png",
+      "alpha": true,
+      "use": "HR and manager welcome states"
+    }
+  ]
+}

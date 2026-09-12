@@ -1,0 +1,54 @@
+[project]
+name = "careermate-v2"
+version = "0.1.0"
+description = "CareerMate v2 - Auth/Tenant foundation"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.5.0",
+    "sqlalchemy[asyncio]>=2.0.0",
+    "alembic>=1.13.0",
+    "cryptography>=50.0.0",
+    "PyJWT[crypto]>=2.10.0",
+    "PyYAML>=6.0.0",
+    "pwdlib[argon2]>=0.3.0",
+    "bcrypt>=4.2.0",
+    "aiosqlite>=0.20.0",
+    "asyncpg>=0.29.0",
+    "structlog>=24.0.0",
+    "email-validator>=2.0.0",
+    "python-multipart>=0.0.32",
+    "pypdf>=5.0,<7.0",
+    "pypdfium2>=5.0,<6.0",
+    "defusedxml>=0.7.1,<1.0",
+    "httpx>=0.27.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "ruff>=0.6.0",
+    "mypy>=1.11.0",
+    "bandit>=1.9.4",
+    "pip-audit>=2.10.1",
+    "types-defusedxml>=0.7.0.20240218",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+exclude = ["tests", "alembic"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]

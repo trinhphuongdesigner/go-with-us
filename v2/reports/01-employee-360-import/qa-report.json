@@ -1,0 +1,586 @@
+{
+  "schema_version": "1.0",
+  "report_language": "vi",
+  "feature_id": "01-employee-360-import",
+  "feature_name": "Wave 1 — Employee 360°, nhập tài liệu có dẫn nguồn và selective apply",
+  "branch": "feat/v2-rebuild",
+  "implementation_sha": "de246d8c74ec8425cec0172613012fc600811719",
+  "verified_tree_sha": "27ef3bafeb15c887ab167fcf34d1dc35a45f3a39",
+  "generated_at": "2026-09-12T09:53:00+07:00",
+  "environment": {
+    "os": "macOS Darwin arm64",
+    "python": "3.12.8",
+    "node": "v26.7.0",
+    "browser": "Chromium qua Playwright 1.63.0",
+    "database": "PostgreSQL local: careermate_v2_test và careermate_v2_migration_check",
+    "ai_provider": null
+  },
+  "scope": [
+    "Nhận PDF, DOCX, PNG, JPEG, WebP, văn bản, CSV và XLSX với kiểm tra MIME, kích thước, malware, file trùng và giới hạn tài nguyên parser.",
+    "Lưu SourceDocument, SourceVersion, SourceBlock, EvidenceRef, AIInvocation và ProposedValue trong company scope của chủ hồ sơ.",
+    "Tạo đề xuất AI có schema, evidence và trạng thái rõ; nội dung thiếu nguồn hoặc mơ hồ không được tự áp dụng.",
+    "Cho người dùng xem nguồn, chọn từng trường và apply nguyên tử với version, lock và idempotency.",
+    "Cung cấp UI nhập tài liệu responsive, demo có nhãn, trạng thái loading/empty/error/stale, bàn phím và reduced motion."
+  ],
+  "user_value": "Nhân viên có thể chuyển tài liệu nghề nghiệp thành đề xuất hồ sơ có dẫn nguồn, kiểm tra từng dữ kiện trước khi lưu và không gặp hồ sơ nửa vời khi một bước thất bại.",
+  "functional_breakdown": [
+    {
+      "step": 1,
+      "actor": "Nhân viên",
+      "behavior": "Chọn tài liệu hỗ trợ, nhận hướng dẫn định dạng và trạng thái xử lý bằng tiếng Việt."
+    },
+    {
+      "step": 2,
+      "actor": "Backend",
+      "behavior": "Kiểm tra file, hash chống trùng, quét malware và trích xuất block có thứ tự trong sandbox tài nguyên giới hạn."
+    },
+    {
+      "step": 3,
+      "actor": "AI gateway",
+      "behavior": "Sinh ProposedValue đúng schema, tham chiếu EvidenceRef hợp lệ và không ghi hồ sơ trực tiếp."
+    },
+    {
+      "step": 4,
+      "actor": "Nhân viên",
+      "behavior": "Mở từng đề xuất, đối chiếu nguồn, chọn trường cần lưu hoặc yêu cầu xử lý lại khi dữ kiện chưa đủ."
+    },
+    {
+      "step": 5,
+      "actor": "Profile service",
+      "behavior": "Khóa phiên bản, kiểm tra idempotency rồi apply toàn bộ lựa chọn trong một transaction cùng provenance và activity log."
+    },
+    {
+      "step": 6,
+      "actor": "Quản lý hoặc HR",
+      "behavior": "Chỉ thấy dữ liệu thuộc công ty và phạm vi quyền được backend cấp; không thể truy cập import của tenant khác."
+    }
+  ],
+  "interfaces": [
+    {
+      "kind": "API",
+      "name": "POST/GET /api/v2/profile-imports",
+      "change": "Thêm upload, danh sách phân trang và detail theo owner/company scope."
+    },
+    {
+      "kind": "API",
+      "name": "POST /api/v2/profile-imports/{id}/parse và /apply",
+      "change": "Thêm parse có fencing và selective apply nguyên tử với version cùng idempotency key."
+    },
+    {
+      "kind": "API",
+      "name": "DELETE /api/v2/profile-imports/{id}",
+      "change": "Thêm xóa nguồn chưa áp dụng theo quyền và phạm vi tenant."
+    },
+    {
+      "kind": "DATABASE",
+      "name": "SourceDocument, SourceVersion, SourceBlock, EvidenceRef, AIInvocation, ProposedValue, ProfileProvenance, ProfileApplyReceipt",
+      "change": "Thêm mô hình provenance, composite tenant keys, optimistic version và audit cho import."
+    },
+    {
+      "kind": "AI_SCHEMA",
+      "name": "ProfileImportProposal",
+      "change": "Thêm kết quả typed với status, evidence refs, warnings, trace, prompt/schema/model metadata và kiểm tra allowlist."
+    },
+    {
+      "kind": "UI_ROUTE",
+      "name": "/ho-so/import và /ho-so/import/:importId",
+      "change": "Thêm luồng tải file, xem đề xuất có nguồn, chọn từng trường và xử lý loading/empty/error/stale."
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "File intake kiểm tra định dạng, kích thước, malware, trùng lặp và giới hạn tài nguyên trước khi tạo đề xuất.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-INTEGRATION",
+        "CHK-SECURITY"
+      ]
+    },
+    {
+      "id": "AC-02",
+      "description": "Mọi dữ kiện AI có evidence hợp lệ; dữ kiện mơ hồ, prompt injection hoặc ID bịa bị chặn; proposal không tự persist.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-AI-GROUNDING",
+        "CHK-INTEGRATION"
+      ]
+    },
+    {
+      "id": "AC-03",
+      "description": "Selective apply nguyên tử, idempotent và từ chối stale/concurrent update mà không tạo hồ sơ nửa vời.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-INTEGRATION"
+      ]
+    },
+    {
+      "id": "AC-04",
+      "description": "Owner và company scope được áp dụng trên API, repository và khóa ngoại để ngăn truy cập chéo tenant.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-INTEGRATION",
+        "CHK-SECURITY"
+      ]
+    },
+    {
+      "id": "AC-05",
+      "description": "OpenAPI, generated client và migration khớp implementation SHA.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-CONTRACT",
+        "CHK-MIGRATION"
+      ]
+    },
+    {
+      "id": "AC-06",
+      "description": "UI import rõ ràng, responsive và đạt keyboard, focus, reduced motion, axe trên ba viewport.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-E2E",
+        "CHK-ACCESSIBILITY",
+        "CHK-MANUAL-UI"
+      ]
+    },
+    {
+      "id": "AC-07",
+      "description": "Code format, lint, typecheck, unit test và production build đều đạt trên exact SHA.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-FORMAT",
+        "CHK-LINT",
+        "CHK-TYPE",
+        "CHK-UNIT",
+        "CHK-BUILD"
+      ]
+    },
+    {
+      "id": "AC-08",
+      "description": "Không có security critical/high, dependency vulnerability hoặc secret trong committed diff.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-SECURITY"
+      ]
+    },
+    {
+      "id": "AC-09",
+      "description": "Trang import production build giữ LCP dưới 2.5 giây trong ba viewport kiểm tra.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-PERFORMANCE"
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "id": "CHK-FORMAT",
+      "category": "FORMAT",
+      "required": true,
+      "status": "PASS",
+      "command": ".venv/bin/ruff format --check app tests",
+      "cwd": "v2/backend",
+      "started_at": "2026-09-12T02:10:00Z",
+      "finished_at": "2026-09-12T02:10:02Z",
+      "exit_code": 0,
+      "exact_sha": "de246d8c74ec8425cec0172613012fc600811719",
+      "summary": "Ruff xác nhận 61 file đã được format.",
+      "artifact_paths": [],
+      "metrics": {
+        "files": 61
+      }
+    },
+    {
+      "id": "CHK-LINT",
+      "category": "LINT",
+      "required": true,
+      "status": "PASS",
+      "command": ".venv/bin/ruff check app tests và npm run lint",
+      "cwd": "v2",
+      "started_at": "2026-09-12T02:10:02Z",
+      "finished_at": "2026-09-12T02:11:30Z",
+      "exit_code": 0,
+      "exact_sha": "de246d8c74ec8425cec0172613012fc600811719",
+      "summary": "Backend và frontend không có lint error hoặc warning.",
+      "artifact_paths": [],
+      "metrics": {
+        "errors": 0,
+        "warnings": 0
+      }
+    },
+    {
+      "id": "CHK-TYPE",
+      "category": "TYPECHECK",
+      "required": true,
+      "status": "PASS",
+      "command": ".venv/bin/mypy app scripts và npm run typecheck",
+      "cwd": "v2",
+      "started_at": "2026-09-12T02:10:05Z",
+      "finished_at": "2026-09-12T02:11:34Z",
+      "exit_code": 0,
+      "exact_sha": "de246d8c74ec8425cec0172613012fc600811719",
+      "summary": "Mypy PASS 35 source file và TypeScript PASS 0 lỗi.",
+      "artifact_paths": [],
+      "metrics": {
+        "backend_files": 35,
+        "errors": 0
+      }
+    },
+    {
+      "id": "CHK-UNIT",
+      "category": "UNIT",
+      "required": true,
+      "status": "PASS",
+      "command": "npm run test",
+      "cwd": "v2/frontend",
+      "started_at": "2026-09-12T02:11:34Z",
+      "finished_at": "2026-09-12T02:11:42Z",
+      "exit_code": 0,
+      "exact_sha": "de246d8c74ec8425cec0172613012fc600811719",
+      "summary": "Vitest PASS 21 test trong 6 suite.",
+      "artifact_paths": [
+        "v2/frontend/tests"
+      ],
+      "metrics": {
+        "passed": 21,
+        "failed": 0,
+        "suites": 6
+      }
+    },
+    {
+      "id": "CHK-INTEGRATION",
+      "category": "INTEGRATION",
+      "required": true,
+      "status": "PASS",
+      "command": "DATABASE_URL=postgresql+asyncpg://[REDACTED] .venv/bin/pytest -q",
+      "cwd": "v2/backend",
+      "started_at": "2026-09-12T02:15:00Z",
+      "finished_at": "2026-09-12T02:15:54Z",
+      "exit_code": 0,
+      "exact_sha": "de246d8c74ec8425cec0172613012fc600811719",
+      "summary": "205 backend test PASS trên PostgreSQL; SQLite chạy bổ sung 196 PASS và 9 PostgreSQL-only skip. Fixture chỉ DELETE theo thứ tự khóa ngoại, không drop hoặc truncate.",
+      "artifact_paths": [
+        "v2/backend/tests",
+        "v2/reports/01-employee-360-import/traces/exact-sha-evidence.json"
+      ],
+      "metrics": {
+        "postgresql_passed": 205,
+        "sqlite_passed": 196,
+        "sqlite_skipped": 9,
+        "duration_seconds": 53.63
+      }
+    },
+    {
+      "id": "CHK-CONTRACT",
+      "category": "CONTRACT",
+      "required": true,
+      "status": "PASS",
+      "command": "python scripts/export_openapi.py và scripts/check-openapi-contract.sh",
+      "cwd": "v2",
+      "started_at": "2026-09-12T02:12:00Z",
+      "finished_at": "2026-09-12T02:12:08Z",
+      "exit_code": 0,
+      "exact_sha": "de246d8c74ec8425cec0172613012fc600811719",
+      "summary": "OpenAPI 3.1 snapshot và generated TypeScript contract hiện tại, không có drift.",
+      "artifact_paths": [
+        "v2/contracts/openapi.json",
+        "v2/contracts/generated/openapi.ts"
+      ],
+      "metrics": {
+        "stale_contracts": 0
+      }
+    },
+    {
+      "id": "CHK-MIGRATION",
+      "category": "MIGRATION",
+      "required": true,
+      "status": "PASS",
+      "command": "alembic upgrade head và alembic check trên careermate_v2_migration_check",
+      "cwd": "v2/backend",
+      "started_at": "2026-09-12T02:12:10Z",
+      "finished_at": "2026-09-12T02:12:22Z",
+      "exit_code": 0,
+      "exact_sha": "de246d8c74ec8425cec0172613012fc600811719",
+      "summary": "Migration 0006 và các migration trước nâng schema thành công; Alembic không phát hiện drift.",
+      "artifact_paths": [
+        "v2/backend/alembic/versions"
+      ],
+      "metrics": {
+        "head_revision": "0006_profile_import",
+        "drift_operations": 0
+      }
+    },
+    {
+      "id": "CHK-BUILD",
+      "category": "BUILD",
+      "required": true,
+      "status": "PASS",
+      "command": "NEXT_PUBLIC_BUILD_SHA=<exact_sha> npm run build",
+      "cwd": "v2/frontend",
+      "started_at": "2026-09-12T02:16:00Z",
+      "finished_at": "2026-09-12T02:16:12Z",
+      "exit_code": 0,
+      "exact_sha": "de246d8c74ec8425cec0172613012fc600811719",
+      "summary": "Next.js 16.3.5 production build PASS và nhúng đúng implementation SHA.",
+      "artifact_paths": [],
+      "metrics": {
+        "errors": 0
+      }
+    },
+    {
+      "id": "CHK-E2E",
+      "category": "E2E",
+      "required": true,
+      "status": "PASS",
+      "command": "CAREERMATE_EXPECTED_SHA=<exact_sha> CAREERMATE_E2E_USE_BUILD=true npm run test:e2e",
+      "cwd": "v2/frontend",
+      "started_at": "2026-09-12T02:16:15Z",
+      "finished_at": "2026-09-12T02:16:32Z",
+      "exit_code": 0,
+      "exact_sha": "de246d8c74ec8425cec0172613012fc600811719",
+      "summary": "36 Playwright scenario PASS trên production build ở 390×844, 768×1024 và 1440×900, gồm luồng import, error và stale state.",
+      "artifact_paths": [
+        "v2/frontend/tests/e2e/profile-import.spec.ts",
+        "v2/reports/01-employee-360-import/screenshots/manifest.json"
+      ],
+      "metrics": {
+        "passed": 36,
+        "failed": 0,
+        "viewports": 3
+      }
+    },
+    {
+      "id": "CHK-ACCESSIBILITY",
+      "category": "ACCESSIBILITY",
+      "required": true,
+      "status": "PASS",
+      "command": "npm run test:e2e (axe, keyboard focus, touch targets và reduced motion)",
+      "cwd": "v2/frontend",
+      "started_at": "2026-09-12T02:16:15Z",
+      "finished_at": "2026-09-12T02:16:32Z",
+      "exit_code": 0,
+      "exact_sha": "de246d8c74ec8425cec0172613012fc600811719",
+      "summary": "Axe 0 violation; focus hiển thị, thao tác bàn phím và reduced motion được kiểm tra trên ba viewport.",
+      "artifact_paths": [
+        "v2/frontend/tests/e2e/profile-import.spec.ts"
+      ],
+      "metrics": {
+        "axe_violations": 0,
+        "viewports": 3,
+        "keyboard_alternative": true,
+        "reduced_motion": true
+      }
+    },
+    {
+      "id": "CHK-SECURITY",
+      "category": "SECURITY",
+      "required": true,
+      "status": "PASS",
+      "command": "bandit -ll; pip-audit; npm audit --omit=dev; gitleaks git origin/master..HEAD",
+      "cwd": "v2",
+      "started_at": "2026-09-12T02:18:00Z",
+      "finished_at": "2026-09-12T02:19:30Z",
+      "exit_code": 0,
+      "exact_sha": "de246d8c74ec8425cec0172613012fc600811719",
+      "summary": "Bandit có 0 medium/high; Python và npm production có 0 vulnerability; Gitleaks quét 6 commit, 1.47 MB và không phát hiện secret.",
+      "artifact_paths": [
+        "v2/backend/app/security",
+        "v2/backend/tests/test_profile_import_security.py"
+      ],
+      "metrics": {
+        "critical_high": 0,
+        "bandit_medium_high": 0,
+        "dependency_vulnerabilities": 0,
+        "gitleaks_findings": 0
+      }
+    },
+    {
+      "id": "CHK-PERFORMANCE",
+      "category": "PERFORMANCE",
+      "required": true,
+      "status": "PASS",
+      "command": "npm run test:e2e (profile import LCP budget)",
+      "cwd": "v2/frontend",
+      "started_at": "2026-09-12T02:16:15Z",
+      "finished_at": "2026-09-12T02:16:32Z",
+      "exit_code": 0,
+      "exact_sha": "de246d8c74ec8425cec0172613012fc600811719",
+      "summary": "Trang import production build đạt ngân sách LCP dưới 2500 ms trong cả ba viewport; suite chỉ lưu kết quả đạt ngưỡng, không ghi số đo giả.",
+      "artifact_paths": [
+        "v2/frontend/tests/e2e/profile-import.spec.ts"
+      ],
+      "metrics": {
+        "scenarios_under_budget": 3,
+        "budget_ms": 2500
+      }
+    },
+    {
+      "id": "CHK-AI-GROUNDING",
+      "category": "AI_GROUNDING",
+      "required": true,
+      "status": "PASS",
+      "command": ".venv/bin/pytest tests/test_profile_import_ai.py tests/test_profile_import_security.py tests/test_profile_import_api.py -q",
+      "cwd": "v2/backend",
+      "started_at": "2026-09-12T02:13:00Z",
+      "finished_at": "2026-09-12T02:13:20Z",
+      "exit_code": 0,
+      "exact_sha": "de246d8c74ec8425cec0172613012fc600811719",
+      "summary": "74 focused case PASS; 5 PostgreSQL-only case được bao phủ trong full PostgreSQL run. Suite chặn invented ID, thiếu evidence, prompt injection, timeout và auto-persist.",
+      "artifact_paths": [
+        "v2/backend/tests/test_profile_import_ai.py",
+        "v2/contracts/ai-golden-evals.yaml"
+      ],
+      "metrics": {
+        "focused_passed": 74,
+        "postgresql_only_covered": 5,
+        "invented_ids_accepted": 0,
+        "unsupported_values_accepted": 0
+      }
+    },
+    {
+      "id": "CHK-MANUAL-UI",
+      "category": "MANUAL_UI",
+      "required": true,
+      "status": "PASS",
+      "command": "Independent persona review và đối chiếu manifest/checksum ảnh production exact SHA",
+      "cwd": "v2/frontend",
+      "started_at": "2026-09-12T09:52:00+07:00",
+      "finished_at": "2026-09-12T09:53:00+07:00",
+      "exit_code": 0,
+      "exact_sha": "de246d8c74ec8425cec0172613012fc600811719",
+      "summary": "Antigravity correction review độc lập xác nhận PASS với 0 P0, 0 P1 và 0 P2 sau khi đối chiếu code, manifest cùng 7 ảnh mới trên 3 viewport. Ảnh demo chỉ là bằng chứng UX, không khẳng định provider/backend live.",
+      "artifact_paths": [
+        "v2/reports/01-employee-360-import/screenshots",
+        "v2/reports/01-employee-360-import/screenshots/manifest.json"
+      ],
+      "metrics": {
+        "personas_passed": 5,
+        "screenshots": 7,
+        "checksum_mismatches": 0,
+        "open_p0": 0,
+        "open_p1": 0,
+        "open_p2": 0,
+        "resolved_previous_p1": 3,
+        "resolved_previous_p2": 3
+      }
+    }
+  ],
+  "persona_reviews": [
+    {
+      "persona": "EMPLOYEE_22_30",
+      "viewport": "390x844",
+      "status": "PASS",
+      "findings": [
+        {
+          "severity": "P2",
+          "description": "Ảnh dùng dữ liệu demo để minh họa luồng đề xuất.",
+          "resolution": "Đã gắn nhãn demo rõ và không diễn giải ảnh thành bằng chứng AI/backend live."
+        }
+      ]
+    },
+    {
+      "persona": "HR_35_45",
+      "viewport": "1440x900",
+      "status": "PASS",
+      "findings": [
+        {
+          "severity": "P2",
+          "description": "Danh sách nhân sự và roster tổng thể chưa thuộc slice import.",
+          "resolution": "Giữ trong Wave 1 IN_PROGRESS và triển khai ở slice Employee 360 tiếp theo."
+        }
+      ]
+    },
+    {
+      "persona": "MANAGER_45_55",
+      "viewport": "1440x900",
+      "status": "PASS",
+      "findings": []
+    },
+    {
+      "persona": "LOW_TECH_USER",
+      "viewport": "768x1024",
+      "status": "PASS",
+      "findings": [
+        {
+          "severity": "P2",
+          "description": "Người trên 50 tuổi cần giữ cỡ chữ hướng dẫn tối thiểu 14px và tên file không phá layout.",
+          "resolution": "Đã nâng nội dung trợ giúp lên text-sm, đổi thuật ngữ kỹ thuật sang tiếng Việt và cho filename wrap an toàn."
+        }
+      ]
+    }
+  ],
+  "security_privacy_notes": [
+    "API và repository lọc company_id cùng owner; composite foreign key ngăn liên kết evidence/proposal sang tenant khác.",
+    "Parser PDF và OCR chạy trong worker có wall/CPU/RSS/output limit, semaphore concurrency, cancel và kill/reap.",
+    "ZIP, ảnh nén và dimension bomb bị chặn; ClamAV và Tesseract fail-closed khi dịch vụ không sẵn sàng.",
+    "PostgreSQL test fixture không drop hoặc truncate; chỉ DELETE dữ liệu test theo thứ tự khóa ngoại.",
+    "Report, committed diff và telemetry không chứa secret, raw CV hoặc dữ liệu nhân sự thật."
+  ],
+  "ai_grounding_notes": [
+    "ProfileImportProposal dùng Pydantic schema, allowlisted IDs, evidence coverage và semantic validation ở server.",
+    "Prompt injection trong tài liệu được xem là dữ liệu không tin cậy và không thể thay đổi system instruction hoặc bật tool.",
+    "Proposal không tự persist; chỉ selective apply được người dùng xác nhận mới ghi trong transaction.",
+    "Provider runtime thật chưa chạy trong gate này; deterministic demo được gắn nhãn và không được coi là behavioral provider PASS."
+  ],
+  "screenshots": [
+    {
+      "path": "v2/reports/01-employee-360-import/screenshots/import-390x844.png",
+      "route": "/ho-so/import",
+      "viewport": "390x844",
+      "sha": "de246d8c74ec8425cec0172613012fc600811719"
+    },
+    {
+      "path": "v2/reports/01-employee-360-import/screenshots/proposal-390x844.png",
+      "route": "/ho-so/import/:importId",
+      "viewport": "390x844",
+      "sha": "de246d8c74ec8425cec0172613012fc600811719"
+    },
+    {
+      "path": "v2/reports/01-employee-360-import/screenshots/import-768x1024.png",
+      "route": "/ho-so/import",
+      "viewport": "768x1024",
+      "sha": "de246d8c74ec8425cec0172613012fc600811719"
+    },
+    {
+      "path": "v2/reports/01-employee-360-import/screenshots/proposal-768x1024.png",
+      "route": "/ho-so/import/:importId",
+      "viewport": "768x1024",
+      "sha": "de246d8c74ec8425cec0172613012fc600811719"
+    },
+    {
+      "path": "v2/reports/01-employee-360-import/screenshots/import-1440x900.png",
+      "route": "/ho-so/import",
+      "viewport": "1440x900",
+      "sha": "de246d8c74ec8425cec0172613012fc600811719"
+    },
+    {
+      "path": "v2/reports/01-employee-360-import/screenshots/proposal-1440x900.png",
+      "route": "/ho-so/import/:importId",
+      "viewport": "1440x900",
+      "sha": "de246d8c74ec8425cec0172613012fc600811719"
+    },
+    {
+      "path": "v2/reports/01-employee-360-import/screenshots/proposal-company-admin-1440x900.png",
+      "route": "/ho-so/import/:importId với COMPANY_ADMIN",
+      "viewport": "1440x900",
+      "sha": "de246d8c74ec8425cec0172613012fc600811719"
+    }
+  ],
+  "known_gaps": [
+    {
+      "description": "Ảnh và E2E dùng deterministic demo fixture; chưa chứng minh provider AI thật hoặc frontend gọi backend live.",
+      "impact": "MEDIUM",
+      "next_action": "Chạy provider evaluation bằng synthetic data và live API wiring khi metadata/provider được xác minh."
+    },
+    {
+      "description": "Wave 1 chưa có đầy đủ profile aggregate, kinh nghiệm, dự án, chứng chỉ, giải thưởng, timeline và roster HR.",
+      "impact": "HIGH",
+      "next_action": "Tiếp tục slice Employee 360 core và roster; giữ Wave 1 ở IN_PROGRESS."
+    },
+    {
+      "description": "Chưa có load benchmark p95 cho non-AI API trên demo dataset.",
+      "impact": "MEDIUM",
+      "next_action": "Đo và lưu trace p95 trong Wave 6 hardening."
+    }
+  ],
+  "overall_status": "PASS"
+}
