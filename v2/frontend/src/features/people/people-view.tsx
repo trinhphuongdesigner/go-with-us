@@ -80,7 +80,12 @@ export function PeopleListView({ forceState, initialCompanyId }: { forceState?: 
           <h1 className="mt-2 text-2xl font-bold tracking-[-0.03em] text-ink sm:text-3xl">Đội ngũ {companyName}</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">Xem thông tin nghề nghiệp tối thiểu trong phạm vi công ty. Hồ sơ nhân sự ở chế độ chỉ đọc.</p>
         </div>
-        <Badge tone="neutral"><ShieldCheck size={13} aria-hidden="true" /> Chỉ đọc · {peopleQuery.data.total} nhân sự</Badge>
+        <div className="flex flex-wrap items-center gap-3">
+          <Badge tone="neutral"><ShieldCheck size={13} aria-hidden="true" /> Chỉ đọc · {peopleQuery.data.total} nhân sự</Badge>
+          <Button asChild variant="secondary">
+            <Link href="/nhan-su/tim-kiem" prefetch={false}><Search size={16} aria-hidden="true" /> Tìm theo yêu cầu</Link>
+          </Button>
+        </div>
       </div>
 
       {isSuperAdmin ? (

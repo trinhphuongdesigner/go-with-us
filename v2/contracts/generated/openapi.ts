@@ -286,6 +286,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/people-search/query": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Query People */
+        post: operations["query_people_api_v2_people_search_query_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/people/{employee_id}": {
         parameters: {
             query?: never;
@@ -542,6 +559,105 @@ export interface components {
             /** File */
             file: string;
         };
+        /** CandidateEvidence */
+        CandidateEvidence: {
+            /** Employment Id */
+            employment_id?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Job Title */
+            job_title?: string | null;
+            /** Start Date */
+            start_date?: string | null;
+            /** Status */
+            status?: string | null;
+            /** Title */
+            title?: string | null;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "user" | "employment";
+            /** User Id */
+            user_id?: string | null;
+        };
+        /** CandidateMatch */
+        CandidateMatch: {
+            /**
+             * Company Id
+             * Format: uuid
+             */
+            company_id: string;
+            /** Evidence */
+            evidence: components["schemas"]["CandidateEvidence"][];
+            /** Factors */
+            factors: components["schemas"]["ScoreFactor"][];
+            /** Name */
+            name: string;
+            /** Score */
+            score: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            score_version: "people-search-v1";
+            /** Title */
+            title: string | null;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /** CanonicalCandidateMatch */
+        CanonicalCandidateMatch: {
+            /**
+             * Candidate Id
+             * Format: uuid
+             */
+            candidate_id: string;
+            /**
+             * Company Id
+             * Format: uuid
+             */
+            company_id: string;
+            /**
+             * Data Freshness At
+             * Format: date-time
+             */
+            data_freshness_at: string;
+            /** Evidence Refs */
+            evidence_refs: components["schemas"]["EvidenceRef"][];
+            /** Explanation */
+            explanation?: string | null;
+            /** Name */
+            name: string;
+            /** Score */
+            score: number;
+            /** Score Factors */
+            score_factors: components["schemas"]["CanonicalScoreFactor"][];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            score_version: "people-search-canonical-v1";
+            /** Title */
+            title?: string | null;
+        };
+        /** CanonicalScoreFactor */
+        CanonicalScoreFactor: {
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "REQUIRED_SKILL" | "PREFERRED_SKILL" | "EXPERIENCE" | "DOMAIN" | "AVAILABILITY" | "DATA_FRESHNESS";
+            /** Evidence Refs */
+            evidence_refs?: components["schemas"]["EvidenceRef"][];
+            /** Maximum Points */
+            maximum_points: number;
+            /** Points */
+            points: number;
+        };
         /** CertificationCreate */
         CertificationCreate: {
             /** Credentialurl */
@@ -679,6 +795,27 @@ export interface components {
             /** Detail */
             detail: string;
         };
+        /** EmployeeSearchPlan */
+        EmployeeSearchPlan: {
+            /** Availability */
+            availability?: ("AVAILABLE" | "AVAILABLE_SOON") | null;
+            /** Clarification Reason */
+            clarification_reason?: string | null;
+            interpretation?: components["schemas"]["SearchInterpretation"] | null;
+            /** Min Experience Years */
+            min_experience_years?: number | null;
+            /**
+             * Needs Clarification
+             * @default false
+             */
+            needs_clarification: boolean;
+            /** Preferred Skills */
+            preferred_skills?: components["schemas"]["SkillConstraint"][];
+            /** Raw Query */
+            raw_query: string;
+            /** Required Skills */
+            required_skills?: components["schemas"]["SkillConstraint"][];
+        };
         /** EmployeeSkillInput */
         EmployeeSkillInput: {
             /** Note */
@@ -771,6 +908,45 @@ export interface components {
             /** Detail */
             detail: string;
         };
+        /**
+         * EvidenceRef
+         * @description Provider citation that must resolve to an allowed immutable source block.
+         */
+        EvidenceRef: {
+            /**
+             * Block Id
+             * Format: uuid
+             */
+            block_id: string;
+            /** Char End */
+            char_end: number;
+            /** Char Start */
+            char_start: number;
+            /** Quote */
+            quote: string;
+            /** Quote Sha256 */
+            quote_sha256: string;
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+            /**
+             * Source Version Id
+             * Format: uuid
+             */
+            source_version_id: string;
+            /**
+             * Subject Id
+             * Format: uuid
+             */
+            subject_id: string;
+            /**
+             * Tenant Id
+             * Format: uuid
+             */
+            tenant_id: string;
+        };
         /** ExperienceCreate */
         ExperienceCreate: {
             /** Description */
@@ -851,6 +1027,28 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** InterpretedDomain */
+        InterpretedDomain: {
+            /** Canonical Domain */
+            canonical_domain: string | null;
+            /** Name */
+            name: string;
+        };
+        /** InterpretedSkill */
+        InterpretedSkill: {
+            /** Canonical Skill Id */
+            canonical_skill_id: string | null;
+            /** Minimum Level */
+            minimum_level: number | null;
+            /** Minimum Years */
+            minimum_years: number | null;
+            /** Minimum Years Exclusive */
+            minimum_years_exclusive: boolean;
+            /** Name */
+            name: string;
+            /** Required */
+            required: boolean;
+        };
         /** LoginRequest */
         LoginRequest: {
             /**
@@ -880,6 +1078,11 @@ export interface components {
         MessageResponse: {
             /** Message */
             message: string;
+        };
+        /** PeopleSearchRequest */
+        PeopleSearchRequest: {
+            /** Query */
+            query: string;
         };
         /**
          * Permission
@@ -1347,6 +1550,63 @@ export interface components {
              */
             updatedAt: string;
         };
+        /** ScoreFactor */
+        ScoreFactor: {
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "EXPERIENCE" | "TITLE_TEXT_SIGNAL" | "DATA_FRESHNESS";
+            /** Contribution */
+            contribution: number;
+            /** Label */
+            label: string;
+            /** Weight */
+            weight: number;
+        };
+        /** SearchInterpretation */
+        SearchInterpretation: {
+            /**
+             * Availability
+             * @enum {string}
+             */
+            availability: "AVAILABLE" | "AVAILABLE_SOON" | "ANY";
+            /** Minimum Total Years */
+            minimum_total_years: number | null;
+            /** Minimum Total Years Exclusive */
+            minimum_total_years_exclusive: boolean;
+            /** Missing Fields */
+            missing_fields: ("ROLE" | "SKILLS" | "AVAILABILITY" | "TIMEFRAME")[];
+            /** Normalized Query */
+            normalized_query: string;
+            /** Required Domains */
+            required_domains: components["schemas"]["InterpretedDomain"][];
+            /** Skills */
+            skills: components["schemas"]["InterpretedSkill"][];
+            /** Soft Preferences */
+            soft_preferences: string[];
+            /** Title Keywords */
+            title_keywords: string[];
+            /** Unsupported Constraints */
+            unsupported_constraints: string[];
+        };
+        /** SearchResponse */
+        SearchResponse: {
+            /** Candidates */
+            candidates?: (components["schemas"]["CandidateMatch"] | components["schemas"]["CanonicalCandidateMatch"])[];
+            /** Explanation */
+            explanation?: string | null;
+            /** Explanation Source */
+            explanation_source?: ("ai" | "deterministic_fallback") | null;
+            plan: components["schemas"]["EmployeeSearchPlan"];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "empty" | "needs_clarification" | "insufficient_evidence" | "provider_failure";
+            /** Unsupported Reasons */
+            unsupported_reasons?: string[];
+        };
         /** SessionUserRead */
         SessionUserRead: {
             /** Companyid */
@@ -1372,6 +1632,13 @@ export interface components {
             role: components["schemas"]["Role"];
             /** Title */
             title: string;
+        };
+        /** SkillConstraint */
+        SkillConstraint: {
+            /** Phrase */
+            phrase: string;
+            /** Required */
+            required: boolean;
         };
         /** SkillCreate */
         SkillCreate: {
@@ -2477,6 +2744,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorDetailRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    query_people_api_v2_people_search_query_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PeopleSearchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResponse"];
                 };
             };
             /** @description Validation Error */

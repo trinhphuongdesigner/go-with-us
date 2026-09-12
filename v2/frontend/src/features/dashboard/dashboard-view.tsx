@@ -31,7 +31,7 @@ function CircularProgress({ value }: { value: number }) {
 
 function MetricCard({ icon: Icon, label, value, detail, tone }: { icon: typeof Target; label: string; value: string; detail: string; tone: "blue" | "sage" | "violet" | "amber" }) {
   const toneClass = {
-    blue: "bg-[#EAF1F6] text-primary",
+    blue: "bg-primary-subtle text-primary",
     sage: "bg-[#EFF6F0] text-sage-strong",
     violet: "bg-[#F1EEFF] text-violet-strong",
     amber: "bg-[#FFF7E8] text-[#8A5A12]",

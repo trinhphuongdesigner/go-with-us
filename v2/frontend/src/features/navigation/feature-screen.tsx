@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/app-state";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/features/auth/auth-provider";
+import { AppearanceSettings } from "@/features/appearance";
 import { PeopleListView } from "@/features/people/people-view";
 import { ProfileView, type CoreUiForcedState } from "@/features/profile/profile-view";
 import { RoadmapView } from "@/features/roadmap/roadmap-view";
@@ -38,6 +39,8 @@ export function FeatureScreen({ feature, detail, forceState, initialCompanyId }:
     );
   }
 
+  if (feature === "cai-dat") return <AppearanceSettings />;
+
   if (feature === "lo-trinh") {
     const roadmapOwnerKey = `${session.user.companyId ?? "platform"}:${session.user.id}`;
     return <RoadmapView key={roadmapOwnerKey} />;
@@ -54,7 +57,16 @@ export function FeatureScreen({ feature, detail, forceState, initialCompanyId }:
       <p className="text-xs font-bold uppercase tracking-[0.15em] text-primary">{detail.eyebrow}</p>
       <h1 className="mt-2 text-2xl font-bold tracking-[-0.03em] text-ink sm:text-3xl">{detail.title}</h1>
       <p className="mt-2 mb-6 max-w-2xl text-sm leading-6 text-muted">Khu vực chức năng đã sẵn sàng để kết nối dữ liệu nghiệp vụ.</p>
-      <EmptyState title="Đang chuẩn bị dữ liệu" description={detail.description} />
+      {feature === "cong-ty" ? (
+        <Card className="flex flex-col items-start gap-4 p-6">
+          <p className="text-sm leading-6 text-muted">Bản xem trước, chưa lưu lên máy chủ</p>
+          <Button asChild>
+            <Link href="/cong-ty/tieu-chi/preview" prefetch={false}>Thử trình tạo bộ đánh giá</Link>
+          </Button>
+        </Card>
+      ) : (
+        <EmptyState title="Đang chuẩn bị dữ liệu" description={detail.description} />
+      )}
     </div>
   );
 }

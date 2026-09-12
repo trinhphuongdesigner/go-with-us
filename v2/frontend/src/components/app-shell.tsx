@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth/auth-provider";
+import { useAppearance } from "@/features/appearance";
 import { cn } from "@/lib/cn";
 import { getAllowedNavigation, type NavigationItem } from "@/lib/navigation";
 
@@ -34,7 +35,7 @@ function NavigationLink({ item, compact, onSelect }: { item: NavigationItem; com
       className={cn(
         "group flex min-h-11 items-center rounded-xl text-sm font-medium transition-colors",
         compact ? "flex-col justify-center gap-1 px-1 py-2 text-center" : "gap-3 px-3",
-        active ? "bg-[#EAF1F6] text-primary" : "text-muted hover:bg-background hover:text-ink",
+        active ? "bg-primary-subtle text-primary-strong" : "text-muted hover:bg-background hover:text-ink",
       )}
     >
       <Icon size={20} strokeWidth={active ? 2.4 : 1.9} aria-hidden="true" />
@@ -125,7 +126,7 @@ function UserCard({ compact = false }: { compact?: boolean }) {
 
   return (
     <div className={cn("flex items-center", compact ? "justify-center" : "gap-3")}>
-      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#EAF1F6] text-xs font-bold text-primary">
+      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary-subtle text-xs font-bold text-primary-strong">
         {session.user.initials}
       </span>
       {compact ? null : (
@@ -188,6 +189,7 @@ function MobileNavigation({ items }: { items: NavigationItem[] }) {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { session, status, signOut } = useAuth();
+  const { isReady } = useAppearance();
   const router = useRouter();
   const items = useMemo(() => getAllowedNavigation(session?.user.permissions ?? []), [session]);
   const demoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
@@ -196,7 +198,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     if (status === "anonymous") router.replace("/login");
   }, [router, status]);
 
-  if (status === "loading" || !session) {
+  if (status === "loading" || !session || !isReady) {
     return (
       <main className="grid min-h-screen place-items-center bg-background" role="status" aria-label="Đang mở CareerMate">
         <div className="text-center">

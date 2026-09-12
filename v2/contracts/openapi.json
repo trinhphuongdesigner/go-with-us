@@ -319,6 +319,300 @@
         "title": "Body_create_profile_import_api_v2_profile_imports_post",
         "type": "object"
       },
+      "CandidateEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "employment_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employment Id"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "job_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Title"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "type": {
+            "enum": [
+              "user",
+              "employment"
+            ],
+            "title": "Type",
+            "type": "string"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "title": "CandidateEvidence",
+        "type": "object"
+      },
+      "CandidateMatch": {
+        "additionalProperties": false,
+        "properties": {
+          "company_id": {
+            "format": "uuid",
+            "title": "Company Id",
+            "type": "string"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/CandidateEvidence"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "factors": {
+            "items": {
+              "$ref": "#/components/schemas/ScoreFactor"
+            },
+            "title": "Factors",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "score": {
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Score",
+            "type": "number"
+          },
+          "score_version": {
+            "const": "people-search-v1",
+            "default": "people-search-v1",
+            "title": "Score Version",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "name",
+          "title",
+          "company_id",
+          "score",
+          "factors",
+          "evidence"
+        ],
+        "title": "CandidateMatch",
+        "type": "object"
+      },
+      "CanonicalCandidateMatch": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate_id": {
+            "format": "uuid",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "company_id": {
+            "format": "uuid",
+            "title": "Company Id",
+            "type": "string"
+          },
+          "data_freshness_at": {
+            "format": "date-time",
+            "title": "Data Freshness At",
+            "type": "string"
+          },
+          "evidence_refs": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceRef"
+            },
+            "minItems": 1,
+            "title": "Evidence Refs",
+            "type": "array"
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Explanation"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "score": {
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Score",
+            "type": "number"
+          },
+          "score_factors": {
+            "items": {
+              "$ref": "#/components/schemas/CanonicalScoreFactor"
+            },
+            "maxItems": 6,
+            "minItems": 1,
+            "title": "Score Factors",
+            "type": "array"
+          },
+          "score_version": {
+            "const": "people-search-canonical-v1",
+            "default": "people-search-canonical-v1",
+            "title": "Score Version",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "required": [
+          "candidate_id",
+          "company_id",
+          "name",
+          "score",
+          "score_factors",
+          "evidence_refs",
+          "data_freshness_at"
+        ],
+        "title": "CanonicalCandidateMatch",
+        "type": "object"
+      },
+      "CanonicalScoreFactor": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "enum": [
+              "REQUIRED_SKILL",
+              "PREFERRED_SKILL",
+              "EXPERIENCE",
+              "DOMAIN",
+              "AVAILABILITY",
+              "DATA_FRESHNESS"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "evidence_refs": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceRef"
+            },
+            "title": "Evidence Refs",
+            "type": "array"
+          },
+          "maximum_points": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 100.0,
+            "title": "Maximum Points",
+            "type": "number"
+          },
+          "points": {
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Points",
+            "type": "number"
+          }
+        },
+        "required": [
+          "code",
+          "points",
+          "maximum_points"
+        ],
+        "title": "CanonicalScoreFactor",
+        "type": "object"
+      },
       "CertificationCreate": {
         "additionalProperties": false,
         "properties": {
@@ -809,6 +1103,90 @@
         "title": "CoreProfileConflictRead",
         "type": "object"
       },
+      "EmployeeSearchPlan": {
+        "additionalProperties": false,
+        "properties": {
+          "availability": {
+            "anyOf": [
+              {
+                "enum": [
+                  "AVAILABLE",
+                  "AVAILABLE_SOON"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Availability"
+          },
+          "clarification_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clarification Reason"
+          },
+          "interpretation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SearchInterpretation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "min_experience_years": {
+            "anyOf": [
+              {
+                "maximum": 60.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Experience Years"
+          },
+          "needs_clarification": {
+            "default": false,
+            "title": "Needs Clarification",
+            "type": "boolean"
+          },
+          "preferred_skills": {
+            "items": {
+              "$ref": "#/components/schemas/SkillConstraint"
+            },
+            "title": "Preferred Skills",
+            "type": "array"
+          },
+          "raw_query": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Raw Query",
+            "type": "string"
+          },
+          "required_skills": {
+            "items": {
+              "$ref": "#/components/schemas/SkillConstraint"
+            },
+            "title": "Required Skills",
+            "type": "array"
+          }
+        },
+        "required": [
+          "raw_query"
+        ],
+        "title": "EmployeeSearchPlan",
+        "type": "object"
+      },
       "EmployeeSkillInput": {
         "additionalProperties": false,
         "properties": {
@@ -1057,6 +1435,71 @@
           "detail"
         ],
         "title": "ErrorDetailRead",
+        "type": "object"
+      },
+      "EvidenceRef": {
+        "additionalProperties": false,
+        "description": "Provider citation that must resolve to an allowed immutable source block.",
+        "properties": {
+          "block_id": {
+            "format": "uuid",
+            "title": "Block Id",
+            "type": "string"
+          },
+          "char_end": {
+            "exclusiveMinimum": 0.0,
+            "title": "Char End",
+            "type": "integer"
+          },
+          "char_start": {
+            "minimum": 0.0,
+            "title": "Char Start",
+            "type": "integer"
+          },
+          "quote": {
+            "maxLength": 800,
+            "minLength": 1,
+            "title": "Quote",
+            "type": "string"
+          },
+          "quote_sha256": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Quote Sha256",
+            "type": "string"
+          },
+          "source_id": {
+            "format": "uuid",
+            "title": "Source Id",
+            "type": "string"
+          },
+          "source_version_id": {
+            "format": "uuid",
+            "title": "Source Version Id",
+            "type": "string"
+          },
+          "subject_id": {
+            "format": "uuid",
+            "title": "Subject Id",
+            "type": "string"
+          },
+          "tenant_id": {
+            "format": "uuid",
+            "title": "Tenant Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subject_id",
+          "source_id",
+          "source_version_id",
+          "block_id",
+          "tenant_id",
+          "char_start",
+          "char_end",
+          "quote",
+          "quote_sha256"
+        ],
+        "title": "EvidenceRef",
         "type": "object"
       },
       "ExperienceCreate": {
@@ -1371,6 +1814,103 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "InterpretedDomain": {
+        "additionalProperties": false,
+        "properties": {
+          "canonical_domain": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canonical Domain"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "canonical_domain"
+        ],
+        "title": "InterpretedDomain",
+        "type": "object"
+      },
+      "InterpretedSkill": {
+        "additionalProperties": false,
+        "properties": {
+          "canonical_skill_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canonical Skill Id"
+          },
+          "minimum_level": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum Level"
+          },
+          "minimum_years": {
+            "anyOf": [
+              {
+                "maximum": 60.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum Years"
+          },
+          "minimum_years_exclusive": {
+            "title": "Minimum Years Exclusive",
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "required": {
+            "title": "Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "canonical_skill_id",
+          "required",
+          "minimum_level",
+          "minimum_years",
+          "minimum_years_exclusive"
+        ],
+        "title": "InterpretedSkill",
+        "type": "object"
+      },
       "LoginRequest": {
         "additionalProperties": false,
         "properties": {
@@ -1441,6 +1981,22 @@
           "message"
         ],
         "title": "MessageResponse",
+        "type": "object"
+      },
+      "PeopleSearchRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "query": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "PeopleSearchRequest",
         "type": "object"
       },
       "Permission": {
@@ -2860,6 +3416,226 @@
         "title": "RosterPersonRead",
         "type": "object"
       },
+      "ScoreFactor": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "enum": [
+              "EXPERIENCE",
+              "TITLE_TEXT_SIGNAL",
+              "DATA_FRESHNESS"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "contribution": {
+            "minimum": 0.0,
+            "title": "Contribution",
+            "type": "number"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "weight": {
+            "exclusiveMinimum": 0.0,
+            "title": "Weight",
+            "type": "number"
+          }
+        },
+        "required": [
+          "code",
+          "label",
+          "weight",
+          "contribution"
+        ],
+        "title": "ScoreFactor",
+        "type": "object"
+      },
+      "SearchInterpretation": {
+        "additionalProperties": false,
+        "properties": {
+          "availability": {
+            "enum": [
+              "AVAILABLE",
+              "AVAILABLE_SOON",
+              "ANY"
+            ],
+            "title": "Availability",
+            "type": "string"
+          },
+          "minimum_total_years": {
+            "anyOf": [
+              {
+                "maximum": 60.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum Total Years"
+          },
+          "minimum_total_years_exclusive": {
+            "title": "Minimum Total Years Exclusive",
+            "type": "boolean"
+          },
+          "missing_fields": {
+            "items": {
+              "enum": [
+                "ROLE",
+                "SKILLS",
+                "AVAILABILITY",
+                "TIMEFRAME"
+              ],
+              "type": "string"
+            },
+            "maxItems": 4,
+            "title": "Missing Fields",
+            "type": "array"
+          },
+          "normalized_query": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Normalized Query",
+            "type": "string"
+          },
+          "required_domains": {
+            "items": {
+              "$ref": "#/components/schemas/InterpretedDomain"
+            },
+            "maxItems": 20,
+            "title": "Required Domains",
+            "type": "array"
+          },
+          "skills": {
+            "items": {
+              "$ref": "#/components/schemas/InterpretedSkill"
+            },
+            "maxItems": 20,
+            "title": "Skills",
+            "type": "array"
+          },
+          "soft_preferences": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Soft Preferences",
+            "type": "array"
+          },
+          "title_keywords": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Title Keywords",
+            "type": "array"
+          },
+          "unsupported_constraints": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Unsupported Constraints",
+            "type": "array"
+          }
+        },
+        "required": [
+          "normalized_query",
+          "skills",
+          "required_domains",
+          "availability",
+          "minimum_total_years",
+          "minimum_total_years_exclusive",
+          "title_keywords",
+          "soft_preferences",
+          "missing_fields",
+          "unsupported_constraints"
+        ],
+        "title": "SearchInterpretation",
+        "type": "object"
+      },
+      "SearchResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "candidates": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "people-search-canonical-v1": "#/components/schemas/CanonicalCandidateMatch",
+                  "people-search-v1": "#/components/schemas/CandidateMatch"
+                },
+                "propertyName": "score_version"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/CandidateMatch"
+                },
+                {
+                  "$ref": "#/components/schemas/CanonicalCandidateMatch"
+                }
+              ]
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Explanation"
+          },
+          "explanation_source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "ai",
+                  "deterministic_fallback"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Explanation Source"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/EmployeeSearchPlan"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "empty",
+              "needs_clarification",
+              "insufficient_evidence",
+              "provider_failure"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "unsupported_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unsupported Reasons",
+            "type": "array"
+          }
+        },
+        "required": [
+          "status",
+          "plan"
+        ],
+        "title": "SearchResponse",
+        "type": "object"
+      },
       "SessionUserRead": {
         "additionalProperties": false,
         "properties": {
@@ -2924,6 +3700,27 @@
           "initials"
         ],
         "title": "SessionUserRead",
+        "type": "object"
+      },
+      "SkillConstraint": {
+        "additionalProperties": false,
+        "properties": {
+          "phrase": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Phrase",
+            "type": "string"
+          },
+          "required": {
+            "title": "Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "phrase",
+          "required"
+        ],
+        "title": "SkillConstraint",
         "type": "object"
       },
       "SkillCreate": {
@@ -4941,6 +5738,52 @@
         "summary": "List People",
         "tags": [
           "people"
+        ]
+      }
+    },
+    "/api/v2/people-search/query": {
+      "post": {
+        "operationId": "query_people_api_v2_people_search_query_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PeopleSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Query People",
+        "tags": [
+          "people-search"
         ]
       }
     },

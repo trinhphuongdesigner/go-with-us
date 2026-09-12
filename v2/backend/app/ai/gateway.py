@@ -33,9 +33,14 @@ class AiTask(StrEnum):
     ASSESSMENT_SUMMARY = "assessment_summary"
     OFFBOARDING_NARRATIVE = "offboarding_narrative"
     PEOPLE_SEARCH_EXPLANATION = "people_search_explanation"
+    PEOPLE_SEARCH_INTENT = "people_search_intent"
 
 
-EVIDENCE_REQUIRED_TASKS = frozenset(AiTask)
+# Intent describes requested filters, not claims about people. Keep evidence
+# mandatory for every other task (including future tasks) by default.
+EVIDENCE_REQUIRED_TASKS = frozenset(
+    task for task in AiTask if task != AiTask.PEOPLE_SEARCH_INTENT
+)
 
 
 class AiStatus(StrEnum):

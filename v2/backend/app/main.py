@@ -20,6 +20,7 @@ from app.api.v2 import (
     skills_competency_router,
 )
 from app.core.config import Settings, get_settings
+from app.people_search.router import router as people_search_router
 
 
 def configure_profile_import_ai_runtime(
@@ -104,6 +105,7 @@ app.include_router(people_router, prefix="/api/v2")
 app.include_router(profile_imports_router, prefix="/api/v2")
 app.include_router(skills_competency_router, prefix="/api/v2")
 app.include_router(competency_profile_router, prefix="/api/v2")
+app.include_router(people_search_router, prefix="/api/v2")
 
 
 @app.get("/api/v2/health", tags=["system"])
