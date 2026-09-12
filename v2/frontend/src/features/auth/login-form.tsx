@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Building2, Check, LoaderCircle, RefreshCw, ShieldCheck, UserRound } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, Building2, Check, LoaderCircle, RefreshCw, ShieldCheck, UserRound, UsersRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -22,6 +22,8 @@ type LoginValues = z.infer<typeof loginSchema>;
 
 const accountIcons = {
   EMPLOYEE: UserRound,
+  HR: UsersRound,
+  BOD: BriefcaseBusiness,
   COMPANY_ADMIN: Building2,
   SUPER_ADMIN: ShieldCheck,
 } as const;

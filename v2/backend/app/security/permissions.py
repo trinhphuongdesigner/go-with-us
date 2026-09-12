@@ -1,9 +1,9 @@
 from app.domain.enums import AdminPermission, Permission, Role
 from app.domain.models import User
+from app.security.roles import ADMIN_ROLES, is_employee_role
 
 _SELF_SERVICE_PERMISSIONS = frozenset(
     {
-        Permission.DASHBOARD_READ,
         Permission.PROFILE_SELF,
         Permission.ROADMAP_SELF,
         Permission.ASSESSMENT_SELF,
@@ -19,7 +19,7 @@ _ADMIN_PERMISSION_MAP: dict[AdminPermission, Permission] = {
     AdminPermission.PASSPORT_APPROVE: Permission.PASSPORT_APPROVE,
 }
 
-_SUPER_ADMIN_PERMISSIONS = frozenset(Permission)
+_SUPER_ADMIN_PERMISSIONS = frozenset(Permission) - _SELF_SERVICE_PERMISSIONS
 
 
 def effective_permissions(user: User) -> set[Permission]:
@@ -29,8 +29,10 @@ def effective_permissions(user: User) -> set[Permission]:
     if user.role == Role.SUPER_ADMIN:
         return set(_SUPER_ADMIN_PERMISSIONS)
 
-    result = set(_SELF_SERVICE_PERMISSIONS)
-    if user.role != Role.COMPANY_ADMIN:
+    result = {Permission.DASHBOARD_READ}
+    if is_employee_role(user.role):
+        result.update(_SELF_SERVICE_PERMISSIONS)
+    if user.role not in ADMIN_ROLES:
         return result
 
     for raw_permission in user.admin_permissions:

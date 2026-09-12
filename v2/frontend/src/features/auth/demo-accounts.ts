@@ -14,8 +14,10 @@ const basePermissions: Permission[] = ["dashboard:read", "profile:self", "roadma
 
 const rolePermissions: Record<UserRole, Permission[]> = {
   EMPLOYEE: basePermissions,
-  COMPANY_ADMIN: [...basePermissions, "people:read", "company:manage"],
-  SUPER_ADMIN: [...basePermissions, "people:read", "company:manage", "platform:manage"],
+  HR: [...basePermissions, "people:read", "people:write"],
+  BOD: [...basePermissions, "people:read", "people:write"],
+  COMPANY_ADMIN: ["dashboard:read", "people:read", "people:write", "company:read", "company:manage"],
+  SUPER_ADMIN: ["dashboard:read", "people:read", "people:write", "company:read", "company:manage", "platform:manage"],
 };
 
 export const demoAccounts: DemoAccount[] = [
@@ -40,8 +42,8 @@ export const demoAccounts: DemoAccount[] = [
   },
   {
     id: "company-admin",
-    label: "Quản lý nhân sự",
-    description: "Theo dõi đội ngũ, năng lực và đánh giá",
+    label: "Quản trị công ty",
+    description: "Quản lý tài khoản và cấu hình tổ chức",
     email: "hr.manager@demo.careermate.vn",
     password: "CareerMateDemo!",
     accent: "sage",
@@ -74,6 +76,44 @@ export const demoAccounts: DemoAccount[] = [
       role: "SUPER_ADMIN",
       permissions: rolePermissions.SUPER_ADMIN,
       initials: "TH",
+    },
+  },
+  {
+    id: "hr",
+    label: "Nhân sự (HR)",
+    description: "Hồ sơ cá nhân và quản lý nhân viên theo quyền được cấp",
+    email: "hr@demo.careermate.vn",
+    password: "CareerMateDemo!",
+    accent: "sage",
+    user: {
+      id: "demo-hr",
+      name: "Lê Hoài Anh",
+      email: "hr@demo.careermate.vn",
+      title: "HR Specialist",
+      companyId: "00000000-0000-5000-8000-000000000101",
+      companyName: "Acme Việt Nam",
+      role: "HR",
+      permissions: rolePermissions.HR,
+      initials: "HA",
+    },
+  },
+  {
+    id: "bod",
+    label: "Ban giám đốc (BOD)",
+    description: "Hồ sơ cá nhân và quản lý HR, nhân viên theo quyền được cấp",
+    email: "bod@demo.careermate.vn",
+    password: "CareerMateDemo!",
+    accent: "violet",
+    user: {
+      id: "demo-bod",
+      name: "Đỗ Minh Châu",
+      email: "bod@demo.careermate.vn",
+      title: "Operations Director",
+      companyId: "00000000-0000-5000-8000-000000000101",
+      companyName: "Acme Việt Nam",
+      role: "BOD",
+      permissions: rolePermissions.BOD,
+      initials: "MC",
     },
   },
 ];

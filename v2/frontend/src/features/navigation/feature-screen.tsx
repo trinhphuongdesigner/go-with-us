@@ -50,7 +50,7 @@ export function FeatureScreen({ feature, detail, forceState, initialCompanyId }:
     return <ProfileView forceState={forceState} />;
   }
 
-  if (feature === "nhan-su") return <PeopleListView forceState={forceState} initialCompanyId={initialCompanyId} />;
+  if (feature === "nhan-su") return <PeopleListView key={`${session.user.id}:${initialCompanyId ?? "default"}`} forceState={forceState} initialCompanyId={initialCompanyId} />;
 
   return (
     <div>

@@ -1,27 +1,25 @@
 "use client";
 
 import * as Dialog from "@radix-ui/react-dialog";
-import { Bell, CheckCircle2, LogOut, Menu, Search, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, Bell, Building2, CheckCircle2, LogOut, Menu, Search, X } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useAppearance } from "@/features/appearance";
 import { cn } from "@/lib/cn";
-import { getAllowedNavigation, type NavigationItem } from "@/lib/navigation";
-
-const roleLabels = {
-  EMPLOYEE: "Nhân viên",
-  COMPANY_ADMIN: "Quản lý công ty",
-  SUPER_ADMIN: "Quản trị hệ thống",
-} as const;
+import { listAvailableCompanies } from "@/lib/api";
+import { getAllowedNavigation, getCompanyNavigation, type NavigationItem } from "@/lib/navigation";
+import { roleLabels } from "@/lib/types";
 
 function NavigationLink({ item, compact, onSelect }: { item: NavigationItem; compact?: boolean; onSelect?: () => void }) {
   const pathname = usePathname();
-  const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+  const itemPath = item.href.split("?")[0];
+  const active = pathname === itemPath || (!item.exact && pathname.startsWith(`${itemPath}/`));
   const Icon = item.icon;
 
   return (
@@ -139,7 +137,18 @@ function UserCard({ compact = false }: { compact?: boolean }) {
   );
 }
 
-function MobileNavigation({ items }: { items: NavigationItem[] }) {
+function CompanyScopeHeading({ name, compact = false, onSelect }: { name: string; compact?: boolean; onSelect?: () => void }) {
+  return (
+    <div className="mb-4 border-b border-border pb-4">
+      <Link href="/cong-ty" prefetch={false} onClick={onSelect} title="Tất cả công ty" aria-label="Tất cả công ty" className={cn("flex min-h-11 items-center gap-2 rounded-xl text-sm font-semibold text-primary hover:bg-background", compact ? "justify-center" : "px-3")}>
+        <ArrowLeft size={18} aria-hidden="true" />{compact ? null : "Tất cả công ty"}
+      </Link>
+      {compact ? null : <p className="mt-2 truncate px-3 text-sm font-bold text-ink" title={name}>{name}</p>}
+    </div>
+  );
+}
+
+function MobileNavigation({ items, companyScopeName }: { items: NavigationItem[]; companyScopeName?: string }) {
   const [open, setOpen] = useState(false);
   const { signOut } = useAuth();
   const router = useRouter();
@@ -172,7 +181,8 @@ function MobileNavigation({ items }: { items: NavigationItem[] }) {
           <Dialog.Description className="mt-5 text-xs leading-5 text-muted">
             Chọn khu vực làm việc phù hợp với quyền của bạn.
           </Dialog.Description>
-          <nav aria-label="Điều hướng chính" className="mt-6 flex-1 space-y-1.5">
+          <nav aria-label="Điều hướng chính" className="mt-6 min-h-0 flex-1 space-y-1.5 overflow-y-auto">
+            {companyScopeName ? <CompanyScopeHeading name={companyScopeName} onSelect={() => setOpen(false)} /> : null}
             {items.map((item) => <NavigationLink key={item.href} item={item} onSelect={() => setOpen(false)} />)}
           </nav>
           <div className="border-t border-border pt-4">
@@ -188,10 +198,28 @@ function MobileNavigation({ items }: { items: NavigationItem[] }) {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
+  return <Suspense fallback={<main className="grid min-h-screen place-items-center bg-background" role="status">Đang mở không gian làm việc…</main>}><AppShellContent>{children}</AppShellContent></Suspense>;
+}
+
+function AppShellContent({ children }: { children: ReactNode }) {
   const { session, status, signOut } = useAuth();
   const { isReady } = useAppearance();
   const router = useRouter();
-  const items = useMemo(() => getAllowedNavigation(session?.user.permissions ?? []), [session]);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const inCompanyArea = pathname === "/cong-ty" || pathname.startsWith("/cong-ty/") || pathname === "/nhan-su" || pathname.startsWith("/nhan-su/");
+  const isSuperAdmin = session?.user.role === "SUPER_ADMIN";
+  const companyScopeId = isSuperAdmin && inCompanyArea ? searchParams.get("companyId") : null;
+  const companiesQuery = useQuery({
+    queryKey: ["company-options", session?.user.id],
+    queryFn: () => listAvailableCompanies(session!),
+    enabled: Boolean(session && isSuperAdmin && inCompanyArea),
+  });
+  const scopedCompany = companiesQuery.data?.find((company) => company.id === companyScopeId);
+  const companyScopeName = companyScopeId ? scopedCompany?.name ?? (companiesQuery.isPending ? "Đang tải công ty…" : "Công ty không khả dụng") : undefined;
+  const items = useMemo(() => companyScopeId
+    ? getCompanyNavigation(companyScopeId, session?.user.permissions ?? [])
+    : getAllowedNavigation(session?.user.permissions ?? []), [session, companyScopeId]);
   const demoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
   useEffect(() => {
@@ -219,7 +247,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <aside className="sticky top-0 hidden h-screen w-20 shrink-0 flex-col border-r border-border bg-surface px-3 py-5 md:flex lg:w-68 lg:px-5">
         <BrandLogo compact className="mx-auto lg:hidden" />
         <BrandLogo className="hidden lg:inline-flex" />
-        <nav aria-label="Điều hướng chính" className="mt-10 flex-1 space-y-1.5">
+        <nav aria-label="Điều hướng chính" className="mt-6 min-h-0 flex-1 space-y-1.5 overflow-y-auto">
+          {companyScopeName ? <><div className="lg:hidden"><CompanyScopeHeading name={companyScopeName} compact /></div><div className="hidden lg:block"><CompanyScopeHeading name={companyScopeName} /></div></> : null}
           {items.map((item) => (
             <span key={item.href} className="block lg:hidden"><NavigationLink item={item} compact /></span>
           ))}
@@ -242,11 +271,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="min-w-0 flex-1">
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-surface/95 px-4 backdrop-blur sm:px-6 lg:h-18 lg:px-8">
           <div className="flex items-center gap-2">
-            <MobileNavigation items={items} />
+            <MobileNavigation items={items} companyScopeName={companyScopeName} />
             <BrandLogo className="md:hidden" />
             <div className="hidden md:block">
-              <p className="text-xs font-medium text-muted">{session.user.companyName}</p>
-              <p className="text-sm font-semibold text-ink">Không gian làm việc</p>
+              <p className="text-xs font-medium text-muted">{companyScopeName ?? session.user.companyName}</p>
+              <p className="text-sm font-semibold text-ink">{companyScopeId ? "Không gian công ty" : "Không gian làm việc"}</p>
             </div>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
@@ -256,6 +285,18 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </header>
         <main id="main-content" className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+          {isSuperAdmin && pathname === "/cong-ty" && !companyScopeId ? (
+            <section aria-labelledby="company-directory-heading" className="mb-8 rounded-2xl border border-border bg-surface p-5 sm:p-6">
+              <h2 id="company-directory-heading" className="text-lg font-bold text-ink">Chọn không gian công ty</h2>
+              <p className="mt-2 text-sm text-muted">Mở một doanh nghiệp để xem nhân sự và các công cụ trong phạm vi công ty đó.</p>
+              {companiesQuery.isPending ? <p role="status" className="mt-4 text-sm text-muted">Đang tải danh sách công ty…</p> : null}
+              {companiesQuery.isError ? <div role="alert" className="mt-4 text-sm text-danger">Không thể tải danh sách công ty.<Button variant="ghost" onClick={() => void companiesQuery.refetch()}>Thử lại</Button></div> : null}
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {companiesQuery.data?.map((company) => <Link key={company.id} href={`/cong-ty?companyId=${encodeURIComponent(company.id)}`} prefetch={false} className="flex min-h-16 items-center gap-3 rounded-xl border border-border px-4 py-3 font-semibold text-ink hover:border-primary hover:bg-primary-subtle"><Building2 size={20} className="text-primary" aria-hidden="true" />{company.name}</Link>)}
+              </div>
+              {companiesQuery.isSuccess && companiesQuery.data.length === 0 ? <p className="mt-4 text-sm text-muted">Chưa có công ty đang hoạt động.</p> : null}
+            </section>
+          ) : null}
           {children}
         </main>
       </div>

@@ -38,9 +38,6 @@ def test_typed_admin_permission_mapping_ignores_unknown_database_values() -> Non
 
     assert effective_permissions(user) == {
         Permission.DASHBOARD_READ,
-        Permission.PROFILE_SELF,
-        Permission.ROADMAP_SELF,
-        Permission.ASSESSMENT_SELF,
         Permission.PEOPLE_READ,
     }
 
@@ -62,11 +59,8 @@ def test_session_schema_keeps_permissions_typed() -> None:
     projected = session_user(make_user(Role.COMPANY_ADMIN, [AdminPermission.EMPLOYEE_READ.value]))
 
     assert projected.permissions == [
-        Permission.ASSESSMENT_SELF,
         Permission.DASHBOARD_READ,
         Permission.PEOPLE_READ,
-        Permission.PROFILE_SELF,
-        Permission.ROADMAP_SELF,
     ]
 
 

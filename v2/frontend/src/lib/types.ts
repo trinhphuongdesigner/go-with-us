@@ -2,6 +2,18 @@ import type { components } from "../../../contracts/generated/openapi";
 
 export type UserRole = components["schemas"]["Role"];
 
+export function isEmployeeRole(role: UserRole) {
+  return role === "BOD" || role === "HR" || role === "EMPLOYEE";
+}
+
+export const roleLabels: Record<UserRole, string> = {
+  SUPER_ADMIN: "Quản trị hệ thống",
+  COMPANY_ADMIN: "Quản trị công ty",
+  BOD: "Ban giám đốc",
+  HR: "Nhân sự",
+  EMPLOYEE: "Nhân viên",
+};
+
 export type Permission =
   | "dashboard:read"
   | "profile:self"

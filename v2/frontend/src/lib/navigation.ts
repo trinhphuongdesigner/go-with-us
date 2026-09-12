@@ -18,6 +18,7 @@ export interface NavigationItem {
   href: string;
   icon: LucideIcon;
   permission: Permission;
+  exact?: boolean;
 }
 
 export const navigationItems: NavigationItem[] = [
@@ -36,9 +37,18 @@ export function getAllowedNavigation(permissions: Permission[]) {
 }
 
 export function getNavigationItem(pathname: string) {
-  return navigationItems.find(
+  return [...navigationItems].sort((a, b) => b.href.length - a.href.length).find(
     (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
   );
+}
+
+export function getCompanyNavigation(companyId: string, permissions: Permission[]): NavigationItem[] {
+  const query = `?companyId=${encodeURIComponent(companyId)}`;
+  return [
+    { label: "Tổng quan công ty", shortLabel: "Công ty", href: `/cong-ty${query}`, icon: Building2, permission: "company:manage" as const, exact: true },
+    { label: "Nhân sự", shortLabel: "Nhân sự", href: `/nhan-su${query}`, icon: UsersRound, permission: "people:read" as const },
+    { label: "Bộ đánh giá · Bản xem trước", shortLabel: "Bản xem trước", href: `/cong-ty/tieu-chi/preview${query}`, icon: BadgeCheck, permission: "company:manage" as const },
+  ].filter((item) => permissions.includes(item.permission));
 }
 
 export function canAccessPath(pathname: string, permissions: Permission[]) {

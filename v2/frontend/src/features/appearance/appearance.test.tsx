@@ -117,6 +117,17 @@ describe("Appearance Feature", () => {
     vi.restoreAllMocks();
   });
 
+  it.each(["BOD", "HR"] as const)("preserves personal appearance for %s", (role) => {
+    mockAuthValue = {
+      session: { ...employeeSessionA, user: { ...employeeSessionA.user, role } },
+      status: "authenticated",
+      signOut: vi.fn(),
+    };
+    render(<AppearanceProvider><AppearanceSettings /><CurrentThemeWatcher /></AppearanceProvider>);
+    expect(screen.queryByText("Giao diện quản trị tiêu chuẩn")).not.toBeInTheDocument();
+    expect(screen.getByTestId("is-ready")).toHaveTextContent("ready");
+  });
+
   it("applies default Bright Milo when anonymous or loading", () => {
     mockAuthValue = { session: null, status: "anonymous", signOut: vi.fn() };
 

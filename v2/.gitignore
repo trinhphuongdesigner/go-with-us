@@ -25,6 +25,7 @@ frontend/.env.local
 *.sqlite3
 .env
 .env.*
+.qc.env
 !.env.example
 
 # Generated evidence

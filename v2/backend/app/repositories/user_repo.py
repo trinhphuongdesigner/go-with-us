@@ -9,6 +9,7 @@ from sqlalchemy.sql.elements import ColumnElement
 from app.domain.enums import CompanyStatus, Role
 from app.domain.models import Company, Employment, User
 from app.repositories.base import BaseRepository
+from app.security.roles import EMPLOYEE_ROLES
 
 
 class UserRepository(BaseRepository[User]):
@@ -47,8 +48,9 @@ class UserRepository(BaseRepository[User]):
         *,
         query: str | None,
         active: bool | None,
+        roles: Sequence[Role] = EMPLOYEE_ROLES,
     ) -> list[ColumnElement[bool]]:
-        filters = [User.company_id == company_id, User.role == Role.EMPLOYEE]
+        filters = [User.company_id == company_id, User.role.in_(roles)]
         if active is not None:
             filters.append(User.is_active.is_(active))
         if query:
@@ -68,11 +70,12 @@ class UserRepository(BaseRepository[User]):
         *,
         query: str | None,
         active: bool | None,
+        roles: Sequence[Role] = EMPLOYEE_ROLES,
     ) -> int:
         result = await self.session.scalar(
             select(func.count())
             .select_from(User)
-            .where(*self._roster_filters(company_id, query=query, active=active))
+            .where(*self._roster_filters(company_id, query=query, active=active, roles=roles))
         )
         return int(result or 0)
 
@@ -84,22 +87,25 @@ class UserRepository(BaseRepository[User]):
         active: bool | None,
         offset: int,
         limit: int,
+        roles: Sequence[Role] = EMPLOYEE_ROLES,
     ) -> Sequence[User]:
         result = await self.session.execute(
             select(User)
-            .where(*self._roster_filters(company_id, query=query, active=active))
+            .where(*self._roster_filters(company_id, query=query, active=active, roles=roles))
             .order_by(func.lower(User.name), User.id)
             .offset(offset)
             .limit(limit)
         )
         return result.scalars().all()
 
-    async def get_roster_person(self, user_id: uuid.UUID, company_id: uuid.UUID) -> User | None:
+    async def get_roster_person(
+        self, user_id: uuid.UUID, company_id: uuid.UUID, *, roles: Sequence[Role] = EMPLOYEE_ROLES
+    ) -> User | None:
         result = await self.session.execute(
             select(User).where(
                 User.id == user_id,
                 User.company_id == company_id,
-                User.role == Role.EMPLOYEE,
+                User.role.in_(roles),
             )
         )
         return result.scalar_one_or_none()

@@ -85,7 +85,7 @@ class User(TimestampMixin, Base):
     __table_args__ = (
         CheckConstraint(
             "(role = 'SUPER_ADMIN' AND company_id IS NULL) OR "
-            "(role IN ('COMPANY_ADMIN', 'EMPLOYEE') AND company_id IS NOT NULL)",
+            "(role IN ('COMPANY_ADMIN', 'BOD', 'HR', 'EMPLOYEE') AND company_id IS NOT NULL)",
             name="ck_users_role_company",
         ),
         CheckConstraint("email = lower(trim(email))", name="ck_users_email_canonical"),
@@ -918,10 +918,12 @@ class ProfileApplyReceipt(Base):
 
 
 def validate_user_tenant_invariant(user: User) -> None:
+    if user.role not in set(Role):
+        raise ValueError("Unknown user role")
     if user.role == Role.SUPER_ADMIN and user.company_id is not None:
         raise ValueError("SUPER_ADMIN company_id must be null")
-    if user.role in {Role.COMPANY_ADMIN, Role.EMPLOYEE} and user.company_id is None:
-        raise ValueError(f"{user.role.value} company_id is required")
+    if user.role != Role.SUPER_ADMIN and user.company_id is None:
+        raise ValueError(f"{user.role} company_id is required")
 
 
 @event.listens_for(User, "before_insert")

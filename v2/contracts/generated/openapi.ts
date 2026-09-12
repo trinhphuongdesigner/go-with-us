@@ -252,6 +252,75 @@ export interface paths {
         patch: operations["update_project_api_v2_competency_profile_projects__resource_id__patch"];
         trace?: never;
     };
+    "/api/v2/development-plans/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get My Plan */
+        get: operations["get_my_plan_api_v2_development_plans_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/development-plans/me/roadmaps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List My Roadmaps */
+        get: operations["list_my_roadmaps_api_v2_development_plans_me_roadmaps_get"];
+        put?: never;
+        /** Save My Roadmap */
+        post: operations["save_my_roadmap_api_v2_development_plans_me_roadmaps_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/development-plans/me/roadmaps/{roadmap_id}/tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch My Task */
+        patch: operations["patch_my_task_api_v2_development_plans_me_roadmaps__roadmap_id__tasks__task_id__patch"];
+        trace?: never;
+    };
+    "/api/v2/development-plans/me/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch My Settings */
+        patch: operations["patch_my_settings_api_v2_development_plans_me_settings_patch"];
+        trace?: never;
+    };
     "/api/v2/health": {
         parameters: {
             query?: never;
@@ -794,6 +863,10 @@ export interface components {
             currentProfileVersion: number;
             /** Detail */
             detail: string;
+        };
+        /** DevelopmentPlanRead */
+        DevelopmentPlanRead: {
+            settings: components["schemas"]["RoadmapSettingsRead"];
         };
         /** EmployeeSearchPlan */
         EmployeeSearchPlan: {
@@ -1487,11 +1560,189 @@ export interface components {
             /** Profileversion */
             profileVersion: number;
         };
+        /** RoadmapMilestoneDraft */
+        RoadmapMilestoneDraft: {
+            /** Description */
+            description?: string | null;
+            /** Duedate */
+            dueDate?: string | null;
+            /** Tasks */
+            tasks: components["schemas"]["RoadmapTaskDraft"][];
+            /** Title */
+            title: string;
+        };
+        /** RoadmapMilestoneRead */
+        RoadmapMilestoneRead: {
+            /** Completedtasks */
+            completedTasks: number;
+            /** Description */
+            description: string | null;
+            /** Duedate */
+            dueDate: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Order */
+            order: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "NOT_STARTED" | "IN_PROGRESS" | "DONE";
+            /** Tasks */
+            tasks: components["schemas"]["RoadmapTaskRead"][];
+            /** Title */
+            title: string;
+            /** Totaltasks */
+            totalTasks: number;
+        };
+        /** RoadmapRead */
+        RoadmapRead: {
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "WORK" | "PERSONAL";
+            /** Completedtasks */
+            completedTasks: number;
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /** Durationweeks */
+            durationWeeks: number | null;
+            /** Hoursperweek */
+            hoursPerWeek: number | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Milestones */
+            milestones: components["schemas"]["RoadmapMilestoneRead"][];
+            /** Progress */
+            progress: number;
+            /** Title */
+            title: string;
+            /** Totaltasks */
+            totalTasks: number;
+            /**
+             * Updatedat
+             * Format: date-time
+             */
+            updatedAt: string;
+            /** Version */
+            version: number;
+        };
+        /** RoadmapSave */
+        RoadmapSave: {
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "WORK" | "PERSONAL";
+            /**
+             * Clientrequestid
+             * Format: uuid
+             */
+            clientRequestId: string;
+            /** Durationweeks */
+            durationWeeks?: number | null;
+            /** Hoursperweek */
+            hoursPerWeek?: number | null;
+            /** Milestones */
+            milestones: components["schemas"]["RoadmapMilestoneDraft"][];
+            /** Title */
+            title: string;
+        };
+        /** RoadmapSettingsPatch */
+        RoadmapSettingsPatch: {
+            /** Character */
+            character?: string | null;
+            /** Costumecolor */
+            costumeColor?: string | null;
+            /** Expectedversion */
+            expectedVersion: number;
+            /** Fontsize */
+            fontSize?: ("sm" | "md" | "lg") | null;
+            /** Reducemotion */
+            reduceMotion?: boolean | null;
+            /** Viewmode */
+            viewMode?: ("stair" | "diagram") | null;
+        };
+        /** RoadmapSettingsRead */
+        RoadmapSettingsRead: {
+            /**
+             * Character
+             * @default milo
+             */
+            character: string;
+            /**
+             * Costumecolor
+             * @default #6366f1
+             */
+            costumeColor: string;
+            /**
+             * Fontsize
+             * @default md
+             * @enum {string}
+             */
+            fontSize: "sm" | "md" | "lg";
+            /**
+             * Reducemotion
+             * @default false
+             */
+            reduceMotion: boolean;
+            /**
+             * Version
+             * @default 0
+             */
+            version: number;
+            /**
+             * Viewmode
+             * @default stair
+             * @enum {string}
+             */
+            viewMode: "stair" | "diagram";
+        };
+        /** RoadmapTaskDraft */
+        RoadmapTaskDraft: {
+            /** Metric */
+            metric?: string | null;
+            /** Title */
+            title: string;
+        };
+        /** RoadmapTaskPatch */
+        RoadmapTaskPatch: {
+            /** Done */
+            done: boolean;
+            /** Expectedversion */
+            expectedVersion: number;
+        };
+        /** RoadmapTaskRead */
+        RoadmapTaskRead: {
+            /** Done */
+            done: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Metric */
+            metric?: string | null;
+            /** Order */
+            order: number;
+            /** Title */
+            title: string;
+        };
         /**
          * Role
          * @enum {string}
          */
-        Role: "SUPER_ADMIN" | "COMPANY_ADMIN" | "EMPLOYEE";
+        Role: "SUPER_ADMIN" | "COMPANY_ADMIN" | "BOD" | "HR" | "EMPLOYEE";
         /** RosterPageRead */
         RosterPageRead: {
             /** Items */
@@ -2651,6 +2902,159 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProfileResourceConflictRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_my_plan_api_v2_development_plans_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DevelopmentPlanRead"];
+                };
+            };
+        };
+    };
+    list_my_roadmaps_api_v2_development_plans_me_roadmaps_get: {
+        parameters: {
+            query?: {
+                category?: ("WORK" | "PERSONAL") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoadmapRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_my_roadmap_api_v2_development_plans_me_roadmaps_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoadmapSave"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoadmapRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_my_task_api_v2_development_plans_me_roadmaps__roadmap_id__tasks__task_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                roadmap_id: string;
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoadmapTaskPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoadmapRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_my_settings_api_v2_development_plans_me_settings_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoadmapSettingsPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoadmapSettingsRead"];
                 };
             };
             /** @description Validation Error */

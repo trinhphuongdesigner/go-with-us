@@ -11,8 +11,8 @@ describe("DemoAccountPicker", () => {
     const onSelect = vi.fn();
     render(<DemoAccountPicker selectedId="employee" onSelect={onSelect} />);
 
-    const employee = screen.getByRole("button", { name: /Nhân viên/i });
-    const manager = screen.getByRole("button", { name: /Quản lý nhân sự/i });
+    const employee = screen.getByRole("button", { name: /^Nhân viên/i });
+    const manager = screen.getByRole("button", { name: /Quản trị công ty/i });
     expect(employee).toHaveAttribute("aria-pressed", "true");
 
     manager.focus();

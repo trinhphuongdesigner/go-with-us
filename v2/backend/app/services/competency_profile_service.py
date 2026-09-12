@@ -37,6 +37,7 @@ from app.domain.models import (
 )
 from app.repositories.activity_repo import ActivityLogRepository
 from app.security.permissions import effective_permissions
+from app.security.roles import can_manage_role, is_employee_role
 
 Resource = Experience | Project | Certification | Award
 ResourceType = TypeVar("ResourceType", Experience, Project, Certification, Award)
@@ -107,6 +108,8 @@ class CompetencyProfileService:
         )
         if target is None:
             raise CompetencyNotFound
+        if not is_employee_role(target.role):
+            raise CompetencyDenied
         if target.id == actor.id:
             if Permission.PROFILE_SELF not in effective_permissions(actor):
                 raise CompetencyDenied
@@ -116,8 +119,10 @@ class CompetencyProfileService:
         permission = Permission.PEOPLE_WRITE if write else Permission.PEOPLE_READ
         if permission not in effective_permissions(actor):
             raise CompetencyDenied
-        if actor.role == Role.COMPANY_ADMIN and (
-            actor.company_id is None or target.company_id != actor.company_id
+        if actor.role != Role.SUPER_ADMIN and (
+            actor.company_id is None
+            or target.company_id != actor.company_id
+            or not can_manage_role(actor.role, target.role)
         ):
             raise CompetencyNotFound
         return target

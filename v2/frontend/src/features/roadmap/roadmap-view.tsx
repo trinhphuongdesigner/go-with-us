@@ -23,6 +23,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useAuth } from "@/features/auth/auth-provider";
 import { cn } from "@/lib/cn";
+import { DEMO_MODE } from "@/lib/api";
+import { CategoryPicker, PersistedRoadmapView } from "./persisted-roadmap-view";
+import type { RoadmapCategory } from "./roadmap-api";
 
 type MilestoneStatus = "completed" | "current" | "upcoming" | "goal";
 
@@ -128,10 +131,13 @@ function MindMapDialog() {
 
 export function RoadmapView() {
   const { session } = useAuth();
+  const [category, setCategory] = useState<RoadmapCategory>("WORK");
   const ownerKey = `${session?.user.companyId ?? "platform"}:${session?.user.id ?? "anonymous"}`;
-  const draftKey = `${ROADMAP_DRAFT_KEY}:${ownerKey}`;
+  const draftKey = `${ROADMAP_DRAFT_KEY}:${ownerKey}${category === "PERSONAL" ? ":PERSONAL" : ""}`;
 
-  return <RoadmapWorkspace key={draftKey} draftKey={draftKey} />;
+  if (!session) return null;
+  if (!DEMO_MODE) return <PersistedRoadmapView session={session} />;
+  return <div className="space-y-5"><p className="text-sm text-muted">Dữ liệu minh họa; bản nháp chỉ lưu trên trình duyệt này, chưa gửi FastAPI.</p><CategoryPicker category={category} onChange={setCategory} /><RoadmapWorkspace key={draftKey} draftKey={draftKey} /></div>;
 }
 
 function RoadmapWorkspace({ draftKey }: { draftKey: string }) {

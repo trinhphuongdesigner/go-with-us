@@ -11,7 +11,7 @@ import {
 } from "react";
 
 import { useAuth } from "@/features/auth/auth-provider";
-import type { Session } from "@/lib/types";
+import { isEmployeeRole, type Session } from "@/lib/types";
 import {
   clearAppearancePreference,
   loadAppearancePreference,
@@ -59,8 +59,8 @@ function AppearanceInner({
   session: Session | null;
   status: "loading" | "authenticated" | "anonymous";
 }) {
-  const isEmployee = status === "authenticated" && session?.user.role === "EMPLOYEE";
-  const isAdminLocked = status === "authenticated" && session?.user.role !== "EMPLOYEE";
+  const isEmployee = status === "authenticated" && Boolean(session && isEmployeeRole(session.user.role));
+  const isAdminLocked = status === "authenticated" && !isEmployee;
 
   // Enforce default theme for nonemployees or unauthenticated users; read storage for employees
   const [appliedPresetId, setAppliedPresetId] = useState<ThemePresetId>(() => {

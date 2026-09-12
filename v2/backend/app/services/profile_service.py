@@ -5,11 +5,13 @@ from dataclasses import dataclass
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domain.enums import CompanyStatus, Role
+from app.domain.enums import CompanyStatus, Permission, Role
 from app.domain.models import User
 from app.domain.profile_schemas import ProfilePatch
 from app.repositories.activity_repo import ActivityLogRepository
 from app.repositories.user_repo import CompanyRepository, UserRepository
+from app.security.permissions import effective_permissions
+from app.security.roles import get_manageable_roles
 
 
 class RosterScopeRequired(ValueError):
@@ -47,6 +49,8 @@ class ProfileService:
         payload: ProfilePatch,
         request_id: str | None,
     ) -> User:
+        if Permission.PROFILE_SELF not in effective_permissions(actor):
+            raise RosterTenantDenied
         actor_id = actor.id
         actor_company_id = actor.company_id
         fields = sorted(
@@ -93,6 +97,8 @@ class ProfileService:
     async def resolve_roster_company(
         self, actor: User, requested_company_id: uuid.UUID | None
     ) -> uuid.UUID:
+        if Permission.PEOPLE_READ not in effective_permissions(actor):
+            raise RosterTenantDenied
         if actor.role == Role.SUPER_ADMIN:
             if requested_company_id is None:
                 raise RosterScopeRequired
@@ -119,13 +125,15 @@ class ProfileService:
         page_size: int,
     ) -> tuple[list[User], int]:
         company_id = await self.resolve_roster_company(actor, requested_company_id)
-        total = await self.users.count_roster(company_id, query=query, active=active)
+        roles = get_manageable_roles(actor.role)
+        total = await self.users.count_roster(company_id, query=query, active=active, roles=roles)
         users = await self.users.list_roster(
             company_id,
             query=query,
             active=active,
             offset=(page - 1) * page_size,
             limit=page_size,
+            roles=roles,
         )
         return list(users), total
 
@@ -137,7 +145,9 @@ class ProfileService:
         user_id: uuid.UUID,
     ) -> User:
         company_id = await self.resolve_roster_company(actor, requested_company_id)
-        user = await self.users.get_roster_person(user_id, company_id)
+        user = await self.users.get_roster_person(
+            user_id, company_id, roles=get_manageable_roles(actor.role)
+        )
         if user is None:
             raise RosterPersonNotFound
         return user

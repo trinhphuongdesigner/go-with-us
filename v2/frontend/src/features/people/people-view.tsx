@@ -94,7 +94,7 @@ export function PeopleListView({ forceState, initialCompanyId }: { forceState?: 
           <select
             id="people-company"
             value={selectedCompanyId}
-            onChange={(event) => { setSelectedCompanyOverride(event.target.value); setPage(1); }}
+            onChange={(event) => { setSelectedCompanyOverride(event.target.value); setPage(1); router.replace(`/nhan-su?companyId=${encodeURIComponent(event.target.value)}`); }}
             className="h-12 w-full rounded-xl border border-border bg-white px-4 text-sm text-ink shadow-[0_1px_2px_rgb(22_32_51_/_4%)] focus:border-primary focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             {companiesQuery.data?.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}

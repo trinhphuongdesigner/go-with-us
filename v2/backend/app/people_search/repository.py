@@ -13,6 +13,7 @@ from sqlalchemy.orm import selectinload, with_loader_criteria
 
 from app.domain.enums import EmploymentStatus
 from app.domain.models import Employment, User
+from app.security.roles import EMPLOYEE_ROLES
 
 Now = Callable[[], datetime]
 
@@ -83,7 +84,7 @@ async def search_candidates(
             selectinload(User.employments),
             with_loader_criteria(Employment, Employment.company_id == company_id),
         )
-        .where(User.company_id == company_id, User.is_active.is_(True), active_employment)
+        .where(User.company_id == company_id, User.role.in_(EMPLOYEE_ROLES), User.is_active.is_(True), active_employment)
     )
     for term in required:
         pattern = f"%{term.casefold()}%"

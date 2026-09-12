@@ -1103,6 +1103,19 @@
         "title": "CoreProfileConflictRead",
         "type": "object"
       },
+      "DevelopmentPlanRead": {
+        "additionalProperties": false,
+        "properties": {
+          "settings": {
+            "$ref": "#/components/schemas/RoadmapSettingsRead"
+          }
+        },
+        "required": [
+          "settings"
+        ],
+        "title": "DevelopmentPlanRead",
+        "type": "object"
+      },
       "EmployeeSearchPlan": {
         "additionalProperties": false,
         "properties": {
@@ -3273,10 +3286,523 @@
         "title": "ResourceListRead",
         "type": "object"
       },
+      "RoadmapMilestoneDraft": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "dueDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duedate"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/RoadmapTaskDraft"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Tasks",
+            "type": "array"
+          },
+          "title": {
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "tasks"
+        ],
+        "title": "RoadmapMilestoneDraft",
+        "type": "object"
+      },
+      "RoadmapMilestoneRead": {
+        "additionalProperties": false,
+        "properties": {
+          "completedTasks": {
+            "title": "Completedtasks",
+            "type": "integer"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "dueDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duedate"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "NOT_STARTED",
+              "IN_PROGRESS",
+              "DONE"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/RoadmapTaskRead"
+            },
+            "title": "Tasks",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "totalTasks": {
+            "title": "Totaltasks",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "dueDate",
+          "order",
+          "status",
+          "completedTasks",
+          "totalTasks",
+          "tasks"
+        ],
+        "title": "RoadmapMilestoneRead",
+        "type": "object"
+      },
+      "RoadmapRead": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "enum": [
+              "WORK",
+              "PERSONAL"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "completedTasks": {
+            "title": "Completedtasks",
+            "type": "integer"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "durationWeeks": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Durationweeks"
+          },
+          "hoursPerWeek": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hoursperweek"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "milestones": {
+            "items": {
+              "$ref": "#/components/schemas/RoadmapMilestoneRead"
+            },
+            "title": "Milestones",
+            "type": "array"
+          },
+          "progress": {
+            "title": "Progress",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "totalTasks": {
+            "title": "Totaltasks",
+            "type": "integer"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "title": "Updatedat",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "category",
+          "title",
+          "durationWeeks",
+          "hoursPerWeek",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "completedTasks",
+          "totalTasks",
+          "progress",
+          "milestones"
+        ],
+        "title": "RoadmapRead",
+        "type": "object"
+      },
+      "RoadmapSave": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "enum": [
+              "WORK",
+              "PERSONAL"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "clientRequestId": {
+            "format": "uuid",
+            "title": "Clientrequestid",
+            "type": "string"
+          },
+          "durationWeeks": {
+            "anyOf": [
+              {
+                "maximum": 520.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Durationweeks"
+          },
+          "hoursPerWeek": {
+            "anyOf": [
+              {
+                "maximum": 168.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hoursperweek"
+          },
+          "milestones": {
+            "items": {
+              "$ref": "#/components/schemas/RoadmapMilestoneDraft"
+            },
+            "maxItems": 30,
+            "minItems": 1,
+            "title": "Milestones",
+            "type": "array"
+          },
+          "title": {
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "clientRequestId",
+          "category",
+          "title",
+          "milestones"
+        ],
+        "title": "RoadmapSave",
+        "type": "object"
+      },
+      "RoadmapSettingsPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "character": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Character"
+          },
+          "costumeColor": {
+            "anyOf": [
+              {
+                "pattern": "^#[0-9a-fA-F]{6}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Costumecolor"
+          },
+          "expectedVersion": {
+            "minimum": 0.0,
+            "title": "Expectedversion",
+            "type": "integer"
+          },
+          "fontSize": {
+            "anyOf": [
+              {
+                "enum": [
+                  "sm",
+                  "md",
+                  "lg"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fontsize"
+          },
+          "reduceMotion": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reducemotion"
+          },
+          "viewMode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "stair",
+                  "diagram"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Viewmode"
+          }
+        },
+        "required": [
+          "expectedVersion"
+        ],
+        "title": "RoadmapSettingsPatch",
+        "type": "object"
+      },
+      "RoadmapSettingsRead": {
+        "additionalProperties": false,
+        "properties": {
+          "character": {
+            "default": "milo",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Character",
+            "type": "string"
+          },
+          "costumeColor": {
+            "default": "#6366f1",
+            "pattern": "^#[0-9a-fA-F]{6}$",
+            "title": "Costumecolor",
+            "type": "string"
+          },
+          "fontSize": {
+            "default": "md",
+            "enum": [
+              "sm",
+              "md",
+              "lg"
+            ],
+            "title": "Fontsize",
+            "type": "string"
+          },
+          "reduceMotion": {
+            "default": false,
+            "title": "Reducemotion",
+            "type": "boolean"
+          },
+          "version": {
+            "default": 0,
+            "title": "Version",
+            "type": "integer"
+          },
+          "viewMode": {
+            "default": "stair",
+            "enum": [
+              "stair",
+              "diagram"
+            ],
+            "title": "Viewmode",
+            "type": "string"
+          }
+        },
+        "title": "RoadmapSettingsRead",
+        "type": "object"
+      },
+      "RoadmapTaskDraft": {
+        "additionalProperties": false,
+        "properties": {
+          "metric": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metric"
+          },
+          "title": {
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "RoadmapTaskDraft",
+        "type": "object"
+      },
+      "RoadmapTaskPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "done": {
+            "title": "Done",
+            "type": "boolean"
+          },
+          "expectedVersion": {
+            "minimum": 1.0,
+            "title": "Expectedversion",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expectedVersion",
+          "done"
+        ],
+        "title": "RoadmapTaskPatch",
+        "type": "object"
+      },
+      "RoadmapTaskRead": {
+        "additionalProperties": false,
+        "properties": {
+          "done": {
+            "title": "Done",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "metric": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metric"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          },
+          "title": {
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "id",
+          "done",
+          "order"
+        ],
+        "title": "RoadmapTaskRead",
+        "type": "object"
+      },
       "Role": {
         "enum": [
           "SUPER_ADMIN",
           "COMPANY_ADMIN",
+          "BOD",
+          "HR",
           "EMPLOYEE"
         ],
         "title": "Role",
@@ -5561,6 +6087,252 @@
         "summary": "Update Project",
         "tags": [
           "competency profile"
+        ]
+      }
+    },
+    "/api/v2/development-plans/me": {
+      "get": {
+        "operationId": "get_my_plan_api_v2_development_plans_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DevelopmentPlanRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get My Plan",
+        "tags": [
+          "development-plans"
+        ]
+      }
+    },
+    "/api/v2/development-plans/me/roadmaps": {
+      "get": {
+        "operationId": "list_my_roadmaps_api_v2_development_plans_me_roadmaps_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "WORK",
+                    "PERSONAL"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RoadmapRead"
+                  },
+                  "title": "Response List My Roadmaps Api V2 Development Plans Me Roadmaps Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List My Roadmaps",
+        "tags": [
+          "development-plans"
+        ]
+      },
+      "post": {
+        "operationId": "save_my_roadmap_api_v2_development_plans_me_roadmaps_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoadmapSave"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoadmapRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Save My Roadmap",
+        "tags": [
+          "development-plans"
+        ]
+      }
+    },
+    "/api/v2/development-plans/me/roadmaps/{roadmap_id}/tasks/{task_id}": {
+      "patch": {
+        "operationId": "patch_my_task_api_v2_development_plans_me_roadmaps__roadmap_id__tasks__task_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "roadmap_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Roadmap Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoadmapTaskPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoadmapRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Patch My Task",
+        "tags": [
+          "development-plans"
+        ]
+      }
+    },
+    "/api/v2/development-plans/me/settings": {
+      "patch": {
+        "operationId": "patch_my_settings_api_v2_development_plans_me_settings_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoadmapSettingsPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoadmapSettingsRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Patch My Settings",
+        "tags": [
+          "development-plans"
         ]
       }
     },

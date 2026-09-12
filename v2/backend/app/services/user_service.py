@@ -9,6 +9,7 @@ from app.repositories.activity_repo import ActivityLogRepository
 from app.repositories.user_repo import CompanyRepository, EmploymentRepository, UserRepository
 from app.security.jwt import hash_password
 from app.security.permissions import effective_permissions
+from app.security.roles import can_manage_role, is_employee_role
 
 
 class AuthorizationDenied(PermissionError):
@@ -77,12 +78,15 @@ class UserService:
         email: str,
         password: str,
         title: str = "Employee",
+        role: Role = Role.EMPLOYEE,
     ) -> User:
         self._require_active_initiator(initiator)
         if Permission.PEOPLE_WRITE not in effective_permissions(initiator):
             raise AuthorizationDenied("Employee write permission is required")
+        if not is_employee_role(role) or not can_manage_role(initiator.role, role):
+            raise AuthorizationDenied("Cannot create an employee with this role")
         if initiator.role != Role.SUPER_ADMIN and initiator.company_id != company_id:
-            raise TenantMismatch("Company admin cannot create employees in another tenant")
+            raise TenantMismatch("Cannot create employees in another tenant")
         company = await self.company_repo.get_by_id(company_id)
         if company is None or company.status != CompanyStatus.ACTIVE:
             raise TenantMismatch("Target company is unavailable")
@@ -94,7 +98,7 @@ class UserService:
                     name=email.split("@", maxsplit=1)[0].replace(".", " ").title(),
                     job_title=title,
                     hashed_password=hash_password(password),
-                    role=Role.EMPLOYEE,
+                    role=role,
                     company_id=company_id,
                     is_active=True,
                 )
