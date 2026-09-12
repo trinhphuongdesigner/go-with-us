@@ -1,0 +1,65 @@
+{
+  "version": 2,
+  "reference": "Original purple Milo roadmap mockup",
+  "assets": [
+    {
+      "id": "reference-step-current",
+      "src": "/brand/careermate/v2-reference/step-current.svg",
+      "width": 260,
+      "height": 152,
+      "format": "svg"
+    },
+    {
+      "id": "reference-step-completed",
+      "src": "/brand/careermate/v2-reference/step-completed.svg",
+      "width": 260,
+      "height": 152,
+      "format": "svg"
+    },
+    {
+      "id": "reference-step-upcoming",
+      "src": "/brand/careermate/v2-reference/step-upcoming.svg",
+      "width": 260,
+      "height": 152,
+      "format": "svg"
+    },
+    {
+      "id": "reference-step-goal",
+      "src": "/brand/careermate/v2-reference/step-goal.svg",
+      "width": 260,
+      "height": 152,
+      "format": "svg"
+    },
+    {
+      "id": "reference-check-marker",
+      "src": "/brand/careermate/v2-reference/check-marker.svg",
+      "width": 96,
+      "height": 100,
+      "format": "svg"
+    },
+    {
+      "id": "reference-goal-flag",
+      "src": "/brand/careermate/v2-reference/goal-flag.svg",
+      "width": 104,
+      "height": 176,
+      "format": "svg"
+    },
+    {
+      "id": "milo-contact-shadow",
+      "src": "/brand/careermate/v2-reference/milo-contact-shadow.svg",
+      "width": 200,
+      "height": 60,
+      "format": "svg"
+    },
+    {
+      "id": "milo-purple-tablet",
+      "src": "/brand/careermate/v2-reference/milo-purple-tablet.png",
+      "width": 1254,
+      "height": 1254,
+      "format": "png",
+      "alpha": false,
+      "background": "white RGB",
+      "usage": "Light surfaces; see MiloRoadmapStep CSS blend and README."
+    }
+  ]
+}

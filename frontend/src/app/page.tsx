@@ -1,492 +1,470 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
-import PageContainer from '@/components/layout/PageContainer';
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
-import Dialog from '@/components/ui/Dialog';
-import PageSkeleton from '@/components/ui/PageSkeleton';
+import Link from 'next/link';
 import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import LinearProgress from '@mui/material/LinearProgress';
 import Stack from '@mui/material/Stack';
-import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import Chip from '@mui/material/Chip';
-import Avatar from '@mui/material/Avatar';
-import Alert from '@mui/material/Alert';
-import OpenInFullOutlinedIcon from '@mui/icons-material/OpenInFullOutlined';
-import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
-import RadioButtonUncheckedOutlinedIcon from '@mui/icons-material/RadioButtonUncheckedOutlined';
-import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
+import Button from '@mui/material/Button';
+import LinearProgress from '@mui/material/LinearProgress';
+import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
+import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
+import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined';
+import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
+import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
+import PostAddOutlinedIcon from '@mui/icons-material/PostAddOutlined';
+import PageContainer from '@/components/layout/PageContainer';
 import { useAuth } from '@/contexts/AuthContext';
-import {
-  getCompetencyProfile,
-  type CompetencyProfile,
-  type EmployeeSkillEntry,
-  type TimelineEntry,
-} from '@/lib/api/competencyProfileApi';
-import {
-  getMyPlan,
-  listRoadmaps,
-  type DevelopmentMilestone,
-} from '@/lib/api/developmentPlansApi';
-import { colorTokens, radiusTokens, shadowTokens } from '@/theme/theme';
-import RoadmapSummaryCard from './profile/RoadmapSummaryCard';
 
-/**
- * Dashboard tổng quan cho nhân sự — gộp lại các mảnh dữ liệu đã có ở
- * `/profile` (thông tin cá nhân, kỹ năng, dòng thời gian, lộ trình) thành
- * một cái nhìn nhanh, kèm các tín hiệu thật rút ra từ lộ trình hiện tại
- * (việc cần làm, việc trễ hạn, cột mốc đã hoàn thành). Không có endpoint
- * riêng — chỉ gọi lại các API sẵn có (`getCompetencyProfile`, `getMyPlan`,
- * `listRoadmaps`), mỗi cái đều đã được EMPLOYEE dùng được từ trước; mọi chỉ
- * số dưới đây là derive ở client, không có state/API mới.
- */
 export default function DashboardPage() {
   const { user } = useAuth();
-  const router = useRouter();
-
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const [profile, setProfile] = React.useState<CompetencyProfile | null>(null);
-  const [milestones, setMilestones] = React.useState<DevelopmentMilestone[]>([]);
-  const [timelineExpanded, setTimelineExpanded] = React.useState(false);
-
-  React.useEffect(() => {
-    if (!user) return;
-
-    setLoading(true);
-    setError(null);
-
-    Promise.all([getCompetencyProfile(), getMyPlan(), listRoadmaps()])
-      .then(([prof, , roadmaps]) => {
-        setProfile(prof);
-        setMilestones(roadmaps[0]?.milestones ?? []);
-      })
-      .catch((err) => setError(err instanceof Error ? err.message : 'Không tải được trang chủ'))
-      .finally(() => setLoading(false));
-  }, [user]);
-
-  if (loading) {
-    return (
-      <PageContainer>
-        <PageSkeleton variant="cards" rows={4} />
-      </PageContainer>
-    );
-  }
-
-  const skills = [...(profile?.skills ?? [])].sort((a, b) => b.level - a.level);
-  const timeline = profile?.timeline ?? [];
-  const sortedMilestones = [...milestones].sort((a, b) => a.order - b.order);
-  const goalTitle = sortedMilestones.length > 0 ? sortedMilestones[sortedMilestones.length - 1].title : null;
-  const currentIndex = sortedMilestones.length > 0
-    ? (() => {
-        const idx = sortedMilestones.findIndex((m) => m.status !== 'DONE');
-        return idx === -1 ? sortedMilestones.length - 1 : idx;
-      })()
-    : -1;
-  const currentMilestone = currentIndex >= 0 ? sortedMilestones[currentIndex] : null;
-
-  const now = Date.now();
-  const overdueMilestones = sortedMilestones.filter(
-    (m) => m.status !== 'DONE' && m.dueDate && new Date(m.dueDate).getTime() < now,
-  );
-  const overdueTaskCount = overdueMilestones.reduce(
-    (sum, m) => sum + m.tasks.filter((t) => !t.done).length,
-    0,
-  );
-  const upcomingTasks = currentMilestone ? currentMilestone.tasks.filter((t) => !t.done) : [];
-  const doneMilestones = [...sortedMilestones]
-    .filter((m) => m.status === 'DONE')
-    .sort((a, b) => b.order - a.order)
-    .slice(0, 5);
-  const milestoneCompletionPct =
-    sortedMilestones.length > 0
-      ? Math.round((sortedMilestones.filter((m) => m.status === 'DONE').length / sortedMilestones.length) * 100)
-      : null;
+  const userName = user?.name ?? 'Minh Anh';
 
   return (
     <PageContainer>
-      {error ? (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      ) : null}
-
-      <DashboardHero
-        name={user?.name ?? ''}
-        avatarUrl={profile?.user.avatarUrl ?? null}
-        skillCount={skills.length}
-        milestoneCompletionPct={milestoneCompletionPct}
-        pendingTaskCount={upcomingTasks.length}
-        overdueTaskCount={overdueTaskCount}
-      />
-
-      <Stack spacing={3} sx={{ mt: 3 }}>
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: '1.4fr 1fr' },
-            gap: 3,
-            alignItems: 'stretch',
-          }}
-        >
-          {/* Cột trái: kỹ năng — phân bố level + chip, xếp lần lượt. */}
-          <Card
-            title="Kỹ năng"
-            actions={
-              <Button variant="text" size="sm" onClick={() => router.push('/profile?tab=skills')}>
-                Xem tất cả
-              </Button>
-            }
+        {/* Page Header */}
+        <Box sx={{ mb: 4, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { sm: 'center' }, gap: 2 }}>
+          <Box>
+            <Typography variant="h1" sx={{ fontSize: { xs: 24, sm: 28 }, fontWeight: 700, color: '#1c1b2e' }}>
+              Chào {userName},
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#64748b', mt: 0.5 }}>
+              Hôm nay, bạn muốn tiến thêm bước nào?
+            </Typography>
+          </Box>
+          <Button
+            variant="outlined"
+            startIcon={<EditOutlinedIcon sx={{ color: '#6d5bd0' }} />}
+            component={Link}
+            href="/profile"
+            sx={{
+              borderRadius: '12px',
+              borderColor: '#e2e8f0',
+              color: '#1c1b2e',
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: 13,
+              bgcolor: '#ffffff',
+              '&:hover': { borderColor: '#6d5bd0', bgcolor: '#fafafc' },
+            }}
           >
-            {skills.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                Chưa có kỹ năng nào — thêm ở tab Kỹ năng.
-              </Typography>
-            ) : (
-              <Stack spacing={2.5}>
-                <SkillLevelDistribution skills={skills} />
-                <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
-                  {skills.slice(0, 8).map((entry) => (
-                    <Chip
-                      key={entry.id}
-                      label={`${entry.skill.name} · ${entry.level}/5`}
-                      size="small"
-                      variant={entry.level >= 4 ? 'filled' : 'outlined'}
-                      color={entry.level >= 4 ? 'primary' : 'default'}
-                    />
-                  ))}
-                </Stack>
-              </Stack>
-            )}
-          </Card>
-
-          {/* Cột phải: dòng thời gian, cao bằng cột trái — scroll nội bộ nếu dài, nút mở rộng để xem toàn màn hình. */}
-          <Card
-            title="Dòng thời gian"
-            actions={
-              <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
-                <Tooltip title="Xem toàn màn hình">
-                  <IconButton size="small" onClick={() => setTimelineExpanded(true)}>
-                    <OpenInFullOutlinedIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                <Button variant="text" size="sm" onClick={() => router.push('/profile?tab=timeline')}>
-                  Xem tất cả
-                </Button>
-              </Stack>
-            }
-          >
-            <TimelineList entries={timeline} maxHeight={420} />
-          </Card>
-        </Box>
-
-        <Card
-          title="Lộ trình phát triển"
-          actions={
-            sortedMilestones.length > 0 ? (
-              <Button variant="text" size="sm" onClick={() => router.push('/profile?tab=development-plan')}>
-                Xem toàn bộ
-              </Button>
-            ) : undefined
-          }
-        >
-          {sortedMilestones.length === 0 ? (
-            <Stack spacing={2} sx={{ alignItems: 'center', justifyContent: 'center', minHeight: 160 }}>
-              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
-                Chưa có lộ trình phát triển.
-              </Typography>
-              <Button variant="outlined" size="sm" onClick={() => router.push('/profile?tab=development-plan')}>
-                Tạo lộ trình
-              </Button>
-            </Stack>
-          ) : (
-            <Stack spacing={3}>
-              <RoadmapSummaryCard
-                goalTitle={goalTitle}
-                milestones={sortedMilestones}
-                currentIndex={currentIndex}
-                compact={false}
-                onViewAll={() => router.push('/profile?tab=development-plan')}
-              />
-
-              {overdueMilestones.length > 0 ? (
-                <OverdueMilestonesAlert milestones={overdueMilestones} now={now} />
-              ) : null}
-
-              {upcomingTasks.length > 0 ? (
-                <UpcomingTasksList milestoneTitle={currentMilestone!.title} tasks={upcomingTasks} />
-              ) : null}
-
-              {doneMilestones.length > 0 ? <CompletedMilestonesRow milestones={doneMilestones} /> : null}
-            </Stack>
-          )}
-        </Card>
-      </Stack>
-
-      <Dialog
-        open={timelineExpanded}
-        onClose={() => setTimelineExpanded(false)}
-        title="Dòng thời gian"
-        maxWidth="md"
-        actions={
-          <Button variant="text" onClick={() => setTimelineExpanded(false)}>
-            Đóng
+            Cập nhật hồ sơ
           </Button>
-        }
-      >
-        <TimelineList entries={timeline} maxHeight="70vh" />
-      </Dialog>
-    </PageContainer>
-  );
-}
-
-/**
- * Signature element của trang — banner gradient đậm hơn mức bình thường
- * (nhưng vẫn dùng đúng colorTokens gốc), gộp lời chào + nhận diện cá nhân
- * với các tín hiệu thật (kỹ năng, tiến độ lộ trình, việc chờ/trễ). Đây là
- * khối duy nhất trong app kết hợp cả hai, nên đặt lên đầu trang chủ.
- */
-function DashboardHero({
-  name,
-  avatarUrl,
-  skillCount,
-  milestoneCompletionPct,
-  pendingTaskCount,
-  overdueTaskCount,
-}: {
-  name: string;
-  avatarUrl: string | null;
-  skillCount: number;
-  milestoneCompletionPct: number | null;
-  pendingTaskCount: number;
-  overdueTaskCount: number;
-}) {
-  const statusText =
-    overdueTaskCount > 0
-      ? `Có ${overdueTaskCount} việc trễ hạn cần xử lý`
-      : pendingTaskCount > 0
-        ? `${pendingTaskCount} việc đang chờ ở bước hiện tại`
-        : 'Chưa có việc nào trễ hạn';
-
-  return (
-    <Box
-      sx={{
-        p: { xs: 3, md: 4 },
-        borderRadius: `${radiusTokens.lg}px`,
-        background: `linear-gradient(135deg, ${colorTokens.primary} 0%, ${colorTokens.heading} 100%)`,
-        color: '#ffffff',
-        boxShadow: shadowTokens.md,
-      }}
-    >
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2.5} sx={{ alignItems: { sm: 'center' }, mb: 3 }}>
-        <Avatar src={avatarUrl ?? undefined} sx={{ width: 72, height: 72, fontSize: 28, border: '3px solid rgba(255,255,255,0.35)' }}>
-          {name?.[0]?.toUpperCase() ?? '?'}
-        </Avatar>
-        <Box sx={{ minWidth: 0 }}>
-          <Typography sx={{ fontSize: { xs: 24, md: 28 }, fontWeight: 600, lineHeight: 1.2 }}>
-            Chào mừng trở lại{name ? `, ${name}` : ''}
-          </Typography>
-          <Typography sx={{ opacity: 0.85, mt: 0.5 }}>{statusText}</Typography>
         </Box>
-      </Stack>
 
-      <Stack direction="row" spacing={{ xs: 2, sm: 4 }} sx={{ flexWrap: 'wrap', rowGap: 2 }}>
-        <HeroStat label="Kỹ năng" value={skillCount} />
-        <HeroStat
-          label="Cột mốc hoàn thành"
-          value={milestoneCompletionPct !== null ? `${milestoneCompletionPct}%` : '—'}
-        />
-        <HeroStat label="Việc đang chờ" value={pendingTaskCount} />
-        <HeroStat
-          label="Việc trễ hạn"
-          value={overdueTaskCount}
-          warn={overdueTaskCount > 0}
-        />
-      </Stack>
-    </Box>
-  );
-}
-
-function HeroStat({
-  label,
-  value,
-  warn = false,
-}: {
-  label: string;
-  value: string | number;
-  warn?: boolean;
-}) {
-  return (
-    <Box>
-      <Typography
-        sx={{
-          fontSize: 30,
-          fontWeight: 700,
-          lineHeight: 1.1,
-          color: warn ? '#FFD9CC' : '#ffffff',
-        }}
-      >
-        {value}
-      </Typography>
-      <Typography sx={{ fontSize: 13, opacity: 0.8 }}>{label}</Typography>
-    </Box>
-  );
-}
-
-/** Horizontal bar per skill level (1-5) — how many skills sit at each level. No chart library needed for five bars. */
-function SkillLevelDistribution({ skills }: { skills: EmployeeSkillEntry[] }) {
-  const max = Math.max(...[1, 2, 3, 4, 5].map((lvl) => skills.filter((s) => s.level === lvl).length), 1);
-
-  return (
-    <Stack spacing={0.75}>
-      {[5, 4, 3, 2, 1].map((lvl) => {
-        const count = skills.filter((s) => s.level === lvl).length;
-        return (
-          <Stack key={lvl} direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-            <Typography variant="caption" sx={{ width: 44, flexShrink: 0, color: colorTokens.secondary }}>
-              Cấp {lvl}
-            </Typography>
-            <LinearProgress
-              variant="determinate"
-              value={(count / max) * 100}
+        {/* 2-Column Dashboard Grid */}
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '8fr 4fr' }, gap: 3, alignItems: 'start' }}>
+          
+          {/* Left Column (8 cols) */}
+          <Stack spacing={3}>
+            
+            {/* Lộ trình đang theo đuổi Card */}
+            <Box
               sx={{
-                flex: 1,
-                height: 8,
-                borderRadius: 4,
-                bgcolor: colorTokens.muted,
-                '& .MuiLinearProgress-bar': { borderRadius: 4, bgcolor: lvl >= 4 ? colorTokens.primary : colorTokens.selectedBorder },
+                p: { xs: 2.5, md: 3 },
+                borderRadius: '20px',
+                bgcolor: '#ffffff',
+                border: '1px solid #e8e7f0',
+                boxShadow: '0 1px 3px rgba(28,27,46,.04)',
               }}
-            />
-            <Typography variant="caption" sx={{ width: 18, textAlign: 'right', color: colorTokens.secondary }}>
-              {count}
-            </Typography>
-          </Stack>
-        );
-      })}
-    </Stack>
-  );
-}
+            >
+              <Typography sx={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#94a3b8' }}>
+                LỘ TRÌNH ĐANG THEO ĐUỔI
+              </Typography>
+              <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#1c1b2e', mt: 0.5 }}>
+                Trưởng nhóm vận hành
+              </Typography>
+              <Typography sx={{ fontSize: 13, color: '#64748b', mt: 0.25 }}>
+                Bạn đang ở bước 2: Giao tiếp & phản hồi.
+              </Typography>
 
-/** Tasks still open under the milestone the person is currently on. */
-function UpcomingTasksList({
-  milestoneTitle,
-  tasks,
-}: {
-  milestoneTitle: string;
-  tasks: DevelopmentMilestone['tasks'];
-}) {
-  return (
-    <Box>
-      <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-        Cần làm tiếp · {milestoneTitle}
-      </Typography>
-      <Stack spacing={1}>
-        {tasks.slice(0, 5).map((task) => (
-          <Stack key={task.id} direction="row" spacing={1} sx={{ alignItems: 'flex-start' }}>
-            <RadioButtonUncheckedOutlinedIcon sx={{ fontSize: 18, color: colorTokens.primary, mt: '2px' }} />
-            <Box sx={{ minWidth: 0 }}>
-              <Typography variant="body2">{task.title}</Typography>
-              {task.metric ? (
-                <Typography variant="caption" color="text.secondary">
-                  {task.metric}
-                </Typography>
-              ) : null}
+              {/* Step Progress Line with Milo Mascot on Step 2 */}
+              <Box
+                sx={{
+                  py: 4,
+                  px: 3,
+                  my: 3,
+                  borderRadius: '16px',
+                  bgcolor: '#fafafc',
+                  border: '1px solid #f0edf7',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: 520, mx: 'auto', position: 'relative' }}>
+                  
+                  {/* Step 1 */}
+                  <Stack spacing={0.5} sx={{ alignItems: 'center', textAlign: 'center' }}>
+                    <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: '#16a34a', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12 }}>
+                      <CheckCircleRoundedIcon sx={{ fontSize: 20 }} />
+                    </Box>
+                    <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#1c1b2e' }}>1</Typography>
+                    <Typography sx={{ fontSize: 11, color: '#64748b', lineHeight: 1.2 }}>Nền tảng<br />vững chắc</Typography>
+                  </Stack>
+
+                  {/* Connector 1-2 */}
+                  <Box sx={{ flex: 1, height: 3, bgcolor: '#6d5bd0', mx: 1.5 }} />
+
+                  {/* Step 2 (Active with Milo) */}
+                  <Stack spacing={0.5} sx={{ alignItems: 'center', textAlign: 'center', position: 'relative' }}>
+                    {/* Milo Standing with float animation */}
+                    <Box
+                      component="img"
+                      src="/milo-standing.png"
+                      alt="Milo"
+                      sx={{
+                        position: 'absolute',
+                        top: -50,
+                        width: 44,
+                        height: 52,
+                        objectFit: 'contain',
+                        filter: 'drop-shadow(0 4px 6px rgba(109,91,208,0.25))',
+                        animation: 'floatMilo 3s ease-in-out infinite',
+                        '@keyframes floatMilo': {
+                          '0%, 100%': { transform: 'translateY(0px)' },
+                          '50%': { transform: 'translateY(-6px)' },
+                        },
+                      }}
+                    />
+                    <Box sx={{ width: 34, height: 34, borderRadius: '50%', bgcolor: '#6d5bd0', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, boxShadow: '0 0 16px rgba(109,91,208,0.45)' }}>
+                      2
+                    </Box>
+                    <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#6d5bd0' }}>2</Typography>
+                    <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#6d5bd0', lineHeight: 1.2 }}>Giao tiếp<br />& phản hồi</Typography>
+                  </Stack>
+
+                  {/* Connector 2-3 */}
+                  <Box sx={{ flex: 1, height: 3, bgcolor: '#e2e8f0', mx: 1.5 }} />
+
+                  {/* Step 3 */}
+                  <Stack spacing={0.5} sx={{ alignItems: 'center', textAlign: 'center' }}>
+                    <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: '#ffffff', border: '2px solid #cbd5e1', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12 }}>
+                      3
+                    </Box>
+                    <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#94a3b8' }}>3</Typography>
+                    <Typography sx={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.2 }}>Quản lý<br />công việc</Typography>
+                  </Stack>
+
+                  {/* Connector 3-4 */}
+                  <Box sx={{ flex: 1, height: 3, bgcolor: '#e2e8f0', mx: 1.5 }} />
+
+                  {/* Step 4 */}
+                  <Stack spacing={0.5} sx={{ alignItems: 'center', textAlign: 'center' }}>
+                    <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: '#ffffff', border: '2px solid #cbd5e1', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <FlagOutlinedIcon sx={{ fontSize: 16 }} />
+                    </Box>
+                    <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#94a3b8' }}>4</Typography>
+                    <Typography sx={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.2 }}>Dẫn dắt<br />đội nhóm</Typography>
+                  </Stack>
+
+                </Box>
+              </Box>
+
+              {/* Progress bar */}
+              <Box sx={{ mb: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748b', mb: 1 }}>
+                  <span>1/4 cột mốc hoàn thành</span>
+                  <Typography component="span" sx={{ fontWeight: 700, color: '#1c1b2e', fontSize: 12 }}>25%</Typography>
+                </Box>
+                <LinearProgress
+                  variant="determinate"
+                  value={25}
+                  sx={{
+                    height: 8,
+                    borderRadius: 4,
+                    bgcolor: '#e2e8f0',
+                    '& .MuiLinearProgress-bar': { bgcolor: '#6d5bd0', borderRadius: 4 },
+                  }}
+                />
+              </Box>
+
+              {/* Time Details & Actions */}
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { sm: 'center' }, gap: 2, pt: 1 }}>
+                <Stack direction="row" spacing={3} sx={{ fontSize: 12, color: '#64748b' }}>
+                  <span>📅 12 tuần</span>
+                  <span>🕒 3 giờ mỗi tuần</span>
+                </Stack>
+
+                <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+                  <Button
+                    variant="contained"
+                    component={Link}
+                    href="/development-plan"
+                    endIcon={<ArrowForwardRoundedIcon sx={{ fontSize: 16 }} />}
+                    sx={{
+                      bgcolor: '#6d5bd0',
+                      '&:hover': { bgcolor: '#5847be' },
+                      borderRadius: '12px',
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      fontSize: 13,
+                      px: 2.5,
+                      py: 1,
+                    }}
+                  >
+                    Tiếp tục bước 2
+                  </Button>
+                  <Button
+                    component={Link}
+                    href="/development-plan"
+                    endIcon={<ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />}
+                    sx={{
+                      color: '#6d5bd0',
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      fontSize: 13,
+                      p: 0,
+                      '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' },
+                    }}
+                  >
+                    Xem toàn bộ lộ trình
+                  </Button>
+                </Stack>
+              </Box>
             </Box>
+
+            {/* Hồ sơ năng lực Card */}
+            <Box
+              sx={{
+                p: { xs: 2.5, md: 3 },
+                borderRadius: '20px',
+                bgcolor: '#ffffff',
+                border: '1px solid #e8e7f0',
+                boxShadow: '0 1px 3px rgba(28,27,46,.04)',
+              }}
+            >
+              <Typography sx={{ fontSize: 16, fontWeight: 700, color: '#1c1b2e', mb: 2 }}>
+                Hồ sơ năng lực
+              </Typography>
+
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, mb: 3 }}>
+                <Box sx={{ p: 2, borderRadius: '14px', bgcolor: '#fafafc', border: '1px solid #f0edf7', textAlign: 'center' }}>
+                  <Typography sx={{ fontSize: 24, fontWeight: 700, color: '#6d5bd0' }}>8</Typography>
+                  <Typography sx={{ fontSize: 12, color: '#64748b' }}>Kỹ năng</Typography>
+                </Box>
+                <Box sx={{ p: 2, borderRadius: '14px', bgcolor: '#fafafc', border: '1px solid #f0edf7', textAlign: 'center' }}>
+                  <Typography sx={{ fontSize: 24, fontWeight: 700, color: '#16a34a' }}>4</Typography>
+                  <Typography sx={{ fontSize: 12, color: '#64748b' }}>Dự án</Typography>
+                </Box>
+                <Box sx={{ p: 2, borderRadius: '14px', bgcolor: '#fafafc', border: '1px solid #f0edf7', textAlign: 'center' }}>
+                  <Typography sx={{ fontSize: 24, fontWeight: 700, color: '#5847be' }}>2</Typography>
+                  <Typography sx={{ fontSize: 12, color: '#64748b' }}>Chứng chỉ</Typography>
+                </Box>
+              </Box>
+
+              <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#64748b', mb: 1 }}>
+                Hoạt động gần đây
+              </Typography>
+              <Stack spacing={1.5}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1.5, borderRadius: '12px', bgcolor: '#fafafc', fontSize: 12 }}>
+                  <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#6d5bd0' }} />
+                    <Typography sx={{ fontWeight: 700, fontSize: 12 }}>Đánh giá tháng 8</Typography>
+                    <Box component="span" sx={{ px: 1, py: 0.25, borderRadius: '6px', bgcolor: '#dcfce7', color: '#15803d', fontSize: 10, fontWeight: 600 }}>
+                      Đã duyệt
+                    </Box>
+                  </Stack>
+                  <Typography sx={{ color: '#64748b', fontSize: 12 }}>Góp ý từ quản lý và đồng nghiệp</Typography>
+                </Box>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1.5, borderRadius: '12px', bgcolor: '#fafafc', fontSize: 12 }}>
+                  <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#94a3b8' }} />
+                    <Typography sx={{ fontWeight: 700, fontSize: 12 }}>Dự án cải tiến quy trình</Typography>
+                    <Box component="span" sx={{ px: 1, py: 0.25, borderRadius: '6px', bgcolor: '#dcfce7', color: '#15803d', fontSize: 10, fontWeight: 600 }}>
+                      Đã cập nhật
+                    </Box>
+                  </Stack>
+                  <Typography sx={{ color: '#64748b', fontSize: 12 }}>Vai trò và đóng góp đã được ghi nhận</Typography>
+                </Box>
+              </Stack>
+
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 2, mt: 2, borderTop: '1px solid #f0edf7' }}>
+                <Button
+                  component={Link}
+                  href="/profile"
+                  endIcon={<ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />}
+                  sx={{ color: '#6d5bd0', textTransform: 'none', fontWeight: 600, fontSize: 13, p: 0 }}
+                >
+                  Xem hồ sơ
+                </Button>
+                <Button
+                  component={Link}
+                  href="/profile/import"
+                  startIcon={<PostAddOutlinedIcon sx={{ fontSize: 16, color: '#6d5bd0' }} />}
+                  variant="outlined"
+                  sx={{ borderRadius: '10px', borderColor: '#e2e8f0', color: '#1c1b2e', textTransform: 'none', fontSize: 12, fontWeight: 600 }}
+                >
+                  Thêm từ tài liệu
+                </Button>
+              </Box>
+            </Box>
+
           </Stack>
-        ))}
-      </Stack>
-    </Box>
-  );
-}
 
-/** Milestones past their dueDate and not yet DONE — a real warning, not decoration, so it renders as an Alert rather than a tinted label. */
-function OverdueMilestonesAlert({
-  milestones,
-  now,
-}: {
-  milestones: DevelopmentMilestone[];
-  now: number;
-}) {
-  return (
-    <Alert severity="warning" icon={<WarningAmberOutlinedIcon fontSize="small" />}>
-      <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.75 }}>
-        {milestones.length} cột mốc đang trễ hạn
-      </Typography>
-      <Stack spacing={0.5}>
-        {milestones.map((m) => {
-          const daysLate = Math.max(1, Math.round((now - new Date(m.dueDate!).getTime()) / 86_400_000));
-          const openTasks = m.tasks.filter((t) => !t.done).length;
-          return (
-            <Typography key={m.id} variant="body2">
-              {m.title} — trễ {daysLate} ngày{openTasks > 0 ? `, còn ${openTasks} việc chưa xong` : ''}
-            </Typography>
-          );
-        })}
-      </Stack>
-    </Alert>
-  );
-}
+          {/* Right Column (4 cols) */}
+          <Stack spacing={3}>
+            
+            {/* Việc cần làm Card */}
+            <Box
+              sx={{
+                p: 2.5,
+                borderRadius: '20px',
+                bgcolor: '#ffffff',
+                border: '1px solid #e8e7f0',
+                boxShadow: '0 1px 3px rgba(28,27,46,.04)',
+              }}
+            >
+              <Typography sx={{ fontSize: 14, fontWeight: 700, color: '#1c1b2e', mb: 2 }}>
+                Việc cần làm
+              </Typography>
 
-/** Recently completed milestones, worth calling out — silently omitted when there's nothing to praise yet. */
-function CompletedMilestonesRow({ milestones }: { milestones: DevelopmentMilestone[] }) {
-  return (
-    <Box>
-      <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-        Đã hoàn thành tốt
-      </Typography>
-      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
-        {milestones.map((m) => (
-          <Chip
-            key={m.id}
-            icon={<CheckCircleOutlinedIcon fontSize="small" />}
-            label={m.title}
-            size="small"
-            color="primary"
-          />
-        ))}
-      </Stack>
-    </Box>
-  );
-}
+              <Stack spacing={1.5}>
+                <Box sx={{ p: 1.5, borderRadius: '14px', border: '1px solid #ede9fe', bgcolor: '#faf5ff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+                    <DescriptionOutlinedIcon sx={{ color: '#6d5bd0', fontSize: 20 }} />
+                    <Box>
+                      <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#1c1b2e' }}>Tự đánh giá tháng 9</Typography>
+                      <Typography sx={{ fontSize: 10, color: '#94a3b8' }}>Hạn 20/09</Typography>
+                    </Box>
+                  </Stack>
+                  <Button component={Link} href="/assessments" sx={{ bgcolor: '#6d5bd0', color: '#fff', fontSize: 11, fontWeight: 700, textTransform: 'none', borderRadius: '8px', px: 1.5, py: 0.5, '&:hover': { bgcolor: '#5847be' } }}>
+                    Mở đánh giá →
+                  </Button>
+                </Box>
 
-/** Compact vertical timeline list — used both inline (fixed max height,
- * scrolls internally) and inside the "xem toàn màn hình" Dialog (tall
- * viewport-relative max height). */
-function TimelineList({
-  entries,
-  maxHeight,
-}: {
-  entries: TimelineEntry[];
-  maxHeight: number | string;
-}) {
-  if (entries.length === 0) {
-    return (
-      <Typography variant="body2" color="text.secondary">
-        Chưa có hoạt động nào.
-      </Typography>
-    );
-  }
+                <Box sx={{ p: 1.5, borderRadius: '14px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', '&:hover': { bgcolor: '#fafafc' }, cursor: 'pointer' }}>
+                  <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+                    <PeopleAltOutlinedIcon sx={{ color: '#64748b', fontSize: 20 }} />
+                    <Box>
+                      <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#1c1b2e' }}>Thực hành buổi trao đổi</Typography>
+                      <Typography sx={{ fontSize: 10, color: '#94a3b8' }}>Trong tuần</Typography>
+                    </Box>
+                  </Stack>
+                  <ChevronRightRoundedIcon sx={{ color: '#cbd5e1' }} />
+                </Box>
 
-  return (
-    <Stack
-      spacing={1.5}
-      divider={<Box sx={{ borderBottom: '1px solid', borderColor: 'divider' }} />}
-      sx={{ maxHeight, overflowY: 'auto', pr: 0.5 }}
-    >
-      {entries.map((entry) => (
-        <Box key={entry.id}>
-          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-            {entry.title}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {new Date(entry.date).toLocaleDateString('vi-VN', { year: 'numeric', month: 'short', day: 'numeric' })}
-          </Typography>
+                <Box sx={{ p: 1.5, borderRadius: '14px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', '&:hover': { bgcolor: '#fafafc' }, cursor: 'pointer' }}>
+                  <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+                    <PostAddOutlinedIcon sx={{ color: '#64748b', fontSize: 20 }} />
+                    <Box>
+                      <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#1c1b2e' }}>Cập nhật kinh nghiệm mới</Typography>
+                      <Typography sx={{ fontSize: 10, color: '#94a3b8' }}>Khi thuận tiện</Typography>
+                    </Box>
+                  </Stack>
+                  <ChevronRightRoundedIcon sx={{ color: '#cbd5e1' }} />
+                </Box>
+              </Stack>
+            </Box>
+
+            {/* Trợ lý đồng hành Card */}
+            <Box
+              sx={{
+                p: 2.5,
+                borderRadius: '20px',
+                border: '2px solid #ddd6fe',
+                background: 'linear-gradient(135deg, #faf5ff 0%, #ffffff 100%)',
+                boxShadow: '0 1px 3px rgba(28,27,46,.04)',
+              }}
+            >
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
+                <AutoAwesomeOutlinedIcon sx={{ color: '#6d5bd0', fontSize: 18 }} />
+                <Typography sx={{ fontSize: 14, fontWeight: 700, color: '#1c1b2e' }}>
+                  Trợ lý đồng hành
+                </Typography>
+              </Stack>
+              <Typography sx={{ fontSize: 11, color: '#64748b', mb: 2 }}>
+                Gợi ý bước tiếp theo từ hồ sơ và mục tiêu của bạn.
+              </Typography>
+
+              <Stack spacing={1} sx={{ mb: 2 }}>
+                <Box
+                  component={Link}
+                  href="/assistant"
+                  sx={{
+                    p: 1.5,
+                    borderRadius: '12px',
+                    bgcolor: '#ffffff',
+                    border: '1px solid #ede9fe',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    fontSize: 12,
+                    color: '#1c1b2e',
+                    textDecoration: 'none',
+                    '&:hover': { borderColor: '#6d5bd0' },
+                  }}
+                >
+                  <span>💬 Tôi nên phát triển kỹ năng nào?</span>
+                  <ChevronRightRoundedIcon sx={{ color: '#6d5bd0', fontSize: 18 }} />
+                </Box>
+
+                <Box
+                  component={Link}
+                  href="/development-plan"
+                  sx={{
+                    p: 1.5,
+                    borderRadius: '12px',
+                    bgcolor: '#ffffff',
+                    border: '1px solid #ede9fe',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    fontSize: 12,
+                    color: '#1c1b2e',
+                    textDecoration: 'none',
+                    '&:hover': { borderColor: '#6d5bd0' },
+                  }}
+                >
+                  <span>📋 Điều chỉnh lộ trình của tôi?</span>
+                  <ChevronRightRoundedIcon sx={{ color: '#6d5bd0', fontSize: 18 }} />
+                </Box>
+              </Stack>
+
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11 }}>
+                <Button
+                  component={Link}
+                  href="/assistant"
+                  endIcon={<ArrowForwardRoundedIcon sx={{ fontSize: 12 }} />}
+                  sx={{ color: '#6d5bd0', textTransform: 'none', fontWeight: 700, fontSize: 11, p: 0 }}
+                >
+                  Mở trợ lý AI
+                </Button>
+                <Typography sx={{ color: '#94a3b8', fontSize: 11 }}>
+                  Bạn xem đề xuất trước khi lưu.
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Ghi nhận gần đây */}
+            <Box
+              sx={{
+                p: 2,
+                borderRadius: '16px',
+                bgcolor: '#ffffff',
+                border: '1px solid #e8e7f0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+                <Box sx={{ width: 36, height: 36, borderRadius: '10px', bgcolor: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <EmojiEventsOutlinedIcon sx={{ fontSize: 20 }} />
+                </Box>
+                <Box>
+                  <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#1c1b2e' }}>Hoàn thành cột mốc Nền tảng</Typography>
+                  <Typography sx={{ fontSize: 10, color: '#94a3b8' }}>Cột mốc đầu tiên trong lộ trình</Typography>
+                </Box>
+              </Stack>
+              <Typography sx={{ fontSize: 10, color: '#94a3b8' }}>30/08/2026</Typography>
+            </Box>
+
+          </Stack>
+
         </Box>
-      ))}
-    </Stack>
+      </PageContainer>
   );
 }

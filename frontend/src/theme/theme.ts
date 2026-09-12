@@ -24,6 +24,18 @@ export const colorTokens = {
   border: '#E2E8E4',
   muted: '#EFF2EF',
   danger: '#AD442E',
+  // Compatibility tokens
+  bg: '#F7F8F5',
+  text: '#243F36',
+  neutral400: '#626C65',
+  neutral500: '#8b899f',
+  divider: '#E2E8E4',
+  accent: '#3E7868',
+  accent300: '#2E5B4F',
+  accent700: '#91B3A1',
+  accent900: '#E4EFE7',
+  accentContrast: '#FFFFFF',
+  success: '#2D8A6E',
 } as const;
 
 export const radiusTokens = {

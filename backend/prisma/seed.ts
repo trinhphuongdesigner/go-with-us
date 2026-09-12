@@ -378,6 +378,273 @@ async function main() {
     });
   }
 
+  // --- Seed Employee Skills -----------------------------------------------
+  const allSkills = await prisma.skill.findMany();
+  const skillMap = new Map(allSkills.map((s) => [s.name, s.id]));
+
+  const alice = employees[0];
+  const bob = employees[1];
+  const carol = employees[2];
+
+  const aliceSkills = [
+    { name: 'React', level: 5 },
+    { name: 'TypeScript', level: 4 },
+    { name: 'JavaScript', level: 5 },
+    { name: 'Next.js', level: 4 },
+    { name: 'Redux Toolkit', level: 4 },
+    { name: 'Communication', level: 4 },
+    { name: 'Project Management', level: 3 },
+    { name: 'English (TOEIC)', level: 4 },
+  ];
+
+  for (const s of aliceSkills) {
+    const skillId = skillMap.get(s.name);
+    if (skillId) {
+      await prisma.employeeSkill.upsert({
+        where: { userId_skillId: { userId: alice.id, skillId } },
+        update: { level: s.level },
+        create: {
+          userId: alice.id,
+          skillId,
+          level: s.level,
+          selfAssessed: true,
+        },
+      });
+    }
+  }
+
+  const bobSkills = [
+    { name: 'Node.js', level: 5 },
+    { name: 'NestJS', level: 4 },
+    { name: 'PostgreSQL', level: 4 },
+    { name: 'Redis', level: 3 },
+    { name: 'TypeScript', level: 4 },
+    { name: 'SQL', level: 4 },
+  ];
+
+  for (const s of bobSkills) {
+    const skillId = skillMap.get(s.name);
+    if (skillId) {
+      await prisma.employeeSkill.upsert({
+        where: { userId_skillId: { userId: bob.id, skillId } },
+        update: { level: s.level },
+        create: {
+          userId: bob.id,
+          skillId,
+          level: s.level,
+          selfAssessed: true,
+        },
+      });
+    }
+  }
+
+  const carolSkills = [
+    { name: 'Figma', level: 5 },
+    { name: 'UI/UX Design', level: 5 },
+    { name: 'Communication', level: 4 },
+  ];
+
+  for (const s of carolSkills) {
+    const skillId = skillMap.get(s.name);
+    if (skillId) {
+      await prisma.employeeSkill.upsert({
+        where: { userId_skillId: { userId: carol.id, skillId } },
+        update: { level: s.level },
+        create: {
+          userId: carol.id,
+          skillId,
+          level: s.level,
+          selfAssessed: true,
+        },
+      });
+    }
+  }
+
+  // --- Seed Project Experiences -------------------------------------------
+  await prisma.projectExperience.deleteMany({
+    where: { userId: { in: [alice.id, bob.id, carol.id] } },
+  });
+
+  await prisma.projectExperience.createMany({
+    data: [
+      {
+        userId: alice.id,
+        companyId: company.id,
+        employmentId: 'demo-employment-0',
+        name: 'Cổng thông tin Bất động sản Vinhomes (Vinhomes Real Estate Portal)',
+        role: 'Frontend Lead',
+        domain: 'Bất động sản',
+        techStack: ['React', 'TypeScript', 'Next.js', 'Redux Toolkit', 'Tailwind CSS'],
+        contribution:
+          'Xây dựng hệ thống bản đồ quy hoạch và lọc dự án bất động sản realtime, phục vụ 50.000 lượt truy cập/ngày.',
+        startDate: new Date('2022-03-01'),
+        endDate: new Date('2024-06-30'),
+      },
+      {
+        userId: alice.id,
+        companyId: company.id,
+        employmentId: 'demo-employment-0',
+        name: 'Hệ thống Quản lý Bất động sản Cho thuê (PropTech SaaS)',
+        role: 'Senior Frontend Developer',
+        domain: 'Bất động sản',
+        techStack: ['React', 'TypeScript', 'Ant Design', 'GraphQL'],
+        contribution:
+          'Tối ưu hóa tốc độ tải trang từ 4.2s xuống 1.1s; thiết kế luồng ký hợp đồng thuê trực tuyến.',
+        startDate: new Date('2024-07-01'),
+        endDate: null,
+      },
+      {
+        userId: bob.id,
+        companyId: company.id,
+        employmentId: 'demo-employment-1',
+        name: 'Cổng thanh toán FinTech (FinTech Payment Gateway)',
+        role: 'Backend Lead',
+        domain: 'Tài chính - Ngân hàng (FinTech)',
+        techStack: ['Node.js', 'NestJS', 'PostgreSQL', 'Redis', 'Kafka'],
+        contribution:
+          'Xử lý 1.000 giao dịch/giây, đảm bảo chuẩn bảo mật thanh toán quốc tế PCI-DSS.',
+        startDate: new Date('2023-01-15'),
+        endDate: null,
+      },
+      {
+        userId: carol.id,
+        companyId: company.id,
+        employmentId: 'demo-employment-2',
+        name: 'Acme Design System 2.0 & Token Architecture',
+        role: 'Lead Product Designer',
+        domain: 'Enterprise Software',
+        techStack: ['Figma', 'Design System', 'Tokens', 'Prototyping'],
+        contribution:
+          'Chuẩn hóa hơn 100 components, rút ngắn 35% thời gian thiết kế UI cho toàn bộ team sản phẩm.',
+        startDate: new Date('2024-02-01'),
+        endDate: null,
+      },
+    ],
+  });
+
+  // --- Seed Certifications & Awards for Alice ------------------------------
+  await prisma.certification.deleteMany({ where: { userId: alice.id } });
+  await prisma.certification.createMany({
+    data: [
+      {
+        userId: alice.id,
+        name: 'AWS Certified Cloud Practitioner',
+        type: 'PROFESSIONAL',
+        issuer: 'Amazon Web Services',
+        score: '880/1000',
+        issuedAt: new Date('2023-05-15'),
+      },
+      {
+        userId: alice.id,
+        name: 'TOEIC 850',
+        type: 'LANGUAGE',
+        issuer: 'ETS',
+        score: '850/990',
+        issuedAt: new Date('2023-01-10'),
+      },
+    ],
+  });
+
+  await prisma.award.deleteMany({ where: { userId: alice.id } });
+  await prisma.award.createMany({
+    data: [
+      {
+        userId: alice.id,
+        title: 'Nhân viên xuất sắc Quý 2/2024',
+        category: 'WORK',
+        issuer: 'Acme Corp',
+        description:
+          'Đóng góp nổi bật trong việc bàn giao module bản đồ quy hoạch BĐS đúng tiến độ.',
+        awardedAt: new Date('2024-06-30'),
+        selfReported: false,
+      },
+      {
+        userId: alice.id,
+        title: 'Giải Nhất Hackathon Nội bộ 2023 - Đề án PropTech AI',
+        category: 'WORK',
+        issuer: 'Acme Corp',
+        description: 'Xây dựng trợ lý ảo định giá bất động sản theo thời gian thực.',
+        awardedAt: new Date('2023-11-20'),
+        selfReported: false,
+      },
+    ],
+  });
+
+  // --- Seed Previous Approved Assessment for Alice ------------------------
+  const pastPeriod = '2024-08';
+  const pastCycle = await prisma.assessmentCycle.upsert({
+    where: { companyId_period: { companyId: company.id, period: pastPeriod } },
+    update: {},
+    create: {
+      companyId: company.id,
+      templateId: template.id,
+      name: `Check-in ${pastPeriod}`,
+      period: pastPeriod,
+      status: 'CLOSED',
+    },
+  });
+
+  const fullTemplate = await prisma.assessmentTemplate.findUniqueOrThrow({
+    where: { id: template.id },
+    include: {
+      groups: {
+        include: { questions: true },
+      },
+    },
+  });
+
+  const existingAssessment = await prisma.assessment.findFirst({
+    where: {
+      cycleId: pastCycle.id,
+      revieweeId: alice.id,
+      type: 'MANAGER',
+    },
+  });
+
+  if (!existingAssessment) {
+    const questions = fullTemplate.groups.flatMap((g) => g.questions);
+    const answersData = questions.map((q, idx) => ({
+      questionId: q.id,
+      score: idx % 2 === 0 ? 9 : 8,
+      comment: 'Thể hiện rất tốt yêu cầu chuyên môn và phối hợp nhóm.',
+    }));
+
+    await prisma.assessment.create({
+      data: {
+        cycleId: pastCycle.id,
+        templateId: template.id,
+        revieweeId: alice.id,
+        reviewerId: companyAdmin.id,
+        employmentId: 'demo-employment-0',
+        type: 'MANAGER',
+        status: 'APPROVED',
+        mood: 'GREAT',
+        highlights:
+          'Chủ động đề xuất kiến trúc frontend cho hệ thống BĐS, dẫn dắt team vượt tiến độ sprint.',
+        comment: 'Đánh giá xuất sắc, sẵn sàng cho vai trò Tech Lead.',
+        totalScore: 8.8,
+        contributionScore: 8.7,
+        attitudeScore: 9.3,
+        templateSnapshot: JSON.parse(JSON.stringify(fullTemplate)),
+        submittedAt: new Date('2024-08-28'),
+        approvedAt: new Date('2024-08-29'),
+        approvedById: companyAdmin.id,
+        answers: {
+          create: answersData,
+        },
+      },
+    });
+  }
+
+  // Update Alice user scores reflecting the approved assessment
+  await prisma.user.update({
+    where: { id: alice.id },
+    data: {
+      contributionScore: 8.7,
+      attitudeScore: 9.3,
+    },
+  });
+
   console.log(
     '\nSeed complete. Demo login credentials (all use the same password):\n',
   );

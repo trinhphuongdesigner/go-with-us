@@ -8,6 +8,7 @@ interface CardProps {
   actions?: React.ReactNode;
   children: React.ReactNode;
   sx?: object;
+  className?: string;
 }
 
 /**
@@ -15,9 +16,15 @@ interface CardProps {
  * table/form should live inside one of these rather than sitting directly
  * on the page background.
  */
-export default function Card({ title, actions, children, sx }: CardProps) {
+export default function Card({
+  title,
+  actions,
+  children,
+  sx,
+  className,
+}: CardProps) {
   return (
-    <MuiCard sx={sx}>
+    <MuiCard sx={sx} className={className}>
       <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
         {title || actions ? (
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>

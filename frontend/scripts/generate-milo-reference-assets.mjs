@@ -1,0 +1,27 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+
+const frontend = fileURLToPath(new URL('../', import.meta.url));
+const root = path.join(frontend, 'public/brand/careermate/v2-reference');
+await mkdir(root, { recursive: true });
+const states = {
+  current: { top: '#FBF9FF', lower: '#DED4F7', left: '#9978F3', center: '#8863EC', right: '#6E49D7', bottom: '#704BD6', edge: '#9D7FF0', shadow: '#7352CE' },
+  completed: { top: '#C6ECCB', lower: '#98D6A4', left: '#7BC78F', center: '#72BC85', right: '#4F9C68', bottom: '#589F6D', edge: '#BAE6C1', shadow: '#639C70' },
+  upcoming: { top: '#FEFEFF', lower: '#EDECF1', left: '#DEDEE5', center: '#D6D5DF', right: '#BDBACB', bottom: '#BEBDC9', edge: '#F7F7FA', shadow: '#737087' },
+  goal: { top: '#FEFEFF', lower: '#EDECF1', left: '#DEDEE5', center: '#D6D5DF', right: '#BDBACB', bottom: '#BEBDC9', edge: '#F7F7FA', shadow: '#737087' },
+};
+const assets = [];
+for (const [state, c] of Object.entries(states)) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="260" height="152" viewBox="0 0 260 152"><defs><linearGradient id="top-${state}" x1="0" y1="0" x2="0" y2="1"><stop stop-color="${c.top}"/><stop offset="1" stop-color="${c.lower}"/></linearGradient><linearGradient id="side-${state}"><stop stop-color="${c.left}"/><stop offset=".42" stop-color="${c.center}"/><stop offset="1" stop-color="${c.right}"/></linearGradient><radialGradient id="shadow-${state}"><stop stop-color="${c.shadow}" stop-opacity=".25"/><stop offset="1" stop-color="${c.shadow}" stop-opacity="0"/></radialGradient></defs><ellipse cx="132" cy="121" rx="125" ry="30" fill="url(#shadow-${state})"/><path d="M16 55V92C16 113 67 131 130 131S244 113 244 92V55Z" fill="${c.bottom}"/><path d="M16 53V87C16 108 67 126 130 126S244 108 244 87V53Z" fill="url(#side-${state})"/><ellipse cx="130" cy="53" rx="114" ry="36" fill="url(#top-${state})" stroke="${c.edge}" stroke-width="2.5"/><path d="M25 47C36 31 80 19 130 19S224 31 235 47" fill="none" stroke="#FFFFFF" stroke-opacity=".65" stroke-width="2" stroke-linecap="round"/></svg>\n`;
+  const name = `step-${state}.svg`;
+  await writeFile(path.join(root, name), svg);
+  assets.push({ id: `reference-step-${state}`, src: `/brand/careermate/v2-reference/${name}`, width: 260, height: 152, format: 'svg' });
+}
+await writeFile(path.join(root, 'check-marker.svg'), `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="100" viewBox="0 0 96 100"><defs><linearGradient id="check-ball" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#45B27C"/><stop offset=".6" stop-color="#249966"/><stop offset="1" stop-color="#187746"/></linearGradient><radialGradient id="check-shadow"><stop stop-color="#276C3E" stop-opacity=".27"/><stop offset="1" stop-color="#276C3E" stop-opacity="0"/></radialGradient></defs><ellipse cx="48" cy="85" rx="43" ry="12" fill="url(#check-shadow)"/><circle cx="48" cy="46" r="36" fill="url(#check-ball)"/><path d="M21 36C24 24 35 15 48 14" fill="none" stroke="#B8F1CC" stroke-opacity=".32" stroke-width="2.5" stroke-linecap="round"/><path d="M33 47L44 58L65 34" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>\n`);
+await writeFile(path.join(root, 'goal-flag.svg'), `<svg xmlns="http://www.w3.org/2000/svg" width="104" height="176" viewBox="0 0 104 176"><defs><linearGradient id="pole"><stop stop-color="#C3BECF"/><stop offset=".35" stop-color="#F0ECF6"/><stop offset=".6" stop-color="#A49AB9"/><stop offset="1" stop-color="#887C9F"/></linearGradient><linearGradient id="cloth"><stop stop-color="#8B6DEA"/><stop offset=".5" stop-color="#AF91FA"/><stop offset="1" stop-color="#7B58D7"/></linearGradient><radialGradient id="flag-shadow"><stop stop-color="#595267" stop-opacity=".22"/><stop offset="1" stop-color="#595267" stop-opacity="0"/></radialGradient></defs><ellipse cx="45" cy="157" rx="42" ry="14" fill="url(#flag-shadow)"/><ellipse cx="42" cy="146" rx="25" ry="10" fill="#C8C4D0"/><ellipse cx="42" cy="141" rx="25" ry="9" fill="#EBE8EF"/><path d="M42 22C55 17 60 31 88 33C83 44 62 52 43 64Z" fill="url(#cloth)"/><path d="M43 21C59 20 66 32 86 33" fill="none" stroke="#C3AFFA" stroke-width="2"/><rect x="35" y="13" width="13" height="131" rx="6.5" fill="url(#pole)"/><ellipse cx="41.5" cy="13" rx="6.5" ry="4" fill="#B4A7CD"/></svg>\n`);
+assets.push({ id: 'reference-check-marker', src: '/brand/careermate/v2-reference/check-marker.svg', width: 96, height: 100, format: 'svg' }, { id: 'reference-goal-flag', src: '/brand/careermate/v2-reference/goal-flag.svg', width: 104, height: 176, format: 'svg' });
+await writeFile(path.join(root, 'milo-contact-shadow.svg'), '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60"><defs><radialGradient id="contact"><stop stop-color="#65536E" stop-opacity=".22"/><stop offset=".55" stop-color="#65536E" stop-opacity=".12"/><stop offset="1" stop-color="#65536E" stop-opacity="0"/></radialGradient></defs><ellipse cx="100" cy="30" rx="100" ry="30" fill="url(#contact)"/></svg>\n');
+assets.push({ id: 'milo-contact-shadow', src: '/brand/careermate/v2-reference/milo-contact-shadow.svg', width: 200, height: 60, format: 'svg' });
+await writeFile(path.join(root, 'vectors.json'), JSON.stringify({ version: 2, reference: 'Original purple Milo roadmap mockup', assets }, null, 2) + '\n');
+console.log(`Created ${assets.length} SVG parts matched to the original Milo roadmap.`);
