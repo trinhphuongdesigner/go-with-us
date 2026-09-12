@@ -14,14 +14,20 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
+import ForwardToInboxOutlinedIcon from '@mui/icons-material/ForwardToInboxOutlined';
+import StatusChip from '@/components/ui/StatusChip';
 import { ApiError } from '@/lib/api/client';
 import {
   createCertification,
   deleteCertification,
   updateCertification,
+  uploadCertificationEvidence,
   type Certification,
   type CertificationType,
+  type EmploymentEntry,
 } from '@/lib/api/competencyProfileApi';
+import { listSentCompetencyRequests, type CompetencyRequest } from '@/lib/api/competencyRequestsApi';
+import SendToHrDialog from './SendToHrDialog';
 
 const TYPES: { value: CertificationType; label: string }[] = [
   { value: 'DEGREE', label: 'Bằng cấp' },
@@ -52,12 +58,20 @@ const EMPTY: FormState = {
 
 const toInputDate = (value: string | null) => (value ? value.slice(0, 10) : '');
 
+const REQUEST_STATUS_LABEL: Record<CompetencyRequest['status'], string> = {
+  PENDING: 'Đang chờ HR duyệt',
+  APPROVED: 'HR đã duyệt',
+  REJECTED: 'HR đã từ chối',
+};
+
 /** Degrees, language certificates (IELTS/TOEIC) and professional certs. */
 export default function CertificationsTab({
   certifications,
+  employments,
   onChanged,
 }: {
   certifications: Certification[];
+  employments: EmploymentEntry[];
   onChanged: () => void;
 }) {
   const { ask, dialog } = useConfirmDialog();
@@ -66,6 +80,25 @@ export default function CertificationsTab({
   const [form, setForm] = React.useState<FormState>(EMPTY);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [uploading, setUploading] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [sentRequests, setSentRequests] = React.useState<CompetencyRequest[]>([]);
+  const [hrDialogFor, setHrDialogFor] = React.useState<Certification | null>(null);
+
+  const loadSentRequests = React.useCallback(() => {
+    listSentCompetencyRequests()
+      .then(setSentRequests)
+      .catch(() => undefined);
+  }, []);
+
+  React.useEffect(() => {
+    loadSentRequests();
+  }, [loadSentRequests]);
+
+  const latestRequestFor = (certificationId: string) =>
+    sentRequests
+      .filter((r) => r.sourceType === 'CERTIFICATION' && r.sourceId === certificationId)
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))[0];
 
   const openCreate = () => {
     setEditingId(null);
@@ -123,6 +156,23 @@ export default function CertificationsTab({
       );
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setUploading(true);
+    setError(null);
+    try {
+      const { url } = await uploadCertificationEvidence(file);
+      setForm((prev) => ({ ...prev, credentialUrl: url }));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Không tải được minh chứng');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -197,8 +247,22 @@ export default function CertificationsTab({
                     Xem chứng chỉ
                   </Link>
                 ) : null}
+                {latestRequestFor(certification.id) ? (
+                  <Box sx={{ mt: 0.5 }}>
+                    <StatusChip
+                      label={REQUEST_STATUS_LABEL[latestRequestFor(certification.id)!.status]}
+                    />
+                  </Box>
+                ) : null}
               </Box>
-              <Stack direction="row" spacing={1}>
+              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+                <Button
+                  size="sm"
+                  startIcon={<ForwardToInboxOutlinedIcon fontSize="small" />}
+                  onClick={() => setHrDialogFor(certification)}
+                >
+                  Gửi tới HR
+                </Button>
                 <Button size="sm" onClick={() => openEdit(certification)}>
                   Sửa
                 </Button>
@@ -299,16 +363,46 @@ export default function CertificationsTab({
                 fullWidth
               />
             </Stack>
-            <TextField
-              label="URL chứng chỉ"
-              value={form.credentialUrl}
-              onChange={(e) =>
-                setForm({ ...form, credentialUrl: e.target.value })
-              }
-              fullWidth
-            />
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ alignItems: { sm: 'flex-start' } }}>
+              <TextField
+                label="URL chứng chỉ"
+                helperText="Link ảnh/giấy chứng nhận, hoặc tải file lên"
+                value={form.credentialUrl}
+                onChange={(e) =>
+                  setForm({ ...form, credentialUrl: e.target.value })
+                }
+                fullWidth
+              />
+              <Button
+                variant="outlined"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                sx={{ whiteSpace: 'nowrap', mt: { sm: '8px' } }}
+              >
+                {uploading ? 'Đang tải...' : 'Chọn file'}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.doc,.docx,.xls,.xlsx"
+                hidden
+                onChange={handleFileChange}
+              />
+            </Stack>
           </Stack>
       </Dialog>
+
+      {hrDialogFor ? (
+        <SendToHrDialog
+          open
+          onClose={() => setHrDialogFor(null)}
+          sourceLabel={hrDialogFor.name}
+          sourceType="CERTIFICATION"
+          sourceId={hrDialogFor.id}
+          employments={employments}
+          onSent={loadSentRequests}
+        />
+      ) : null}
       {dialog}
     </Box>
   );

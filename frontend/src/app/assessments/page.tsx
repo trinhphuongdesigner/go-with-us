@@ -31,6 +31,7 @@ import {
 import { listUsers } from '@/lib/api/usersApi';
 import { ASSESSMENT_STATUS_LABEL, MOOD_LABEL } from '@/lib/labels';
 import type { User } from '@/types';
+import { isEmployeeRole } from '@/lib/roles';
 
 const STATUS_TONE: Record<
   AssessmentStatus,
@@ -51,7 +52,7 @@ export default function AssessmentsPage() {
   const { user } = useAuth();
   const router = useRouter();
 
-  const isAdmin = user?.role === 'COMPANY_ADMIN' || user?.role === 'SUPER_ADMIN';
+  const isAdmin = user?.role === 'BOD' || user?.role === 'COMPANY_ADMIN' || user?.role === 'SUPER_ADMIN';
 
   const [cycle, setCycle] = React.useState<ActiveCycle | null>(null);
   const [received, setReceived] = React.useState<AssessmentListItem[]>([]);

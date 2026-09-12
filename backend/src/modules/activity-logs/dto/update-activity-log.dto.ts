@@ -15,6 +15,10 @@ export class UpdateActivityLogDto {
   category?: string;
 
   @IsOptional()
+  @IsString()
+  evidenceUrl?: string;
+
+  @IsOptional()
   @IsDateString()
   date?: string;
 }

@@ -33,11 +33,17 @@ Monorepo, two independently-run servers — not one Next.js app with API routes:
   project's `frontend/src/theme/theme.ts` implements. Read before any
   visual/UI work.
 
-**No object storage** — unlike Workflow Pro (DigitalOcean Spaces for long
-file content), all content here — including AI-generated Markdown like a
-Development Plan — lives directly in Postgres `String`/`Text` columns on
-the relevant Prisma model. There is no `StorageService` and no `SPACES_*`
-env vars in this codebase; don't introduce one.
+**Object storage is avatar + evidence uploads only.** DigitalOcean Spaces
+stores uploaded user avatar image bytes under `careermate/avatars/`, award
+evidence under `careermate/award-evidence/`, activity log evidence under
+`careermate/activity-evidence/`, and certification evidence under
+`careermate/certification-evidence/`. Postgres stores the public URL in
+`User.avatarUrl`, `Award.evidenceUrl`, `ActivityLog.evidenceUrl`, and
+`Certification.credentialUrl`. All other content — including AI-generated
+Markdown like a Development Plan — remains directly in Postgres
+`String`/`Text` columns. Reuse `backend/src/storage/storage.service.ts`;
+don't put other domain content in Spaces without an explicit product
+requirement.
 
 ## Running locally
 

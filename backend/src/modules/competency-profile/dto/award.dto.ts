@@ -1,7 +1,5 @@
-import { LifeCategory } from '@prisma/client';
 import {
   IsDateString,
-  IsEnum,
   IsOptional,
   IsString,
   MinLength,
@@ -12,11 +10,6 @@ export class CreateAwardDto {
   @MinLength(1)
   title!: string;
 
-  /** WORK = best staff, internal hackathon; PERSONAL = sport, volunteering. */
-  @IsOptional()
-  @IsEnum(LifeCategory)
-  category?: LifeCategory;
-
   @IsOptional()
   @IsString()
   issuer?: string;
@@ -25,7 +18,8 @@ export class CreateAwardDto {
   @IsString()
   description?: string;
 
-  /** URL to a certificate/photo — this project has no object storage. */
+  /** URL to a certificate/photo (outside Spaces) OR Spaces upload (prefix careermate/award-evidence/).
+   * No other domain content stored in Spaces (avatar-only + award evidence only). */
   @IsOptional()
   @IsString()
   evidenceUrl?: string;
@@ -40,10 +34,6 @@ export class UpdateAwardDto {
   @IsString()
   @MinLength(1)
   title?: string;
-
-  @IsOptional()
-  @IsEnum(LifeCategory)
-  category?: LifeCategory;
 
   @IsOptional()
   @IsString()

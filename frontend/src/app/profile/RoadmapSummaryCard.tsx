@@ -17,8 +17,12 @@ interface Props {
   currentIndex: number;
   durationWeeks?: number | null;
   hoursPerWeek?: number | null;
-  character?: RoadmapCharacter;
+  character?: RoadmapCharacter | 'none';
   isDraft?: boolean;
+  /** Whether the caller's detail view (staircase/diagram) is currently expanded — only used to flip the "Xem toàn bộ lộ trình" label; RoadmapSection owns the actual expand/collapse state. */
+  expanded?: boolean;
+  /** Forwarded to RoadmapStaircase — false renders the full-size staircase (character art + milestone titles) instead of the tiny compact preview. Default true. */
+  compact?: boolean;
   onContinue?: () => void;
   onViewAll?: () => void;
 }
@@ -36,6 +40,8 @@ export default function RoadmapSummaryCard({
   hoursPerWeek,
   character,
   isDraft = false,
+  expanded,
+  compact = true,
   onContinue,
   onViewAll,
 }: Props) {
@@ -84,7 +90,7 @@ export default function RoadmapSummaryCard({
           onSelect={() => undefined}
           currentIndex={activeIndex}
           character={character}
-          compact
+          compact={compact}
         />
       </Box>
 
@@ -111,7 +117,7 @@ export default function RoadmapSummaryCard({
         )}
         {onViewAll && (
           <Button variant="text" size="sm" endIcon={<ArrowForwardRoundedIcon fontSize="small" />} onClick={onViewAll}>
-            Xem toàn bộ lộ trình
+            {expanded ? 'Thu gọn lộ trình' : 'Xem toàn bộ lộ trình'}
           </Button>
         )}
       </Stack>

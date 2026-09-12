@@ -7,10 +7,8 @@ import {
   Patch,
   Post,
   Put,
-  Query,
   UseGuards,
 } from '@nestjs/common';
-import { LifeCategory } from '@prisma/client';
 import { DevelopmentPlansService } from './development-plans.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -47,11 +45,8 @@ export class DevelopmentPlansController {
   ) {}
 
   @Get('goals')
-  listGoals(
-    @CurrentUser() caller: AuthenticatedUser,
-    @Query('category') category?: LifeCategory,
-  ) {
-    return this.developmentPlansService.listGoals(caller, category);
+  listGoals(@CurrentUser() caller: AuthenticatedUser) {
+    return this.developmentPlansService.listGoals(caller);
   }
 
   @Post('goals')
@@ -102,12 +97,9 @@ export class DevelopmentPlansController {
 
   // ---- Milestones & tasks --------------------------------------------
 
-  @Get('me/milestones')
-  listMilestones(
-    @CurrentUser() caller: AuthenticatedUser,
-    @Query('category') category?: LifeCategory,
-  ) {
-    return this.developmentPlansService.listMilestones(caller, category);
+  @Get('me/roadmaps')
+  listRoadmaps(@CurrentUser() caller: AuthenticatedUser) {
+    return this.developmentPlansService.listRoadmaps(caller);
   }
 
   @Post('me/milestones')

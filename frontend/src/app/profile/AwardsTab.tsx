@@ -14,14 +14,20 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
+import ForwardToInboxOutlinedIcon from '@mui/icons-material/ForwardToInboxOutlined';
+import StatusChip from '@/components/ui/StatusChip';
 import { ApiError } from '@/lib/api/client';
 import {
   createAward,
   deleteAward,
   updateAward,
+  uploadAwardEvidence,
   type Award,
+  type EmploymentEntry,
   type LifeCategory,
 } from '@/lib/api/competencyProfileApi';
+import { listSentCompetencyRequests, type CompetencyRequest } from '@/lib/api/competencyRequestsApi';
+import SendToHrDialog from './SendToHrDialog';
 
 interface FormState {
   title: string;
@@ -48,11 +54,19 @@ const toInputDate = (value: string | null) => (value ? value.slice(0, 10) : '');
  * doc's "nhân viên tự ghi nhận" is that this does not wait for HR to enter
  * it, so everything here is self-reported with an optional evidence link.
  */
+const REQUEST_STATUS_LABEL: Record<CompetencyRequest['status'], string> = {
+  PENDING: 'Đang chờ HR duyệt',
+  APPROVED: 'HR đã duyệt',
+  REJECTED: 'HR đã từ chối',
+};
+
 export default function AwardsTab({
   awards,
+  employments,
   onChanged,
 }: {
   awards: Award[];
+  employments: EmploymentEntry[];
   onChanged: () => void;
 }) {
   const { ask, dialog } = useConfirmDialog();
@@ -61,6 +75,25 @@ export default function AwardsTab({
   const [form, setForm] = React.useState<FormState>(EMPTY);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [uploading, setUploading] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [sentRequests, setSentRequests] = React.useState<CompetencyRequest[]>([]);
+  const [hrDialogFor, setHrDialogFor] = React.useState<Award | null>(null);
+
+  const loadSentRequests = React.useCallback(() => {
+    listSentCompetencyRequests()
+      .then(setSentRequests)
+      .catch(() => undefined);
+  }, []);
+
+  React.useEffect(() => {
+    loadSentRequests();
+  }, [loadSentRequests]);
+
+  const latestRequestFor = (awardId: string) =>
+    sentRequests
+      .filter((r) => r.sourceType === 'AWARD' && r.sourceId === awardId)
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))[0];
 
   const openCreate = () => {
     setEditingId(null);
@@ -114,6 +147,23 @@ export default function AwardsTab({
       setError(err instanceof ApiError ? err.message : 'Không lưu được thành tích');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setUploading(true);
+    setError(null);
+    try {
+      const { url } = await uploadAwardEvidence(file);
+      setForm((prev) => ({ ...prev, evidenceUrl: url }));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Không tải được minh chứng');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -190,8 +240,20 @@ export default function AwardsTab({
                     Xem minh chứng
                   </Link>
                 ) : null}
+                {latestRequestFor(award.id) ? (
+                  <Box sx={{ mt: 0.5 }}>
+                    <StatusChip label={REQUEST_STATUS_LABEL[latestRequestFor(award.id)!.status]} />
+                  </Box>
+                ) : null}
               </Box>
-              <Stack direction="row" spacing={1}>
+              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+                <Button
+                  size="sm"
+                  startIcon={<ForwardToInboxOutlinedIcon fontSize="small" />}
+                  onClick={() => setHrDialogFor(award)}
+                >
+                  Gửi tới HR
+                </Button>
                 <Button size="sm" onClick={() => openEdit(award)}>
                   Sửa
                 </Button>
@@ -280,15 +342,44 @@ export default function AwardsTab({
               multiline
               minRows={2}
             />
-            <TextField
-              label="URL minh chứng"
-              helperText="Link ảnh hoặc giấy chứng nhận"
-              value={form.evidenceUrl}
-              onChange={(e) => setForm({ ...form, evidenceUrl: e.target.value })}
-              fullWidth
-            />
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ alignItems: { sm: 'flex-start' } }}>
+              <TextField
+                label="URL minh chứng"
+                helperText="Link ảnh/giấy chứng nhận, hoặc tải file lên"
+                value={form.evidenceUrl}
+                onChange={(e) => setForm({ ...form, evidenceUrl: e.target.value })}
+                fullWidth
+              />
+              <Button
+                variant="outlined"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                sx={{ whiteSpace: 'nowrap', mt: { sm: '8px' } }}
+              >
+                {uploading ? 'Đang tải...' : 'Chọn file'}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.doc,.docx,.xls,.xlsx"
+                hidden
+                onChange={handleFileChange}
+              />
+            </Stack>
           </Stack>
       </Dialog>
+
+      {hrDialogFor ? (
+        <SendToHrDialog
+          open
+          onClose={() => setHrDialogFor(null)}
+          sourceLabel={hrDialogFor.title}
+          sourceType="AWARD"
+          sourceId={hrDialogFor.id}
+          employments={employments}
+          onSent={loadSentRequests}
+        />
+      ) : null}
       {dialog}
     </Box>
   );

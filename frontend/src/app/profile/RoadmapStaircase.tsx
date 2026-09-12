@@ -14,19 +14,21 @@ interface Props {
   onSelect: (index: number) => void;
   /** Mascot only renders on the milestone the user is currently working on. */
   currentIndex?: number;
-  character?: RoadmapCharacter;
+  character?: RoadmapCharacter | 'none';
   /** Smaller, label-less rendering used in the summary card / customize preview. */
   compact?: boolean;
+  /** Roadmap start date (plan.createdAt) — used to compute the "Tuần N" label under each title. */
+  startDate?: string;
 }
 
 type StepState = 'completed' | 'current' | 'upcoming' | 'goal';
 
 /** Inline (not an <img>) so every completed step gets its own non-colliding gradient ids. */
-function CheckBadge({ uid, size }: { uid: string; size: number }) {
+function CheckBadge({ uid, size, height }: { uid: string; size: number; height: number }) {
   const radialId = `roadmap-check-radial-${uid}`;
   const linearId = `roadmap-check-linear-${uid}`;
   return (
-    <svg width={size} height={(size * 60) / 57} viewBox="0 0 57 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width={size} height={height} viewBox="0 0 57 60" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M28.38 57.3513C42.4211 57.3513 53.8037 54.1747 53.8037 50.2563C53.8037 46.3378 42.4211 43.1613 28.38 43.1613C14.3388 43.1613 2.95624 46.3378 2.95624 50.2563C2.95624 54.1747 14.3388 57.3513 28.38 57.3513Z"
         fill={`url(#${radialId})`}
@@ -64,7 +66,7 @@ function CheckBadge({ uid, size }: { uid: string; size: number }) {
   );
 }
 
-function CharacterOverlay({ src, alt, size, top }: { src: string; alt: string; size: number; top: number }) {
+function CharacterOverlay({ src, alt, height, top }: { src: string; alt: string; height: number; top: number }) {
   return (
     <Box
       sx={{
@@ -72,12 +74,12 @@ function CharacterOverlay({ src, alt, size, top }: { src: string; alt: string; s
         top,
         left: '50%',
         transform: 'translateX(-50%)',
-        width: size,
-        height: size,
+        height,
+        width: 'auto',
         zIndex: 3,
       }}
     >
-      <img src={src} alt={alt} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
+      <img src={src} alt={alt} style={{ height: '100%', width: 'auto', objectFit: 'contain', display: 'block' }} />
     </Box>
   );
 }
@@ -92,30 +94,43 @@ function StepArt({
 }: {
   state: StepState;
   showCharacter: boolean;
-  character?: RoadmapCharacter;
+  character?: RoadmapCharacter | 'none';
   isDone: boolean;
   uid: string;
   compact: boolean;
 }) {
-  const charOpt = showCharacter ? findCharacter(character) : null;
-  const scale = compact ? 0.72 : 1;
-  const platformW = Math.round((state === 'current' || state === 'goal' ? 104 : 92) * scale);
-  const platformH = Math.round((state === 'current' || state === 'goal' ? 61 : 54) * scale);
-  const charSize = Math.round((compact ? 44 : 64));
-  const badgeSize = Math.round(compact ? 24 : 34);
+  const charOpt = showCharacter && character && character !== 'none' ? findCharacter(character) : null;
+  const isBig = state === 'current' || state === 'goal';
+  // Non-compact: fixed 132px platform width (matches step-*.svg native 132×78); current/goal
+  // keeps the original 104:92 ratio bump, height derived from each SVG's own native aspect ratio.
+  const platformW = compact ? Math.round((isBig ? 104 : 92) * 0.72) : isBig ? Math.round(132 * (104 / 92)) : 132;
+  const platformH = compact
+    ? Math.round((isBig ? 61 : 54) * 0.72)
+    : isBig
+      ? Math.round(platformW * (87 / 148))
+      : Math.round(platformW * (78 / 132));
+  const charHeight = compact ? 44 : 180;
+  // Feet-into-platform overlap, scaled to charHeight using the compact ratio (14/44) that
+  // already looks grounded — a fixed pixel overlap left the mascot floating at full size.
+  const charOverlap = Math.round(charHeight * (14 / 44));
+  const badgeSize = compact ? 24 : 42;
+  const badgeHeightPx = compact ? Math.round((badgeSize * 60) / 57) : 42;
 
   if (state === 'goal') {
-    const flagW = Math.round(platformW * (47 / 148));
     const flagCropH = Math.round(platformH * 0.78);
+    const flagW = Math.round(platformW * (47 / 148));
+    const platformOverlap = Math.round(platformH * (6 / 44));
+    // Not reached yet → gray podium (same as upcoming); only turns purple once actually done.
+    const goalPlatformSrc = isDone ? '/roadmap/step-current.svg' : '/roadmap/step-upcoming.svg';
     return (
-      <Box sx={{ position: 'relative', width: platformW, height: platformH + flagCropH - 6 }}>
+      <Box sx={{ position: 'relative', width: platformW, height: platformH + flagCropH - platformOverlap }}>
         <Box sx={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: flagW, height: flagCropH, overflow: 'hidden' }}>
           <img src="/roadmap/step-goal.svg" alt="" width={flagW} height={Math.round(flagW * (79 / 47))} style={{ display: 'block' }} />
         </Box>
         <Box sx={{ position: 'absolute', bottom: 0, left: 0 }}>
-          <img src="/roadmap/step-current.svg" alt="mục tiêu" width={platformW} height={platformH} style={{ display: 'block' }} />
+          <img src={goalPlatformSrc} alt="mục tiêu" width={platformW} height={platformH} style={{ display: 'block' }} />
         </Box>
-        {charOpt && <CharacterOverlay src={charOpt.src} alt={charOpt.label} size={charSize} top={-(charSize - 14)} />}
+        {charOpt && <CharacterOverlay src={charOpt.src} alt={charOpt.label} height={charHeight} top={-(charHeight - charOverlap)} />}
       </Box>
     );
   }
@@ -125,10 +140,10 @@ function StepArt({
   return (
     <Box sx={{ position: 'relative', width: platformW, height: platformH }}>
       <img src={stepSrc} alt={state} width={platformW} height={platformH} style={{ display: 'block' }} />
-      {charOpt && <CharacterOverlay src={charOpt.src} alt={charOpt.label} size={charSize} top={-(charSize - 14)} />}
+      {charOpt && <CharacterOverlay src={charOpt.src} alt={charOpt.label} height={charHeight} top={-(charHeight - charOverlap)} />}
       {isDone && (
-        <Box sx={{ position: 'absolute', top: -(badgeSize - 6), left: '50%', transform: 'translateX(-50%)', zIndex: 3 }}>
-          <CheckBadge uid={uid} size={badgeSize} />
+        <Box sx={{ position: 'absolute', top: -(badgeHeightPx - 6), left: '50%', transform: 'translateX(-50%)', zIndex: 3 }}>
+          <CheckBadge uid={uid} size={badgeSize} height={badgeHeightPx} />
         </Box>
       )}
     </Box>
@@ -154,6 +169,7 @@ export default function RoadmapStaircase({
   currentIndex = -1,
   character,
   compact = false,
+  startDate,
 }: Props) {
   const sorted = React.useMemo(() => [...milestones].sort((a, b) => a.order - b.order), [milestones]);
 
@@ -194,7 +210,7 @@ export default function RoadmapStaircase({
   }
 
   const RISE = compact ? 24 : 46;
-  const topPad = compact ? 30 : 56;
+  const topPad = compact ? 30 : 190; // non-compact: room for 180px-tall character overlay above the platform
   const rowHeight = RISE * (sorted.length - 1) + (compact ? 44 : 61) + topPad;
 
   return (
@@ -260,6 +276,14 @@ export default function RoadmapStaircase({
           else if (isCurrent) state = 'current';
           else state = 'upcoming';
 
+          const weekLabel =
+            m.dueDate && startDate
+              ? `Tuần ${Math.max(
+                  1,
+                  Math.ceil((new Date(m.dueDate).getTime() - new Date(startDate).getTime()) / (7 * 24 * 60 * 60 * 1000)),
+                )}`
+              : null;
+
           return (
             <Box
               key={m.id}
@@ -285,37 +309,41 @@ export default function RoadmapStaircase({
                 <Typography
                   sx={{
                     position: 'absolute',
-                    inset: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    left: 0,
+                    right: 0,
+                    bottom: 8,
+                    textAlign: 'center',
                     pointerEvents: 'none',
                     fontSize: compact ? 10 : 12,
                     fontWeight: 700,
                     color: '#fff',
                     textShadow: '0 1px 2px rgba(0,0,0,0.25)',
-                    pb: state === 'goal' ? `${Math.round((compact ? 24 : 34) * 0.4)}px` : 0,
                   }}
                 >
                   {String(idx + 1).padStart(2, '0')}
                 </Typography>
               </Box>
               {!compact && (
-                <Typography
-                  sx={{
-                    mt: 0.75,
-                    fontSize: 11,
-                    fontWeight: 500,
-                    textAlign: 'center',
-                    color: colorTokens.body,
-                    maxWidth: 110,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {m.title}
-                </Typography>
+                <>
+                  <Typography
+                    sx={{
+                      mt: 0.75,
+                      fontSize: 11,
+                      fontWeight: 500,
+                      textAlign: 'center',
+                      color: colorTokens.body,
+                      maxWidth: 130,
+                      whiteSpace: 'normal',
+                    }}
+                  >
+                    {m.title}
+                  </Typography>
+                  {weekLabel && (
+                    <Typography sx={{ fontSize: 10, color: colorTokens.secondary, textAlign: 'center' }}>
+                      {weekLabel}
+                    </Typography>
+                  )}
+                </>
               )}
             </Box>
           );

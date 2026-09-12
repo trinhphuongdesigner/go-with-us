@@ -8,7 +8,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { GoalStatus, LifeCategory } from '@prisma/client';
+import { GoalStatus } from '@prisma/client';
 
 export class CreateGoalDto {
   @IsString()
@@ -17,11 +17,6 @@ export class CreateGoalDto {
   @IsOptional()
   @IsString()
   description?: string;
-
-  /** WORK vs PERSONAL — defaults to WORK server-side. */
-  @IsOptional()
-  @IsEnum(LifeCategory)
-  category?: LifeCategory;
 
   @IsOptional()
   @IsString()

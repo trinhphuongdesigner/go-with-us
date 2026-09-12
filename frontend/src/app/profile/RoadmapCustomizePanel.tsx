@@ -22,13 +22,22 @@ import type {
   RoadmapDisplaySettings,
 } from '@/lib/api/developmentPlansApi';
 import RoadmapStaircase from './RoadmapStaircase';
+import RoadmapDiagram from './RoadmapDiagram';
 import type { RoadmapCharacter } from './roadmapCharacters';
+
+export interface RoadmapDraftTask {
+  id: string;
+  title: string;
+  metric: string;
+  done: boolean;
+}
 
 export interface RoadmapDraftMilestone {
   id: string;
   title: string;
   description: string;
   dueDate: string;
+  tasks: RoadmapDraftTask[];
 }
 
 export interface CustomizeSaveData {
@@ -50,24 +59,18 @@ interface Props {
   saving?: boolean;
 }
 
-const COSTUME_COLORS = ['#3E7868', '#B98A3D', '#5B7FB9'];
-const FONT_SIZES: { key: 'md' | 'lg'; label: string }[] = [
-  { key: 'md', label: 'Chuẩn' },
-  { key: 'lg', label: 'Lớn' },
-];
-
 type CompanionChoice = 'milo' | 'human' | 'none';
 
 function companionFromCharacter(character?: string): CompanionChoice {
-  if (!character) return 'none';
+  if (character === 'none') return 'none';
   if (character === 'an-welcome') return 'human';
   return 'milo';
 }
 
-function characterFromCompanion(choice: CompanionChoice): RoadmapCharacter | undefined {
+function characterFromCompanion(choice: CompanionChoice): RoadmapCharacter | 'none' {
   if (choice === 'milo') return 'milo-standing';
   if (choice === 'human') return 'an-welcome';
-  return undefined;
+  return 'none';
 }
 
 let tempSeq = 0;
@@ -99,6 +102,9 @@ export default function RoadmapCustomizePanel({
         title: m.title,
         description: m.description ?? '',
         dueDate: m.dueDate ? m.dueDate.slice(0, 10) : '',
+        tasks: [...m.tasks]
+          .sort((a, b) => a.order - b.order)
+          .map((t) => ({ id: t.id, title: t.title, metric: t.metric ?? '', done: t.done })),
       })),
   );
   const [settings, setSettings] = React.useState<RoadmapDisplaySettings>(initialSettings);
@@ -108,12 +114,11 @@ export default function RoadmapCustomizePanel({
 
   const previewMilestones: DevelopmentMilestone[] = drafts.map((d, i) => ({
     id: d.id,
-    planId: '',
+    roadmapId: '',
     title: d.title || `Cột mốc ${i + 1}`,
     description: d.description || null,
     dueDate: d.dueDate || null,
     status: 'NOT_STARTED',
-    category,
     order: i,
     tasks: [],
   }));
@@ -150,9 +155,33 @@ export default function RoadmapCustomizePanel({
   };
 
   const addDraft = () => {
-    const draft = { id: nextTempId(), title: '', description: '', dueDate: '' };
+    const draft: RoadmapDraftMilestone = { id: nextTempId(), title: '', description: '', dueDate: '', tasks: [] };
     setDrafts((prev) => [...prev, draft]);
     setExpandedId(draft.id);
+  };
+
+  const addTask = (milestoneId: string) => {
+    setDrafts((prev) =>
+      prev.map((d) =>
+        d.id === milestoneId
+          ? { ...d, tasks: [...d.tasks, { id: nextTempId(), title: '', metric: '', done: false }] }
+          : d,
+      ),
+    );
+  };
+
+  const updateTask = (milestoneId: string, taskId: string, patch: Partial<RoadmapDraftTask>) => {
+    setDrafts((prev) =>
+      prev.map((d) =>
+        d.id === milestoneId ? { ...d, tasks: d.tasks.map((t) => (t.id === taskId ? { ...t, ...patch } : t)) } : d,
+      ),
+    );
+  };
+
+  const removeTask = (milestoneId: string, taskId: string) => {
+    setDrafts((prev) =>
+      prev.map((d) => (d.id === milestoneId ? { ...d, tasks: d.tasks.filter((t) => t.id !== taskId) } : d)),
+    );
   };
 
   const handleSave = async () => {
@@ -160,7 +189,9 @@ export default function RoadmapCustomizePanel({
       category,
       durationWeeks: durationWeeks ? Number(durationWeeks) : undefined,
       hoursPerWeek: hoursPerWeek ? Number(hoursPerWeek) : undefined,
-      milestones: drafts.filter((d) => d.title.trim().length > 0),
+      milestones: drafts
+        .filter((d) => d.title.trim().length > 0)
+        .map((d) => ({ ...d, tasks: d.tasks.filter((t) => t.title.trim().length > 0) })),
       settings,
     });
   };
@@ -305,13 +336,42 @@ export default function RoadmapCustomizePanel({
                           onChange={(e) => updateDraft(d.id, { dueDate: e.target.value })}
                           slotProps={{ inputLabel: { shrink: true } }}
                         />
-                        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Typography
-                            variant="body2"
-                            sx={{ color: colorTokens.primary, fontWeight: 600, cursor: 'default' }}
-                          >
-                            {(initialMilestones.find((m) => m.id === d.id)?.tasks.length ?? 0)} đầu việc
-                          </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600, mt: 1 }}>
+                          Đầu việc
+                        </Typography>
+                        <Stack spacing={1}>
+                          {d.tasks.map((t) => (
+                            <Stack key={t.id} direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                              <TextField
+                                size="small"
+                                placeholder="Tên đầu việc"
+                                value={t.title}
+                                onChange={(e) => updateTask(d.id, t.id, { title: e.target.value })}
+                                sx={{ flex: 2 }}
+                              />
+                              <TextField
+                                size="small"
+                                placeholder="Đo lường (vd: 3 lần/tuần)"
+                                value={t.metric}
+                                onChange={(e) => updateTask(d.id, t.id, { metric: e.target.value })}
+                                sx={{ flex: 1 }}
+                              />
+                              <IconButton size="small" onClick={() => removeTask(d.id, t.id)}>
+                                <DeleteOutlineIcon fontSize="small" />
+                              </IconButton>
+                            </Stack>
+                          ))}
+                        </Stack>
+                        <Button
+                          variant="outlined"
+                          size="sm"
+                          startIcon={<AddIcon fontSize="small" />}
+                          onClick={() => addTask(d.id)}
+                        >
+                          Thêm đầu việc
+                        </Button>
+
+                        <Stack direction="row" sx={{ justifyContent: 'flex-end', alignItems: 'center' }}>
                           <Button
                             variant="text"
                             size="sm"
@@ -347,15 +407,24 @@ export default function RoadmapCustomizePanel({
               <Typography sx={{ fontWeight: 600, fontSize: 13 }}>Xem trước lộ trình</Typography>
               {paceChip && <Chip label={paceChip} size="small" sx={{ bgcolor: colorTokens.primarySubtle, fontSize: 11 }} />}
             </Stack>
-            <RoadmapStaircase
-              milestones={previewMilestones}
-              selectedIndex={-1}
-              onSelect={() => undefined}
-              currentIndex={0}
-              character={characterFromCompanion(companion)}
-              compact
-            />
-            {companion !== 'none' && (
+            {settings.viewMode === 'diagram' ? (
+              <RoadmapDiagram
+                milestones={previewMilestones}
+                selectedIndex={-1}
+                onSelect={() => undefined}
+                currentIndex={0}
+              />
+            ) : (
+              <RoadmapStaircase
+                milestones={previewMilestones}
+                selectedIndex={-1}
+                onSelect={() => undefined}
+                currentIndex={0}
+                character={characterFromCompanion(companion)}
+                compact
+              />
+            )}
+            {settings.viewMode !== 'diagram' && companion !== 'none' && (
               <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', mt: 1, color: colorTokens.secondary }}>
                 {companion === 'milo' ? 'Milo' : 'Nhân vật'} đồng hành cùng bạn
               </Typography>
@@ -397,50 +466,6 @@ export default function RoadmapCustomizePanel({
                   onClick={() => setSettings((s) => ({ ...s, character: characterFromCompanion(opt.key) }))}
                 >
                   {opt.label}
-                </Button>
-              ))}
-            </Stack>
-
-            <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>Màu trang phục</Typography>
-            <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
-              {COSTUME_COLORS.map((c) => (
-                <Box
-                  key={c}
-                  onClick={() => setSettings((s) => ({ ...s, costumeColor: c }))}
-                  sx={{
-                    width: 26,
-                    height: 26,
-                    borderRadius: '50%',
-                    bgcolor: c,
-                    cursor: 'pointer',
-                    border: settings.costumeColor === c ? `2px solid ${colorTokens.heading}` : '2px solid transparent',
-                  }}
-                />
-              ))}
-            </Stack>
-
-            <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1.5 }}>
-              <input
-                type="checkbox"
-                id="reduce-motion"
-                checked={settings.reduceMotion ?? false}
-                onChange={(e) => setSettings((s) => ({ ...s, reduceMotion: e.target.checked }))}
-              />
-              <label htmlFor="reduce-motion">
-                <Typography variant="body2">Giảm chuyển động</Typography>
-              </label>
-            </Stack>
-
-            <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>Cỡ chữ</Typography>
-            <Stack direction="row" spacing={1}>
-              {FONT_SIZES.map((f) => (
-                <Button
-                  key={f.key}
-                  size="sm"
-                  variant={(settings.fontSize === 'lg' ? 'lg' : 'md') === f.key ? 'contained' : 'outlined'}
-                  onClick={() => setSettings((s) => ({ ...s, fontSize: f.key }))}
-                >
-                  {f.label}
                 </Button>
               ))}
             </Stack>

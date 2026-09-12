@@ -165,12 +165,7 @@ export class ProfileImportsService {
       awards: 0,
     };
 
-    if (dto.jobTitle) {
-      await this.prisma.user.update({
-        where: { id: caller.id },
-        data: { jobTitle: dto.jobTitle },
-      });
-    }
+    // jobTitle is display-only on import review — never apply from AI proposal.
 
     for (const skill of dto.skills ?? []) {
       const name = skill.name.trim();
@@ -330,7 +325,7 @@ export class ProfileImportsService {
         where: { userId },
       }),
       this.prisma.developmentMilestone.findMany({
-        where: { plan: { userId } },
+        where: { roadmap: { plan: { userId } } },
         include: { tasks: true },
         orderBy: { order: 'asc' },
       }),
@@ -497,6 +492,9 @@ Rules:
 - Activities and dated items are high value for timeline.
 - If nothing new, return mostly empty arrays + a clear summary (in Vietnamese).
 - Keep strings short and factual.
+- SKILLS: List EVERY distinct technology/framework/language/tool mentioned as its own separate skill entry — never merge multiple techs into one item and never drop the frontend stack. Example: "BE code nestjs + mysql, fe dùng vuejs" must yield 3 skills: NestJS, MySQL, VueJS (plus a Fullstack skill if that role is stated).
+- PROJECT DOMAIN (Lĩnh vực): every project you propose MUST have a non-empty "domain" — a short Vietnamese industry/field label (e.g. "Công nghệ thông tin", "Phát triển phần mềm"). Infer it from context (fullstack/web/mobile dev → "Công nghệ thông tin") when the source doesn't state one explicitly; never leave it blank.
+- basicInfo.name/jobTitle: only fill these when the NEW SOURCES actually restate the person's name or title — do not guess or copy them from the CURRENT SNAPSHOT just to fill the field.
 - IDENTITY: Always fully read and analyze every source and populate the COMPLETE proposal (skills/projects/certifications/awards/activities/goals/roadmap), regardless of whether the name in the source matches "${s.user.name}". Never use a perceived name difference as a reason to skip, omit, or hedge on any item, and never mention "name mismatch" inside "summary" or "dedupNotes" — the only valid reason to skip an item there is that it already exists in the CURRENT SNAPSHOT above.
 - Set "identityCheck.detectedSourceName" to the person's name exactly as it appears in the NEW SOURCES (empty string if none is mentioned). Set "identityCheck.matches" to false if that name clearly refers to a different person than "${s.user.name}" (not just a spelling/nickname variant), otherwise true. This field is for the UI to ask the user for confirmation — it must NOT influence which items you include in the proposal above.`;
   }
@@ -708,11 +706,9 @@ IDENTITY: The person who submitted the original sources IS ${snapshot.user.name}
       roadmapMilestones: 0,
     };
 
-    // Basic info (jobTitle + limited others)
+    // Basic info: name + jobTitle are display-only (đối chiếu), never applied.
     if (dto.basicInfo) {
-      const patch: any = {};
-      if (dto.basicInfo.jobTitle) patch.jobTitle = dto.basicInfo.jobTitle.trim();
-      if (dto.basicInfo.name) patch.name = dto.basicInfo.name.trim();
+      const patch: { phone?: string } = {};
       if (dto.basicInfo.phone) patch.phone = dto.basicInfo.phone.trim();
       if (Object.keys(patch).length) {
         await this.prisma.user.update({ where: { id: caller.id }, data: patch });
@@ -823,37 +819,37 @@ IDENTITY: The person who submitted the original sources IS ${snapshot.user.name}
       counts.goals += 1;
     }
 
-    // Roadmap (replace whole tree if provided — same contract as saveRoadmap)
+    // Roadmap (create a new attempt instead of replacing existing history)
     if (dto.roadmap && dto.roadmap.milestones?.length) {
       const plan = await this.prisma.developmentPlan.findFirst({ where: { userId: caller.id } });
       const planId = plan
         ? plan.id
         : (await this.prisma.developmentPlan.create({ data: { userId: caller.id, content: '' } })).id;
 
-      await this.prisma.developmentMilestone.deleteMany({ where: { planId } });
-
-      for (let i = 0; i < dto.roadmap.milestones.length; i++) {
-        const m = dto.roadmap.milestones[i];
-        await this.prisma.developmentMilestone.create({
-          data: {
-            planId,
-            title: m.title,
-            description: m.description,
-            dueDate: parseLooseDate(m.dueDate),
-            order: i,
-            tasks: m.tasks?.length
-              ? {
-                  create: m.tasks.map((t, ti) => ({
-                    title: t.title,
-                    metric: t.metric,
-                    order: ti,
-                  })),
-                }
-              : undefined,
+      await this.prisma.developmentRoadmap.create({
+        data: {
+          planId,
+          category: LifeCategory.WORK,
+          milestones: {
+            create: dto.roadmap.milestones.map((m, i) => ({
+              title: m.title,
+              description: m.description,
+              dueDate: parseLooseDate(m.dueDate),
+              order: i,
+              tasks: m.tasks?.length
+                ? {
+                    create: m.tasks.map((t, ti) => ({
+                      title: t.title,
+                      metric: t.metric,
+                      order: ti,
+                    })),
+                  }
+                : undefined,
+            })),
           },
-        });
-        counts.roadmapMilestones += 1;
-      }
+        },
+      });
+      counts.roadmapMilestones += dto.roadmap.milestones.length;
     }
 
     return counts;

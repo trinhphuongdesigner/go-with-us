@@ -30,6 +30,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { keyframes } from '@mui/system';
 import { colorTokens } from '@/theme/theme';
 import { ApiError } from '@/lib/api/client';
+import { getCompetencyProfile } from '@/lib/api/competencyProfileApi';
 
 const popAnimation = keyframes`
   0% {
@@ -134,6 +135,21 @@ export default function ProfileImportPage() {
   } | null>(null);
 
   const pending = React.useRef(false);
+
+  // Names already in the user's profile (skills + tech used on existing projects) —
+  // used to gray out AI suggestions that just re-detect what's already there.
+  const [existingSkillNames, setExistingSkillNames] = React.useState<Set<string>>(new Set());
+  React.useEffect(() => {
+    getCompetencyProfile()
+      .then((p) => {
+        const names = new Set<string>();
+        p.skills.forEach((s) => names.add(s.skill.name.trim().toLowerCase()));
+        p.projects.forEach((pr) => pr.techStack.forEach((t) => names.add(t.trim().toLowerCase())));
+        setExistingSkillNames(names);
+      })
+      .catch(() => {}); // best-effort hint only — never blocks the import flow
+  }, []);
+  const isKnownSkill = (name: string) => existingSkillNames.has(name.trim().toLowerCase());
 
   const hasSources = urlText.trim().length > 0 || files.length > 0 || pastedText.trim().length > 0;
 
@@ -602,57 +618,62 @@ export default function ProfileImportPage() {
             <Typography sx={{ mt: 1, fontWeight: 600 }}>{selectedCount} mục được chọn</Typography>
           </Card>
 
-          {/* Basic Info */}
-          <Card title="Thông tin cơ bản" sx={{ mb: 3 }}>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={drafts.basicInfo?.selected ?? false}
-                  disabled={busy || !drafts.basicInfo}
-                  onChange={(e) => toggleBasic(e.target.checked)}
-                />
-              }
-              label="Cập nhật thông tin cơ bản"
-            />
-            {drafts.basicInfo ? (
+          {/* Basic Info — only show fields AI actually detected something for */}
+          {drafts.basicInfo &&
+          (drafts.basicInfo.name || drafts.basicInfo.jobTitle || drafts.basicInfo.phone || drafts.basicInfo.summary) ? (
+            <Card title="Thông tin cơ bản" sx={{ mb: 3 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={drafts.basicInfo.selected}
+                    disabled={busy}
+                    onChange={(e) => toggleBasic(e.target.checked)}
+                  />
+                }
+                label="Cập nhật thông tin cơ bản"
+              />
               <Stack spacing={1.5} sx={{ mt: 1 }}>
-                <TextField
-                  label="Họ tên"
-                  size="small"
-                  value={drafts.basicInfo.name ?? ''}
-                  disabled={busy || !drafts.basicInfo.selected}
-                  onChange={(e) => patchBasic({ name: e.target.value })}
-                />
-                <TextField
-                  label="Chức danh"
-                  size="small"
-                  value={drafts.basicInfo.jobTitle ?? ''}
-                  disabled={busy || !drafts.basicInfo.selected}
-                  onChange={(e) => patchBasic({ jobTitle: e.target.value })}
-                />
-                <TextField
-                  label="Số điện thoại"
-                  size="small"
-                  value={drafts.basicInfo.phone ?? ''}
-                  disabled={busy || !drafts.basicInfo.selected}
-                  onChange={(e) => patchBasic({ phone: e.target.value })}
-                />
-                <TextField
-                  label="Tóm tắt"
-                  size="small"
-                  multiline
-                  minRows={2}
-                  value={drafts.basicInfo.summary ?? ''}
-                  disabled={busy || !drafts.basicInfo.selected}
-                  onChange={(e) => patchBasic({ summary: e.target.value })}
-                />
+                {drafts.basicInfo.name ? (
+                  <TextField
+                    label="Họ tên"
+                    size="small"
+                    value={drafts.basicInfo.name}
+                    disabled={true}
+                    helperText="Chỉ hiển thị để đối chiếu, không thể chỉnh sửa"
+                  />
+                ) : null}
+                {drafts.basicInfo.jobTitle ? (
+                  <TextField
+                    label="Chức danh"
+                    size="small"
+                    value={drafts.basicInfo.jobTitle}
+                    disabled={true}
+                    helperText="Chỉ hiển thị để đối chiếu, không thể chỉnh sửa"
+                  />
+                ) : null}
+                {drafts.basicInfo.phone ? (
+                  <TextField
+                    label="Số điện thoại"
+                    size="small"
+                    value={drafts.basicInfo.phone}
+                    disabled={busy || !drafts.basicInfo.selected}
+                    onChange={(e) => patchBasic({ phone: e.target.value })}
+                  />
+                ) : null}
+                {drafts.basicInfo.summary ? (
+                  <TextField
+                    label="Tóm tắt"
+                    size="small"
+                    multiline
+                    minRows={2}
+                    value={drafts.basicInfo.summary}
+                    disabled={busy || !drafts.basicInfo.selected}
+                    onChange={(e) => patchBasic({ summary: e.target.value })}
+                  />
+                ) : null}
               </Stack>
-            ) : (
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                Không có đề xuất mới.
-              </Typography>
-            )}
-          </Card>
+            </Card>
+          ) : null}
 
           {/* Skills */}
           <Card title={`Kỹ năng (${drafts.skills.length})`} sx={{ mb: 3 }}>
@@ -660,24 +681,41 @@ export default function ProfileImportPage() {
               <Typography variant="body2">Không có đề xuất mới.</Typography>
             ) : (
               <Stack spacing={1}>
-                {drafts.skills.map((skill, index) => (
+                {drafts.skills.map((skill, index) => {
+                  const dup = isKnownSkill(skill.name);
+                  return (
                   <Box
                     key={skill.key}
-                    sx={{ p: 1.5, border: `1px solid ${colorTokens.border}`, borderRadius: 1 }}
+                    sx={{
+                      p: 1.5,
+                      border: `1px solid ${colorTokens.border}`,
+                      borderRadius: 1,
+                      bgcolor: dup ? colorTokens.muted : undefined,
+                    }}
                   >
                     <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-                      <FormControlLabel
-                        control={
-                          <Checkbox
+                      <Stack direction="row" sx={{ alignItems: 'center' }} spacing={1}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              size="small"
+                              checked={skill.selected}
+                              disabled={busy}
+                              onChange={(e) => toggleItem('skills', skill.key, e.target.checked)}
+                            />
+                          }
+                          label=""
+                          sx={{ mr: 0 }}
+                        />
+                        {dup ? (
+                          <Chip
                             size="small"
-                            checked={skill.selected}
-                            disabled={busy}
-                            onChange={(e) => toggleItem('skills', skill.key, e.target.checked)}
+                            variant="outlined"
+                            label="Đã có trong hồ sơ"
+                            sx={{ color: colorTokens.secondary, borderColor: colorTokens.border }}
                           />
-                        }
-                        label=""
-                        sx={{ mr: 0 }}
-                      />
+                        ) : null}
+                      </Stack>
                       <Box>
                         <IconButton
                           size="small"
@@ -726,7 +764,8 @@ export default function ProfileImportPage() {
                       />
                     </Stack>
                   </Box>
-                ))}
+                  );
+                })}
               </Stack>
             )}
           </Card>

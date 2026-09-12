@@ -16,6 +16,7 @@ import { ApiError } from '@/lib/api/client';
 import { getUser, updateUser } from '@/lib/api/usersApi';
 import type { EmploymentEntry } from '@/lib/api/competencyProfileApi';
 import type { User } from '@/types';
+import { isEmployeeRole } from '@/lib/roles';
 
 const GENDER_OPTIONS = [
   { value: 'MALE', label: 'Nam' },
@@ -31,6 +32,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 interface FormState {
   name: string;
+  email: string;
   jobTitle: string;
   phone: string;
   dateOfBirth: string;
@@ -58,6 +60,7 @@ function calculateAge(dateOfBirth: string): number | null {
 function toFormState(user: User): FormState {
   return {
     name: user.name,
+    email: user.email,
     jobTitle: user.jobTitle ?? '',
     phone: user.phone ?? '',
     dateOfBirth: toInputDate(user.dateOfBirth),
@@ -82,7 +85,7 @@ export default function PersonalInfoTab({
 }: {
   employments: EmploymentEntry[];
 }) {
-  const { user: authUser } = useAuth();
+  const { user: authUser, updateCurrentUser } = useAuth();
   const [record, setRecord] = React.useState<User | null>(null);
   const [form, setForm] = React.useState<FormState | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -101,7 +104,9 @@ export default function PersonalInfoTab({
       .finally(() => setLoading(false));
   }, [authUser]);
 
-  const canEditOnboardDate = authUser?.role !== 'EMPLOYEE';
+  // HR/BOD are employee-like roles but may edit onboardDate (HR-controlled milestone).
+  const canEditOnboardDate =
+    !isEmployeeRole(authUser?.role) || authUser?.role === 'HR' || authUser?.role === 'BOD';
   const currentEmployment = employments.find((e) => e.status === 'ACTIVE');
   const age = form?.dateOfBirth ? calculateAge(form.dateOfBirth) : null;
 
@@ -118,6 +123,7 @@ export default function PersonalInfoTab({
     try {
       const payload: Parameters<typeof updateUser>[1] = {
         name: form.name.trim(),
+        email: form.email.trim(),
         jobTitle: form.jobTitle.trim() || undefined,
         phone: form.phone.trim() || undefined,
         dateOfBirth: form.dateOfBirth ? new Date(form.dateOfBirth).toISOString() : undefined,
@@ -132,6 +138,7 @@ export default function PersonalInfoTab({
       const updated = await updateUser(authUser.id, payload);
       setRecord(updated);
       setForm(toFormState(updated));
+      updateCurrentUser(updated);
       setSuccess(true);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Không lưu được thông tin cá nhân');
@@ -175,7 +182,14 @@ export default function PersonalInfoTab({
       <Stack spacing={2.5}>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
           <TextField label="Họ và tên" value={form.name} onChange={handleChange('name')} fullWidth required />
-          <TextField label="Email" value={record.email} fullWidth disabled />
+          <TextField
+            label="Email"
+            type="email"
+            value={form.email}
+            onChange={handleChange('email')}
+            fullWidth
+            required
+          />
         </Stack>
 
         <TextField

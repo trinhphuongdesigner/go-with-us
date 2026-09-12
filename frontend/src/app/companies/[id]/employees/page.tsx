@@ -17,6 +17,7 @@ import * as usersApi from '@/lib/api/usersApi';
 import { ROLE_LABEL } from '@/lib/labels';
 import type { User } from '@/types';
 import { useCompanyScope } from '../CompanyScopeContext';
+import { isEmployeeRole } from '@/lib/roles';
 
 export default function CompanyEmployeesPage() {
   const router = useRouter();
@@ -55,7 +56,7 @@ export default function CompanyEmployeesPage() {
             </TableHead>
             <TableBody>
               {members.map((member) => {
-                const clickable = member.role === 'EMPLOYEE';
+                const clickable = isEmployeeRole(member.role);
                 return (
                   <TableRow
                     key={member.id}
