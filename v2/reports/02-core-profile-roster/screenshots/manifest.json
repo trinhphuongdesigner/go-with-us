@@ -1,0 +1,88 @@
+{
+  "schema_version": "1.0",
+  "exact_sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+  "generated_at": "2026-09-12T03:58:38.729Z",
+  "screenshots": [
+    {
+      "file": "profile-390x844.png",
+      "route": "/ho-so",
+      "viewport": "390x844",
+      "sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+      "sha256": "e2490d94d8dbcec609ac52096da39110374b90b5b202f61ddbc55fb7192555db",
+      "account": "employee",
+      "rendered_size": "390x1156"
+    },
+    {
+      "file": "profile-768x1024.png",
+      "route": "/ho-so",
+      "viewport": "768x1024",
+      "sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+      "sha256": "4e82c785dacdc5b2ad123f6135f44e45d789d454c676d5eb090d696f89a8d0ae",
+      "account": "employee",
+      "rendered_size": "768x1024"
+    },
+    {
+      "file": "profile-1440x900.png",
+      "route": "/ho-so",
+      "viewport": "1440x900",
+      "sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+      "sha256": "9ed1d9731337e34327c56ee3d543e526f78a842f760325cfb66e702d229ab14a",
+      "account": "employee",
+      "rendered_size": "1440x900"
+    },
+    {
+      "file": "roster-390x844.png",
+      "route": "/nhan-su",
+      "viewport": "390x844",
+      "sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+      "sha256": "5e517cccb33040765500d421f92ad69c0ac130432d5b7c7e02f4e795a1043237",
+      "account": "company-admin",
+      "rendered_size": "390x898"
+    },
+    {
+      "file": "roster-768x1024.png",
+      "route": "/nhan-su",
+      "viewport": "768x1024",
+      "sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+      "sha256": "0c073cb52d941d95fe01a5f6f6b9973586da8da3fbc0ff2a5dae7ed4ee0dd3f3",
+      "account": "company-admin",
+      "rendered_size": "768x1024"
+    },
+    {
+      "file": "roster-1440x900.png",
+      "route": "/nhan-su",
+      "viewport": "1440x900",
+      "sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+      "sha256": "5dcf55e6497f4165b7a57a476a1259745976c9eff555f7bb66370e0bc3894ee0",
+      "account": "company-admin",
+      "rendered_size": "1440x900"
+    },
+    {
+      "file": "roster-super-admin-1440x900.png",
+      "route": "/nhan-su",
+      "viewport": "1440x900",
+      "sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+      "sha256": "055797b511c4698e2713a32ec03b4c7f1c67825df9a7638016703663acff2f00",
+      "account": "super-admin",
+      "rendered_size": "1440x900"
+    },
+    {
+      "file": "person-detail-1440x900.png",
+      "route": "/nhan-su/demo-employee",
+      "viewport": "1440x900",
+      "sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+      "sha256": "7a1a878dd882d23a9e356b7f754fefc4d168f001fdb95d5fc1486bac01c6b821",
+      "account": "company-admin",
+      "rendered_size": "1440x900"
+    }
+  ],
+  "verified_tree_sha": "052b9d39877cfe584033bf2c574594495df79497",
+  "render_mode": "Next.js production build; deterministic demo fixture",
+  "personas": [
+    "EMPLOYEE_22_30",
+    "HR_35_45",
+    "MANAGER_45_55",
+    "LOW_TECH_USER",
+    "KEYBOARD_REDUCED_MOTION"
+  ]
+}

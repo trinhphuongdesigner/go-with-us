@@ -2,24 +2,67 @@
   "schema_version": "1.0",
   "overall_status": "IN_PROGRESS",
   "latest_completed_wave": "W0",
-  "implementation_sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6",
+  "implementation_sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
   "wave0_status": "PASS",
   "checks": [
-    {"id": "backend", "status": "PASS", "evidence": "111 PostgreSQL tests; Ruff and mypy PASS"},
-    {"id": "migration", "status": "PASS", "evidence": "Alembic upgrade head and check: no drift"},
-    {"id": "contracts", "status": "PASS", "evidence": "OpenAPI snapshot and generated TypeScript client current"},
-    {"id": "frontend", "status": "PASS", "evidence": "12 Vitest; lint, typecheck and production build PASS"},
-    {"id": "e2e-accessibility", "status": "PASS", "evidence": "27 Playwright tests, 3 viewports, axe 0 violation"},
-    {"id": "performance", "status": "PASS", "evidence": "LCP 727/703/770 ms, budget 2500 ms"},
-    {"id": "security", "status": "PASS", "evidence": "scan 20cf79c3-cc35-4b26-b99b-06dd7e616c33, 0 findings; no secret leaks"},
-    {"id": "independent-review", "status": "PASS", "evidence": "Antigravity exact-SHA correction: P0=0, P1=0, five personas PASS"},
-    {"id": "report", "status": "PASS", "evidence": "qa-report.json bound to implementation SHA and tree"}
+    {
+      "id": "backend",
+      "status": "PASS",
+      "evidence": "111 PostgreSQL tests; Ruff and mypy PASS"
+    },
+    {
+      "id": "migration",
+      "status": "PASS",
+      "evidence": "Alembic upgrade head and check: no drift"
+    },
+    {
+      "id": "contracts",
+      "status": "PASS",
+      "evidence": "OpenAPI snapshot and generated TypeScript client current"
+    },
+    {
+      "id": "frontend",
+      "status": "PASS",
+      "evidence": "12 Vitest; lint, typecheck and production build PASS"
+    },
+    {
+      "id": "e2e-accessibility",
+      "status": "PASS",
+      "evidence": "27 Playwright tests, 3 viewports, axe 0 violation"
+    },
+    {
+      "id": "performance",
+      "status": "PASS",
+      "evidence": "LCP 727/703/770 ms, budget 2500 ms"
+    },
+    {
+      "id": "security",
+      "status": "PASS",
+      "evidence": "scan 20cf79c3-cc35-4b26-b99b-06dd7e616c33, 0 findings; no secret leaks"
+    },
+    {
+      "id": "independent-review",
+      "status": "PASS",
+      "evidence": "Antigravity exact-SHA correction: P0=0, P1=0, five personas PASS"
+    },
+    {
+      "id": "report",
+      "status": "PASS",
+      "evidence": "qa-report.json bound to implementation SHA and tree"
+    }
   ],
-  "latest_completed_slice": "W1-IMPORT",
+  "latest_completed_slice": "W1-CORE",
   "wave1_import": {
     "status": "PASS",
     "implementation_sha": "de246d8c74ec8425cec0172613012fc600811719",
     "evidence": "205 PostgreSQL, 196 SQLite, 21 Vitest, 36 Playwright; Antigravity P0/P1/P2=0; report 01-employee-360-import"
   },
-  "next_gate": "Wave 1 core profile aggregate and roster"
+  "next_gate": "Wave 1 profile resource aggregate and unified timeline",
+  "verified_tree_sha": "052b9d39877cfe584033bf2c574594495df79497",
+  "wave1_core": {
+    "status": "PASS",
+    "implementation_sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+    "verified_tree_sha": "052b9d39877cfe584033bf2c574594495df79497",
+    "evidence": "212 PostgreSQL, 40 Vitest, 60 Playwright; migration/contract/security PASS; independent backend, concurrency và UI review exact SHA; report 02-core-profile-roster"
+  }
 }

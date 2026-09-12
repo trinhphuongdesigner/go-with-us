@@ -34,3 +34,14 @@ Tại checkpoint 01:00 ICT chưa có feature nào PASS; trạng thái mới hơn
 - 7 screenshot mới có checksum trong manifest. Đây là bằng chứng Demo UX, không phải bằng chứng provider/backend live.
 - Report chuẩn ở `v2/reports/01-employee-360-import/qa-report.json`.
 - Wave 1 vẫn IN_PROGRESS; bước kế tiếp là profile aggregate, kỹ năng/kinh nghiệm/dự án/chứng chỉ/giải thưởng/timeline và roster HR.
+
+## 2026-09-12 11:00 ICT
+
+- Slice `W1-CORE` PASS tại implementation SHA `ca230bceb3b2d9be473fa8f842b23ecd51379115`, tree `052b9d39877cfe584033bf2c574594495df79497`.
+- Backend PASS 212 test PostgreSQL; frontend PASS 40 Vitest và 60 Playwright production trên 390×844, 768×1024 và 1440×900.
+- Ruff, mypy, ESLint, TypeScript, Next.js production build, Alembic upgrade/drift, OpenAPI/client, Bandit, dependency audit và Gitleaks đều PASS.
+- Independent backend, concurrency và UI/persona review cùng bind đúng exact SHA; P0/P1 UI mở bằng 0. P2 company-options scalability được ghi vào backlog.
+- Đã đóng lỗi cache detail chéo phiên/tenant, contract 400/422, page quá lớn, roster index, tenant override và hai nút xóa tìm kiếm.
+- 8 screenshot production mới có checksum, tree, account và rendered size trong manifest; ảnh super-admin đầy đủ shell/selector/content.
+- Report chuẩn ở `v2/reports/02-core-profile-roster/qa-report.json`.
+- Wave 1 vẫn IN_PROGRESS; bước tiếp theo là CRUD skill, experience, project, certification, award, provenance và unified timeline.

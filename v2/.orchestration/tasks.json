@@ -3,17 +3,80 @@
   "branch": "feat/v2-rebuild",
   "status": "IN_PROGRESS",
   "waves": [
-    {"id": "W0", "name": "Foundation, Auth, AI boundary", "status": "PASS", "implementation_sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6"},
-    {"id": "W1", "name": "Employee 360 and import", "status": "IN_PROGRESS", "depends_on": ["W0"]},
-    {"id": "W2", "name": "Goals and Milo roadmap", "status": "PENDING", "depends_on": ["W1"]},
-    {"id": "W3", "name": "Cross Assessment", "status": "PENDING", "depends_on": ["W0", "W1"]},
-    {"id": "W4", "name": "Passport and offboarding", "status": "PENDING", "depends_on": ["W1", "W3"]},
-    {"id": "W5", "name": "Staffing and dashboards", "status": "PENDING", "depends_on": ["W1"]},
-    {"id": "W6", "name": "Migration and hardening", "status": "PENDING", "depends_on": ["W1", "W2", "W3", "W4", "W5"]}
+    {
+      "id": "W0",
+      "name": "Foundation, Auth, AI boundary",
+      "status": "PASS",
+      "implementation_sha": "01e1e87838d9cd4473a0e661b6dd75291b5119e6"
+    },
+    {
+      "id": "W1",
+      "name": "Employee 360 and import",
+      "status": "IN_PROGRESS",
+      "depends_on": [
+        "W0"
+      ]
+    },
+    {
+      "id": "W2",
+      "name": "Goals and Milo roadmap",
+      "status": "PENDING",
+      "depends_on": [
+        "W1"
+      ]
+    },
+    {
+      "id": "W3",
+      "name": "Cross Assessment",
+      "status": "PENDING",
+      "depends_on": [
+        "W0",
+        "W1"
+      ]
+    },
+    {
+      "id": "W4",
+      "name": "Passport and offboarding",
+      "status": "PENDING",
+      "depends_on": [
+        "W1",
+        "W3"
+      ]
+    },
+    {
+      "id": "W5",
+      "name": "Staffing and dashboards",
+      "status": "PENDING",
+      "depends_on": [
+        "W1"
+      ]
+    },
+    {
+      "id": "W6",
+      "name": "Migration and hardening",
+      "status": "PENDING",
+      "depends_on": [
+        "W1",
+        "W2",
+        "W3",
+        "W4",
+        "W5"
+      ]
+    }
   ],
   "active_assignments": [
-    {"owner": "codex", "worktree": "v2-integration", "scope": "Wave 1 core profile aggregate và roster; orchestration, integration và quality gates", "mode": "manager-writer"},
-    {"owner": "antigravity", "worktree": "v2-integration", "scope": "UI/UX persona review theo từng slice, chỉ đọc", "mode": "read-only-on-demand"}
+    {
+      "owner": "codex",
+      "worktree": "v2-integration",
+      "scope": "Wave 1 resource aggregate: skill, experience, project, certification, award, provenance và timeline",
+      "mode": "manager-writer"
+    },
+    {
+      "owner": "antigravity",
+      "worktree": "v2-integration",
+      "scope": "UI/UX persona review theo từng slice, chỉ đọc",
+      "mode": "read-only-on-demand"
+    }
   ],
   "completed_slices": [
     {
@@ -22,6 +85,13 @@
       "status": "PASS",
       "implementation_sha": "de246d8c74ec8425cec0172613012fc600811719",
       "report": "../reports/01-employee-360-import/qa-report.json"
+    },
+    {
+      "id": "W1-CORE",
+      "name": "Core self profile và tenant-scoped roster",
+      "status": "PASS",
+      "implementation_sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+      "report": "../reports/02-core-profile-roster/qa-report.json"
     }
   ]
 }
