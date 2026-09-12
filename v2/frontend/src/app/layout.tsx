@@ -16,7 +16,7 @@ const extensionProtectionScript = `
 (function() {
   if (typeof window === "undefined") return;
 
-  var extensionPattern = /(chrome-extension:\\/\\/|moz-extension:\\/\\/|safari-web-extension:\\/\\/|executors\\/200\\.js|M_ID|bis_skin_checked|bis_register|__processed_|cz-shortcut-listen|mdl-js|eppiocemhmnlbhjplcgkofciiegomcon|runtime\\.lastError|Could not establish connection|data-gr-ext|data-new-gr|data-lastpass|data-1p|data-bitwarden|data-dashlane)/;
+  var extensionPattern = /(chrome-extension:\\/\\/|moz-extension:\\/\\/|safari-web-extension:\\/\\/|executors\\/200\\.js|M_ID|bis_skin_checked|bis_register|__processed_|cz-shortcut-listen|mdl-js|eppiocemhmnlbhjplcgkofciiegomcon|runtime\\.lastError|Could not establish connection|data-gr-ext|data-new-gr|data-lastpass|data-1p|data-bitwarden|data-dashlane|reportAllChanges|reading 'startTime'|reading "startTime"|startTime)/;
 
   function isIgnored(arg) {
     if (!arg) return false;
@@ -38,7 +38,7 @@ const extensionProtectionScript = `
     "error",
     function(event) {
       var source = (event.filename || "") + " " + (event.message || "") + " " + (event.error && event.error.stack ? event.error.stack : "");
-      if (shouldIgnore([source])) {
+      if (shouldIgnore([source, event.message, event.error])) {
         event.preventDefault();
         event.stopImmediatePropagation();
         return true;
@@ -47,19 +47,43 @@ const extensionProtectionScript = `
     true
   );
 
+  var origOnError = window.onerror;
+  window.onerror = function(message, source, lineno, colno, error) {
+    var sourceStr = (message || "") + " " + (source || "") + " " + (error && error.stack ? error.stack : "");
+    if (shouldIgnore([sourceStr, message, error])) {
+      return true;
+    }
+    if (typeof origOnError === "function") {
+      return origOnError.apply(this, arguments);
+    }
+  };
+
   // Intercept unhandled promise rejections from browser extensions in capture phase
   window.addEventListener(
     "unhandledrejection",
     function(event) {
       var reason = event.reason;
       var source = (reason && reason.stack ? reason.stack : "") + " " + (reason && reason.message ? reason.message : "") + " " + String(reason || "");
-      if (shouldIgnore([source])) {
+      if (shouldIgnore([source, reason])) {
         event.preventDefault();
         event.stopImmediatePropagation();
       }
     },
     true
   );
+
+  var origOnUnhandledRejection = window.onunhandledrejection;
+  window.onunhandledrejection = function(event) {
+    var reason = event && event.reason;
+    var source = (reason && reason.stack ? reason.stack : "") + " " + (reason && reason.message ? reason.message : "") + " " + String(reason || "");
+    if (shouldIgnore([source, reason])) {
+      if (event && event.preventDefault) event.preventDefault();
+      return true;
+    }
+    if (typeof origOnUnhandledRejection === "function") {
+      return origOnUnhandledRejection.apply(this, arguments);
+    }
+  };
 
   // Hook console.error with recursion guard so Next.js dev overlay cannot crash or open on extension errors
   var nativeError = console.error.bind(console);
