@@ -18,6 +18,12 @@ export interface AuthenticatedUser {
   name: string;
   role: Role;
   companyId: string | null;
+  // Every companyId this user holds a CompanyMembership for — resolved
+  // fresh per-request, same as adminPermissions below, never embedded in
+  // the JWT itself. Lets a user act inside more than one company (e.g.
+  // Cross Assessment) while User.companyId stays the single "current
+  // employer" pointer every other module still reads.
+  companyMemberships: string[];
   adminPermissions: AdminPermission[];
 }
 
@@ -67,12 +73,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       }
     }
 
+    const memberships = await this.prisma.companyMembership.findMany({
+      where: { userId: user.id },
+      select: { companyId: true },
+    });
+
     return {
       id: user.id,
       email: user.email,
       name: user.name,
       role: user.role,
       companyId: user.companyId,
+      companyMemberships: memberships.map((m) => m.companyId),
       adminPermissions,
     };
   }

@@ -14,12 +14,21 @@ import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompanyScope } from '@/contexts/CompanyScopeContext';
 import { ApiError } from '@/lib/api/client';
 import { listRoles, updateRolePermissions } from '@/lib/api/rolesApi';
 import { ROLE_LABEL } from '@/lib/labels';
 import type { AdminPermission, RoleDefinition } from '@/types';
 
-const ALL_PERMISSIONS: AdminPermission[] = ['VIEW', 'COLLECT', 'CROSS_ASSESS', 'APPROVE', 'EDIT', 'FULL'];
+const ALL_PERMISSIONS: AdminPermission[] = [
+  'VIEW',
+  'COLLECT',
+  'CROSS_ASSESS',
+  'APPROVE',
+  'EDIT',
+  'FULL',
+  'MANAGE_ROLES',
+];
 
 const PERMISSION_LABELS: Record<AdminPermission, string> = {
   VIEW: 'Xem dữ liệu',
@@ -28,13 +37,25 @@ const PERMISSION_LABELS: Record<AdminPermission, string> = {
   APPROVE: 'Duyệt',
   EDIT: 'Chỉnh sửa',
   FULL: 'Toàn quyền (FULL)',
+  MANAGE_ROLES: 'Quản lý phân quyền',
 };
 
+const ALLOWED_ROLES = ['COMPANY_ADMIN', 'HR', 'BOD', 'SUPER_ADMIN'];
+
+/**
+ * Phân quyền cho HR/BOD trong một công ty. Nằm trong company scope vì một
+ * người có thể thuộc nhiều công ty (CompanyMembership) — mỗi công ty có
+ * RoleDefinition riêng. Backend gate bằng permission MANAGE_ROLES (không
+ * chỉ theo Role cứng), nên một HR/BOD có thể bị 403 nếu Company Admin
+ * chưa bật quyền này cho họ — xử lý riêng thông báo đó thay vì lỗi chung.
+ */
 export default function RolesPage() {
   const { user } = useAuth();
+  const { companyId } = useCompanyScope();
   const [roles, setRoles] = React.useState<RoleDefinition[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [forbidden, setForbidden] = React.useState(false);
   const [saving, setSaving] = React.useState<string | null>(null);
   const [notice, setNotice] = React.useState<string | null>(null);
 
@@ -44,8 +65,9 @@ export default function RolesPage() {
   const load = React.useCallback(async () => {
     setLoading(true);
     setError(null);
+    setForbidden(false);
     try {
-      const data = await listRoles();
+      const data = await listRoles(companyId);
       setRoles(data);
       // Initialize drafts from fetched data
       const drafts: Record<string, AdminPermission[]> = {};
@@ -54,16 +76,22 @@ export default function RolesPage() {
       });
       setDraftPermissions(drafts);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Không tải được danh sách phân quyền');
+      if (err instanceof ApiError && err.status === 403) {
+        setForbidden(true);
+      } else {
+        setError(err instanceof ApiError ? err.message : 'Không tải được danh sách phân quyền');
+      }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [companyId]);
 
   React.useEffect(() => {
-    if (user && (user.role === 'COMPANY_ADMIN' || user.role === 'SUPER_ADMIN')) {
-      void load();
-    }
+    if (!user || !ALLOWED_ROLES.includes(user.role)) return;
+    // Wrapped so the initial fetch's setState lands after the effect.
+    void (async () => {
+      await load();
+    })();
   }, [user, load]);
 
   const togglePermission = (role: string, perm: AdminPermission) => {
@@ -90,7 +118,7 @@ export default function RolesPage() {
     setNotice(null);
     try {
       const permissions = draftPermissions[role] ?? [];
-      await updateRolePermissions(role as RoleDefinition['role'], { permissions });
+      await updateRolePermissions(role as RoleDefinition['role'], { permissions }, companyId);
       setNotice(`Đã lưu quyền cho ${ROLE_LABEL[role as keyof typeof ROLE_LABEL] ?? role}.`);
       await load();
     } catch (err) {
@@ -106,13 +134,13 @@ export default function RolesPage() {
     setNotice(null);
   };
 
-  if (!user || (user.role !== 'COMPANY_ADMIN' && user.role !== 'SUPER_ADMIN')) {
+  if (!user || !ALLOWED_ROLES.includes(user.role)) {
     return (
       <PageContainer>
         <PageHeader title="Phân quyền" />
         <Card title="Không có quyền truy cập">
           <Typography variant="body1">
-            Trang này chỉ dành cho Quản trị công ty (Company Admin) hoặc Quản trị nền tảng (Super Admin).
+            Trang này chỉ dành cho Quản trị công ty, HR, hoặc BOD được cấp quyền quản lý phân quyền.
           </Typography>
         </Card>
       </PageContainer>
@@ -140,6 +168,12 @@ export default function RolesPage() {
 
       {loading ? (
         <PageSkeleton variant="cards" />
+      ) : forbidden ? (
+        <Card title="Chưa được cấp quyền">
+          <Typography variant="body2">
+            Bạn chưa được cấp quyền quản lý phân quyền (MANAGE_ROLES) cho công ty này. Liên hệ Quản trị công ty để được cấp quyền.
+          </Typography>
+        </Card>
       ) : roles.length === 0 ? (
         <Card title="Chưa có vai trò">
           <Typography variant="body2">

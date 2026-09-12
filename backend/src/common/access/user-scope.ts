@@ -41,8 +41,13 @@ export async function assertCanViewUser(
 }
 
 /**
- * Resolves which company a write should land in: SUPER_ADMIN must name one,
- * everyone else is pinned to their own. Mirrors JobRequirementsService.create.
+ * Resolves which company a write/read should be scoped to: SUPER_ADMIN must
+ * name one. Everyone else defaults to their own companyId when no explicit
+ * one is given (unchanged single-company behavior), but MAY instead name any
+ * company they hold a CompanyMembership for — this is what lets a
+ * multi-membership caller act inside a company other than their current
+ * User.companyId (e.g. Cross Assessment nested per-company). Mirrors
+ * JobRequirementsService.create.
  */
 export function resolveCompanyScope(
   caller: AuthenticatedUser,
@@ -51,6 +56,12 @@ export function resolveCompanyScope(
   if (caller.role === Role.SUPER_ADMIN) {
     if (!explicitCompanyId) {
       throw new ForbiddenException('companyId is required for SUPER_ADMIN');
+    }
+    return explicitCompanyId;
+  }
+  if (explicitCompanyId) {
+    if (!caller.companyMemberships.includes(explicitCompanyId)) {
+      throw new ForbiddenException('Not a member of this company');
     }
     return explicitCompanyId;
   }

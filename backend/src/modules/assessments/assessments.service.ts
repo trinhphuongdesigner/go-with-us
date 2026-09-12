@@ -266,10 +266,10 @@ export class AssessmentsService {
   }
 
   /** The open cycle an employee should be filling in right now, if any. */
-  async getActiveCycle(caller: AuthenticatedUser) {
-    if (!caller.companyId) return null;
+  async getActiveCycle(caller: AuthenticatedUser, companyId?: string) {
+    const scope = resolveCompanyScope(caller, companyId);
     return this.prisma.assessmentCycle.findFirst({
-      where: { companyId: caller.companyId, status: CycleStatus.OPEN },
+      where: { companyId: scope, status: CycleStatus.OPEN },
       include: { template: { include: TEMPLATE_INCLUDE } },
       orderBy: { period: 'desc' },
     });
@@ -306,12 +306,17 @@ export class AssessmentsService {
     });
   }
 
-  /** Everything waiting for this admin to approve. */
+  /**
+   * Everything waiting for this admin to approve. SUPER_ADMIN may omit
+   * companyId to see every company's queue at once; everyone else is
+   * resolved through resolveCompanyScope (their own companyId by default,
+   * or an explicit company they hold a CompanyMembership for).
+   */
   listPendingApproval(caller: AuthenticatedUser, companyId?: string) {
     const scope =
       caller.role === Role.SUPER_ADMIN
         ? companyId
-        : resolveCompanyScope(caller);
+        : resolveCompanyScope(caller, companyId);
     return this.prisma.assessment.findMany({
       where: {
         status: AssessmentStatus.SUBMITTED,
@@ -377,10 +382,11 @@ export class AssessmentsService {
     }
     if (
       caller.role !== Role.SUPER_ADMIN &&
-      reviewee.companyId !== caller.companyId
+      (!reviewee.companyId ||
+        !caller.companyMemberships.includes(reviewee.companyId))
     ) {
       throw new ForbiddenException(
-        'You can only assess people in your own company',
+        'You can only assess people in a company you belong to',
       );
     }
 
@@ -625,7 +631,10 @@ export class AssessmentsService {
   }
 
   /** HR builds/owns the scale — templates and cycles are their tool. */
-  private assertCanManageTemplates(caller: AuthenticatedUser, companyId: string) {
+  private assertCanManageTemplates(
+    caller: AuthenticatedUser,
+    companyId: string,
+  ) {
     if (caller.role === Role.SUPER_ADMIN) return;
     if (caller.role === Role.HR && caller.companyId === companyId) {
       return;

@@ -5,15 +5,14 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  CertificationType,
-  ImportStatus,
-  LifeCategory,
-  Prisma,
-} from '@prisma/client';
+import { CertificationType, ImportStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AiChatService } from '../ai-chat/ai-chat.service';
-import { asArray, asString, parseJsonReplyOrThrow } from '../ai-chat/ai-reply.utils';
+import {
+  asArray,
+  asString,
+  parseJsonReplyOrThrow,
+} from '../ai-chat/ai-reply.utils';
 import type { AuthenticatedUser } from '../auth/jwt.strategy';
 import {
   ApplyProfileImportDto,
@@ -45,7 +44,6 @@ export interface ParsedProfile {
   }[];
   awards: {
     title: string;
-    category?: string;
     issuer?: string;
     description?: string;
     awardedAt?: string;
@@ -229,10 +227,6 @@ export class ProfileImportsService {
         data: {
           userId: caller.id,
           title: award.title,
-          category:
-            award.category === 'PERSONAL'
-              ? LifeCategory.PERSONAL
-              : LifeCategory.WORK,
           issuer: award.issuer,
           description: award.description,
           awardedAt: parseLooseDate(award.awardedAt),
@@ -361,7 +355,9 @@ export class ProfileImportsService {
    */
   private async extractFromUrl(url: string): Promise<string> {
     try {
-      const res = await fetch(url, { headers: { 'User-Agent': 'CareerMate/1.0' } });
+      const res = await fetch(url, {
+        headers: { 'User-Agent': 'CareerMate/1.0' },
+      });
       if (!res.ok) throw new Error(`Fetch failed ${res.status}`);
       const html = await res.text();
       // Very rough strip: remove scripts/styles, keep text
@@ -381,7 +377,11 @@ export class ProfileImportsService {
    * Extract text from uploaded file buffer based on mime or name.
    * pdf-parse, mammoth, xlsx are already installed.
    */
-  private async extractFromFile(buffer: Buffer, filename: string, mime?: string): Promise<string> {
+  private async extractFromFile(
+    buffer: Buffer,
+    filename: string,
+    mime?: string,
+  ): Promise<string> {
     const lower = filename.toLowerCase();
     try {
       if (lower.endsWith('.pdf') || mime === 'application/pdf') {
@@ -395,7 +395,11 @@ export class ProfileImportsService {
         const result = await mammoth.extractRawText({ buffer });
         return (result.value || '').slice(0, 30000);
       }
-      if (lower.endsWith('.xlsx') || lower.endsWith('.xls') || mime?.includes('spreadsheet')) {
+      if (
+        lower.endsWith('.xlsx') ||
+        lower.endsWith('.xls') ||
+        mime?.includes('spreadsheet')
+      ) {
         const XLSX = await import('xlsx');
         const wb = XLSX.read(buffer, { type: 'buffer' });
         let out = '';
@@ -406,7 +410,11 @@ export class ProfileImportsService {
         });
         return out.slice(0, 30000);
       }
-      if (lower.endsWith('.txt') || lower.endsWith('.md') || lower.endsWith('.markdown')) {
+      if (
+        lower.endsWith('.txt') ||
+        lower.endsWith('.md') ||
+        lower.endsWith('.markdown')
+      ) {
         return buffer.toString('utf8').slice(0, 30000);
       }
       // Fallback: try utf8
@@ -424,29 +432,69 @@ export class ProfileImportsService {
     const s = snapshot;
     const userLine = `${s.user.name} — ${s.user.jobTitle ?? 'no title'} — ${s.user.email}`;
     const skills = s.skills.length
-      ? s.skills.map((e: any) => `${e.skill.name} (lvl ${e.level}/5)${e.note ? ` — ${e.note}` : ''}`).join('; ')
+      ? s.skills
+          .map(
+            (e: any) =>
+              `${e.skill.name} (lvl ${e.level}/5)${e.note ? ` — ${e.note}` : ''}`,
+          )
+          .join('; ')
       : 'none';
     const certs = s.certifications.length
-      ? s.certifications.map((c: any) => `${c.name}${c.issuer ? ` @${c.issuer}` : ''}${c.issuedAt ? ` (${c.issuedAt.toISOString().slice(0, 7)})` : ''}`).join('; ')
+      ? s.certifications
+          .map(
+            (c: any) =>
+              `${c.name}${c.issuer ? ` @${c.issuer}` : ''}${c.issuedAt ? ` (${c.issuedAt.toISOString().slice(0, 7)})` : ''}`,
+          )
+          .join('; ')
       : 'none';
     const projs = s.projects.length
-      ? s.projects.map((p: any) => `${p.name} as ${p.role}${p.startDate ? ` [${p.startDate.toISOString().slice(0, 7)}→${p.endDate?.toISOString().slice(0, 7) ?? 'now'}]` : ''}`).join('; ')
+      ? s.projects
+          .map(
+            (p: any) =>
+              `${p.name} as ${p.role}${p.startDate ? ` [${p.startDate.toISOString().slice(0, 7)}→${p.endDate?.toISOString().slice(0, 7) ?? 'now'}]` : ''}`,
+          )
+          .join('; ')
       : 'none';
     const awds = s.awards.length
-      ? s.awards.map((a: any) => `${a.title}${a.awardedAt ? ` (${a.awardedAt.toISOString().slice(0, 7)})` : ''}`).join('; ')
+      ? s.awards
+          .map(
+            (a: any) =>
+              `${a.title}${a.awardedAt ? ` (${a.awardedAt.toISOString().slice(0, 7)})` : ''}`,
+          )
+          .join('; ')
       : 'none';
     const acts = s.activities.length
-      ? s.activities.map((a: any) => `${a.title} @${a.date.toISOString().slice(0, 10)}${a.category ? ` [${a.category}]` : ''}`).join('; ')
+      ? s.activities
+          .map(
+            (a: any) =>
+              `${a.title} @${a.date.toISOString().slice(0, 10)}${a.category ? ` [${a.category}]` : ''}`,
+          )
+          .join('; ')
       : 'none';
     const gls = s.goals.length
-      ? s.goals.map((g: any) => `${g.title} [${g.category}, ${g.status}]${g.dueDate ? ` due ${g.dueDate.toISOString().slice(0, 10)}` : ''}`).join('; ')
+      ? s.goals
+          .map(
+            (g: any) =>
+              `${g.title} [${g.status}]${g.dueDate ? ` due ${g.dueDate.toISOString().slice(0, 10)}` : ''}`,
+          )
+          .join('; ')
       : 'none';
     const plan = s.devPlan ? (s.devPlan.content || '').slice(0, 2000) : 'none';
     const mstones = s.milestones.length
-      ? s.milestones.map((m: any) => `${m.title}${m.dueDate ? ` (${m.dueDate.toISOString().slice(0, 10)})` : ''}`).join('; ')
+      ? s.milestones
+          .map(
+            (m: any) =>
+              `${m.title}${m.dueDate ? ` (${m.dueDate.toISOString().slice(0, 10)})` : ''}`,
+          )
+          .join('; ')
       : 'none';
     const jobs = s.employments.length
-      ? s.employments.map((e: any) => `${e.jobTitle} @${e.company?.name} [${e.startDate.toISOString().slice(0, 7)}→${e.endDate?.toISOString().slice(0, 7) ?? 'now'}]`).join('; ')
+      ? s.employments
+          .map(
+            (e: any) =>
+              `${e.jobTitle} @${e.company?.name} [${e.startDate.toISOString().slice(0, 7)}→${e.endDate?.toISOString().slice(0, 7) ?? 'now'}]`,
+          )
+          .join('; ')
       : 'none';
 
     return `You are CareerMate's profile enrichment analyst.
@@ -478,9 +526,9 @@ Reply with ONLY a JSON object of this exact shape, no prose, no markdown code fe
   "skills": [ { "name": "...", "level": 1-5, "note": "..." } ],
   "projects": [ { "name": "...", "role": "...", "domain": "...", "techStack": ["..."], "contribution": "...", "startDate": "YYYY-MM or YYYY-MM-DD", "endDate": "..." } ],
   "certifications": [ { "name": "...", "issuer": "...", "type": "DEGREE|LANGUAGE|PROFESSIONAL|OTHER", "score": "...", "issuedAt": "YYYY or YYYY-MM or YYYY-MM-DD" } ],
-  "awards": [ { "title": "...", "issuer": "...", "description": "...", "category": "WORK|PERSONAL", "awardedAt": "YYYY or YYYY-MM or YYYY-MM-DD" } ],
+  "awards": [ { "title": "...", "issuer": "...", "description": "...", "awardedAt": "YYYY or YYYY-MM or YYYY-MM-DD" } ],
   "activities": [ { "title": "...", "description": "...", "category": "...", "date": "YYYY-MM-DD" } ],
-  "goals": [ { "title": "...", "description": "...", "category": "WORK|PERSONAL", "dueDate": "YYYY-MM-DD", "metric": "..." } ],
+  "goals": [ { "title": "...", "description": "...", "dueDate": "YYYY-MM-DD", "metric": "..." } ],
   "roadmap": { "milestones": [ { "title": "...", "description": "...", "dueDate": "YYYY-MM-DD", "tasks": [ { "title": "...", "metric": "..." } ] } ] },
   "summary": "one sentence about what changed",
   "dedupNotes": "brief note on what was skipped as duplicate"
@@ -515,10 +563,16 @@ Rules:
       const t = await this.extractFromUrl(u);
       urlTexts.push(`\n--- URL: ${u} ---\n${t}`);
     }
-    const pasted = (payload.pastedTexts ?? []).map((t, i) => `\n--- Pasted text #${i + 1} ---\n${t}`);
-    const files = (payload.fileTexts ?? []).map((t, i) => `\n--- File text #${i + 1} ---\n${t}`);
+    const pasted = (payload.pastedTexts ?? []).map(
+      (t, i) => `\n--- Pasted text #${i + 1} ---\n${t}`,
+    );
+    const files = (payload.fileTexts ?? []).map(
+      (t, i) => `\n--- File text #${i + 1} ---\n${t}`,
+    );
 
-    const sourcesMd = [...urlTexts, ...pasted, ...files].join('\n').slice(0, 60000);
+    const sourcesMd = [...urlTexts, ...pasted, ...files]
+      .join('\n')
+      .slice(0, 60000);
     if (sourcesMd.trim().length < 30) {
       throw new BadRequestException('Not enough source content to analyze');
     }
@@ -527,7 +581,7 @@ Rules:
 
     this.logger.log(
       `analyzeSources: sourcesMdLen=${sourcesMd.length} sysPromptLen=${systemPrompt.length} ` +
-      `sourcesPrefix=${sourcesMd.slice(0, 400)} sysHead=${systemPrompt.slice(0, 800)}`,
+        `sourcesPrefix=${sourcesMd.slice(0, 400)} sysHead=${systemPrompt.slice(0, 800)}`,
     );
 
     const { content } = await this.aiChatService.send({
@@ -535,7 +589,8 @@ Rules:
       messages: [
         {
           role: 'user',
-          content: 'Output exactly one JSON object matching the required shape and nothing else. No explanations, no fences.',
+          content:
+            'Output exactly one JSON object matching the required shape and nothing else. No explanations, no fences.',
         },
       ],
     });
@@ -580,7 +635,13 @@ IDENTITY: The person who submitted the original sources IS ${snapshot.user.name}
 
     const { content } = await this.aiChatService.send({
       systemPrompt,
-      messages: [{ role: 'user', content: 'Output exactly one JSON object matching the required shape and nothing else. No explanations, no fences.' }],
+      messages: [
+        {
+          role: 'user',
+          content:
+            'Output exactly one JSON object matching the required shape and nothing else. No explanations, no fences.',
+        },
+      ],
     });
 
     return this.parseRichProposal(content);
@@ -598,7 +659,9 @@ IDENTITY: The person who submitted the original sources IS ${snapshot.user.name}
     const proposal: RichProfileProposal = {
       identityCheck: parsed.identityCheck
         ? {
-            detectedSourceName: asString(parsed.identityCheck.detectedSourceName),
+            detectedSourceName: asString(
+              parsed.identityCheck.detectedSourceName,
+            ),
             matches: parsed.identityCheck.matches !== false,
           }
         : undefined,
@@ -613,7 +676,10 @@ IDENTITY: The person who submitted the original sources IS ${snapshot.user.name}
       skills: asArray(parsed.skills)
         .map((s: any) => ({
           name: asString(s.name) ?? '',
-          level: typeof s.level === 'number' ? Math.max(1, Math.min(5, Math.round(s.level))) : undefined,
+          level:
+            typeof s.level === 'number'
+              ? Math.max(1, Math.min(5, Math.round(s.level)))
+              : undefined,
           note: asString(s.note),
         }))
         .filter((s: any) => s.name),
@@ -622,7 +688,9 @@ IDENTITY: The person who submitted the original sources IS ${snapshot.user.name}
           name: asString(p.name) ?? '',
           role: asString(p.role) ?? 'Member',
           domain: asString(p.domain),
-          techStack: Array.isArray(p.techStack) ? p.techStack.filter((t: any) => typeof t === 'string') : [],
+          techStack: Array.isArray(p.techStack)
+            ? p.techStack.filter((t: any) => typeof t === 'string')
+            : [],
           contribution: asString(p.contribution),
           startDate: asString(p.startDate),
           endDate: asString(p.endDate),
@@ -642,7 +710,6 @@ IDENTITY: The person who submitted the original sources IS ${snapshot.user.name}
           title: asString(a.title) ?? '',
           issuer: asString(a.issuer),
           description: asString(a.description),
-          category: a.category === 'PERSONAL' ? 'PERSONAL' : 'WORK',
           awardedAt: asString(a.awardedAt),
         }))
         .filter((a: any) => a.title),
@@ -658,31 +725,33 @@ IDENTITY: The person who submitted the original sources IS ${snapshot.user.name}
         .map((g: any) => ({
           title: asString(g.title) ?? '',
           description: asString(g.description),
-          category: (g.category === 'PERSONAL' ? 'PERSONAL' : g.category === 'WORK' ? 'WORK' : undefined) as 'WORK' | 'PERSONAL' | undefined,
           dueDate: asString(g.dueDate),
           metric: asString(g.metric),
         }))
         .filter((g: any) => g.title),
-      roadmap: parsed.roadmap && Array.isArray(parsed.roadmap.milestones)
-        ? {
-            milestones: parsed.roadmap.milestones
-              .map((m: any) => ({
-                title: asString(m.title) ?? '',
-                description: asString(m.description),
-                dueDate: asString(m.dueDate),
-                tasks: Array.isArray(m.tasks)
-                  ? m.tasks
-                      .map((t: any) => ({
-                        title: asString(t.title) ?? '',
-                        metric: asString(t.metric),
-                      }))
-                      .filter((t: any) => t.title)
-                  : [],
-              }))
-              .filter((m: any) => m.title),
-          }
-        : undefined,
-      summary: asString(parsed.summary) ?? 'AI đã phân tích các nguồn dữ liệu dựa trên hồ sơ hiện tại của bạn.',
+      roadmap:
+        parsed.roadmap && Array.isArray(parsed.roadmap.milestones)
+          ? {
+              milestones: parsed.roadmap.milestones
+                .map((m: any) => ({
+                  title: asString(m.title) ?? '',
+                  description: asString(m.description),
+                  dueDate: asString(m.dueDate),
+                  tasks: Array.isArray(m.tasks)
+                    ? m.tasks
+                        .map((t: any) => ({
+                          title: asString(t.title) ?? '',
+                          metric: asString(t.metric),
+                        }))
+                        .filter((t: any) => t.title)
+                    : [],
+                }))
+                .filter((m: any) => m.title),
+            }
+          : undefined,
+      summary:
+        asString(parsed.summary) ??
+        'AI đã phân tích các nguồn dữ liệu dựa trên hồ sơ hiện tại của bạn.',
       dedupNotes: asString(parsed.dedupNotes),
     };
 
@@ -711,7 +780,10 @@ IDENTITY: The person who submitted the original sources IS ${snapshot.user.name}
       const patch: { phone?: string } = {};
       if (dto.basicInfo.phone) patch.phone = dto.basicInfo.phone.trim();
       if (Object.keys(patch).length) {
-        await this.prisma.user.update({ where: { id: caller.id }, data: patch });
+        await this.prisma.user.update({
+          where: { id: caller.id },
+          data: patch,
+        });
         counts.basic = 1;
       }
     }
@@ -729,7 +801,11 @@ IDENTITY: The person who submitted the original sources IS ${snapshot.user.name}
       if (existing && existing.level === (sk.level ?? 3)) continue;
       await this.prisma.employeeSkill.upsert({
         where: { userId_skillId: { userId: caller.id, skillId: catalog.id } },
-        update: { level: sk.level ?? 3, note: sk.note ?? null, selfAssessed: true },
+        update: {
+          level: sk.level ?? 3,
+          note: sk.note ?? null,
+          selfAssessed: true,
+        },
         create: {
           userId: caller.id,
           skillId: catalog.id,
@@ -766,7 +842,10 @@ IDENTITY: The person who submitted the original sources IS ${snapshot.user.name}
           userId: caller.id,
           name: c.name,
           issuer: c.issuer,
-          type: c.type && CERTIFICATION_TYPES.has(c.type) ? (c.type as CertificationType) : CertificationType.PROFESSIONAL,
+          type:
+            c.type && CERTIFICATION_TYPES.has(c.type)
+              ? (c.type as CertificationType)
+              : CertificationType.PROFESSIONAL,
           score: c.score,
           issuedAt: parseLooseDate(c.issuedAt),
         },
@@ -780,7 +859,6 @@ IDENTITY: The person who submitted the original sources IS ${snapshot.user.name}
         data: {
           userId: caller.id,
           title: a.title,
-          category: a.category === 'PERSONAL' ? LifeCategory.PERSONAL : LifeCategory.WORK,
           issuer: a.issuer,
           description: a.description,
           awardedAt: parseLooseDate(a.awardedAt),
@@ -811,7 +889,6 @@ IDENTITY: The person who submitted the original sources IS ${snapshot.user.name}
           userId: caller.id,
           title: g.title,
           description: g.description,
-          category: g.category === 'PERSONAL' ? LifeCategory.PERSONAL : LifeCategory.WORK,
           dueDate: parseLooseDate(g.dueDate),
           metric: g.metric,
         },
@@ -821,15 +898,20 @@ IDENTITY: The person who submitted the original sources IS ${snapshot.user.name}
 
     // Roadmap (create a new attempt instead of replacing existing history)
     if (dto.roadmap && dto.roadmap.milestones?.length) {
-      const plan = await this.prisma.developmentPlan.findFirst({ where: { userId: caller.id } });
+      const plan = await this.prisma.developmentPlan.findFirst({
+        where: { userId: caller.id },
+      });
       const planId = plan
         ? plan.id
-        : (await this.prisma.developmentPlan.create({ data: { userId: caller.id, content: '' } })).id;
+        : (
+            await this.prisma.developmentPlan.create({
+              data: { userId: caller.id, content: '' },
+            })
+          ).id;
 
       await this.prisma.developmentRoadmap.create({
         data: {
           planId,
-          category: LifeCategory.WORK,
           milestones: {
             create: dto.roadmap.milestones.map((m, i) => ({
               title: m.title,
@@ -864,14 +946,13 @@ Reply with ONLY a JSON object of this exact shape, no prose, no markdown code fe
   "skills": [{"name": "<skill name>", "level": <1-5 integer estimated from the text>}],
   "certifications": [{"name": "<name>", "issuer": "<issuer or empty>", "type": "DEGREE|LANGUAGE|PROFESSIONAL|OTHER", "score": "<e.g. IELTS 7.0, or empty>", "issuedAt": "<YYYY or YYYY-MM or empty>"}],
   "projects": [{"name": "<project>", "role": "<role held>", "domain": "<business domain or empty>", "techStack": ["<tech>"], "contribution": "<one sentence on the contribution/result>", "startDate": "<YYYY-MM or empty>", "endDate": "<YYYY-MM or empty>"}],
-  "awards": [{"title": "<award or competition>", "category": "WORK|PERSONAL", "issuer": "<issuer or empty>", "description": "<one sentence>", "awardedAt": "<YYYY or empty>"}],
+  "awards": [{"title": "<award or competition>", "issuer": "<issuer or empty>", "description": "<one sentence>", "awardedAt": "<YYYY or empty>"}],
   "summary": "<one sentence describing what was extracted>"
 }
 
 Rules:
 - Only extract what the text actually supports. Never invent a skill, employer, certificate or award that is not mentioned.
 - Use an empty array when a section is absent.
-- category PERSONAL is for non-work achievements (sport, volunteering, personal contests); everything job-related is WORK.
 - LANGUAGE: Write "summary" and any free-text description in Vietnamese, regardless of the source language. Keep proper nouns, company/project names, tech names and people's names unchanged.`;
   }
 
@@ -931,7 +1012,6 @@ Rules:
       awards: asArray(parsed.awards)
         .map((a: any) => ({
           title: asString(a.title) ?? '',
-          category: a.category === 'PERSONAL' ? 'PERSONAL' : 'WORK',
           issuer: asString(a.issuer),
           description: asString(a.description),
           awardedAt: asString(a.awardedAt),

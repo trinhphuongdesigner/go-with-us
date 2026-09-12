@@ -19,22 +19,24 @@ import { colorTokens, radiusTokens } from '@/theme/theme';
 import * as usersApi from '@/lib/api/usersApi';
 import { ApiError } from '@/lib/api/client';
 import { isEmployeeRole } from '@/lib/roles';
+import { useCompanyScope } from '@/contexts/CompanyScopeContext';
 import type { User } from '@/types';
 
 export default function EmployeesPage() {
   const router = useRouter();
+  const { companyId } = useCompanyScope();
   const [employees, setEmployees] = React.useState<User[] | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [viewMode, setViewMode] = React.useState<ViewMode>('list');
 
   React.useEffect(() => {
     usersApi
-      .listUsers()
+      .listUsers({ companyId })
       .then((users) => setEmployees(users.filter((u) => isEmployeeRole(u.role))))
       .catch((err) => {
         setError(err instanceof ApiError ? err.message : 'Không tải được danh sách nhân sự');
       });
-  }, []);
+  }, [companyId]);
 
   return (
     <PageContainer>
@@ -59,7 +61,7 @@ export default function EmployeesPage() {
               {employees.map((employee) => (
                 <Box
                   key={employee.id}
-                  onClick={() => router.push(`/employees/${employee.id}`)}
+                  onClick={() => router.push(`/my-companies/${companyId}/employees/${employee.id}`)}
                   sx={{
                     border: `1px solid ${colorTokens.border}`,
                     borderRadius: `${radiusTokens.md}px`,
@@ -105,7 +107,7 @@ export default function EmployeesPage() {
                 {employees.map((employee) => (
                   <TableRow
                     key={employee.id}
-                    onClick={() => router.push(`/employees/${employee.id}`)}
+                    onClick={() => router.push(`/my-companies/${companyId}/employees/${employee.id}`)}
                     hover
                     sx={{ cursor: 'pointer' }}
                   >

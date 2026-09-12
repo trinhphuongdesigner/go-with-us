@@ -21,7 +21,7 @@ import {
  * or saving a summary is the employee's own call, from /career-passport.
  */
 export default function EmployeePassportPage() {
-  const params = useParams<{ id: string }>();
+  const params = useParams<{ id: string; employeeId: string }>();
   const { user } = useAuth();
 
   const [passport, setPassport] = React.useState<CareerPassport | null>(null);
@@ -35,7 +35,7 @@ export default function EmployeePassportPage() {
       setLoading(true);
       setError(null);
       try {
-        const data = await getCareerPassport(params.id);
+        const data = await getCareerPassport(params.employeeId);
         if (!cancelled) setPassport(data);
       } catch (err) {
         if (!cancelled) {
@@ -50,7 +50,7 @@ export default function EmployeePassportPage() {
     return () => {
       cancelled = true;
     };
-  }, [params.id, user]);
+  }, [params.employeeId, user]);
 
   return (
     <PageContainer>
@@ -60,7 +60,7 @@ export default function EmployeePassportPage() {
           actions={
             <Button
               component={NextLink}
-              href={`/employees/${params.id}`}
+              href={`/my-companies/${params.id}/employees/${params.employeeId}`}
               variant="outlined"
             >
               Quay lại tổng quan

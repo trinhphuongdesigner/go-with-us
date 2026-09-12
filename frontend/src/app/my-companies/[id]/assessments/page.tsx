@@ -18,6 +18,7 @@ import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import Card from '@/components/ui/Card';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompanyScope } from '@/contexts/CompanyScopeContext';
 import { ApiError } from '@/lib/api/client';
 import {
   createAssessment,
@@ -31,7 +32,6 @@ import {
 import { listUsers } from '@/lib/api/usersApi';
 import { ASSESSMENT_STATUS_LABEL, MOOD_LABEL } from '@/lib/labels';
 import type { User } from '@/types';
-import { isEmployeeRole } from '@/lib/roles';
 
 const STATUS_TONE: Record<
   AssessmentStatus,
@@ -44,13 +44,15 @@ const STATUS_TONE: Record<
 };
 
 /**
- * M3 — the Cross Assessment hub. An employee lands here to do their monthly
- * self check-in and to assess colleagues; an admin also sees what is waiting
- * for approval.
+ * M3 — the Cross Assessment hub, nested inside a company scope since a
+ * person can belong to more than one company. An employee lands here to do
+ * their monthly self check-in and to assess colleagues in THIS company; an
+ * admin also sees what is waiting for approval in this company.
  */
 export default function AssessmentsPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const { companyId } = useCompanyScope();
 
   const isAdmin = user?.role === 'BOD' || user?.role === 'COMPANY_ADMIN' || user?.role === 'SUPER_ADMIN';
 
@@ -70,17 +72,17 @@ export default function AssessmentsPage() {
     setError(null);
     try {
       const [activeCycle, receivedList, givenList, roster] = await Promise.all([
-        getActiveCycle(),
+        getActiveCycle(companyId),
         listAssessments('received'),
         listAssessments('mine'),
-        listUsers().catch(() => [] as User[]),
+        listUsers({ companyId }).catch(() => [] as User[]),
       ]);
       setCycle(activeCycle);
       setReceived(receivedList);
       setGiven(givenList);
       setColleagues(roster.filter((u) => u.id !== user?.id));
       if (isAdmin) {
-        setPending(await listPendingApproval().catch(() => []));
+        setPending(await listPendingApproval(companyId).catch(() => []));
       }
     } catch (err) {
       setError(
@@ -89,7 +91,7 @@ export default function AssessmentsPage() {
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, user?.id]);
+  }, [companyId, isAdmin, user?.id]);
 
   React.useEffect(() => {
     if (!user) return;
@@ -118,9 +120,10 @@ export default function AssessmentsPage() {
       const created = await createAssessment({
         type,
         revieweeId,
+        companyId,
         cycleId: cycle?.id,
       });
-      router.push(`/assessments/${created.id}`);
+      router.push(`/my-companies/${companyId}/assessments/${created.id}`);
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : 'Không bắt đầu được đánh giá',
@@ -190,7 +193,7 @@ export default function AssessmentsPage() {
                 {openSelfDraft ? (
                   <Button
                     component={NextLink}
-                    href={`/assessments/${openSelfDraft.id}`}
+                    href={`/my-companies/${companyId}/assessments/${openSelfDraft.id}`}
                     variant="contained"
                   >
                     Tiếp tục tự đánh giá
@@ -248,6 +251,7 @@ export default function AssessmentsPage() {
           <Card title={`Chờ duyệt (${pending.length})`} sx={{ mb: 3 }}>
             <AssessmentList
               items={pending}
+              companyId={companyId}
               emptyText="Hiện không có bài nào chờ bạn duyệt."
               nameOf={(a) => `${a.reviewee.name} · bởi ${a.reviewer.name}`}
             />
@@ -257,6 +261,7 @@ export default function AssessmentsPage() {
         <Card title="Về tôi" sx={{ mb: 3 }}>
           <AssessmentList
             items={received}
+            companyId={companyId}
             emptyText="Chưa ai đánh giá bạn."
             nameOf={(a) => `${a.reviewer.name} → bạn`}
           />
@@ -265,6 +270,7 @@ export default function AssessmentsPage() {
         <Card title="Tôi đã viết">
           <AssessmentList
             items={given}
+            companyId={companyId}
             emptyText="Bạn chưa viết đánh giá nào."
             nameOf={(a) =>
               a.type === 'SELF' ? 'Tự đánh giá' : `Về ${a.reviewee.name}`
@@ -279,10 +285,12 @@ export default function AssessmentsPage() {
 
 function AssessmentList({
   items,
+  companyId,
   emptyText,
   nameOf,
 }: {
   items: AssessmentListItem[];
+  companyId: string;
   emptyText: string;
   nameOf: (item: AssessmentListItem) => string;
 }) {
@@ -324,7 +332,7 @@ function AssessmentList({
             />
             <Button
               component={NextLink}
-              href={`/assessments/${item.id}`}
+              href={`/my-companies/${companyId}/assessments/${item.id}`}
               size="small"
             >
               Mở

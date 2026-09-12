@@ -18,7 +18,6 @@ import Button from '@/components/ui/Button';
 import { colorTokens, radiusTokens } from '@/theme/theme';
 import type {
   DevelopmentMilestone,
-  LifeCategory,
   RoadmapDisplaySettings,
 } from '@/lib/api/developmentPlansApi';
 import RoadmapStaircase from './RoadmapStaircase';
@@ -41,7 +40,6 @@ export interface RoadmapDraftMilestone {
 }
 
 export interface CustomizeSaveData {
-  category: LifeCategory;
   durationWeeks?: number;
   hoursPerWeek?: number;
   milestones: RoadmapDraftMilestone[];
@@ -49,7 +47,6 @@ export interface CustomizeSaveData {
 }
 
 interface Props {
-  category: LifeCategory;
   durationWeeks: number | null;
   hoursPerWeek: number | null;
   milestones: DevelopmentMilestone[];
@@ -78,7 +75,6 @@ const nextTempId = () => `draft-${Date.now()}-${tempSeq++}`;
 
 /** Full editor shown inline in place of the main card body (no dialog). */
 export default function RoadmapCustomizePanel({
-  category: initialCategory,
   durationWeeks: initialDurationWeeks,
   hoursPerWeek: initialHoursPerWeek,
   milestones: initialMilestones,
@@ -87,7 +83,6 @@ export default function RoadmapCustomizePanel({
   onSave,
   saving = false,
 }: Props) {
-  const [category, setCategory] = React.useState<LifeCategory>(initialCategory);
   const [durationWeeks, setDurationWeeks] = React.useState(
     initialDurationWeeks !== null ? String(initialDurationWeeks) : '',
   );
@@ -186,7 +181,6 @@ export default function RoadmapCustomizePanel({
 
   const handleSave = async () => {
     await onSave({
-      category,
       durationWeeks: durationWeeks ? Number(durationWeeks) : undefined,
       hoursPerWeek: hoursPerWeek ? Number(hoursPerWeek) : undefined,
       milestones: drafts
@@ -211,18 +205,6 @@ export default function RoadmapCustomizePanel({
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.1fr 1fr' }, gap: 3 }}>
         {/* Cột trái: chỉnh nội dung */}
         <Stack spacing={2}>
-          <Box>
-            <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>Loại mục tiêu</Typography>
-            <Stack direction="row" spacing={1}>
-              <Button variant={category === 'WORK' ? 'contained' : 'outlined'} size="sm" onClick={() => setCategory('WORK')}>
-                Công việc
-              </Button>
-              <Button variant={category === 'PERSONAL' ? 'contained' : 'outlined'} size="sm" onClick={() => setCategory('PERSONAL')}>
-                Cá nhân
-              </Button>
-            </Stack>
-          </Box>
-
           <Stack direction="row" spacing={2}>
             <TextField
               label="Thời lượng (tuần)"

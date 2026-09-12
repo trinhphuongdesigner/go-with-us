@@ -146,7 +146,10 @@ export class ProfileImportsController {
    * Stateless: client sends the current proposal + instruction.
    */
   @Post('refine')
-  refine(@Body() dto: RefineProposalDto, @CurrentUser() caller: AuthenticatedUser) {
+  refine(
+    @Body() dto: RefineProposalDto,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
     return this.service.refineProposal(dto, caller);
   }
 
@@ -154,7 +157,10 @@ export class ProfileImportsController {
    * Explicit save for rich updates. Routes to the right domain tables.
    */
   @Post('apply-rich')
-  applyRich(@Body() dto: ApplyRichUpdatesDto, @CurrentUser() caller: AuthenticatedUser) {
+  applyRich(
+    @Body() dto: ApplyRichUpdatesDto,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
     return this.service.applyRichUpdates(dto, caller);
   }
 }

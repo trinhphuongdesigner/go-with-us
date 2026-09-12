@@ -57,8 +57,9 @@ thế bản trước, đã sửa theo các đính chính mới nhất.
 ## 2. Tính năng REAL #1 — Hồ sơ & lộ trình cá nhân
 
 **Phạm vi:** import tài liệu cập nhật hồ sơ → tạo/sửa lộ trình phát triển
-(2 nhóm cá nhân/công việc, hỗ trợ bởi AI assistant focus theo chủ đề) →
-theo dõi & cập nhật tiến độ → kết quả được duyệt cộng điểm (dùng chung
+(nhiều lộ trình song song, mỗi lần lưu tạo một lộ trình mới thay vì ghi đè;
+hỗ trợ bởi AI assistant focus theo chủ đề) → theo dõi & cập nhật tiến độ →
+kết quả được duyệt cộng điểm (dùng chung
 pipeline với tính năng #3) → khi rời tổ chức, nhân sự **request**, Admin
 **approve + trigger** tổng hợp hồ sơ (có redact thông tin nhạy cảm) làm
 đầu vào apply việc khác.
@@ -79,22 +80,24 @@ pipeline với tính năng #3) → khi rời tổ chức, nhân sự **request**
 **Đã có (real):**
 - Import CV → AI đề xuất có cấu trúc → tick chọn → apply vào hồ sơ.
 - CRUD certifications/projects/awards + timeline gộp.
-- `DevelopmentGoal` đã có field `category` (WORK/PERSONAL), `progress`,
-  `dueDate` trong schema.
+- `DevelopmentGoal` có `progress`, `dueDate` trong schema — không còn phân
+  nhóm công việc/cá nhân (`category` đã bỏ khỏi `DevelopmentGoal`, `Award`
+  và `DevelopmentRoadmap`).
+- `development-plans` expose đầy đủ CRUD cho `DevelopmentMilestone`/
+  `DevelopmentTask`, và roadmap dùng **assistant hội thoại nhiều lượt,
+  focus chủ đề "roadmap"** — tự lấy hồ sơ/skill/goal của user làm context
+  ngay từ đầu, AI hỏi lại nếu thiếu thông tin, chốt đề xuất milestone/task
+  khi đủ rõ. Có component UI sửa trực tiếp được (thêm/xóa/sửa milestone &
+  task, sắp xếp lại thứ tự) trước khi bấm Save mới ghi thật.
+- Mỗi lần lưu roadmap tạo một `DevelopmentRoadmap` mới (không ghi đè lộ
+  trình cũ) — trang `/development-plan` hiển thị mọi lộ trình đã lưu thành
+  các section độc lập, có thể thu gọn/mở rộng từng cái.
 - Career Passport: employment CRUD, share link thu hồi được, trang public
   đọc qua token.
 
-**Cần code thêm (gap):**
-- `development-plans` **chưa expose API** cho `DevelopmentGoal` lọc theo 2
-  nhóm work/personal trên UI, và **chưa có CRUD** cho
-  `DevelopmentMilestone`/`DevelopmentTask` dù đã có trong schema.
-- Roadmap: thay vì 1 endpoint sinh JSON 1 lần, cần dùng **assistant hội
-  thoại nhiều lượt, focus chủ đề "roadmap"** — tự lấy hồ sơ/skill/goal của
-  user làm context ngay từ đầu, AI hỏi lại nếu thiếu thông tin, và khi đủ
-  rõ mới chốt đề xuất milestone/task. Cần 1 component UI mới hiển thị dạng
-  sơ đồ trực quan **sửa trực tiếp được** (thêm/xóa/sửa milestone & task,
-  sắp xếp lại thứ tự) trước khi bấm Save mới ghi thành
-  `DevelopmentMilestone`/`DevelopmentTask` thật.
+**Cần code thêm (gap):** không còn gap đáng kể ở phần roadmap/goal — xem
+mục 0 (Not yet built) trong `CLAUDE.md` cho các phần khác của dự án chưa
+làm.
 - **Luồng offboarding summary đổi hẳn theo mục 0.3** — đây là phần việc
   nặng nhất của tính năng #1:
   - Nhân sự: nút "Request tổng hợp hồ sơ" trên 1 kỳ làm việc đã/sắp kết
@@ -267,8 +270,8 @@ Feature list cần A đi qua hết (tính năng #1 + phần "bị tác động" 
 
 - Import CV/LinkedIn → hồ sơ (`/profile/import`).
 - Tự cập nhật certifications/projects/awards (`/profile`).
-- Tạo/sửa lộ trình phát triển qua assistant focus "roadmap", 2 nhóm
-  WORK/PERSONAL, theo dõi & tick tiến độ milestone/task
+- Tạo/sửa lộ trình phát triển qua assistant focus "roadmap", theo dõi &
+  tick tiến độ milestone/task, xem nhiều lộ trình đã lưu song song
   (`/development-plan`).
 - Cross Assessment với vai trò người **được đánh giá** (reviewee) — nhận
   phân công từ Admin, xem điểm sau khi được duyệt.
@@ -321,8 +324,8 @@ với bộ quyền `FULL` để test được mọi nhánh permission:
 **Dev A — "Cá nhân" (tính năng #1) + assistant focus "roadmap" (mục 6):**
 - `backend/src/modules/competency-profile/`,
   `backend/src/modules/profile-imports/`,
-  `backend/src/modules/development-plans/` (mở rộng milestone/task/goal
-  category), `backend/src/modules/career-passport/` (luồng
+  `backend/src/modules/development-plans/` (milestone/task/goal/roadmap),
+  `backend/src/modules/career-passport/` (luồng
   request→approve→trigger, redact, split narrative/evaluation),
   `backend/src/modules/assistant/` (thêm topic "roadmap").
 - Frontend: `/profile`, `/profile/import`, `/development-plan` (+ roadmap

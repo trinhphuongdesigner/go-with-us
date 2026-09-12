@@ -17,6 +17,7 @@ import {
   canManageRole,
   getManageableRoles,
 } from '../../common/access/role-hierarchy';
+import { resolveCompanyScope } from '../../common/access/user-scope';
 
 const SALT_ROUNDS = 10;
 
@@ -73,14 +74,11 @@ export class UsersService {
       });
     }
 
-    if (!caller.companyId) {
-      throw new ForbiddenException('No company scope for this account');
-    }
-
     if (caller.role === Role.EMPLOYEE) {
+      const scope = resolveCompanyScope(caller, filter.companyId);
       return this.prisma.user.findMany({
         where: {
-          companyId: caller.companyId,
+          companyId: scope,
           ...(filter.role ? { role: filter.role } : {}),
         },
         select: PUBLIC_USER_SELECT,
@@ -88,9 +86,11 @@ export class UsersService {
       });
     }
 
+    const scope = resolveCompanyScope(caller, filter.companyId);
+
     return this.prisma.user.findMany({
       where: {
-        companyId: caller.companyId,
+        companyId: scope,
         role: {
           in: filter.role
             ? getManageableRoles(caller.role).filter((r) => r === filter.role)
@@ -237,6 +237,39 @@ export class UsersService {
     });
   }
 
+  /**
+   * Resets a user's password — used by Super Admin to reassign/recover a
+   * Company Admin account. Same authorization as update(): self, or a
+   * privileged caller who outranks the target in the same company.
+   */
+  async resetPassword(
+    id: string,
+    newPassword: string,
+    caller: AuthenticatedUser,
+  ) {
+    const target = await this.prisma.user.findUnique({
+      where: { id },
+      select: { id: true, companyId: true, role: true },
+    });
+    if (!target) {
+      throw new NotFoundException(`User ${id} not found`);
+    }
+
+    const isSelf = target.id === caller.id;
+    const canManageTarget =
+      caller.role !== Role.EMPLOYEE &&
+      caller.companyId === target.companyId &&
+      canManageRole(caller.role, target.role);
+    const isPrivileged = caller.role === Role.SUPER_ADMIN || canManageTarget;
+    if (!isSelf && !isPrivileged) {
+      throw new ForbiddenException("Not allowed to reset this user's password");
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    await this.prisma.user.update({ where: { id }, data: { passwordHash } });
+    return { id };
+  }
+
   async uploadAvatar(file: Express.Multer.File, caller: AuthenticatedUser) {
     const target = await this.prisma.user.findUnique({
       where: { id: caller.id },
@@ -258,8 +291,17 @@ export class UsersService {
 
     const prefix = `careermate/avatars/${caller.id}/`;
     const oldKey = this.storage.keyFromPublicUrl(target.avatarUrl);
-    const key = ['careermate', 'avatars', caller.id, `${randomUUID()}.${extension}`];
-    const avatarUrl = await this.storage.writePublic(key, file.buffer, file.mimetype);
+    const key = [
+      'careermate',
+      'avatars',
+      caller.id,
+      `${randomUUID()}.${extension}`,
+    ];
+    const avatarUrl = await this.storage.writePublic(
+      key,
+      file.buffer,
+      file.mimetype,
+    );
 
     try {
       const updated = await this.prisma.user.update({

@@ -1,8 +1,7 @@
 import { apiRequest } from './client';
 
-// Mirrors backend/prisma/schema.prisma's GoalStatus/LifeCategory/MilestoneStatus enums.
+// Mirrors backend/prisma/schema.prisma's GoalStatus/MilestoneStatus enums.
 export type GoalStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'ACHIEVED';
-export type LifeCategory = 'WORK' | 'PERSONAL';
 export type MilestoneStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'DONE';
 
 export interface DevelopmentGoal {
@@ -10,7 +9,6 @@ export interface DevelopmentGoal {
   userId: string;
   title: string;
   description: string | null;
-  category: LifeCategory;
   metric: string | null;
   targetValue: number | null;
   currentValue: number | null;
@@ -26,7 +24,6 @@ export interface DevelopmentGoal {
 export interface CreateGoalPayload {
   title: string;
   description?: string;
-  category?: LifeCategory;
   metric?: string;
   targetValue?: number;
   currentValue?: number;
@@ -39,7 +36,6 @@ export interface CreateGoalPayload {
 export interface UpdateGoalPayload {
   title?: string;
   description?: string;
-  category?: LifeCategory;
   metric?: string;
   targetValue?: number;
   currentValue?: number;
@@ -105,7 +101,6 @@ export interface DevelopmentMilestone {
 export interface DevelopmentRoadmap {
   id: string;
   planId: string;
-  category: LifeCategory;
   durationWeeks: number | null;
   hoursPerWeek: number | null;
   createdAt: string;
@@ -130,7 +125,6 @@ export interface UpdateMilestonePayload {
   description?: string;
   dueDate?: string;
   status?: MilestoneStatus;
-  category?: LifeCategory;
   order?: number;
 }
 
@@ -148,7 +142,6 @@ export interface RoadmapMilestonePayload {
 }
 
 export interface SaveRoadmapPayload {
-  category?: LifeCategory;
   durationWeeks?: number;
   hoursPerWeek?: number;
   milestones: RoadmapMilestonePayload[];
@@ -156,9 +149,8 @@ export interface SaveRoadmapPayload {
 
 // ---- Goals ----
 
-export function listGoals(category?: LifeCategory) {
-  const query = category ? `?category=${category}` : '';
-  return apiRequest<DevelopmentGoal[]>(`/development-plans/goals${query}`);
+export function listGoals() {
+  return apiRequest<DevelopmentGoal[]>('/development-plans/goals');
 }
 
 export function createGoal(payload: CreateGoalPayload) {
@@ -203,11 +195,8 @@ export function getMyPlan() {
 
 // ---- Milestones & tasks ----
 
-export function listRoadmaps(category?: LifeCategory) {
-  const query = category ? `?category=${category}` : '';
-  return apiRequest<DevelopmentRoadmap[]>(
-    `/development-plans/me/roadmaps${query}`,
-  );
+export function listRoadmaps() {
+  return apiRequest<DevelopmentRoadmap[]>('/development-plans/me/roadmaps');
 }
 
 export function createMilestone(payload: CreateMilestonePayload) {

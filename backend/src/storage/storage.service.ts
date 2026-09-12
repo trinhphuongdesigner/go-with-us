@@ -35,7 +35,16 @@ export class StorageService {
   }
 
   private resolveKey(segments: string[]): string {
-    if (!segments.length || segments.some((segment) => !segment || segment === '.' || segment === '..' || /[\\/]/.test(segment))) {
+    if (
+      !segments.length ||
+      segments.some(
+        (segment) =>
+          !segment ||
+          segment === '.' ||
+          segment === '..' ||
+          /[\\/]/.test(segment),
+      )
+    ) {
       throw new InternalServerErrorException('Invalid storage key segments');
     }
     return segments.join('/');

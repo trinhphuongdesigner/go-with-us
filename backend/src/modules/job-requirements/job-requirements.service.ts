@@ -1,6 +1,5 @@
 import {
   BadGatewayException,
-  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -10,6 +9,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { AiChatService } from '../ai-chat/ai-chat.service';
 import { parseJsonReplyOrThrow } from '../ai-chat/ai-reply.utils';
 import { AuthenticatedUser } from '../auth/jwt.strategy';
+import { resolveCompanyScope } from '../../common/access/user-scope';
 import { CreateJobRequirementDto } from './dto/create-job-requirement.dto';
 import { UpdateJobRequirementDto } from './dto/update-job-requirement.dto';
 
@@ -46,46 +46,19 @@ export class JobRequirementsService {
 
   /**
    * SUPER_ADMIN has no company of their own, so they must pass one
-   * explicitly; every other role is scoped to their own companyId.
+   * explicitly; every other role defaults to their own companyId but may
+   * name any company they hold a CompanyMembership for (multi-company).
    */
   findAll(caller: AuthenticatedUser, companyId?: string) {
-    if (caller.role === Role.SUPER_ADMIN) {
-      if (!companyId) {
-        throw new BadRequestException(
-          'companyId query param is required for SUPER_ADMIN',
-        );
-      }
-      return this.prisma.jobRequirement.findMany({
-        where: { companyId },
-        orderBy: { createdAt: 'desc' },
-      });
-    }
-
-    if (!caller.companyId) {
-      throw new ForbiddenException('No company scope for this account');
-    }
-
+    const scope = resolveCompanyScope(caller, companyId);
     return this.prisma.jobRequirement.findMany({
-      where: { companyId: caller.companyId },
+      where: { companyId: scope },
       orderBy: { createdAt: 'desc' },
     });
   }
 
   async create(dto: CreateJobRequirementDto, caller: AuthenticatedUser) {
-    let companyId: string;
-    if (caller.role === Role.SUPER_ADMIN) {
-      if (!dto.companyId) {
-        throw new BadRequestException('companyId is required for SUPER_ADMIN');
-      }
-      companyId = dto.companyId;
-    } else {
-      // HR/BOD — force their own company, ignore any client-supplied
-      // companyId (RolesGuard already keeps EMPLOYEE out of this handler).
-      if (!caller.companyId) {
-        throw new ForbiddenException('No company scope for this account');
-      }
-      companyId = caller.companyId;
-    }
+    const companyId = resolveCompanyScope(caller, dto.companyId);
 
     return this.prisma.jobRequirement.create({
       data: {
@@ -202,7 +175,7 @@ export class JobRequirementsService {
     const isCreator = requirement.createdById === caller.id;
     const isSameCompanyManager =
       (caller.role === Role.HR || caller.role === Role.BOD) &&
-      caller.companyId === requirement.companyId;
+      caller.companyMemberships.includes(requirement.companyId);
     const isSuperAdmin = caller.role === Role.SUPER_ADMIN;
 
     if (!isCreator && !isSameCompanyManager && !isSuperAdmin) {

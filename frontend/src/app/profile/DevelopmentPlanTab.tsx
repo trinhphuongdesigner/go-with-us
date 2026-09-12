@@ -13,7 +13,6 @@ import type {
   DevelopmentMilestone,
   DevelopmentPlan,
   DevelopmentRoadmap,
-  LifeCategory,
   RoadmapDisplaySettings,
 } from '@/lib/api/developmentPlansApi';
 import { askAssistant } from '@/lib/api/assistantApi';
@@ -25,11 +24,10 @@ import type { RoadmapCharacter } from './roadmapCharacters';
 type ViewMode = 'stair' | 'diagram';
 
 /** Draft roadmap shape shared with RoadmapSection before it's actually saved. */
-function makeDraftRoadmap(category: LifeCategory, milestones: DevelopmentMilestone[]): DevelopmentRoadmap {
+function makeDraftRoadmap(milestones: DevelopmentMilestone[]): DevelopmentRoadmap {
   return {
     id: 'draft',
     planId: '',
-    category,
     durationWeeks: null,
     hoursPerWeek: null,
     createdAt: new Date().toISOString(),
@@ -40,7 +38,6 @@ function makeDraftRoadmap(category: LifeCategory, milestones: DevelopmentMilesto
 
 export default function DevelopmentPlanTab() {
   const [plan, setPlan] = React.useState<DevelopmentPlan | null>(null);
-  const [category, setCategory] = React.useState<LifeCategory>('WORK');
   const [roadmaps, setRoadmaps] = React.useState<DevelopmentRoadmap[] | null>(null);
   const [roadmapsError, setRoadmapsError] = React.useState<string | null>(null);
   const [viewMode, setViewMode] = React.useState<ViewMode>('stair');
@@ -63,9 +60,9 @@ export default function DevelopmentPlanTab() {
   );
 
   const loadRoadmaps = React.useCallback(
-    (cat: LifeCategory) =>
+    () =>
       developmentPlansApi
-        .listRoadmaps(cat)
+        .listRoadmaps()
         .then((data) => {
           setRoadmaps(data);
           setRoadmapsError(null);
@@ -78,19 +75,14 @@ export default function DevelopmentPlanTab() {
 
   React.useEffect(() => {
     void loadPlan();
-  }, [loadPlan]);
-
-  React.useEffect(() => {
-    void loadRoadmaps(category);
-    setAiProposal(null);
-    setCustomizing(false);
-  }, [category, loadRoadmaps]);
+    void loadRoadmaps();
+  }, [loadPlan, loadRoadmaps]);
 
   const isDraft = aiProposal !== null;
   const character = plan?.displaySettings?.character as RoadmapCharacter | 'none' | undefined;
   const draftRoadmap = React.useMemo(
-    () => (isDraft ? makeDraftRoadmap(category, aiProposal!) : null),
-    [aiProposal, category, isDraft],
+    () => (isDraft ? makeDraftRoadmap(aiProposal!) : null),
+    [aiProposal, isDraft],
   );
 
   // Prefill for "Tùy chỉnh lộ trình": the AI draft if there is one, else the newest saved roadmap.
@@ -120,7 +112,7 @@ export default function DevelopmentPlanTab() {
           )
         : null,
     );
-    void developmentPlansApi.updateTask(taskId, { done }).catch(() => void loadRoadmaps(category));
+    void developmentPlansApi.updateTask(taskId, { done }).catch(() => void loadRoadmaps());
   };
 
   // ---- AI roadmap skill: proposal only, explicit save persists ----
@@ -132,7 +124,6 @@ export default function DevelopmentPlanTab() {
     setAiBusy(true);
     setAiError(null);
 
-    const categoryLabel = category === 'WORK' ? 'Công việc' : 'Cá nhân';
     const pace = customizeSource;
     const paceNote =
       pace?.durationWeeks || pace?.hoursPerWeek
@@ -140,7 +131,7 @@ export default function DevelopmentPlanTab() {
             pace?.durationWeeks && pace?.hoursPerWeek ? ', ' : ''
           }${pace?.hoursPerWeek ? `${pace.hoursPerWeek} giờ mỗi tuần` : ''}.`
         : '';
-    const enrichedQuestion = `${q}\n\nLoại mục tiêu: ${categoryLabel}.${paceNote} Hãy xây dựng lộ trình với các cột mốc và nhiệm vụ phù hợp.`;
+    const enrichedQuestion = `${q}\n\n${paceNote} Hãy xây dựng lộ trình với các cột mốc và nhiệm vụ phù hợp.`;
 
     try {
       const res = await askAssistant({ question: enrichedQuestion, focus: 'ROADMAP' });
@@ -177,7 +168,6 @@ export default function DevelopmentPlanTab() {
     if (!aiProposal) return;
     try {
       const saved = await developmentPlansApi.saveRoadmap({
-        category,
         milestones: aiProposal.map((m) => ({
           title: m.title,
           description: m.description ?? undefined,
@@ -199,7 +189,6 @@ export default function DevelopmentPlanTab() {
     setSavingSettings(true);
     try {
       const saved = await developmentPlansApi.saveRoadmap({
-        category: data.category,
         durationWeeks: data.durationWeeks,
         hoursPerWeek: data.hoursPerWeek,
         milestones: data.milestones.map((d) => ({
@@ -212,7 +201,6 @@ export default function DevelopmentPlanTab() {
       const updatedPlan = await developmentPlansApi.updatePlanSettings(data.settings);
       setPlan(updatedPlan);
       if (data.settings.viewMode) setViewMode(data.settings.viewMode);
-      setCategory(data.category);
       setRoadmaps((prev) => [saved, ...(prev ?? [])]);
       setAiProposal(null);
       setCustomizing(false);
@@ -235,17 +223,7 @@ export default function DevelopmentPlanTab() {
     <Box>
       <Card sx={{ mb: 3, minWidth: 0 }}>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ justifyContent: 'space-between', alignItems: { sm: 'center' }, mb: 2 }}>
-          <Stack direction="row" spacing={2} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
-            <Typography sx={{ fontWeight: 600, fontSize: 16 }}>Hành trình của bạn</Typography>
-            <Stack direction="row" spacing={1}>
-              <Button variant={category === 'WORK' ? 'contained' : 'outlined'} size="sm" onClick={() => setCategory('WORK')}>
-                Công việc
-              </Button>
-              <Button variant={category === 'PERSONAL' ? 'contained' : 'outlined'} size="sm" onClick={() => setCategory('PERSONAL')}>
-                Cá nhân
-              </Button>
-            </Stack>
-          </Stack>
+          <Typography sx={{ fontWeight: 600, fontSize: 16 }}>Hành trình của bạn</Typography>
           {!customizing && (
             <Button variant="outlined" size="sm" onClick={() => setCustomizing(true)}>
               Tùy chỉnh lộ trình
@@ -261,7 +239,6 @@ export default function DevelopmentPlanTab() {
 
         {customizing ? (
           <RoadmapCustomizePanel
-            category={category}
             durationWeeks={customizeSource?.durationWeeks ?? null}
             hoursPerWeek={customizeSource?.hoursPerWeek ?? null}
             milestones={customizeSource?.milestones ?? []}
@@ -324,9 +301,8 @@ export default function DevelopmentPlanTab() {
 
       <Card title="Dựng lộ trình bằng AI" sx={{ mb: 3, minWidth: 0 }}>
         <Typography variant="body2" sx={{ mb: 1.5, color: colorTokens.secondary }}>
-          Nhập mong muốn của bạn cho mục tiêu {category === 'WORK' ? 'Công việc' : 'Cá nhân'} đang chọn. AI sẽ đề xuất
-          lộ trình với cột mốc và nhiệm vụ đo lường được — bạn xem, chỉnh sửa rồi mới lưu. Mỗi lần lưu sẽ tạo một lộ
-          trình mới, không ghi đè lộ trình đã lưu trước đó.
+          Nhập mong muốn của bạn. AI sẽ đề xuất lộ trình với cột mốc và nhiệm vụ đo lường được — bạn xem, chỉnh sửa
+          rồi mới lưu. Mỗi lần lưu sẽ tạo một lộ trình mới, không ghi đè lộ trình đã lưu trước đó.
         </Typography>
 
         <Box component="form" onSubmit={(e) => { e.preventDefault(); void handleAskAI(); }}>

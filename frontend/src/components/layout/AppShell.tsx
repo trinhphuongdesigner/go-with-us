@@ -24,7 +24,6 @@ import WorkOutlineOutlinedIcon from '@mui/icons-material/WorkOutlineOutlined';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutlineOutlined';
 import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined';
 import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
-import AssignmentTurnedInOutlinedIcon from '@mui/icons-material/AssignmentTurnedInOutlined';
 import ForwardToInboxOutlinedIcon from '@mui/icons-material/ForwardToInboxOutlined';
 import SecurityOutlinedIcon from '@mui/icons-material/SecurityOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
@@ -52,32 +51,54 @@ interface NavItem {
   roles?: Role[];
   /** Require an exact pathname match instead of startsWith — for a scope's own root, which would otherwise also match every child route's prefix. */
   exact?: boolean;
-  /** Only show while the user currently belongs to a company (companyId set) — e.g. Cross Assessment, which needs a company's assessment template/cycle to mean anything. */
-  requiresCompany?: boolean;
+  /** Only show while the user holds a CompanyMembership for at least one company — e.g. "Công ty", which is pointless with zero memberships. */
+  requiresMembership?: boolean;
 }
 
 /**
- * Tier-2 nav for Super Admin's per-company management area — swapped in for
- * the tier-1 NAV_ITEMS list while the URL is under /companies/:id, mirroring
- * how the reference workspace tool swaps in a ProjectSidebar on entering a
- * project. UI-only for now (Đánh giá / Duyệt yêu cầu are mocked screens);
- * real data wiring is a follow-up.
+ * Nav for the company-scoped area — swapped in for the tier-1 NAV_ITEMS
+ * list while the URL is under /my-companies/:id. A user can belong to more
+ * than one company (CompanyMembership), so this scope exists to make
+ * "which company am I acting inside" explicit before showing anything
+ * company-specific (Nhân sự, Careers, Yêu cầu, Đánh giá chéo, Phân quyền).
+ * COMPANY_ADMIN uses this same scope too, even though they only ever
+ * belong to exactly one company.
  */
-function companyNavItems(companyId: string): NavItem[] {
-  const base = `/companies/${companyId}`;
+function myCompanyNavItems(companyId: string): NavItem[] {
+  const base = `/my-companies/${companyId}`;
   return [
-    { label: 'Tổng quan', href: base, icon: <DashboardOutlinedIcon fontSize="small" />, exact: true },
-    { label: 'Nhân sự', href: `${base}/employees`, icon: <GroupsOutlinedIcon fontSize="small" /> },
-    { label: 'Đánh giá', href: `${base}/assessments`, icon: <FactCheckOutlinedIcon fontSize="small" /> },
-    { label: 'Duyệt yêu cầu', href: `${base}/requests`, icon: <AssignmentTurnedInOutlinedIcon fontSize="small" /> },
-    { label: 'Cài đặt', href: `${base}/settings`, icon: <SettingsOutlinedIcon fontSize="small" /> },
+    {
+      label: 'Nhân sự',
+      href: `${base}/employees`,
+      icon: <GroupsOutlinedIcon fontSize="small" />,
+      roles: ['COMPANY_ADMIN', 'HR', 'BOD'],
+    },
+    {
+      label: 'Careers',
+      href: `${base}/job-requirements`,
+      icon: <WorkOutlineOutlinedIcon fontSize="small" />,
+      roles: ['HR', 'BOD'],
+    },
+    {
+      label: 'Yêu cầu',
+      href: `${base}/competency-requests`,
+      icon: <ForwardToInboxOutlinedIcon fontSize="small" />,
+      roles: ['COMPANY_ADMIN', 'HR', 'BOD'],
+    },
+    { label: 'Đánh giá chéo', href: `${base}/assessments`, icon: <FactCheckOutlinedIcon fontSize="small" /> },
+    {
+      label: 'Phân quyền',
+      href: `${base}/roles`,
+      icon: <SecurityOutlinedIcon fontSize="small" />,
+      roles: ['COMPANY_ADMIN', 'HR', 'BOD'],
+    },
   ];
 }
 
-/** Extracts :id from /companies/:id(/...) — null outside that scope. */
-function matchCompanyScope(pathname: string | null): string | null {
+/** Extracts :id from /my-companies/:id(/...) — null outside that scope. */
+function matchMyCompanyScope(pathname: string | null): string | null {
   if (!pathname) return null;
-  const match = pathname.match(/^\/companies\/([^/]+)(?:\/|$)/);
+  const match = pathname.match(/^\/my-companies\/([^/]+)(?:\/|$)/);
   return match ? match[1] : null;
 }
 
@@ -90,41 +111,17 @@ const NAV_ITEMS: NavItem[] = [
     roles: ['SUPER_ADMIN'],
   },
   {
-    label: 'Nhân sự',
-    href: '/employees',
-    icon: <GroupsOutlinedIcon fontSize="small" />,
-    roles: ['COMPANY_ADMIN', 'HR', 'BOD'],
-  },
-  {
-    label: 'Yêu cầu công việc',
-    href: '/job-requirements',
-    icon: <WorkOutlineOutlinedIcon fontSize="small" />,
-    roles: ['HR', 'BOD'],
-  },
-  {
     label: 'Trợ lý AI',
     href: '/assistant',
     icon: <AutoAwesomeOutlinedIcon fontSize="small" />,
     roles: ['HR', 'BOD', 'EMPLOYEE'],
   },
   {
-    label: 'Đánh giá chéo',
-    href: '/assessments',
-    icon: <FactCheckOutlinedIcon fontSize="small" />,
-    roles: ['HR', 'BOD', 'EMPLOYEE'],
-    requiresCompany: true,
-  },
-  {
-    label: 'Yêu cầu năng lực',
-    href: '/competency-requests',
-    icon: <ForwardToInboxOutlinedIcon fontSize="small" />,
-    roles: ['HR', 'BOD', 'COMPANY_ADMIN'],
-  },
-  {
-    label: 'Phân quyền',
-    href: '/roles',
-    icon: <SecurityOutlinedIcon fontSize="small" />,
-    roles: ['COMPANY_ADMIN'],
+    label: 'Công ty',
+    href: '/my-companies',
+    icon: <ApartmentOutlinedIcon fontSize="small" />,
+    roles: ['COMPANY_ADMIN', 'HR', 'BOD', 'EMPLOYEE'],
+    requiresMembership: true,
   },
   {
     label: 'Cài đặt',
@@ -163,35 +160,55 @@ function Sidebar({
   // Inside the mobile drawer the rail is always shown "full" (icons + labels).
   const isFull = isLg ? !collapsed : true;
 
-  const companyScopeId = user?.role === 'SUPER_ADMIN' ? matchCompanyScope(pathname) : null;
-  const [companyScopeName, setCompanyScopeName] = React.useState<string | null>(null);
+  const myCompanyScopeId =
+    user && user.role !== 'SUPER_ADMIN' ? matchMyCompanyScope(pathname) : null;
+  const [fetchedCompanyName, setFetchedCompanyName] = React.useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const companyScopeName =
+    fetchedCompanyName?.id === myCompanyScopeId ? fetchedCompanyName.name : null;
 
   React.useEffect(() => {
-    if (!companyScopeId) {
-      setCompanyScopeName(null);
-      return;
-    }
+    if (!myCompanyScopeId) return;
     let cancelled = false;
     companiesApi
-      .getCompany(companyScopeId)
+      .getCompany(myCompanyScopeId)
       .then((company) => {
-        if (!cancelled) setCompanyScopeName(company.name);
+        if (!cancelled) setFetchedCompanyName({ id: myCompanyScopeId, name: company.name });
       })
       .catch(() => {
-        if (!cancelled) setCompanyScopeName(null);
+        if (!cancelled) setFetchedCompanyName(null);
       });
     return () => {
       cancelled = true;
     };
-  }, [companyScopeId]);
+  }, [myCompanyScopeId]);
 
-  const visibleItems = companyScopeId
-    ? companyNavItems(companyScopeId)
-    : NAV_ITEMS.filter(
-        (item) =>
-          (!item.roles || (user && item.roles.includes(user.role))) &&
-          (!item.requiresCompany || Boolean(user?.companyId)),
-      );
+  const [myCompanyCount, setMyCompanyCount] = React.useState<number | null>(null);
+  const shouldLoadMyCompanies = Boolean(user) && user?.role !== 'SUPER_ADMIN';
+
+  React.useEffect(() => {
+    if (!shouldLoadMyCompanies) return;
+    let cancelled = false;
+    companiesApi
+      .listMyCompanies()
+      .then((companies) => {
+        if (!cancelled) setMyCompanyCount(companies.length);
+      })
+      .catch(() => {
+        if (!cancelled) setMyCompanyCount(0);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [shouldLoadMyCompanies]);
+
+  const visibleItems = (myCompanyScopeId ? myCompanyNavItems(myCompanyScopeId) : NAV_ITEMS).filter(
+    (item) =>
+      (!item.roles || (user && item.roles.includes(user.role))) &&
+      (!item.requiresMembership || (myCompanyCount ?? 0) > 0),
+  );
 
   const content = (
     <Box
@@ -244,7 +261,7 @@ function Sidebar({
           }}
         />
       </Box>
-      {companyScopeId ? (
+      {myCompanyScopeId ? (
         <Box
           sx={{
             px: isFull ? 2.5 : 0,
@@ -257,10 +274,10 @@ function Sidebar({
             flexShrink: 0,
           }}
         >
-          <Tooltip title="Tất cả công ty" placement="right" disableHoverListener={isFull}>
+          <Tooltip title="Danh sách công ty" placement="right" disableHoverListener={isFull}>
             <Box
               component={NextLink}
-              href="/companies"
+              href="/my-companies"
               sx={{
                 display: 'flex',
                 alignItems: 'center',
@@ -273,7 +290,7 @@ function Sidebar({
               }}
             >
               <ArrowBackOutlinedIcon fontSize="inherit" sx={{ fontSize: 16 }} />
-              {isFull ? 'Tất cả công ty' : null}
+              {isFull ? 'Danh sách công ty' : null}
             </Box>
           </Tooltip>
           {isFull ? (

@@ -53,8 +53,12 @@ export class AnthropicAdapter implements AiProviderAdapter {
         `AnthropicAdapter: detected OpenAI-compatible response via proxy finish=${finish} id=${rid ?? 'n/a'} usage=${usage ? JSON.stringify(usage) : 'n/a'}`,
       );
       if (!text) {
-        this.logger.warn(`AnthropicAdapter: proxy returned empty choice content finish=${finish}`);
-        throw new Error(`Proxy returned empty content (finish_reason=${finish})`);
+        this.logger.warn(
+          `AnthropicAdapter: proxy returned empty choice content finish=${finish}`,
+        );
+        throw new Error(
+          `Proxy returned empty content (finish_reason=${finish})`,
+        );
       }
       return text;
     }
@@ -78,7 +82,9 @@ export class AnthropicAdapter implements AiProviderAdapter {
 
     const textBlock = content.find((block: any) => block?.type === 'text');
     if (!textBlock || !('text' in textBlock)) {
-      throw new Error('Anthropic response has no text block (possibly tool_use or refusal)');
+      throw new Error(
+        'Anthropic response has no text block (possibly tool_use or refusal)',
+      );
     }
     return textBlock.text ?? '';
   }

@@ -45,9 +45,11 @@ const MOODS = [
  * permanent history for the person.
  */
 export default function AssessmentDetailPage() {
-  const params = useParams<{ id: string }>();
+  const params = useParams<{ id: string; assessmentId: string }>();
   const router = useRouter();
   const { user } = useAuth();
+
+  const backHref = `/my-companies/${params.id}/assessments`;
 
   const [assessment, setAssessment] = React.useState<AssessmentDetail | null>(
     null,
@@ -67,7 +69,7 @@ export default function AssessmentDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await getAssessment(params.id);
+      const data = await getAssessment(params.assessmentId);
       setAssessment(data);
       setMood(data.mood ?? '');
       setHighlights(data.highlights ?? '');
@@ -87,7 +89,7 @@ export default function AssessmentDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [params.id]);
+  }, [params.assessmentId]);
 
   React.useEffect(() => {
     // Wrapped so the initial fetch's setState lands after the effect.
@@ -198,7 +200,7 @@ export default function AssessmentDetailPage() {
               : undefined
           }
           actions={
-            <Button component={NextLink} href="/assessments" variant="outlined">
+            <Button component={NextLink} href={backHref} variant="outlined">
               Quay lại
             </Button>
           }
@@ -420,7 +422,7 @@ export default function AssessmentDetailPage() {
                   onClick={() =>
                     router.push(
                       isAdmin && !isAuthor
-                        ? `/employees/${assessment.revieweeId}/passport`
+                        ? `/my-companies/${params.id}/employees/${assessment.revieweeId}/passport`
                         : '/profile?tab=passport',
                     )
                   }

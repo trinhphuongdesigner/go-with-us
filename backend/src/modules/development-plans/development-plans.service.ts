@@ -414,7 +414,9 @@ Reply with ONLY a JSON object of the exact shape {"planMd": string, "summary": s
           create: dto.milestones.map((milestone, index) => ({
             title: milestone.title,
             description: milestone.description,
-            dueDate: milestone.dueDate ? new Date(milestone.dueDate) : undefined,
+            dueDate: milestone.dueDate
+              ? new Date(milestone.dueDate)
+              : undefined,
             order: index,
             tasks: {
               create: milestone.tasks.map((t, i) => ({
@@ -426,7 +428,9 @@ Reply with ONLY a JSON object of the exact shape {"planMd": string, "summary": s
           })),
         },
       },
-      include: { milestones: { include: { tasks: true }, orderBy: { order: 'asc' } } },
+      include: {
+        milestones: { include: { tasks: true }, orderBy: { order: 'asc' } },
+      },
     });
   }
 
@@ -435,7 +439,10 @@ Reply with ONLY a JSON object of the exact shape {"planMd": string, "summary": s
    * same get-or-create-plan pattern as saveRoadmap, but never touches
    * milestones/content.
    */
-  async updatePlanSettings(dto: UpdatePlanSettingsDto, caller: AuthenticatedUser) {
+  async updatePlanSettings(
+    dto: UpdatePlanSettingsDto,
+    caller: AuthenticatedUser,
+  ) {
     const plan = await this.getOrCreatePlan(caller);
     const existing =
       plan.displaySettings && typeof plan.displaySettings === 'object'
@@ -490,7 +497,9 @@ Reply with ONLY a JSON object of the exact shape {"planMd": string, "summary": s
       where: { id },
       include: {
         milestone: {
-          include: { roadmap: { include: { plan: { select: { userId: true } } } } },
+          include: {
+            roadmap: { include: { plan: { select: { userId: true } } } },
+          },
         },
       },
     });

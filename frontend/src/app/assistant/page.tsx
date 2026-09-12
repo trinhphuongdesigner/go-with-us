@@ -301,20 +301,24 @@ export default function AssistantPage() {
                           {person.jobTitle ?? 'Chưa có chức danh'}
                         </Typography>
                       </Box>
-                      <Button
-                        component={NextLink}
-                        href={`/employees/${person.id}`}
-                        size="small"
-                      >
-                        Hồ sơ
-                      </Button>
-                      <Button
-                        component={NextLink}
-                        href={`/employees/${person.id}/passport`}
-                        size="small"
-                      >
-                        Hộ chiếu
-                      </Button>
+                      {user?.companyId ? (
+                        <>
+                          <Button
+                            component={NextLink}
+                            href={`/my-companies/${user.companyId}/employees/${person.id}`}
+                            size="small"
+                          >
+                            Hồ sơ
+                          </Button>
+                          <Button
+                            component={NextLink}
+                            href={`/my-companies/${user.companyId}/employees/${person.id}/passport`}
+                            size="small"
+                          >
+                            Hộ chiếu
+                          </Button>
+                        </>
+                      ) : null}
                     </Box>
                   ))}
                 </Stack>

@@ -60,7 +60,7 @@ export default function DashboardPage() {
     setLoading(true);
     setError(null);
 
-    Promise.all([getCompetencyProfile(), getMyPlan(), listRoadmaps('WORK')])
+    Promise.all([getCompetencyProfile(), getMyPlan(), listRoadmaps()])
       .then(([prof, , roadmaps]) => {
         setProfile(prof);
         setMilestones(roadmaps[0]?.milestones ?? []);
