@@ -40,7 +40,7 @@ export const navigationItems: NavigationItem[] = [
   { label: "Công ty của tôi", shortLabel: "Công ty tôi", href: "/cong-ty-cua-toi", icon: Building2, permission: "dashboard:read" },
   { label: "Phân quyền vai trò", shortLabel: "Phân quyền", href: "/vai-tro", icon: ShieldCheck, permission: "roles:manage" },
   { label: "Mẫu & chu kỳ đánh giá", shortLabel: "Mẫu đánh giá", href: "/cong-ty/tieu-chi", icon: BadgeCheck, permission: "assessment:review" },
-  { label: "Quản lý công ty", shortLabel: "Công ty", href: "/cong-ty", icon: Building2, permission: "company:manage" },
+  { label: "Quản lý công ty", shortLabel: "Công ty", href: "/cong-ty", icon: Building2, permission: "company:manage", exact: true },
   { label: "Quản trị hệ thống", shortLabel: "Hệ thống", href: "/he-thong", icon: ShieldCheck, permission: "platform:manage" },
   { label: "Cài đặt", shortLabel: "Cài đặt", href: "/cai-dat", icon: Settings2, permission: "dashboard:read" },
 ];
@@ -51,7 +51,7 @@ export function getAllowedNavigation(permissions: Permission[]) {
 
 export function getNavigationItem(pathname: string) {
   return [...navigationItems].sort((a, b) => b.href.length - a.href.length).find(
-    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
+    (item) => item.exact ? pathname === item.href : (pathname === item.href || pathname.startsWith(`${item.href}/`)),
   );
 }
 
@@ -65,7 +65,7 @@ export function getCompanyNavigation(companyId: string, permissions: Permission[
     { label: "Duyệt hộ chiếu", shortLabel: "Hộ chiếu", href: `/ho-chieu${query}`, icon: BookUser, permission: "passport:approve" as const },
     { label: "Yêu cầu tuyển dụng", shortLabel: "Tuyển dụng", href: `/job-requirements${query}`, icon: BriefcaseBusiness, permission: "people:write" },
     { label: "Phân quyền vai trò", shortLabel: "Phân quyền", href: `/vai-tro${query}`, icon: ShieldCheck, permission: "roles:manage" },
-    { label: "Quản trị công ty", shortLabel: "Quản trị", href: `/cong-ty${query}`, icon: Settings2, permission: "company:manage" },
+    { label: "Quản trị công ty", shortLabel: "Quản trị", href: `/cong-ty${query}`, icon: Settings2, permission: "company:manage", exact: true },
   ];
   return scoped.filter((item) => (item.anyPermissions ?? [item.permission]).some((permission) => permissions.includes(permission)));
 }
