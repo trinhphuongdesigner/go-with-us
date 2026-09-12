@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "character": "Milo",
   "source": {
     "type": "imagegen edit",
@@ -39,6 +39,42 @@
       "format": "webp",
       "alpha": true,
       "use": "application default"
+    },
+    {
+      "path": "milo-celebrate.png",
+      "width": 1254,
+      "height": 1254,
+      "format": "png",
+      "alpha": true,
+      "use": "success and completion states",
+      "source": "origin/master frontend/public/characters"
+    },
+    {
+      "path": "milo-guide.png",
+      "width": 1254,
+      "height": 1254,
+      "format": "png",
+      "alpha": true,
+      "use": "roadmap guidance",
+      "source": "origin/master frontend/public/characters"
+    },
+    {
+      "path": "milo-standing.png",
+      "width": 1254,
+      "height": 1254,
+      "format": "png",
+      "alpha": true,
+      "use": "neutral empty and profile states",
+      "source": "origin/master frontend/public/characters"
+    },
+    {
+      "path": "milo-wave.png",
+      "width": 1254,
+      "height": 1254,
+      "format": "png",
+      "alpha": true,
+      "use": "welcome and onboarding",
+      "source": "origin/master frontend/public/characters"
     }
   ]
 }

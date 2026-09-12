@@ -3,6 +3,9 @@
 Nhánh: `codex/v2-qa-consolidation`. Worktree: `.claude/worktrees/v2-qa`.
 **Chưa phải bản bàn giao đầy đủ nghiệp vụ master.** Giữ toàn bộ stack v2; không chạy NestJS/MUI.
 
+`origin/master` mới nhất tại `8d5eee37` đã được merge vào candidate bằng commit `be93e4b`.
+Tài liệu bàn giao và ma trận migrate hiện tại: [docs/consolidation-handoff.vi.md](./docs/consolidation-handoff.vi.md).
+
 ## Nguồn và xử lý
 
 | Nguồn | Quyết định |
@@ -16,6 +19,8 @@ Nhánh: `codex/v2-qa-consolidation`. Worktree: `.claude/worktrees/v2-qa`.
 | Frontend foundation `48afb1b` | Đã được thay thế bởi integration |
 | Root dirty `master` | Giữ nguyên; không overlay prototype hay phục hồi component đã bị upstream xóa |
 | Team `origin/master` `8d5eee37` | Đã port 5 role, scope layout và phần roadmap persistence; các khoảng trống còn lại ở bảng dưới |
+
+Các asset Milo/An mới trên `origin/master` đã được copy vào `v2/frontend/public/brand/` và khai báo trong manifest để team có thể dùng mà không kéo asset từ frontend v1.
 
 Snapshot riêng lưu staged/unstaged/untracked + hash tại máy điều phối, ngoài repo; không chứa `.env` thực hoặc `.pi/`. Worktree nguồn không bị xóa/reset/stash. Phiên Anti thiết kế còn chỉ báo trạng thái không xác nhận được; snapshot đã kiểm hash và Git state trước/sau, không sửa nguồn.
 
