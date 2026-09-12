@@ -1,10 +1,9 @@
 import { IsArray, IsEnum } from 'class-validator';
-import { AdminPermission, Role } from '@prisma/client';
+import { AdminPermission } from '@prisma/client';
 
+// The target role comes from the :role path param (see RolesController.update),
+// not the body — the frontend only ever sends { permissions }.
 export class UpdateRolePermissionsDto {
-  @IsEnum(Role)
-  role!: Role;
-
   @IsArray()
   @IsEnum(AdminPermission, { each: true })
   permissions!: AdminPermission[];
