@@ -72,6 +72,186 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/competency-profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Competency Profile
+         * @description Returns 422 when any profile collection exceeds the supported 200 items.
+         */
+        get: operations["get_competency_profile_api_v2_competency_profile_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/competency-profile/awards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Awards
+         * @description Capped at 200 items.
+         */
+        get: operations["list_awards_api_v2_competency_profile_awards_get"];
+        put?: never;
+        /** Create Award */
+        post: operations["create_award_api_v2_competency_profile_awards_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/competency-profile/awards/{resource_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Award */
+        get: operations["get_award_api_v2_competency_profile_awards__resource_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Award */
+        delete: operations["delete_award_api_v2_competency_profile_awards__resource_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Award */
+        patch: operations["update_award_api_v2_competency_profile_awards__resource_id__patch"];
+        trace?: never;
+    };
+    "/api/v2/competency-profile/certifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Certifications
+         * @description Capped at 200 items.
+         */
+        get: operations["list_certifications_api_v2_competency_profile_certifications_get"];
+        put?: never;
+        /** Create Certification */
+        post: operations["create_certification_api_v2_competency_profile_certifications_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/competency-profile/certifications/{resource_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Certification */
+        get: operations["get_certification_api_v2_competency_profile_certifications__resource_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Certification */
+        delete: operations["delete_certification_api_v2_competency_profile_certifications__resource_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Certification */
+        patch: operations["update_certification_api_v2_competency_profile_certifications__resource_id__patch"];
+        trace?: never;
+    };
+    "/api/v2/competency-profile/experiences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Experiences
+         * @description Capped at 200 items.
+         */
+        get: operations["list_experiences_api_v2_competency_profile_experiences_get"];
+        put?: never;
+        /** Create Experience */
+        post: operations["create_experience_api_v2_competency_profile_experiences_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/competency-profile/experiences/{resource_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Experience */
+        get: operations["get_experience_api_v2_competency_profile_experiences__resource_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Experience */
+        delete: operations["delete_experience_api_v2_competency_profile_experiences__resource_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Experience */
+        patch: operations["update_experience_api_v2_competency_profile_experiences__resource_id__patch"];
+        trace?: never;
+    };
+    "/api/v2/competency-profile/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Projects
+         * @description Capped at 200 items.
+         */
+        get: operations["list_projects_api_v2_competency_profile_projects_get"];
+        put?: never;
+        /** Create Project */
+        post: operations["create_project_api_v2_competency_profile_projects_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/competency-profile/projects/{resource_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Project */
+        get: operations["get_project_api_v2_competency_profile_projects__resource_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Project */
+        delete: operations["delete_project_api_v2_competency_profile_projects__resource_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Project */
+        patch: operations["update_project_api_v2_competency_profile_projects__resource_id__patch"];
+        trace?: never;
+    };
     "/api/v2/health": {
         parameters: {
             query?: never;
@@ -211,6 +391,64 @@ export interface paths {
         patch: operations["patch_self_profile_api_v2_profile_me_patch"];
         trace?: never;
     };
+    "/api/v2/skills-competency/skills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Skills
+         * @description Paginated skill catalog.
+         */
+        get: operations["list_skills_api_v2_skills_competency_skills_get"];
+        put?: never;
+        /** Create Skill */
+        post: operations["create_skill_api_v2_skills_competency_skills_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/skills-competency/users/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Employee Skills
+         * @description Capped at 200 items.
+         */
+        get: operations["get_employee_skills_api_v2_skills_competency_users__user_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/skills-competency/users/{user_id}/skills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace Employee Skills */
+        put: operations["replace_employee_skills_api_v2_skills_competency_users__user_id__skills_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -220,11 +458,173 @@ export interface components {
          * @enum {string}
          */
         AiStatus: "ok" | "needs_clarification" | "insufficient_evidence" | "failed";
+        /** AwardCreate */
+        AwardCreate: {
+            /** Awardedat */
+            awardedAt?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Evidenceurl */
+            evidenceUrl?: string | null;
+            /** Issuer */
+            issuer: string;
+            /** Name */
+            name: string;
+            /** Profileversion */
+            profileVersion: number;
+            type: components["schemas"]["AwardType"];
+        };
+        /** AwardPatch */
+        AwardPatch: {
+            /** Awardedat */
+            awardedAt?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Evidenceurl */
+            evidenceUrl?: string | null;
+            /** Issuer */
+            issuer?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Profileversion */
+            profileVersion: number;
+            type?: components["schemas"]["AwardType"] | null;
+        };
+        /** AwardRead */
+        AwardRead: {
+            /** Awardedat */
+            awardedAt: string | null;
+            /** Createdat */
+            createdAt: string;
+            /**
+             * Createdby
+             * Format: uuid
+             */
+            createdBy: string;
+            /** Description */
+            description: string | null;
+            /** Evidenceurl */
+            evidenceUrl: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Issuer */
+            issuer: string;
+            /** Name */
+            name: string;
+            /** Proposalitemid */
+            proposalItemId: string | null;
+            /** Selfreported */
+            selfReported: boolean;
+            /** Sourceimportid */
+            sourceImportId: string | null;
+            sourceType: components["schemas"]["ProfileSourceType"];
+            type: components["schemas"]["AwardType"];
+            /** Updatedat */
+            updatedAt: string;
+            /**
+             * Updatedby
+             * Format: uuid
+             */
+            updatedBy: string;
+            /** Version */
+            version: number;
+        };
+        /**
+         * AwardType
+         * @enum {string}
+         */
+        AwardType: "WORK" | "PERSONAL";
         /** Body_create_profile_import_api_v2_profile_imports_post */
         Body_create_profile_import_api_v2_profile_imports_post: {
             /** File */
             file: string;
         };
+        /** CertificationCreate */
+        CertificationCreate: {
+            /** Credentialurl */
+            credentialUrl?: string | null;
+            /** Expiresat */
+            expiresAt?: string | null;
+            /** Issuedat */
+            issuedAt?: string | null;
+            /** Issuer */
+            issuer: string;
+            /** Name */
+            name: string;
+            /** Profileversion */
+            profileVersion: number;
+            /** Score */
+            score?: string | null;
+            type: components["schemas"]["CertificationType"];
+        };
+        /** CertificationPatch */
+        CertificationPatch: {
+            /** Credentialurl */
+            credentialUrl?: string | null;
+            /** Expiresat */
+            expiresAt?: string | null;
+            /** Issuedat */
+            issuedAt?: string | null;
+            /** Issuer */
+            issuer?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Profileversion */
+            profileVersion: number;
+            /** Score */
+            score?: string | null;
+            type?: components["schemas"]["CertificationType"] | null;
+        };
+        /** CertificationRead */
+        CertificationRead: {
+            /** Createdat */
+            createdAt: string;
+            /**
+             * Createdby
+             * Format: uuid
+             */
+            createdBy: string;
+            /** Credentialurl */
+            credentialUrl: string | null;
+            /** Expiresat */
+            expiresAt: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Issuedat */
+            issuedAt: string | null;
+            /** Issuer */
+            issuer: string;
+            /** Name */
+            name: string;
+            /** Proposalitemid */
+            proposalItemId: string | null;
+            /** Score */
+            score: string | null;
+            /** Sourceimportid */
+            sourceImportId: string | null;
+            sourceType: components["schemas"]["ProfileSourceType"];
+            type: components["schemas"]["CertificationType"];
+            /** Updatedat */
+            updatedAt: string;
+            /**
+             * Updatedby
+             * Format: uuid
+             */
+            updatedBy: string;
+            /** Version */
+            version: number;
+        };
+        /**
+         * CertificationType
+         * @enum {string}
+         */
+        CertificationType: "DEGREE" | "LANGUAGE" | "PROFESSIONAL" | "OTHER";
         /** CompanyOptionListRead */
         CompanyOptionListRead: {
             /** Items */
@@ -240,6 +640,38 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** CompetencyProfileRead */
+        CompetencyProfileRead: {
+            /** Awards */
+            awards: components["schemas"]["AwardRead"][];
+            /** Certifications */
+            certifications: components["schemas"]["CertificationRead"][];
+            /** Employments */
+            employments: components["schemas"]["EmploymentRead"][];
+            /** Experiences */
+            experiences: components["schemas"]["ExperienceRead"][];
+            /** Projects */
+            projects: components["schemas"]["ProjectRead"][];
+            /** Skills */
+            skills: components["schemas"]["EmployeeSkillRead"][];
+            /** Timeline */
+            timeline: components["schemas"]["TimelineItemRead"][];
+            user: components["schemas"]["CompetencyUserRead"];
+            /** Version */
+            version: number;
+        };
+        /** CompetencyUserRead */
+        CompetencyUserRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Jobtitle */
+            jobTitle: string | null;
+            /** Name */
+            name: string;
+        };
         /** CoreProfileConflictRead */
         CoreProfileConflictRead: {
             /** Currentprofileversion */
@@ -247,10 +679,172 @@ export interface components {
             /** Detail */
             detail: string;
         };
+        /** EmployeeSkillInput */
+        EmployeeSkillInput: {
+            /** Note */
+            note?: string | null;
+            /** Rating */
+            rating: number;
+            /**
+             * Skillid
+             * Format: uuid
+             */
+            skillId: string;
+        };
+        /** EmployeeSkillListRead */
+        EmployeeSkillListRead: {
+            /** Items */
+            items: components["schemas"]["EmployeeSkillRead"][];
+            /** Profileversion */
+            profileVersion: number;
+        };
+        /** EmployeeSkillRead */
+        EmployeeSkillRead: {
+            /** Category */
+            category: string | null;
+            /** Createdat */
+            createdAt: string;
+            /**
+             * Createdby
+             * Format: uuid
+             */
+            createdBy: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Note */
+            note: string | null;
+            /** Proposalitemid */
+            proposalItemId: string | null;
+            /** Rating */
+            rating: number;
+            /** Selfassessed */
+            selfAssessed: boolean;
+            /**
+             * Skillid
+             * Format: uuid
+             */
+            skillId: string;
+            /** Sourceimportid */
+            sourceImportId: string | null;
+            sourceType: components["schemas"]["ProfileSourceType"];
+            /** Updatedat */
+            updatedAt: string;
+            /**
+             * Updatedby
+             * Format: uuid
+             */
+            updatedBy: string;
+            /** Version */
+            version: number;
+        };
+        /** EmployeeSkillReplace */
+        EmployeeSkillReplace: {
+            /** Profileversion */
+            profileVersion: number;
+            /** Skills */
+            skills: components["schemas"]["EmployeeSkillInput"][];
+        };
+        /** EmploymentRead */
+        EmploymentRead: {
+            /** Enddate */
+            endDate: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Startdate
+             * Format: date-time
+             */
+            startDate: string;
+            /** Title */
+            title: string;
+        };
         /** ErrorDetailRead */
         ErrorDetailRead: {
             /** Detail */
             detail: string;
+        };
+        /** ExperienceCreate */
+        ExperienceCreate: {
+            /** Description */
+            description?: string | null;
+            /** Employmentid */
+            employmentId?: string | null;
+            /** Enddate */
+            endDate?: string | null;
+            /** Organization */
+            organization: string;
+            /** Profileversion */
+            profileVersion: number;
+            /** Startdate */
+            startDate?: string | null;
+            /** Title */
+            title: string;
+        };
+        /** ExperiencePatch */
+        ExperiencePatch: {
+            /** Description */
+            description?: string | null;
+            /** Employmentid */
+            employmentId?: string | null;
+            /** Enddate */
+            endDate?: string | null;
+            /** Organization */
+            organization?: string | null;
+            /** Profileversion */
+            profileVersion: number;
+            /** Startdate */
+            startDate?: string | null;
+            /** Title */
+            title?: string | null;
+        };
+        /** ExperienceRead */
+        ExperienceRead: {
+            /** Createdat */
+            createdAt: string;
+            /**
+             * Createdby
+             * Format: uuid
+             */
+            createdBy: string;
+            /** Description */
+            description: string | null;
+            /** Employmentid */
+            employmentId: string | null;
+            /** Enddate */
+            endDate: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Organization */
+            organization: string;
+            /** Proposalitemid */
+            proposalItemId: string | null;
+            /** Sourceimportid */
+            sourceImportId: string | null;
+            sourceType: components["schemas"]["ProfileSourceType"];
+            /** Startdate */
+            startDate: string | null;
+            /** Title */
+            title: string;
+            /** Updatedat */
+            updatedAt: string;
+            /**
+             * Updatedby
+             * Format: uuid
+             */
+            updatedBy: string;
+            /** Version */
+            version: number;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -567,6 +1161,129 @@ export interface components {
              */
             updatedAt: string;
         };
+        /** ProfileResourceConflictRead */
+        ProfileResourceConflictRead: {
+            /** Currentprofileversion */
+            currentProfileVersion: number;
+            /** Detail */
+            detail: string;
+        };
+        /**
+         * ProfileSourceType
+         * @enum {string}
+         */
+        ProfileSourceType: "SELF" | "ADMIN" | "IMPORT";
+        /**
+         * ProfileTimelineKind
+         * @enum {string}
+         */
+        ProfileTimelineKind: "EMPLOYMENT" | "EXPERIENCE" | "PROJECT" | "CERTIFICATION" | "AWARD";
+        /** ProjectCreate */
+        ProjectCreate: {
+            /** Contribution */
+            contribution?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Domain */
+            domain?: string | null;
+            /** Employmentid */
+            employmentId?: string | null;
+            /** Enddate */
+            endDate?: string | null;
+            /** Name */
+            name: string;
+            /** Profileversion */
+            profileVersion: number;
+            /** Role */
+            role: string;
+            /** Startdate */
+            startDate?: string | null;
+            /** Techstack */
+            techStack?: string[];
+            /** Url */
+            url?: string | null;
+        };
+        /** ProjectPatch */
+        ProjectPatch: {
+            /** Contribution */
+            contribution?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Domain */
+            domain?: string | null;
+            /** Employmentid */
+            employmentId?: string | null;
+            /** Enddate */
+            endDate?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Profileversion */
+            profileVersion: number;
+            /** Role */
+            role?: string | null;
+            /** Startdate */
+            startDate?: string | null;
+            /** Techstack */
+            techStack?: string[] | null;
+            /** Url */
+            url?: string | null;
+        };
+        /** ProjectRead */
+        ProjectRead: {
+            /** Contribution */
+            contribution: string | null;
+            /** Createdat */
+            createdAt: string;
+            /**
+             * Createdby
+             * Format: uuid
+             */
+            createdBy: string;
+            /** Description */
+            description: string | null;
+            /** Domain */
+            domain: string | null;
+            /** Employmentid */
+            employmentId: string | null;
+            /** Enddate */
+            endDate: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Proposalitemid */
+            proposalItemId: string | null;
+            /** Role */
+            role: string;
+            /** Sourceimportid */
+            sourceImportId: string | null;
+            sourceType: components["schemas"]["ProfileSourceType"];
+            /** Startdate */
+            startDate: string | null;
+            /** Techstack */
+            techStack: string[];
+            /** Updatedat */
+            updatedAt: string;
+            /**
+             * Updatedby
+             * Format: uuid
+             */
+            updatedBy: string;
+            /** Url */
+            url: string | null;
+            /** Version */
+            version: number;
+        };
+        /** ResourceListRead */
+        ResourceListRead: {
+            /** Items */
+            items: (components["schemas"]["ExperienceRead"] | components["schemas"]["ProjectRead"] | components["schemas"]["CertificationRead"] | components["schemas"]["AwardRead"])[];
+            /** Profileversion */
+            profileVersion: number;
+        };
         /**
          * Role
          * @enum {string}
@@ -656,11 +1373,62 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** SkillCreate */
+        SkillCreate: {
+            /** Category */
+            category?: string | null;
+            /** Name */
+            name: string;
+        };
+        /** SkillListRead */
+        SkillListRead: {
+            /** Items */
+            items: components["schemas"]["SkillRead"][];
+            /** Page */
+            page: number;
+            /** Pagesize */
+            pageSize: number;
+            /** Total */
+            total: number;
+        };
+        /** SkillRead */
+        SkillRead: {
+            /** Category */
+            category: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+        };
         /**
          * SupportStatus
          * @enum {string}
          */
         SupportStatus: "SUPPORTED" | "AMBIGUOUS" | "MISSING" | "SELF_ASSERTED";
+        /** TimelineItemRead */
+        TimelineItemRead: {
+            /** Enddate */
+            endDate: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            kind: components["schemas"]["ProfileTimelineKind"];
+            sourceType: components["schemas"]["ProfileSourceType"] | null;
+            /**
+             * Startdate
+             * Format: date
+             */
+            startDate: string;
+            /** Subtitle */
+            subtitle: string;
+            /** Title */
+            title: string;
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -673,6 +1441,11 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** VersionedCommand */
+        VersionedCommand: {
+            /** Profileversion */
+            profileVersion: number;
         };
     };
     responses: never;
@@ -797,6 +1570,829 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorDetailRead"];
+                };
+            };
+        };
+    };
+    get_competency_profile_api_v2_competency_profile_get: {
+        parameters: {
+            query?: {
+                userId?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompetencyProfileRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_awards_api_v2_competency_profile_awards_get: {
+        parameters: {
+            query?: {
+                userId?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceListRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_award_api_v2_competency_profile_awards_post: {
+        parameters: {
+            query?: {
+                userId?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AwardCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AwardRead"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileResourceConflictRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_award_api_v2_competency_profile_awards__resource_id__get: {
+        parameters: {
+            query?: {
+                userId?: string | null;
+            };
+            header?: never;
+            path: {
+                resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AwardRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_award_api_v2_competency_profile_awards__resource_id__delete: {
+        parameters: {
+            query?: {
+                userId?: string | null;
+            };
+            header?: never;
+            path: {
+                resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VersionedCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileResourceConflictRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_award_api_v2_competency_profile_awards__resource_id__patch: {
+        parameters: {
+            query?: {
+                userId?: string | null;
+            };
+            header?: never;
+            path: {
+                resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AwardPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AwardRead"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileResourceConflictRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_certifications_api_v2_competency_profile_certifications_get: {
+        parameters: {
+            query?: {
+                userId?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceListRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_certification_api_v2_competency_profile_certifications_post: {
+        parameters: {
+            query?: {
+                userId?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CertificationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CertificationRead"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileResourceConflictRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_certification_api_v2_competency_profile_certifications__resource_id__get: {
+        parameters: {
+            query?: {
+                userId?: string | null;
+            };
+            header?: never;
+            path: {
+                resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CertificationRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_certification_api_v2_competency_profile_certifications__resource_id__delete: {
+        parameters: {
+            query?: {
+                userId?: string | null;
+            };
+            header?: never;
+            path: {
+                resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VersionedCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileResourceConflictRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_certification_api_v2_competency_profile_certifications__resource_id__patch: {
+        parameters: {
+            query?: {
+                userId?: string | null;
+            };
+            header?: never;
+            path: {
+                resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CertificationPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CertificationRead"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileResourceConflictRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_experiences_api_v2_competency_profile_experiences_get: {
+        parameters: {
+            query?: {
+                userId?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceListRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_experience_api_v2_competency_profile_experiences_post: {
+        parameters: {
+            query?: {
+                userId?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExperienceCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExperienceRead"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileResourceConflictRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_experience_api_v2_competency_profile_experiences__resource_id__get: {
+        parameters: {
+            query?: {
+                userId?: string | null;
+            };
+            header?: never;
+            path: {
+                resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExperienceRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_experience_api_v2_competency_profile_experiences__resource_id__delete: {
+        parameters: {
+            query?: {
+                userId?: string | null;
+            };
+            header?: never;
+            path: {
+                resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VersionedCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileResourceConflictRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_experience_api_v2_competency_profile_experiences__resource_id__patch: {
+        parameters: {
+            query?: {
+                userId?: string | null;
+            };
+            header?: never;
+            path: {
+                resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExperiencePatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExperienceRead"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileResourceConflictRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_projects_api_v2_competency_profile_projects_get: {
+        parameters: {
+            query?: {
+                userId?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceListRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_project_api_v2_competency_profile_projects_post: {
+        parameters: {
+            query?: {
+                userId?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectRead"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileResourceConflictRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_project_api_v2_competency_profile_projects__resource_id__get: {
+        parameters: {
+            query?: {
+                userId?: string | null;
+            };
+            header?: never;
+            path: {
+                resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_project_api_v2_competency_profile_projects__resource_id__delete: {
+        parameters: {
+            query?: {
+                userId?: string | null;
+            };
+            header?: never;
+            path: {
+                resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VersionedCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileResourceConflictRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_project_api_v2_competency_profile_projects__resource_id__patch: {
+        parameters: {
+            query?: {
+                userId?: string | null;
+            };
+            header?: never;
+            path: {
+                resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectRead"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileResourceConflictRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1232,6 +2828,146 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CoreProfileConflictRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_skills_api_v2_skills_competency_skills_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillListRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_skill_api_v2_skills_competency_skills_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_employee_skills_api_v2_skills_competency_users__user_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeSkillListRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    replace_employee_skills_api_v2_skills_competency_users__user_id__skills_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeSkillReplace"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeSkillListRead"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileResourceConflictRead"];
                 };
             };
             /** @description Validation Error */

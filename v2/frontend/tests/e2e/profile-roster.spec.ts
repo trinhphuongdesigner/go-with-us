@@ -43,6 +43,89 @@ test("nhân viên xem, sửa hồ sơ và giữ phiên mới sau khi tải lại
   assertHealthy();
 });
 
+test("nhân viên thêm, sửa, xóa resource và lưu kỹ năng theo aggregate version", async ({ page }) => {
+  const assertHealthy = monitorPageHealth(page);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await openAs(page, "employee", "/ho-so");
+
+  const addButton = page.getByRole("button", { name: "Thêm nội dung hồ sơ" });
+  await addButton.focus();
+  await expect(addButton).toBeFocused();
+  await page.keyboard.press("Enter");
+  await page.getByRole("combobox", { name: "Loại nội dung" }).selectOption("experiences");
+  await page.getByRole("textbox", { name: "Tiêu đề" }).fill("Community Mentor");
+  await page.getByRole("textbox", { name: "Tổ chức" }).fill("Tech Community");
+  await page.getByLabel("Ngày bắt đầu").fill("2025-05-01");
+  await page.getByRole("button", { name: "Lưu kinh nghiệm" }).click();
+  await expect(page.getByText("Phiên hồ sơ 5")).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Đã thêm nội dung hồ sơ" })).toBeFocused();
+
+  await page.getByRole("button", { name: "Kinh nghiệm (2)" }).click();
+  await page.getByRole("button", { name: "Chỉnh sửa Community Mentor" }).click();
+  const title = page.getByRole("textbox", { name: "Tiêu đề" });
+  await title.fill("Community Lead");
+  await page.getByRole("button", { name: "Lưu kinh nghiệm" }).click();
+  await expect(page.getByText("Phiên hồ sơ 6")).toBeVisible();
+  await expect(page.getByText("Community Lead")).toBeVisible();
+
+  await page.getByRole("button", { name: "Xóa Community Lead" }).click();
+  const confirmDelete = page.getByRole("button", { name: "Xác nhận xóa Community Lead" });
+  await expect(confirmDelete).toBeFocused();
+  await confirmDelete.click();
+  await expect(page.getByText("Phiên hồ sơ 7")).toBeVisible();
+  await expect(page.getByText("Community Lead")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Kỹ năng (3)" }).click();
+  await page.getByRole("spinbutton", { name: "Mức Product discovery" }).fill("5");
+  await page.getByRole("button", { name: "Lưu toàn bộ kỹ năng" }).click();
+  await expect(page.getByText("Phiên hồ sơ 8")).toBeVisible();
+  await expect(page.getByText("Product discovery · 5/5")).toBeVisible();
+
+  const accessibility = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+    .analyze();
+  expect(accessibility.violations).toEqual([]);
+  const transitionDuration = await addButton.evaluate((element) => getComputedStyle(element).transitionDuration);
+  expect(["0.01ms", "0.00001s", "1e-05s"]).toContain(transitionDuration);
+  assertHealthy();
+});
+
+test("demo resource conflicts khóa cả tạo và xóa cho đến khi tải phiên mới", async ({ page }) => {
+  const assertHealthy = monitorPageHealth(page);
+  await openAs(page, "employee", "/ho-so");
+
+  await page.getByRole("button", { name: "Chỉnh sửa hồ sơ" }).click();
+  await page.getByRole("button", { name: "Lưu thay đổi" }).click();
+  await expect(page.getByText("Phiên hồ sơ 5")).toBeVisible();
+
+  await page.getByRole("button", { name: "Thêm nội dung hồ sơ" }).click();
+  await page.getByRole("textbox", { name: "Tiêu đề" }).fill("Conflict item");
+  await page.getByRole("textbox", { name: "Tổ chức" }).fill("CareerMate");
+  await page.evaluate(() => {
+    const key = "careermate-v2-core-profile:demo-employee";
+    const stored = JSON.parse(localStorage.getItem(key) ?? "{}") as { profileVersion: number };
+    stored.profileVersion += 1;
+    localStorage.setItem(key, JSON.stringify(stored));
+  });
+  await page.getByRole("button", { name: "Lưu kinh nghiệm" }).click();
+  await expect(page.getByRole("heading", { name: "Hồ sơ đã thay đổi ở nơi khác" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Tải lại hồ sơ" }).click();
+  await expect(page.getByText("Phiên hồ sơ 6")).toBeVisible();
+  await page.getByRole("button", { name: "Giải thưởng (0)" }).click();
+  await page.getByRole("button", { name: "Kinh nghiệm (1)" }).click();
+  await page.getByRole("button", { name: "Xóa Product Designer" }).click();
+  await page.evaluate(() => {
+    const key = "careermate-v2-core-profile:demo-employee";
+    const stored = JSON.parse(localStorage.getItem(key) ?? "{}") as { profileVersion: number };
+    stored.profileVersion += 1;
+    localStorage.setItem(key, JSON.stringify(stored));
+  });
+  await page.getByRole("button", { name: "Xác nhận xóa Product Designer" }).click();
+  await expect(page.getByRole("heading", { name: "Hồ sơ đã thay đổi ở nơi khác" })).toBeVisible();
+  assertHealthy();
+});
+
 test("HR tìm kiếm danh sách và mở hồ sơ nhân sự ở chế độ chỉ đọc", async ({ page }) => {
   const assertHealthy = monitorPageHealth(page);
   await openAs(page, "company-admin", "/nhan-su");
@@ -85,6 +168,8 @@ test("đường dẫn nhân sự trực tiếp trả trạng thái 403 dễ hi�
 });
 
 test("profile và roster có empty, filtered-empty, error và stale với đường phục hồi", async ({ page }) => {
+  await openAs(page, "employee", "/ho-so?state=loading");
+  await expect(page.getByRole("status", { name: "Đang tải hồ sơ" })).toBeVisible();
   await openAs(page, "employee", "/ho-so?state=empty");
   await expect(page.getByRole("heading", { name: "Hồ sơ của bạn đang chờ nội dung" })).toBeVisible();
   await page.goto("/ho-so?state=error");
@@ -94,7 +179,8 @@ test("profile và roster có empty, filtered-empty, error và stale với đư�
   await expect(page.getByRole("heading", { name: "Nguyễn Khánh Linh" })).toBeVisible();
   await page.goto("/ho-so?state=stale");
   await expect(page.getByRole("heading", { name: "Hồ sơ đã thay đổi ở nơi khác" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Tải lại hồ sơ" })).toBeVisible();
+  await page.getByRole("button", { name: "Tải lại hồ sơ" }).click();
+  await expect(page.getByRole("heading", { name: "Hồ sơ đã thay đổi ở nơi khác" })).toHaveCount(0);
 
   await openAs(page, "company-admin", "/nhan-su?state=empty");
   await expect(page.getByRole("heading", { name: "Chưa có nhân sự trong danh sách" })).toBeVisible();

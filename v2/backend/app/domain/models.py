@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 
 from sqlalchemy import (
     JSON,
     Boolean,
     CheckConstraint,
+    Date,
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
@@ -25,7 +26,15 @@ from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.domain.enums import CompanyStatus, EmploymentStatus, ProfileImportStatus, Role
+from app.domain.enums import (
+    AwardType,
+    CertificationType,
+    CompanyStatus,
+    EmploymentStatus,
+    ProfileImportStatus,
+    ProfileSourceType,
+    Role,
+)
 
 
 def utc_now() -> datetime:
@@ -102,7 +111,9 @@ class Employment(TimestampMixin, Base):
             name="fk_employments_user_company",
             ondelete="RESTRICT",
         ),
+        UniqueConstraint("id", "user_id", "company_id", name="uq_employments_scope"),
         Index("ix_employments_company_user", "company_id", "user_id"),
+        Index("ix_employments_user", "user_id"),
         Index(
             "uq_employments_one_active_per_user",
             "user_id",
@@ -128,6 +139,341 @@ class Employment(TimestampMixin, Base):
     version: Mapped[int] = mapped_column(default=1, nullable=False)
 
     user: Mapped[User] = relationship(back_populates="employments", foreign_keys=[user_id])
+
+
+class Skill(TimestampMixin, Base):
+    __tablename__ = "skills"
+    __table_args__ = (
+        UniqueConstraint("normalized_key", name="uq_skills_normalized_key"),
+        CheckConstraint("length(normalized_key) > 0", name="ck_skills_normalized_key_nonempty"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    normalized_key: Mapped[str] = mapped_column(String(120), nullable=False)
+    category: Mapped[str | None] = mapped_column(String(80))
+
+
+class EmployeeSkill(TimestampMixin, Base):
+    __tablename__ = "employee_skills"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["user_id", "company_id"],
+            ["users.id", "users.company_id"],
+            name="fk_employee_skills_user_company",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["source_import_id", "user_id", "company_id"],
+            ["profile_imports.id", "profile_imports.owner_user_id", "profile_imports.company_id"],
+            name="fk_employee_skills_import_scope",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["proposal_item_id", "source_import_id", "user_id", "company_id"],
+            [
+                "profile_proposed_values.id",
+                "profile_proposed_values.profile_import_id",
+                "profile_proposed_values.owner_user_id",
+                "profile_proposed_values.company_id",
+            ],
+            name="fk_employee_skills_proposal_scope",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("user_id", "skill_id", name="uq_employee_skills_user_skill"),
+        UniqueConstraint(
+            "source_import_id", "proposal_item_id", name="uq_employee_skills_import_item"
+        ),
+        CheckConstraint("rating >= 1 AND rating <= 5", name="ck_employee_skills_rating"),
+        CheckConstraint("version > 0", name="ck_employee_skills_version_positive"),
+        CheckConstraint(
+            "(source_type = 'IMPORT' AND source_import_id IS NOT NULL AND proposal_item_id IS NOT NULL) OR "
+            "(source_type IN ('SELF', 'ADMIN') AND source_import_id IS NULL AND proposal_item_id IS NULL)",
+            name="ck_employee_skills_provenance",
+        ),
+        Index("ix_employee_skills_company_user", "company_id", "user_id"),
+        Index("ix_employee_skills_user", "user_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    company_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    skill_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("skills.id", ondelete="RESTRICT"), nullable=False
+    )
+    rating: Mapped[int] = mapped_column(Integer, nullable=False)
+    note: Mapped[str | None] = mapped_column(String(1000))
+    self_assessed: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    source_type: Mapped[ProfileSourceType] = mapped_column(
+        SAEnum(ProfileSourceType, native_enum=False, length=16), nullable=False
+    )
+    source_import_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    proposal_item_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    updated_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+    skill: Mapped[Skill] = relationship()
+
+
+class Experience(TimestampMixin, Base):
+    __tablename__ = "experiences"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["user_id", "company_id"],
+            ["users.id", "users.company_id"],
+            name="fk_experiences_user_company",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["source_import_id", "user_id", "company_id"],
+            ["profile_imports.id", "profile_imports.owner_user_id", "profile_imports.company_id"],
+            name="fk_experiences_import_scope",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["proposal_item_id", "source_import_id", "user_id", "company_id"],
+            [
+                "profile_proposed_values.id",
+                "profile_proposed_values.profile_import_id",
+                "profile_proposed_values.owner_user_id",
+                "profile_proposed_values.company_id",
+            ],
+            name="fk_experiences_proposal_scope",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["employment_id", "user_id", "company_id"],
+            ["employments.id", "employments.user_id", "employments.company_id"],
+            name="fk_experiences_employment_scope",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("source_import_id", "proposal_item_id", name="uq_experiences_import_item"),
+        CheckConstraint(
+            "end_date IS NULL OR start_date IS NULL OR end_date >= start_date",
+            name="ck_experiences_dates",
+        ),
+        CheckConstraint("version > 0", name="ck_experiences_version_positive"),
+        CheckConstraint(
+            "(source_type = 'IMPORT' AND source_import_id IS NOT NULL AND proposal_item_id IS NOT NULL) OR "
+            "(source_type IN ('SELF', 'ADMIN') AND source_import_id IS NULL AND proposal_item_id IS NULL)",
+            name="ck_experiences_provenance",
+        ),
+        Index("ix_experiences_company_user", "company_id", "user_id"),
+        Index("ix_experiences_user", "user_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    company_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    employment_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    title: Mapped[str] = mapped_column(String(180), nullable=False)
+    organization: Mapped[str] = mapped_column(String(180), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    start_date: Mapped[date | None] = mapped_column(Date)
+    end_date: Mapped[date | None] = mapped_column(Date)
+    source_type: Mapped[ProfileSourceType] = mapped_column(
+        SAEnum(ProfileSourceType, native_enum=False, length=16), nullable=False
+    )
+    source_import_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    proposal_item_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    updated_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+
+class Project(TimestampMixin, Base):
+    __tablename__ = "projects"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["user_id", "company_id"],
+            ["users.id", "users.company_id"],
+            name="fk_projects_user_company",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["source_import_id", "user_id", "company_id"],
+            ["profile_imports.id", "profile_imports.owner_user_id", "profile_imports.company_id"],
+            name="fk_projects_import_scope",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["proposal_item_id", "source_import_id", "user_id", "company_id"],
+            [
+                "profile_proposed_values.id",
+                "profile_proposed_values.profile_import_id",
+                "profile_proposed_values.owner_user_id",
+                "profile_proposed_values.company_id",
+            ],
+            name="fk_projects_proposal_scope",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["employment_id", "user_id", "company_id"],
+            ["employments.id", "employments.user_id", "employments.company_id"],
+            name="fk_projects_employment_scope",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("source_import_id", "proposal_item_id", name="uq_projects_import_item"),
+        CheckConstraint(
+            "end_date IS NULL OR start_date IS NULL OR end_date >= start_date",
+            name="ck_projects_dates",
+        ),
+        CheckConstraint("version > 0", name="ck_projects_version_positive"),
+        CheckConstraint(
+            "(source_type = 'IMPORT' AND source_import_id IS NOT NULL AND proposal_item_id IS NOT NULL) OR "
+            "(source_type IN ('SELF', 'ADMIN') AND source_import_id IS NULL AND proposal_item_id IS NULL)",
+            name="ck_projects_provenance",
+        ),
+        Index("ix_projects_company_user", "company_id", "user_id"),
+        Index("ix_projects_user", "user_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    company_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    employment_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    name: Mapped[str] = mapped_column(String(180), nullable=False)
+    role: Mapped[str] = mapped_column(String(180), nullable=False)
+    domain: Mapped[str | None] = mapped_column(String(180))
+    description: Mapped[str | None] = mapped_column(Text)
+    tech_stack: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    contribution: Mapped[str | None] = mapped_column(Text)
+    url: Mapped[str | None] = mapped_column(String(2048))
+    start_date: Mapped[date | None] = mapped_column(Date)
+    end_date: Mapped[date | None] = mapped_column(Date)
+    source_type: Mapped[ProfileSourceType] = mapped_column(
+        SAEnum(ProfileSourceType, native_enum=False, length=16), nullable=False
+    )
+    source_import_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    proposal_item_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    updated_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+
+class Certification(TimestampMixin, Base):
+    __tablename__ = "certifications"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["user_id", "company_id"],
+            ["users.id", "users.company_id"],
+            name="fk_certifications_user_company",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["source_import_id", "user_id", "company_id"],
+            ["profile_imports.id", "profile_imports.owner_user_id", "profile_imports.company_id"],
+            name="fk_certifications_import_scope",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["proposal_item_id", "source_import_id", "user_id", "company_id"],
+            [
+                "profile_proposed_values.id",
+                "profile_proposed_values.profile_import_id",
+                "profile_proposed_values.owner_user_id",
+                "profile_proposed_values.company_id",
+            ],
+            name="fk_certifications_proposal_scope",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint(
+            "source_import_id", "proposal_item_id", name="uq_certifications_import_item"
+        ),
+        CheckConstraint(
+            "expires_at IS NULL OR issued_at IS NULL OR expires_at >= issued_at",
+            name="ck_certifications_dates",
+        ),
+        CheckConstraint("version > 0", name="ck_certifications_version_positive"),
+        CheckConstraint(
+            "(source_type = 'IMPORT' AND source_import_id IS NOT NULL AND proposal_item_id IS NOT NULL) OR "
+            "(source_type IN ('SELF', 'ADMIN') AND source_import_id IS NULL AND proposal_item_id IS NULL)",
+            name="ck_certifications_provenance",
+        ),
+        Index("ix_certifications_company_user", "company_id", "user_id"),
+        Index("ix_certifications_user", "user_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    company_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    name: Mapped[str] = mapped_column(String(180), nullable=False)
+    type: Mapped[CertificationType] = mapped_column(
+        SAEnum(CertificationType, native_enum=False, length=20), nullable=False
+    )
+    issuer: Mapped[str] = mapped_column(String(180), nullable=False)
+    score: Mapped[str | None] = mapped_column(String(120))
+    credential_url: Mapped[str | None] = mapped_column(String(2048))
+    issued_at: Mapped[date | None] = mapped_column(Date)
+    expires_at: Mapped[date | None] = mapped_column(Date)
+    source_type: Mapped[ProfileSourceType] = mapped_column(
+        SAEnum(ProfileSourceType, native_enum=False, length=16), nullable=False
+    )
+    source_import_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    proposal_item_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    updated_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+
+class Award(TimestampMixin, Base):
+    __tablename__ = "awards"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["user_id", "company_id"],
+            ["users.id", "users.company_id"],
+            name="fk_awards_user_company",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["source_import_id", "user_id", "company_id"],
+            ["profile_imports.id", "profile_imports.owner_user_id", "profile_imports.company_id"],
+            name="fk_awards_import_scope",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["proposal_item_id", "source_import_id", "user_id", "company_id"],
+            [
+                "profile_proposed_values.id",
+                "profile_proposed_values.profile_import_id",
+                "profile_proposed_values.owner_user_id",
+                "profile_proposed_values.company_id",
+            ],
+            name="fk_awards_proposal_scope",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("source_import_id", "proposal_item_id", name="uq_awards_import_item"),
+        CheckConstraint("version > 0", name="ck_awards_version_positive"),
+        CheckConstraint(
+            "(source_type = 'IMPORT' AND source_import_id IS NOT NULL AND proposal_item_id IS NOT NULL) OR "
+            "(source_type IN ('SELF', 'ADMIN') AND source_import_id IS NULL AND proposal_item_id IS NULL)",
+            name="ck_awards_provenance",
+        ),
+        Index("ix_awards_company_user", "company_id", "user_id"),
+        Index("ix_awards_user", "user_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    company_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    name: Mapped[str] = mapped_column(String(180), nullable=False)
+    type: Mapped[AwardType] = mapped_column(
+        SAEnum(AwardType, native_enum=False, length=16), nullable=False
+    )
+    issuer: Mapped[str] = mapped_column(String(180), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    evidence_url: Mapped[str | None] = mapped_column(String(2048))
+    awarded_at: Mapped[date | None] = mapped_column(Date)
+    self_reported: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    source_type: Mapped[ProfileSourceType] = mapped_column(
+        SAEnum(ProfileSourceType, native_enum=False, length=16), nullable=False
+    )
+    source_import_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    proposal_item_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    updated_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
 
 class AuthSession(Base):

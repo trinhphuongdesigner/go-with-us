@@ -7,7 +7,16 @@ import {
   parseDemoProfileImport,
 } from "@/lib/profile-import-demo";
 import type { DashboardSummary, Permission, Session, SessionUser } from "@/lib/types";
-import { getDemoOwnProfile, getDemoPerson, listDemoPeople, updateDemoOwnProfile } from "@/lib/profile-demo";
+import {
+  createDemoProfileResource,
+  deleteDemoProfileResource,
+  getDemoOwnProfile,
+  getDemoPerson,
+  listDemoPeople,
+  replaceDemoEmployeeSkills,
+  updateDemoOwnProfile,
+  updateDemoProfileResource,
+} from "@/lib/profile-demo";
 import type { components } from "../../../contracts/generated/openapi";
 
 type ContractLoginResponse = components["schemas"]["LoginResponse"];
@@ -17,6 +26,7 @@ type ContractProfileRead = components["schemas"]["ProfileRead"];
 type ContractRosterPage = components["schemas"]["RosterPageRead"];
 type ContractRosterPerson = components["schemas"]["RosterPersonDetailRead"];
 type ContractCompanyOptions = components["schemas"]["CompanyOptionListRead"];
+type ContractCompetencyProfile = components["schemas"]["CompetencyProfileRead"];
 export type AiStatus = components["schemas"]["AiStatus"];
 export type ProfileApplyRead = components["schemas"]["ProfileApplyRead"];
 export type ProfileApplyRequest = components["schemas"]["ProfileApplyRequest"];
@@ -30,7 +40,25 @@ export type ProfileProposalItem = components["schemas"]["ProfileProposalItemRead
 export type ProfileConflict = components["schemas"]["ProfileConflictRead"];
 
 export type ProfileSourceType = "SELF" | "ADMIN" | "IMPORT";
-export type ProfileTimelineKind = "EXPERIENCE" | "PROJECT" | "CERTIFICATION" | "AWARD";
+export type ProfileTimelineKind = components["schemas"]["ProfileTimelineKind"];
+export type ProfileResourceKind = "experiences" | "projects" | "certifications" | "awards";
+export type ProfileResourceCreate =
+  | components["schemas"]["ExperienceCreate"]
+  | components["schemas"]["ProjectCreate"]
+  | components["schemas"]["CertificationCreate"]
+  | components["schemas"]["AwardCreate"];
+export type ProfileResourcePatch =
+  | components["schemas"]["ExperiencePatch"]
+  | components["schemas"]["ProjectPatch"]
+  | components["schemas"]["CertificationPatch"]
+  | components["schemas"]["AwardPatch"];
+export type ProfileResourceRead =
+  | components["schemas"]["ExperienceRead"]
+  | components["schemas"]["ProjectRead"]
+  | components["schemas"]["CertificationRead"]
+  | components["schemas"]["AwardRead"];
+export type EmployeeSkillReplace = components["schemas"]["EmployeeSkillReplace"];
+export type EmployeeSkillListRead = components["schemas"]["EmployeeSkillListRead"];
 
 export interface CoreProfile {
   id: string;
@@ -40,12 +68,13 @@ export interface CoreProfile {
   companyName: string;
   profileVersion: number;
   updatedAt: string;
-  skills: Array<{ id: string; name: string; level: number; sourceType: ProfileSourceType }>;
-  experiences: Array<{ id: string; title: string; organization: string; startDate: string; endDate: string | null }>;
-  projects: Array<{ id: string; name: string; role: string; startDate: string; endDate: string | null }>;
-  certifications: Array<{ id: string; name: string; issuer: string; issuedAt: string }>;
-  awards: Array<{ id: string; name: string; issuer: string; issuedAt: string }>;
-  timeline: Array<{ id: string; kind: ProfileTimelineKind; title: string; subtitle: string; startDate: string; endDate: string | null; sourceType: ProfileSourceType }>;
+  skills: Array<{ id: string; skillId?: string; name: string; category?: string | null; level: number; note?: string | null; selfAssessed?: boolean; sourceType: ProfileSourceType }>;
+  experiences: Array<{ id: string; title: string; organization: string; employmentId?: string | null; description?: string | null; startDate: string | null; endDate: string | null; sourceType?: ProfileSourceType }>;
+  projects: Array<{ id: string; name: string; role: string; employmentId?: string | null; domain?: string | null; description?: string | null; techStack?: string[]; contribution?: string | null; url?: string | null; startDate: string | null; endDate: string | null; sourceType?: ProfileSourceType }>;
+  certifications: Array<{ id: string; name: string; issuer: string; type?: string; score?: string | null; credentialUrl?: string | null; issuedAt: string | null; expiresAt?: string | null; sourceType?: ProfileSourceType }>;
+  awards: Array<{ id: string; name: string; issuer: string; type?: string; description?: string | null; evidenceUrl?: string | null; awardedAt?: string | null; selfReported?: boolean; sourceType?: ProfileSourceType }>;
+  employments: Array<{ id: string; title: string; startDate: string; endDate: string | null }>;
+  timeline: Array<{ id: string; kind: ProfileTimelineKind; title: string; subtitle: string; startDate: string; endDate: string | null; sourceType: ProfileSourceType | null }>;
 }
 
 export interface ProfileUpdateRequest {
@@ -105,7 +134,80 @@ export function adaptProfileRead(profile: ContractProfileRead): CoreProfile {
     projects: [],
     certifications: [],
     awards: [],
+    employments: [],
     timeline: [],
+  };
+}
+
+export function adaptCompetencyProfile(
+  core: CoreProfile,
+  aggregate: ContractCompetencyProfile,
+): CoreProfile {
+  return {
+    ...core,
+    id: aggregate.user.id,
+    name: aggregate.user.name,
+    jobTitle: aggregate.user.jobTitle ?? "",
+    initials: initialsFromName(aggregate.user.name),
+    profileVersion: aggregate.version,
+    skills: aggregate.skills.map((item) => ({
+      id: item.id,
+      skillId: item.skillId,
+      name: item.name,
+      category: item.category,
+      level: item.rating,
+      note: item.note,
+      selfAssessed: item.selfAssessed,
+      sourceType: item.sourceType,
+    })),
+    experiences: aggregate.experiences.map((item) => ({
+      id: item.id,
+      title: item.title,
+      organization: item.organization,
+      employmentId: item.employmentId,
+      description: item.description,
+      startDate: item.startDate,
+      endDate: item.endDate,
+      sourceType: item.sourceType,
+    })),
+    projects: aggregate.projects.map((item) => ({
+      id: item.id,
+      name: item.name,
+      role: item.role,
+      employmentId: item.employmentId,
+      domain: item.domain,
+      description: item.description,
+      techStack: item.techStack,
+      contribution: item.contribution,
+      url: item.url,
+      startDate: item.startDate,
+      endDate: item.endDate,
+      sourceType: item.sourceType,
+    })),
+    certifications: aggregate.certifications.map((item) => ({
+      id: item.id,
+      name: item.name,
+      issuer: item.issuer,
+      type: item.type,
+      score: item.score,
+      credentialUrl: item.credentialUrl,
+      issuedAt: item.issuedAt,
+      expiresAt: item.expiresAt,
+      sourceType: item.sourceType,
+    })),
+    awards: aggregate.awards.map((item) => ({
+      id: item.id,
+      name: item.name,
+      issuer: item.issuer,
+      type: item.type,
+      description: item.description,
+      evidenceUrl: item.evidenceUrl,
+      awardedAt: item.awardedAt,
+      selfReported: item.selfReported,
+      sourceType: item.sourceType,
+    })),
+    employments: aggregate.employments,
+    timeline: aggregate.timeline,
   };
 }
 
@@ -144,6 +246,7 @@ export function adaptRosterPerson(
     projects: [],
     certifications: [],
     awards: [],
+    employments: [],
     timeline: [],
   };
 }
@@ -159,6 +262,19 @@ export class ApiError<TDetails = unknown> extends Error {
   ) {
     super(message);
     this.name = "ApiError";
+  }
+}
+
+function runDemo<T>(operation: () => T): T {
+  try {
+    return operation();
+  } catch (error) {
+    if (error && typeof error === "object" && "status" in error) {
+      const status = Number(error.status);
+      const details = "details" in error ? error.details : undefined;
+      throw new ApiError(error instanceof Error ? error.message : "Yêu cầu demo không thành công", status, details);
+    }
+    throw error;
   }
 }
 
@@ -347,8 +463,64 @@ export async function applyProfileImport(
 
 export async function getOwnProfile(session: Session): Promise<CoreProfile> {
   if (DEMO_MODE) return getDemoOwnProfile(session);
-  return adaptProfileRead(
-    await apiRequest<ContractProfileRead>("/profile/me", undefined, session.accessToken),
+  const [profile, aggregate] = await Promise.all([
+    apiRequest<ContractProfileRead>("/profile/me", undefined, session.accessToken),
+    apiRequest<ContractCompetencyProfile>("/competency-profile", undefined, session.accessToken),
+  ]);
+  return adaptCompetencyProfile(adaptProfileRead(profile), aggregate);
+}
+
+export async function createProfileResource(
+  session: Session,
+  kind: ProfileResourceKind,
+  payload: ProfileResourceCreate,
+): Promise<ProfileResourceRead> {
+  if (DEMO_MODE) return runDemo(() => createDemoProfileResource(session, kind, payload));
+  return apiRequest<ProfileResourceRead>(
+    `/competency-profile/${kind}`,
+    { method: "POST", body: JSON.stringify(payload) },
+    session.accessToken,
+  );
+}
+
+export async function updateProfileResource(
+  session: Session,
+  kind: ProfileResourceKind,
+  resourceId: string,
+  payload: ProfileResourcePatch,
+): Promise<ProfileResourceRead> {
+  if (DEMO_MODE) return runDemo(() => updateDemoProfileResource(session, kind, resourceId, payload));
+  return apiRequest<ProfileResourceRead>(
+    `/competency-profile/${kind}/${encodeURIComponent(resourceId)}`,
+    { method: "PATCH", body: JSON.stringify(payload) },
+    session.accessToken,
+  );
+}
+
+export async function deleteProfileResource(
+  session: Session,
+  kind: ProfileResourceKind,
+  resourceId: string,
+  profileVersion: number,
+): Promise<void> {
+  if (DEMO_MODE) return runDemo(() => deleteDemoProfileResource(session, kind, resourceId, profileVersion));
+  await apiRequest<void>(
+    `/competency-profile/${kind}/${encodeURIComponent(resourceId)}`,
+    { method: "DELETE", body: JSON.stringify({ profileVersion }) },
+    session.accessToken,
+  );
+}
+
+export async function replaceEmployeeSkills(
+  session: Session,
+  userId: string,
+  payload: EmployeeSkillReplace,
+): Promise<EmployeeSkillListRead> {
+  if (DEMO_MODE) return runDemo(() => replaceDemoEmployeeSkills(session, userId, payload));
+  return apiRequest<EmployeeSkillListRead>(
+    `/skills-competency/users/${encodeURIComponent(userId)}/skills`,
+    { method: "PUT", body: JSON.stringify(payload) },
+    session.accessToken,
   );
 }
 

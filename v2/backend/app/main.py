@@ -13,9 +13,11 @@ from app.ai.provider_runtime import build_profile_import_ai_gateway
 from app.api.v2 import (
     auth_router,
     companies_router,
+    competency_profile_router,
     people_router,
     profile_imports_router,
     profile_router,
+    skills_competency_router,
 )
 from app.core.config import Settings, get_settings
 
@@ -100,6 +102,8 @@ app.include_router(companies_router, prefix="/api/v2")
 app.include_router(profile_router, prefix="/api/v2")
 app.include_router(people_router, prefix="/api/v2")
 app.include_router(profile_imports_router, prefix="/api/v2")
+app.include_router(skills_competency_router, prefix="/api/v2")
+app.include_router(competency_profile_router, prefix="/api/v2")
 
 
 @app.get("/api/v2/health", tags=["system"])

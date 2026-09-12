@@ -1,4 +1,17 @@
-import type { CoreProfile, PeopleCompanyScope, PeopleList, PeopleQuery, PersonDetail, ProfileUpdateRequest } from "@/lib/api";
+import type {
+  CoreProfile,
+  EmployeeSkillListRead,
+  EmployeeSkillReplace,
+  PeopleCompanyScope,
+  PeopleList,
+  PeopleQuery,
+  PersonDetail,
+  ProfileResourceCreate,
+  ProfileResourceKind,
+  ProfileResourcePatch,
+  ProfileResourceRead,
+  ProfileUpdateRequest,
+} from "@/lib/api";
 import type { Session } from "@/lib/types";
 
 const employeeProfile: CoreProfile = {
@@ -10,9 +23,9 @@ const employeeProfile: CoreProfile = {
   profileVersion: 4,
   updatedAt: "2026-09-11T08:30:00.000Z",
   skills: [
-    { id: "skill-product-discovery", name: "Product discovery", level: 4, sourceType: "SELF" },
-    { id: "skill-prototyping", name: "Prototyping", level: 4, sourceType: "IMPORT" },
-    { id: "skill-research", name: "User research", level: 3, sourceType: "SELF" },
+    { id: "employee-skill-product-discovery", skillId: "skill-product-discovery", name: "Product discovery", level: 4, sourceType: "SELF" },
+    { id: "employee-skill-prototyping", skillId: "skill-prototyping", name: "Prototyping", level: 4, sourceType: "IMPORT" },
+    { id: "employee-skill-research", skillId: "skill-research", name: "User research", level: 3, sourceType: "SELF" },
   ],
   experiences: [
     { id: "experience-acme", title: "Product Designer", organization: "Acme Việt Nam", startDate: "2024-01-01", endDate: null },
@@ -22,6 +35,7 @@ const employeeProfile: CoreProfile = {
   ],
   certifications: [{ id: "cert-design", name: "Google UX Design", issuer: "Google", issuedAt: "2024-06-01" }],
   awards: [],
+  employments: [],
   timeline: [
     { id: "timeline-careermate", kind: "PROJECT", title: "Ra mắt CareerMate", subtitle: "Product Designer", startDate: "2026-06-01", endDate: null, sourceType: "IMPORT" },
     { id: "timeline-acme", kind: "EXPERIENCE", title: "Gia nhập Acme Việt Nam", subtitle: "Product Designer", startDate: "2024-01-01", endDate: null, sourceType: "SELF" },
@@ -35,7 +49,7 @@ const adminProfile: CoreProfile = {
   jobTitle: "People Operations Manager",
   initials: "MA",
   profileVersion: 3,
-  skills: [{ id: "skill-people-ops", name: "People operations", level: 4, sourceType: "SELF" }],
+  skills: [{ id: "employee-skill-people-ops", skillId: "skill-people-ops", name: "People operations", level: 4, sourceType: "SELF" }],
   experiences: [{ id: "experience-people-ops", title: "People Operations Manager", organization: "Acme Việt Nam", startDate: "2023-03-01", endDate: null }],
   projects: [],
   certifications: [],
@@ -50,8 +64,8 @@ const engineerProfile: CoreProfile = {
   initials: "HN",
   profileVersion: 7,
   skills: [
-    { id: "skill-typescript", name: "TypeScript", level: 5, sourceType: "SELF" },
-    { id: "skill-system-design", name: "System design", level: 4, sourceType: "SELF" },
+    { id: "employee-skill-typescript", skillId: "skill-typescript", name: "TypeScript", level: 5, sourceType: "SELF" },
+    { id: "employee-skill-system-design", skillId: "skill-system-design", name: "System design", level: 4, sourceType: "SELF" },
   ],
   experiences: [{ id: "experience-engineer", title: "Senior Engineer", organization: "Acme Việt Nam", startDate: "2022-08-01", endDate: null }],
   projects: [{ id: "project-platform", name: "People Data Platform", role: "Tech Lead", startDate: "2025-02-01", endDate: null }],
@@ -124,6 +138,148 @@ export function updateDemoOwnProfile(session: Session, request: ProfileUpdateReq
   };
   writeStored(next);
   return structuredClone(next);
+}
+
+function requireDemoVersion(current: CoreProfile, profileVersion: number) {
+  if (profileVersion !== current.profileVersion) {
+    throw Object.assign(new Error("Phiên hồ sơ đã thay đổi"), {
+      status: 409,
+      details: { detail: "Phiên hồ sơ đã thay đổi", currentProfileVersion: current.profileVersion },
+    });
+  }
+}
+
+function resourceTitle(kind: ProfileResourceKind, value: Record<string, unknown>) {
+  if (kind === "experiences") return String(value.title ?? "Kinh nghiệm");
+  return String(value.name ?? "Nội dung hồ sơ");
+}
+
+function demoResource(
+  session: Session,
+  kind: ProfileResourceKind,
+  resourceId: string,
+  value: Record<string, unknown>,
+): ProfileResourceRead {
+  const now = new Date().toISOString();
+  return {
+    id: resourceId,
+    ...value,
+    sourceType: "SELF",
+    sourceImportId: null,
+    proposalItemId: null,
+    createdBy: session.user.id,
+    updatedBy: session.user.id,
+    createdAt: now,
+    updatedAt: now,
+    version: 1,
+  } as unknown as ProfileResourceRead;
+}
+
+export function createDemoProfileResource(
+  session: Session,
+  kind: ProfileResourceKind,
+  payload: ProfileResourceCreate,
+): ProfileResourceRead {
+  const current = profileFor(session.user.id);
+  const values = payload as unknown as Record<string, unknown>;
+  requireDemoVersion(current, Number(values.profileVersion));
+  const resourceId = `demo-${kind}-${crypto.randomUUID()}`;
+  const resource = demoResource(session, kind, resourceId, values);
+  const next = { ...current, profileVersion: current.profileVersion + 1, updatedAt: new Date().toISOString() };
+  const existing = current[kind] as unknown as Array<Record<string, unknown>>;
+  next[kind] = [...existing, resource] as never;
+  writeStored(next);
+  return resource;
+}
+
+export function updateDemoProfileResource(
+  session: Session,
+  kind: ProfileResourceKind,
+  resourceId: string,
+  payload: ProfileResourcePatch,
+): ProfileResourceRead {
+  const current = profileFor(session.user.id);
+  const values = payload as unknown as Record<string, unknown>;
+  requireDemoVersion(current, Number(values.profileVersion));
+  const existing = current[kind] as unknown as Array<Record<string, unknown>>;
+  const found = existing.find((item) => item.id === resourceId);
+  if (!found) throw Object.assign(new Error("Không tìm thấy nội dung hồ sơ"), { status: 404 });
+  const updated: Record<string, unknown> = {
+    ...found,
+    ...values,
+    id: resourceId,
+    updatedAt: new Date().toISOString(),
+    updatedBy: session.user.id,
+    version: Number(found.version ?? 1) + 1,
+  };
+  delete updated.profileVersion;
+  const next = { ...current, profileVersion: current.profileVersion + 1, updatedAt: new Date().toISOString() };
+  next[kind] = existing.map((item) => item.id === resourceId ? updated : item) as never;
+  writeStored(next);
+  return updated as unknown as ProfileResourceRead;
+}
+
+export function deleteDemoProfileResource(
+  session: Session,
+  kind: ProfileResourceKind,
+  resourceId: string,
+  profileVersion: number,
+) {
+  const current = profileFor(session.user.id);
+  requireDemoVersion(current, profileVersion);
+  const existing = current[kind] as unknown as Array<Record<string, unknown>>;
+  if (!existing.some((item) => item.id === resourceId)) {
+    throw Object.assign(new Error("Không tìm thấy nội dung hồ sơ"), { status: 404 });
+  }
+  const next = { ...current, profileVersion: current.profileVersion + 1, updatedAt: new Date().toISOString() };
+  next[kind] = existing.filter((item) => item.id !== resourceId) as never;
+  writeStored(next);
+}
+
+export function replaceDemoEmployeeSkills(
+  session: Session,
+  userId: string,
+  payload: EmployeeSkillReplace,
+): EmployeeSkillListRead {
+  const current = profileFor(userId);
+  requireDemoVersion(current, payload.profileVersion);
+  const existingBySkill = new Map(current.skills.map((skill) => [skill.skillId, skill]));
+  const now = new Date().toISOString();
+  const skills = payload.skills.map((input) => {
+    const previous = existingBySkill.get(input.skillId);
+    return {
+      id: previous?.id ?? `employee-skill-${crypto.randomUUID()}`,
+      skillId: input.skillId,
+      name: previous?.name ?? resourceTitle("projects", { name: "Kỹ năng" }),
+      category: previous?.category ?? null,
+      level: input.rating,
+      note: input.note ?? null,
+      selfAssessed: previous?.selfAssessed ?? true,
+      sourceType: previous?.sourceType ?? "SELF" as const,
+    };
+  });
+  const next = { ...current, skills, profileVersion: current.profileVersion + 1, updatedAt: now };
+  writeStored(next);
+  return {
+    profileVersion: next.profileVersion,
+    items: skills.map((skill) => ({
+      id: skill.id,
+      skillId: skill.skillId,
+      name: skill.name,
+      category: skill.category ?? null,
+      rating: skill.level,
+      note: skill.note,
+      selfAssessed: skill.selfAssessed,
+      sourceType: skill.sourceType,
+      sourceImportId: null,
+      proposalItemId: null,
+      createdBy: session.user.id,
+      updatedBy: session.user.id,
+      createdAt: now,
+      updatedAt: now,
+      version: 1,
+    })),
+  };
 }
 
 export function listDemoPeople(session: Session, query: PeopleQuery = {}): PeopleList {
