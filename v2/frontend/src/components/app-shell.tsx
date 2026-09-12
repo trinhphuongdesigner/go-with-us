@@ -253,8 +253,8 @@ function AppShellContent({ children }: { children: ReactNode }) {
 
   if (status === "loading" || !session || !isReady) {
     return (
-      <main className="grid min-h-screen place-items-center bg-background" role="status" aria-label="Đang mở CareerMate">
-        <div className="text-center">
+      <main className="grid min-h-screen place-items-center bg-background" role="status" aria-label="Đang mở CareerMate" suppressHydrationWarning>
+        <div className="text-center" suppressHydrationWarning>
           <span className="mx-auto block size-10 animate-pulse rounded-xl bg-primary" />
           <p className="mt-4 text-sm text-muted">Đang mở không gian làm việc…</p>
         </div>

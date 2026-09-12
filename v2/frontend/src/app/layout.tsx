@@ -14,28 +14,31 @@ export const metadata: Metadata = {
 
 const extensionProtectionScript = `
 (function() {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
 
-  var extensionPattern = /(chrome-extension:\\/\\/|moz-extension:\\/\\/|safari-web-extension:\\/\\/|executors\\/200\\.js|M_ID|bis_skin_checked|bis_register|__processed_)/;
+  var extensionPattern = /(chrome-extension:\\/\\/|moz-extension:\\/\\/|safari-web-extension:\\/\\/|executors\\/200\\.js|M_ID|bis_skin_checked|bis_register|__processed_|cz-shortcut-listen|mdl-js|eppiocemhmnlbhjplcgkofciiegomcon|runtime\\.lastError|Could not establish connection|data-gr-ext|data-new-gr|data-lastpass|data-1p|data-bitwarden|data-dashlane)/;
 
-  function isExtensionError(source) {
-    if (!source) return false;
-    if (typeof source !== 'string') {
-      try {
-        source = (source.stack || source.message || String(source));
-      } catch (e) {
-        return false;
-      }
+  function isIgnored(arg) {
+    if (!arg) return false;
+    var str = typeof arg === "string" ? arg : (arg && (arg.message || arg.stack) ? (arg.message || arg.stack) : String(arg || ""));
+    if (extensionPattern.test(str)) return true;
+    if (str.indexOf("A tree hydrated but some attributes") !== -1 || str.indexOf("hydration-mismatch") !== -1) return true;
+    return false;
+  }
+
+  function shouldIgnore(args) {
+    for (var i = 0; i < args.length; i++) {
+      if (isIgnored(args[i])) return true;
     }
-    return extensionPattern.test(source);
+    return false;
   }
 
   // Intercept uncaught errors from browser extensions in capture phase
   window.addEventListener(
-    'error',
+    "error",
     function(event) {
-      var source = (event.filename || '') + ' ' + (event.message || '') + ' ' + (event.error && event.error.stack ? event.error.stack : '');
-      if (isExtensionError(source)) {
+      var source = (event.filename || "") + " " + (event.message || "") + " " + (event.error && event.error.stack ? event.error.stack : "");
+      if (shouldIgnore([source])) {
         event.preventDefault();
         event.stopImmediatePropagation();
         return true;
@@ -46,11 +49,11 @@ const extensionProtectionScript = `
 
   // Intercept unhandled promise rejections from browser extensions in capture phase
   window.addEventListener(
-    'unhandledrejection',
+    "unhandledrejection",
     function(event) {
       var reason = event.reason;
-      var source = (reason && reason.stack ? reason.stack : '') + ' ' + (reason && reason.message ? reason.message : '') + ' ' + String(reason || '');
-      if (isExtensionError(source)) {
+      var source = (reason && reason.stack ? reason.stack : "") + " " + (reason && reason.message ? reason.message : "") + " " + String(reason || "");
+      if (shouldIgnore([source])) {
         event.preventDefault();
         event.stopImmediatePropagation();
       }
@@ -58,60 +61,114 @@ const extensionProtectionScript = `
     true
   );
 
-  // Hook console.error with getter/setter so Next.js dev overlay cannot bypass it
-  var currentConsoleError = console.error;
+  // Hook console.error with recursion guard so Next.js dev overlay cannot crash or open on extension errors
+  var nativeError = console.error.bind(console);
+  var devOverlayHandler = null;
+  var inDevOverlay = false;
+
   try {
-    Object.defineProperty(console, 'error', {
+    Object.defineProperty(console, "error", {
       configurable: true,
       enumerable: true,
       get: function() {
         return function() {
-          for (var i = 0; i < arguments.length; i++) {
-            if (isExtensionError(arguments[i])) {
-              return;
+          if (shouldIgnore(arguments)) return;
+          if (devOverlayHandler && !inDevOverlay) {
+            try {
+              inDevOverlay = true;
+              return devOverlayHandler.apply(this, arguments);
+            } finally {
+              inDevOverlay = false;
             }
           }
-          return currentConsoleError.apply(this, arguments);
+          return nativeError.apply(this, arguments);
         };
       },
       set: function(fn) {
-        currentConsoleError = fn;
+        devOverlayHandler = fn;
       }
     });
   } catch (e) {
+    var fallbackError = console.error;
     console.error = function() {
-      for (var i = 0; i < arguments.length; i++) {
-        if (isExtensionError(arguments[i])) return;
-      }
-      return currentConsoleError.apply(this, arguments);
+      if (shouldIgnore(arguments)) return;
+      return fallbackError.apply(this, arguments);
     };
   }
 
-  // Clean DOM attributes injected by extensions (bis_*, __processed_*)
-  var attrPattern = /^(bis_|__processed_)/;
+  // Hook console.warn similarly
+  var nativeWarn = console.warn.bind(console);
+  var devOverlayWarnHandler = null;
+  var inDevOverlayWarn = false;
+
+  try {
+    Object.defineProperty(console, "warn", {
+      configurable: true,
+      enumerable: true,
+      get: function() {
+        return function() {
+          if (shouldIgnore(arguments)) return;
+          if (devOverlayWarnHandler && !inDevOverlayWarn) {
+            try {
+              inDevOverlayWarn = true;
+              return devOverlayWarnHandler.apply(this, arguments);
+            } finally {
+              inDevOverlayWarn = false;
+            }
+          }
+          return nativeWarn.apply(this, arguments);
+        };
+      },
+      set: function(fn) {
+        devOverlayWarnHandler = fn;
+      }
+    });
+  } catch (e) {
+    var fallbackWarn = console.warn;
+    console.warn = function() {
+      if (shouldIgnore(arguments)) return;
+      return fallbackWarn.apply(this, arguments);
+    };
+  }
+
+  // Clean DOM attributes injected by extensions (bis_*, __processed_*, cz-*, etc.)
+  var attrPattern = /^(bis_|__processed_|cz-|data-gr-|data-new-gr-|data-lastpass|data-1p|data-bw)/;
   function clean(node) {
     if (!node || node.nodeType !== 1) return;
     var attrs = node.attributes;
-    for (var i = attrs.length - 1; i >= 0; i--) {
-      var name = attrs[i].name;
-      if (attrPattern.test(name)) node.removeAttribute(name);
+    if (attrs) {
+      for (var i = attrs.length - 1; i >= 0; i--) {
+        var name = attrs[i].name;
+        if (attrPattern.test(name)) node.removeAttribute(name);
+      }
+    }
+    if (node.classList && node.classList.contains("mdl-js")) {
+      node.classList.remove("mdl-js");
     }
   }
 
-  if (typeof MutationObserver !== 'undefined' && document.documentElement) {
+  if (typeof document !== "undefined") {
+    if (document.documentElement) clean(document.documentElement);
+    if (document.body) clean(document.body);
+  }
+
+  if (typeof MutationObserver !== "undefined" && typeof document !== "undefined" && document.documentElement) {
     var observer = new MutationObserver(function(mutations) {
       for (var i = 0; i < mutations.length; i++) {
         var m = mutations[i];
-        if (m.type === 'attributes') {
+        if (m.type === "attributes") {
           if (m.attributeName && attrPattern.test(m.attributeName)) {
             m.target.removeAttribute(m.attributeName);
           }
-        } else if (m.type === 'childList') {
+          if (m.attributeName === "class" && m.target && m.target.classList && m.target.classList.contains("mdl-js")) {
+            m.target.classList.remove("mdl-js");
+          }
+        } else if (m.type === "childList") {
           for (var j = 0; j < m.addedNodes.length; j++) {
             var n = m.addedNodes[j];
             if (n.nodeType === 1) {
               clean(n);
-              var ch = n.querySelectorAll ? n.querySelectorAll('*') : [];
+              var ch = n.querySelectorAll ? n.querySelectorAll("*") : [];
               for (var k = 0; k < ch.length; k++) clean(ch[k]);
             }
           }
@@ -121,10 +178,13 @@ const extensionProtectionScript = `
     observer.observe(document.documentElement, { attributes: true, subtree: true, childList: true });
   }
 
-  if (typeof Element !== 'undefined') {
+  if (typeof Element !== "undefined") {
     var origSet = Element.prototype.setAttribute;
     Element.prototype.setAttribute = function(name, val) {
       if (attrPattern.test(name)) return;
+      if (name === "class" && typeof val === "string" && val.indexOf("mdl-js") !== -1) {
+        val = val.replace(/\\bmdl-js\\b/g, "").trim();
+      }
       return origSet.apply(this, arguments);
     };
   }
