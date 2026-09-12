@@ -1,6 +1,30 @@
 {
   "components": {
     "schemas": {
+      "AiStatus": {
+        "enum": [
+          "ok",
+          "needs_clarification",
+          "insufficient_evidence",
+          "failed"
+        ],
+        "title": "AiStatus",
+        "type": "string"
+      },
+      "Body_create_profile_import_api_v2_profile_imports_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_create_profile_import_api_v2_profile_imports_post",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -103,6 +127,626 @@
         "title": "Permission",
         "type": "string"
       },
+      "ProfileApplyItem": {
+        "additionalProperties": false,
+        "properties": {
+          "proposalItemId": {
+            "format": "uuid",
+            "title": "Proposalitemid",
+            "type": "string"
+          },
+          "selected": {
+            "title": "Selected",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "proposalItemId",
+          "selected"
+        ],
+        "title": "ProfileApplyItem",
+        "type": "object"
+      },
+      "ProfileApplyRead": {
+        "additionalProperties": false,
+        "properties": {
+          "commandId": {
+            "format": "uuid",
+            "title": "Commandid",
+            "type": "string"
+          },
+          "createdEntityIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Createdentityids",
+            "type": "array"
+          },
+          "profileVersion": {
+            "title": "Profileversion",
+            "type": "integer"
+          },
+          "skippedItemIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Skippeditemids",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "APPLIED",
+              "ALREADY_APPLIED"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "commandId",
+          "status",
+          "createdEntityIds",
+          "skippedItemIds",
+          "profileVersion"
+        ],
+        "title": "ProfileApplyRead",
+        "type": "object"
+      },
+      "ProfileApplyRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProfileApplyItem"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          },
+          "profileVersion": {
+            "minimum": 1.0,
+            "title": "Profileversion",
+            "type": "integer"
+          },
+          "proposalVersion": {
+            "minimum": 1.0,
+            "title": "Proposalversion",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "proposalVersion",
+          "profileVersion",
+          "items"
+        ],
+        "title": "ProfileApplyRequest",
+        "type": "object"
+      },
+      "ProfileConflictRead": {
+        "additionalProperties": false,
+        "properties": {
+          "currentProfileVersion": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currentprofileversion"
+          },
+          "currentProposalVersion": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currentproposalversion"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "title": "ProfileConflictRead",
+        "type": "object"
+      },
+      "ProfileEvidenceRead": {
+        "additionalProperties": false,
+        "properties": {
+          "blockId": {
+            "format": "uuid",
+            "title": "Blockid",
+            "type": "string"
+          },
+          "charEnd": {
+            "title": "Charend",
+            "type": "integer"
+          },
+          "charStart": {
+            "title": "Charstart",
+            "type": "integer"
+          },
+          "context": {
+            "title": "Context",
+            "type": "string"
+          },
+          "pageNumber": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pagenumber"
+          },
+          "quote": {
+            "title": "Quote",
+            "type": "string"
+          },
+          "quoteSha256": {
+            "title": "Quotesha256",
+            "type": "string"
+          },
+          "sheetName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sheetname"
+          },
+          "sourceId": {
+            "format": "uuid",
+            "title": "Sourceid",
+            "type": "string"
+          },
+          "sourceVersionId": {
+            "format": "uuid",
+            "title": "Sourceversionid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sourceId",
+          "sourceVersionId",
+          "blockId",
+          "charStart",
+          "charEnd",
+          "quote",
+          "quoteSha256",
+          "pageNumber",
+          "sheetName",
+          "context"
+        ],
+        "title": "ProfileEvidenceRead",
+        "type": "object"
+      },
+      "ProfileImportDetailRead": {
+        "additionalProperties": false,
+        "properties": {
+          "aiStatus": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AiStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "clarificationQuestions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Clarificationquestions",
+            "type": "array"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "fileName": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "mimeType": {
+            "title": "Mimetype",
+            "type": "string"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "profileVersion": {
+            "title": "Profileversion",
+            "type": "integer"
+          },
+          "promptVersion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Promptversion"
+          },
+          "proposal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProfileProposalRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "proposalVersion": {
+            "title": "Proposalversion",
+            "type": "integer"
+          },
+          "schemaVersion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schemaversion"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "sizeBytes": {
+            "title": "Sizebytes",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProfileImportStatus"
+          },
+          "traceId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Traceid"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "title": "Updatedat",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "fileName",
+          "mimeType",
+          "sizeBytes",
+          "sha256",
+          "version",
+          "proposalVersion",
+          "createdAt",
+          "updatedAt",
+          "profileVersion",
+          "aiStatus",
+          "clarificationQuestions",
+          "warnings",
+          "traceId",
+          "promptVersion",
+          "schemaVersion",
+          "model",
+          "proposal"
+        ],
+        "title": "ProfileImportDetailRead",
+        "type": "object"
+      },
+      "ProfileImportList": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProfileImportRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pageSize": {
+            "title": "Pagesize",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ],
+        "title": "ProfileImportList",
+        "type": "object"
+      },
+      "ProfileImportParseRead": {
+        "additionalProperties": false,
+        "properties": {
+          "aiStatus": {
+            "$ref": "#/components/schemas/AiStatus"
+          },
+          "clarificationQuestions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Clarificationquestions",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "profileVersion": {
+            "title": "Profileversion",
+            "type": "integer"
+          },
+          "promptVersion": {
+            "title": "Promptversion",
+            "type": "string"
+          },
+          "proposal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProfileProposalRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "proposalVersion": {
+            "title": "Proposalversion",
+            "type": "integer"
+          },
+          "schemaVersion": {
+            "title": "Schemaversion",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProfileImportStatus"
+          },
+          "traceId": {
+            "format": "uuid",
+            "title": "Traceid",
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "proposalVersion",
+          "profileVersion",
+          "aiStatus",
+          "clarificationQuestions",
+          "warnings",
+          "traceId",
+          "promptVersion",
+          "schemaVersion",
+          "model",
+          "proposal"
+        ],
+        "title": "ProfileImportParseRead",
+        "type": "object"
+      },
+      "ProfileImportRead": {
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "fileName": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "mimeType": {
+            "title": "Mimetype",
+            "type": "string"
+          },
+          "proposalVersion": {
+            "title": "Proposalversion",
+            "type": "integer"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "sizeBytes": {
+            "title": "Sizebytes",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProfileImportStatus"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "title": "Updatedat",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "fileName",
+          "mimeType",
+          "sizeBytes",
+          "sha256",
+          "version",
+          "proposalVersion",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "ProfileImportRead",
+        "type": "object"
+      },
+      "ProfileImportStatus": {
+        "enum": [
+          "PENDING",
+          "PROCESSING",
+          "PARSED",
+          "APPLIED",
+          "FAILED"
+        ],
+        "title": "ProfileImportStatus",
+        "type": "string"
+      },
+      "ProfileProposalItemRead": {
+        "additionalProperties": false,
+        "properties": {
+          "evidenceRefs": {
+            "items": {
+              "$ref": "#/components/schemas/ProfileEvidenceRead"
+            },
+            "title": "Evidencerefs",
+            "type": "array"
+          },
+          "field": {
+            "title": "Field",
+            "type": "string"
+          },
+          "proposalItemId": {
+            "format": "uuid",
+            "title": "Proposalitemid",
+            "type": "string"
+          },
+          "supportStatus": {
+            "$ref": "#/components/schemas/SupportStatus"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "proposalItemId",
+          "field",
+          "value",
+          "supportStatus",
+          "evidenceRefs"
+        ],
+        "title": "ProfileProposalItemRead",
+        "type": "object"
+      },
+      "ProfileProposalRead": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProfileProposalItemRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "items"
+        ],
+        "title": "ProfileProposalRead",
+        "type": "object"
+      },
       "Role": {
         "enum": [
           "SUPER_ADMIN",
@@ -177,6 +821,16 @@
         ],
         "title": "SessionUserRead",
         "type": "object"
+      },
+      "SupportStatus": {
+        "enum": [
+          "SUPPORTED",
+          "AMBIGUOUS",
+          "MISSING",
+          "SELF_ASSERTED"
+        ],
+        "title": "SupportStatus",
+        "type": "string"
       },
       "ValidationError": {
         "properties": {
@@ -350,6 +1004,343 @@
         "summary": "Health",
         "tags": [
           "system"
+        ]
+      }
+    },
+    "/api/v2/profile-imports": {
+      "get": {
+        "operationId": "list_profile_imports_api_v2_profile_imports_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Pagesize",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileImportList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Profile Imports",
+        "tags": [
+          "profile imports"
+        ]
+      },
+      "post": {
+        "operationId": "create_profile_import_api_v2_profile_imports_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_profile_import_api_v2_profile_imports_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileImportRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Profile Import",
+        "tags": [
+          "profile imports"
+        ]
+      }
+    },
+    "/api/v2/profile-imports/{import_id}": {
+      "delete": {
+        "operationId": "delete_profile_import_api_v2_profile_imports__import_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "import_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Import Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileConflictRead"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Profile Import",
+        "tags": [
+          "profile imports"
+        ]
+      },
+      "get": {
+        "operationId": "get_profile_import_api_v2_profile_imports__import_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "import_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Import Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileImportDetailRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Profile Import",
+        "tags": [
+          "profile imports"
+        ]
+      }
+    },
+    "/api/v2/profile-imports/{import_id}/apply": {
+      "post": {
+        "operationId": "apply_profile_import_api_v2_profile_imports__import_id__apply_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "import_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Import Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileApplyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileApplyRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileConflictRead"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Apply Profile Import",
+        "tags": [
+          "profile imports"
+        ]
+      }
+    },
+    "/api/v2/profile-imports/{import_id}/parse": {
+      "post": {
+        "operationId": "parse_profile_import_api_v2_profile_imports__import_id__parse_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "import_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Import Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileImportParseRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileConflictRead"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Parse Profile Import",
+        "tags": [
+          "profile imports"
         ]
       }
     }

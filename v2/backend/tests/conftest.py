@@ -74,8 +74,12 @@ app.dependency_overrides[get_db] = override_get_db
 @pytest.fixture(autouse=True)
 async def reset_db() -> AsyncGenerator[None, None]:
     async with engine.begin() as connection:
-        await connection.run_sync(Base.metadata.drop_all)
         await connection.run_sync(Base.metadata.create_all)
+        # The dedicated test database may be shared by sequential quality-gate
+        # runs. Clear rows in FK-safe order without destructive schema DDL.
+        # This keeps the suite inside the project's no-drop/no-truncate guard.
+        for table in reversed(Base.metadata.sorted_tables):
+            await connection.execute(table.delete())
     settings = get_settings()
     secret = derive_rate_limit_secret(settings.jwt_secret.get_secret_value())
     if test_database_url.startswith("postgresql"):

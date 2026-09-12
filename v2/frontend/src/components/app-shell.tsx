@@ -38,7 +38,7 @@ function NavigationLink({ item, compact, onSelect }: { item: NavigationItem; com
       )}
     >
       <Icon size={20} strokeWidth={active ? 2.4 : 1.9} aria-hidden="true" />
-      {compact ? <span className="w-full truncate text-[10px] font-semibold leading-3">{item.shortLabel}</span> : <span>{item.label}</span>}
+      {compact ? <span className="w-full text-center text-xs font-semibold leading-[1.2] [overflow-wrap:anywhere]">{item.shortLabel}</span> : <span>{item.label}</span>}
     </Link>
   );
 }
@@ -190,6 +190,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { session, status, signOut } = useAuth();
   const router = useRouter();
   const items = useMemo(() => getAllowedNavigation(session?.user.permissions ?? []), [session]);
+  const demoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
   useEffect(() => {
     if (status === "anonymous") router.replace("/login");
@@ -247,6 +248,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
+            {demoMode ? <span className="rounded-full bg-[#FFF2E8] px-2.5 py-1 text-[11px] font-bold text-[#9A4F18]">Dữ liệu minh hoạ</span> : null}
             <ShellSearch items={items} />
             <NotificationsDialog />
           </div>

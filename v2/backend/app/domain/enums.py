@@ -17,6 +17,14 @@ class EmploymentStatus(StrEnum):
     ENDED = "ENDED"
 
 
+class ProfileImportStatus(StrEnum):
+    PENDING = "PENDING"
+    PROCESSING = "PROCESSING"
+    PARSED = "PARSED"
+    APPLIED = "APPLIED"
+    FAILED = "FAILED"
+
+
 class AdminPermission(StrEnum):
     COMPANY_READ = "COMPANY_READ"
     COMPANY_WRITE = "COMPANY_WRITE"

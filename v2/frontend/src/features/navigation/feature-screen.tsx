@@ -1,6 +1,6 @@
 "use client";
 
-import { LockKeyhole } from "lucide-react";
+import { ArrowRight, FileUp, LockKeyhole } from "lucide-react";
 import Link from "next/link";
 
 import { EmptyState } from "@/components/ui/app-state";
@@ -39,6 +39,22 @@ export function FeatureScreen({ feature, detail }: { feature: string; detail: Fe
   if (feature === "lo-trinh") {
     const roadmapOwnerKey = `${session.user.companyId ?? "platform"}:${session.user.id}`;
     return <RoadmapView key={roadmapOwnerKey} />;
+  }
+
+  if (feature === "ho-so") {
+    return (
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.15em] text-primary">{detail.eyebrow}</p>
+        <h1 className="mt-2 text-2xl font-bold tracking-[-0.03em] text-ink sm:text-3xl">{detail.title}</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">Tập hợp kỹ năng, kinh nghiệm và minh chứng nghề nghiệp trong một hồ sơ do bạn kiểm soát.</p>
+        <Card className="mt-6 flex min-h-64 flex-col items-center justify-center p-6 text-center sm:p-8">
+          <span className="grid size-12 place-items-center rounded-2xl bg-[#EAF1F6] text-primary" aria-hidden="true"><FileUp size={24} /></span>
+          <h2 className="mt-4 text-lg font-bold text-ink">Bổ sung hồ sơ từ tài liệu</h2>
+          <p className="mt-2 max-w-lg text-sm leading-6 text-muted">Tải CV, file LinkedIn đã xuất hoặc bảng dữ liệu. CareerMate tạo đề xuất có dẫn nguồn và chỉ cập nhật những mục bạn chọn.</p>
+          <Button asChild className="mt-5"><Link href="/ho-so/import">Nhập hồ sơ từ tài liệu <ArrowRight size={16} aria-hidden="true" /></Link></Button>
+        </Card>
+      </div>
+    );
   }
 
   return (

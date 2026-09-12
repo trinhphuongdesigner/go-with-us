@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Literal, Self
 
-from pydantic import Field, SecretStr, model_validator
+from pydantic import Field, HttpUrl, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,6 +22,18 @@ class Settings(BaseSettings):
     login_rate_limit_ip_attempts: int = Field(default=25, ge=1, le=1_000)
     login_rate_limit_window_seconds: int = Field(default=60, ge=1, le=3600)
     login_rate_limit_max_keys: int = Field(default=10_000, ge=100, le=1_000_000)
+    malware_scanner: Literal["unavailable", "clamav"] = "unavailable"
+    clamav_host: str = "127.0.0.1"
+    clamav_port: int = Field(default=3310, ge=1, le=65_535)
+    clamav_timeout_seconds: float = Field(default=10.0, ge=0.1, le=60.0)
+    ocr_engine: Literal["unavailable", "tesseract"] = "unavailable"
+    tesseract_executable: str = "tesseract"
+    ocr_timeout_seconds: float = Field(default=20.0, ge=1.0, le=60.0)
+    profile_import_ai_endpoint: HttpUrl | None = None
+    profile_import_ai_model: str | None = Field(default=None, min_length=1, max_length=100)
+    profile_import_ai_api_key: SecretStr | None = Field(default=None, min_length=1)
+    profile_import_ai_timeout_seconds: float = Field(default=15.0, ge=0.1, le=60.0)
+    profile_import_ai_max_attempts: int = Field(default=2, ge=1, le=3)
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -34,6 +46,14 @@ class Settings(BaseSettings):
     def allowed_origins(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
+    @property
+    def profile_import_ai_configured(self) -> bool:
+        return (
+            self.profile_import_ai_endpoint is not None
+            and self.profile_import_ai_model is not None
+            and self.profile_import_ai_api_key is not None
+        )
+
     @model_validator(mode="after")
     def require_shared_security_storage_when_deployed(self) -> Self:
         if self.environment in {"staging", "production"} and not self.database_url.startswith(
@@ -42,6 +62,33 @@ class Settings(BaseSettings):
             raise ValueError(
                 "Staging and production require PostgreSQL for shared login rate limiting"
             )
+        if self.profile_import_ai_model is not None:
+            stripped_model = self.profile_import_ai_model.strip()
+            if not stripped_model:
+                raise ValueError("Profile import AI model must not be blank")
+            self.profile_import_ai_model = stripped_model
+        if (
+            self.profile_import_ai_api_key is not None
+            and not self.profile_import_ai_api_key.get_secret_value().strip()
+        ):
+            raise ValueError("Profile import AI API key must not be blank")
+        ai_values = (
+            self.profile_import_ai_endpoint,
+            self.profile_import_ai_model,
+            self.profile_import_ai_api_key,
+        )
+        if any(value is not None for value in ai_values) and not all(
+            value is not None for value in ai_values
+        ):
+            raise ValueError(
+                "Profile import AI endpoint, model, and API key must be configured together"
+            )
+        if (
+            self.environment in {"staging", "production"}
+            and self.profile_import_ai_endpoint is not None
+            and self.profile_import_ai_endpoint.scheme != "https"
+        ):
+            raise ValueError("Staging and production AI endpoints require HTTPS")
         return self
 
 

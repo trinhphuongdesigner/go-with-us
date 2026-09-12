@@ -3,19 +3,56 @@ import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
+import httpx
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.responses import Response
 
-from app.api.v2 import auth_router
-from app.core.config import get_settings
+from app.ai.provider_runtime import build_profile_import_ai_gateway
+from app.api.v2 import auth_router, profile_imports_router
+from app.core.config import Settings, get_settings
+
+
+def configure_profile_import_ai_runtime(
+    application: FastAPI,
+    configured_settings: Settings,
+    *,
+    client: httpx.AsyncClient | None,
+) -> None:
+    if hasattr(application.state, "profile_import_ai_gateway"):
+        delattr(application.state, "profile_import_ai_gateway")
+    if not configured_settings.profile_import_ai_configured:
+        return
+    endpoint = configured_settings.profile_import_ai_endpoint
+    model = configured_settings.profile_import_ai_model
+    api_key = configured_settings.profile_import_ai_api_key
+    if endpoint is None or model is None or api_key is None or client is None:
+        raise RuntimeError("Profile import AI runtime configuration is incomplete")
+    application.state.profile_import_ai_gateway = build_profile_import_ai_gateway(
+        endpoint=str(endpoint),
+        model=model,
+        api_key=api_key,
+        timeout_seconds=configured_settings.profile_import_ai_timeout_seconds,
+        max_attempts=configured_settings.profile_import_ai_max_attempts,
+        client=client,
+    )
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    get_settings()
-    yield
+async def lifespan(application: FastAPI) -> AsyncIterator[None]:
+    configured_settings = get_settings()
+    ai_client: httpx.AsyncClient | None = None
+    if configured_settings.profile_import_ai_configured:
+        ai_client = httpx.AsyncClient()
+    configure_profile_import_ai_runtime(application, configured_settings, client=ai_client)
+    try:
+        yield
+    finally:
+        if hasattr(application.state, "profile_import_ai_gateway"):
+            delattr(application.state, "profile_import_ai_gateway")
+        if ai_client is not None:
+            await ai_client.aclose()
 
 
 settings = get_settings()
@@ -53,6 +90,7 @@ async def attach_request_id(request: Request, call_next: RequestResponseEndpoint
 
 
 app.include_router(auth_router, prefix="/api/v2")
+app.include_router(profile_imports_router, prefix="/api/v2")
 
 
 @app.get("/api/v2/health", tags=["system"])

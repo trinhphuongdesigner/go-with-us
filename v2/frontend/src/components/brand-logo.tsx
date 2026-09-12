@@ -11,7 +11,7 @@ export function BrandLogo({ compact = false, className }: { compact?: boolean; c
       {compact ? null : (
         <span>
           <span className="block text-[17px] font-bold tracking-[-0.02em] text-ink">CareerMate</span>
-          <span className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-[#596579]">Grow with clarity</span>
+          <span className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-[#596579]">Rõ hướng phát triển</span>
         </span>
       )}
     </div>

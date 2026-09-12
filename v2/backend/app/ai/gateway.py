@@ -45,6 +45,13 @@ class AiStatus(StrEnum):
     FAILED = "failed"
 
 
+class SupportStatus(StrEnum):
+    SUPPORTED = "SUPPORTED"
+    AMBIGUOUS = "AMBIGUOUS"
+    MISSING = "MISSING"
+    SELF_ASSERTED = "SELF_ASSERTED"
+
+
 class EvidenceRef(StrictModel):
     """Provider citation that must resolve to an allowed immutable source block."""
 
@@ -90,6 +97,23 @@ class ClaimEvidence(StrictModel):
 
     subject_id: uuid.UUID
     evidence_refs: tuple[EvidenceRef, ...] = Field(min_length=1, max_length=10)
+
+
+class ProposedValue[ProposedT](StrictModel):
+    value: ProposedT | None
+    support_status: SupportStatus
+    evidence_refs: tuple[EvidenceRef, ...] = Field(default=(), max_length=10)
+    note: str | None = Field(default=None, max_length=300)
+
+    @model_validator(mode="after")
+    def validate_evidence_policy(self) -> ProposedValue[ProposedT]:
+        if self.support_status == SupportStatus.SUPPORTED and not self.evidence_refs:
+            raise ValueError("SUPPORTED values require evidence")
+        if self.support_status == SupportStatus.MISSING and self.value is not None:
+            raise ValueError("MISSING values must be null")
+        if self.support_status == SupportStatus.SELF_ASSERTED:
+            raise ValueError("provider output cannot be SELF_ASSERTED")
+        return self
 
 
 class AiOutputModel(StrictModel, ABC):

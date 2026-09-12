@@ -9,6 +9,8 @@ from .gateway import (
     EvidenceBlock,
     EvidenceContext,
     EvidenceRef,
+    ProposedValue,
+    SupportStatus,
     TransientProviderError,
 )
 from .provider_config import (
@@ -18,6 +20,11 @@ from .provider_config import (
     ProviderConfigError,
     ProviderConfigResolver,
     ResolvedProviderConfig,
+)
+from .provider_runtime import (
+    OpenAICompatibleProvider,
+    build_profile_import_ai_gateway,
+    unavailable_profile_import_ai_gateway,
 )
 from .resilience import CircuitBreaker, CircuitState, RetryPolicy
 
@@ -35,11 +42,16 @@ __all__ = [
     "EvidenceBlock",
     "EvidenceContext",
     "EvidenceRef",
+    "OpenAICompatibleProvider",
+    "ProposedValue",
     "ProviderConfigContext",
     "ProviderConfigCrypto",
     "ProviderConfigError",
     "ProviderConfigResolver",
     "ResolvedProviderConfig",
     "RetryPolicy",
+    "SupportStatus",
     "TransientProviderError",
+    "build_profile_import_ai_gateway",
+    "unavailable_profile_import_ai_gateway",
 ]

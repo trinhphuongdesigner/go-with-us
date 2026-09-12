@@ -25,7 +25,7 @@ from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.domain.enums import CompanyStatus, EmploymentStatus, Role
+from app.domain.enums import CompanyStatus, EmploymentStatus, ProfileImportStatus, Role
 
 
 def utc_now() -> datetime:
@@ -182,6 +182,390 @@ class ActivityLog(Base):
     request_id: Mapped[str | None] = mapped_column(String(64))
     changes: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
     details: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class SourceDocument(TimestampMixin, Base):
+    __tablename__ = "source_documents"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["owner_user_id", "company_id"],
+            ["users.id", "users.company_id"],
+            name="fk_source_documents_owner_company",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint(
+            "owner_user_id", "company_id", "sha256", name="uq_source_documents_owner_sha256"
+        ),
+        UniqueConstraint("id", "owner_user_id", "company_id", name="uq_source_documents_scope"),
+        CheckConstraint("byte_size > 0", name="ck_source_documents_byte_size_positive"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    owner_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
+    )
+    company_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("companies.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    mime_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    byte_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+
+
+class SourceVersion(TimestampMixin, Base):
+    __tablename__ = "source_versions"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["document_id", "owner_user_id", "company_id"],
+            [
+                "source_documents.id",
+                "source_documents.owner_user_id",
+                "source_documents.company_id",
+            ],
+            name="fk_source_versions_document_scope",
+            ondelete="CASCADE",
+        ),
+        UniqueConstraint("document_id", "version", name="uq_source_versions_document_version"),
+        UniqueConstraint(
+            "id", "document_id", "owner_user_id", "company_id", name="uq_source_versions_scope"
+        ),
+        CheckConstraint("version > 0", name="ck_source_versions_version_positive"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    document_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("source_documents.id", ondelete="CASCADE"), nullable=False
+    )
+    owner_user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    company_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    content_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+
+
+class SourceBlock(TimestampMixin, Base):
+    __tablename__ = "source_blocks"
+    __table_args__ = (
+        UniqueConstraint("source_version_id", "ordinal", name="uq_source_blocks_version_ordinal"),
+        UniqueConstraint("id", "source_version_id", name="uq_source_blocks_id_version"),
+        CheckConstraint("ordinal >= 0", name="ck_source_blocks_ordinal_nonnegative"),
+        CheckConstraint("char_start >= 0", name="ck_source_blocks_char_start_nonnegative"),
+        CheckConstraint("char_end > char_start", name="ck_source_blocks_char_span"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    source_version_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("source_versions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    text_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    char_start: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    char_end: Mapped[int] = mapped_column(Integer, nullable=False)
+    page_number: Mapped[int | None] = mapped_column(Integer)
+    sheet_name: Mapped[str | None] = mapped_column(String(100))
+
+
+class ProfileImport(TimestampMixin, Base):
+    __tablename__ = "profile_imports"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["owner_user_id", "company_id"],
+            ["users.id", "users.company_id"],
+            name="fk_profile_imports_owner_company",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["source_document_id", "owner_user_id", "company_id"],
+            [
+                "source_documents.id",
+                "source_documents.owner_user_id",
+                "source_documents.company_id",
+            ],
+            name="fk_profile_imports_document_scope",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["source_version_id", "source_document_id", "owner_user_id", "company_id"],
+            [
+                "source_versions.id",
+                "source_versions.document_id",
+                "source_versions.owner_user_id",
+                "source_versions.company_id",
+            ],
+            name="fk_profile_imports_version_scope",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("source_version_id", name="uq_profile_imports_source_version"),
+        UniqueConstraint("id", "owner_user_id", "company_id", name="uq_profile_imports_scope"),
+        CheckConstraint("version > 0", name="ck_profile_imports_version_positive"),
+        CheckConstraint(
+            "status IN ('PENDING', 'PROCESSING', 'PARSED', 'APPLIED', 'FAILED')",
+            name="ck_profile_imports_status",
+        ),
+        CheckConstraint(
+            "proposal_version >= 0", name="ck_profile_imports_proposal_version_nonnegative"
+        ),
+        CheckConstraint(
+            "(status = 'PROCESSING' AND processing_token IS NOT NULL "
+            "AND processing_started_at IS NOT NULL) OR "
+            "(status <> 'PROCESSING' AND processing_token IS NULL "
+            "AND processing_started_at IS NULL)",
+            name="ck_profile_imports_processing_lease",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    owner_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
+    )
+    company_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("companies.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    source_document_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    source_version_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    status: Mapped[ProfileImportStatus] = mapped_column(
+        SAEnum(ProfileImportStatus, native_enum=False, length=16),
+        nullable=False,
+        default=ProfileImportStatus.PENDING,
+    )
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    proposal_version: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    error_code: Mapped[str | None] = mapped_column(String(80))
+    last_ai_status: Mapped[str | None] = mapped_column(String(32))
+    last_ai_warnings: Mapped[list[str]] = mapped_column(
+        JSON, nullable=False, default=list, server_default=text("'[]'")
+    )
+    last_clarification_questions: Mapped[list[str]] = mapped_column(
+        JSON, nullable=False, default=list, server_default=text("'[]'")
+    )
+    last_ai_trace_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    last_prompt_version: Mapped[str | None] = mapped_column(String(100))
+    last_schema_version: Mapped[str | None] = mapped_column(String(100))
+    last_ai_model: Mapped[str | None] = mapped_column(String(100))
+    processing_token: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    processing_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ProfileProposal(TimestampMixin, Base):
+    __tablename__ = "profile_proposals"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["profile_import_id", "owner_user_id", "company_id"],
+            ["profile_imports.id", "profile_imports.owner_user_id", "profile_imports.company_id"],
+            name="fk_profile_proposals_import_scope",
+            ondelete="CASCADE",
+        ),
+        UniqueConstraint(
+            "profile_import_id", "version", name="uq_profile_proposals_import_version"
+        ),
+        UniqueConstraint(
+            "id",
+            "profile_import_id",
+            "owner_user_id",
+            "company_id",
+            name="uq_profile_proposals_scope",
+        ),
+        CheckConstraint("version > 0", name="ck_profile_proposals_version_positive"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    profile_import_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)
+    owner_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
+    )
+    company_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("companies.id", ondelete="RESTRICT"), nullable=False
+    )
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    trace_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    prompt_version: Mapped[str] = mapped_column(String(100), nullable=False)
+    schema_version: Mapped[str] = mapped_column(String(100), nullable=False)
+    model: Mapped[str] = mapped_column(String(100), nullable=False)
+
+
+class ProfileProposedValue(TimestampMixin, Base):
+    __tablename__ = "profile_proposed_values"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["proposal_id", "profile_import_id", "owner_user_id", "company_id"],
+            [
+                "profile_proposals.id",
+                "profile_proposals.profile_import_id",
+                "profile_proposals.owner_user_id",
+                "profile_proposals.company_id",
+            ],
+            name="fk_profile_proposed_values_proposal_scope",
+            ondelete="CASCADE",
+        ),
+        UniqueConstraint("proposal_id", "field_name", name="uq_profile_proposed_values_field"),
+        UniqueConstraint(
+            "id",
+            "profile_import_id",
+            "owner_user_id",
+            "company_id",
+            name="uq_profile_proposed_values_scope",
+        ),
+        UniqueConstraint(
+            "id", "owner_user_id", "company_id", name="uq_profile_proposed_values_owner_scope"
+        ),
+        CheckConstraint("field_name = 'jobTitle'", name="ck_profile_proposed_values_field"),
+        CheckConstraint(
+            "support_status IN ('SUPPORTED', 'AMBIGUOUS', 'MISSING')",
+            name="ck_profile_proposed_values_support_status",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    proposal_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)
+    profile_import_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    owner_user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    company_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    field_name: Mapped[str] = mapped_column(String(40), nullable=False)
+    value: Mapped[str | None] = mapped_column(String(160))
+    support_status: Mapped[str] = mapped_column(String(20), nullable=False)
+
+
+class ProfileEvidenceRef(TimestampMixin, Base):
+    __tablename__ = "profile_evidence_refs"
+    __table_args__ = (
+        UniqueConstraint(
+            "proposed_value_id",
+            "source_block_id",
+            "char_start",
+            "char_end",
+            name="uq_profile_evidence_refs_span",
+        ),
+        CheckConstraint("char_start >= 0", name="ck_profile_evidence_refs_char_start"),
+        CheckConstraint("char_end > char_start", name="ck_profile_evidence_refs_char_span"),
+        ForeignKeyConstraint(
+            ["proposed_value_id", "subject_id", "company_id"],
+            [
+                "profile_proposed_values.id",
+                "profile_proposed_values.owner_user_id",
+                "profile_proposed_values.company_id",
+            ],
+            name="fk_profile_evidence_refs_proposed_value_scope",
+            ondelete="CASCADE",
+        ),
+        ForeignKeyConstraint(
+            ["source_block_id", "source_version_id"],
+            ["source_blocks.id", "source_blocks.source_version_id"],
+            name="fk_profile_evidence_refs_block_version",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["source_version_id", "source_document_id", "subject_id", "company_id"],
+            [
+                "source_versions.id",
+                "source_versions.document_id",
+                "source_versions.owner_user_id",
+                "source_versions.company_id",
+            ],
+            name="fk_profile_evidence_refs_source_scope",
+            ondelete="RESTRICT",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    proposed_value_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)
+    subject_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
+    )
+    source_document_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("source_documents.id", ondelete="RESTRICT"), nullable=False
+    )
+    source_version_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("source_versions.id", ondelete="RESTRICT"), nullable=False
+    )
+    source_block_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("source_blocks.id", ondelete="RESTRICT"), nullable=False
+    )
+    company_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("companies.id", ondelete="RESTRICT"), nullable=False
+    )
+    char_start: Mapped[int] = mapped_column(Integer, nullable=False)
+    char_end: Mapped[int] = mapped_column(Integer, nullable=False)
+    quote: Mapped[str] = mapped_column(String(800), nullable=False)
+    quote_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    page_number: Mapped[int | None] = mapped_column(Integer)
+    sheet_name: Mapped[str | None] = mapped_column(String(100))
+
+
+class ProfileFieldProvenance(Base):
+    __tablename__ = "profile_field_provenance"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["profile_import_id", "user_id", "company_id"],
+            ["profile_imports.id", "profile_imports.owner_user_id", "profile_imports.company_id"],
+            name="fk_profile_field_provenance_import_scope",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["proposed_value_id", "profile_import_id", "user_id", "company_id"],
+            [
+                "profile_proposed_values.id",
+                "profile_proposed_values.profile_import_id",
+                "profile_proposed_values.owner_user_id",
+                "profile_proposed_values.company_id",
+            ],
+            name="fk_profile_field_provenance_value_scope",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["actor_id", "company_id"],
+            ["users.id", "users.company_id"],
+            name="fk_profile_field_provenance_actor_company",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint(
+            "profile_import_id", "proposed_value_id", name="uq_profile_field_provenance_import_item"
+        ),
+        CheckConstraint("field_name = 'jobTitle'", name="ck_profile_field_provenance_field"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    company_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("companies.id", ondelete="RESTRICT"), nullable=False
+    )
+    profile_import_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    proposed_value_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    actor_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    field_name: Mapped[str] = mapped_column(String(40), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class ProfileApplyReceipt(Base):
+    __tablename__ = "profile_apply_receipts"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["profile_import_id", "owner_user_id", "company_id"],
+            ["profile_imports.id", "profile_imports.owner_user_id", "profile_imports.company_id"],
+            name="fk_profile_apply_receipts_import_scope",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint(
+            "owner_user_id",
+            "company_id",
+            "idempotency_key_hash",
+            name="uq_profile_apply_receipts_owner_key",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    command_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, unique=True)
+    profile_import_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    owner_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
+    )
+    company_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("companies.id", ondelete="RESTRICT"), nullable=False
+    )
+    idempotency_key_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    request_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    result: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
 

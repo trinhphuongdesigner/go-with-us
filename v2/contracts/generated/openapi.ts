@@ -72,10 +72,90 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/profile-imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Profile Imports */
+        get: operations["list_profile_imports_api_v2_profile_imports_get"];
+        put?: never;
+        /** Create Profile Import */
+        post: operations["create_profile_import_api_v2_profile_imports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/profile-imports/{import_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Profile Import */
+        get: operations["get_profile_import_api_v2_profile_imports__import_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Profile Import */
+        delete: operations["delete_profile_import_api_v2_profile_imports__import_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/profile-imports/{import_id}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply Profile Import */
+        post: operations["apply_profile_import_api_v2_profile_imports__import_id__apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/profile-imports/{import_id}/parse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Parse Profile Import */
+        post: operations["parse_profile_import_api_v2_profile_imports__import_id__parse_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AiStatus
+         * @enum {string}
+         */
+        AiStatus: "ok" | "needs_clarification" | "insufficient_evidence" | "failed";
+        /** Body_create_profile_import_api_v2_profile_imports_post */
+        Body_create_profile_import_api_v2_profile_imports_post: {
+            /** File */
+            file: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -116,6 +196,236 @@ export interface components {
          * @enum {string}
          */
         Permission: "dashboard:read" | "profile:self" | "roadmap:self" | "assessment:self" | "company:read" | "company:manage" | "people:read" | "people:write" | "assessment:review" | "passport:approve" | "platform:manage";
+        /** ProfileApplyItem */
+        ProfileApplyItem: {
+            /**
+             * Proposalitemid
+             * Format: uuid
+             */
+            proposalItemId: string;
+            /** Selected */
+            selected: boolean;
+        };
+        /** ProfileApplyRead */
+        ProfileApplyRead: {
+            /**
+             * Commandid
+             * Format: uuid
+             */
+            commandId: string;
+            /** Createdentityids */
+            createdEntityIds: string[];
+            /** Profileversion */
+            profileVersion: number;
+            /** Skippeditemids */
+            skippedItemIds: string[];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "APPLIED" | "ALREADY_APPLIED";
+        };
+        /** ProfileApplyRequest */
+        ProfileApplyRequest: {
+            /** Items */
+            items: components["schemas"]["ProfileApplyItem"][];
+            /** Profileversion */
+            profileVersion: number;
+            /** Proposalversion */
+            proposalVersion: number;
+        };
+        /** ProfileConflictRead */
+        ProfileConflictRead: {
+            /** Currentprofileversion */
+            currentProfileVersion?: number | null;
+            /** Currentproposalversion */
+            currentProposalVersion?: number | null;
+            /** Detail */
+            detail: string;
+        };
+        /** ProfileEvidenceRead */
+        ProfileEvidenceRead: {
+            /**
+             * Blockid
+             * Format: uuid
+             */
+            blockId: string;
+            /** Charend */
+            charEnd: number;
+            /** Charstart */
+            charStart: number;
+            /** Context */
+            context: string;
+            /** Pagenumber */
+            pageNumber: number | null;
+            /** Quote */
+            quote: string;
+            /** Quotesha256 */
+            quoteSha256: string;
+            /** Sheetname */
+            sheetName: string | null;
+            /**
+             * Sourceid
+             * Format: uuid
+             */
+            sourceId: string;
+            /**
+             * Sourceversionid
+             * Format: uuid
+             */
+            sourceVersionId: string;
+        };
+        /** ProfileImportDetailRead */
+        ProfileImportDetailRead: {
+            aiStatus: components["schemas"]["AiStatus"] | null;
+            /** Clarificationquestions */
+            clarificationQuestions: string[];
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /** Filename */
+            fileName: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Mimetype */
+            mimeType: string;
+            /** Model */
+            model: string | null;
+            /** Profileversion */
+            profileVersion: number;
+            /** Promptversion */
+            promptVersion: string | null;
+            proposal: components["schemas"]["ProfileProposalRead"] | null;
+            /** Proposalversion */
+            proposalVersion: number;
+            /** Schemaversion */
+            schemaVersion: string | null;
+            /** Sha256 */
+            sha256: string;
+            /** Sizebytes */
+            sizeBytes: number;
+            status: components["schemas"]["ProfileImportStatus"];
+            /** Traceid */
+            traceId: string | null;
+            /**
+             * Updatedat
+             * Format: date-time
+             */
+            updatedAt: string;
+            /** Version */
+            version: number;
+            /** Warnings */
+            warnings: string[];
+        };
+        /** ProfileImportList */
+        ProfileImportList: {
+            /** Items */
+            items: components["schemas"]["ProfileImportRead"][];
+            /** Page */
+            page: number;
+            /** Pagesize */
+            pageSize: number;
+            /** Total */
+            total: number;
+        };
+        /** ProfileImportParseRead */
+        ProfileImportParseRead: {
+            aiStatus: components["schemas"]["AiStatus"];
+            /** Clarificationquestions */
+            clarificationQuestions: string[];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Model */
+            model: string;
+            /** Profileversion */
+            profileVersion: number;
+            /** Promptversion */
+            promptVersion: string;
+            proposal: components["schemas"]["ProfileProposalRead"] | null;
+            /** Proposalversion */
+            proposalVersion: number;
+            /** Schemaversion */
+            schemaVersion: string;
+            status: components["schemas"]["ProfileImportStatus"];
+            /**
+             * Traceid
+             * Format: uuid
+             */
+            traceId: string;
+            /** Warnings */
+            warnings: string[];
+        };
+        /** ProfileImportRead */
+        ProfileImportRead: {
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /** Filename */
+            fileName: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Mimetype */
+            mimeType: string;
+            /** Proposalversion */
+            proposalVersion: number;
+            /** Sha256 */
+            sha256: string;
+            /** Sizebytes */
+            sizeBytes: number;
+            status: components["schemas"]["ProfileImportStatus"];
+            /**
+             * Updatedat
+             * Format: date-time
+             */
+            updatedAt: string;
+            /** Version */
+            version: number;
+        };
+        /**
+         * ProfileImportStatus
+         * @enum {string}
+         */
+        ProfileImportStatus: "PENDING" | "PROCESSING" | "PARSED" | "APPLIED" | "FAILED";
+        /** ProfileProposalItemRead */
+        ProfileProposalItemRead: {
+            /** Evidencerefs */
+            evidenceRefs: components["schemas"]["ProfileEvidenceRead"][];
+            /** Field */
+            field: string;
+            /**
+             * Proposalitemid
+             * Format: uuid
+             */
+            proposalItemId: string;
+            supportStatus: components["schemas"]["SupportStatus"];
+            /** Value */
+            value: string | null;
+        };
+        /** ProfileProposalRead */
+        ProfileProposalRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Items */
+            items: components["schemas"]["ProfileProposalItemRead"][];
+            /** Version */
+            version: number;
+        };
         /**
          * Role
          * @enum {string}
@@ -147,6 +457,11 @@ export interface components {
             /** Title */
             title: string;
         };
+        /**
+         * SupportStatus
+         * @enum {string}
+         */
+        SupportStatus: "SUPPORTED" | "AMBIGUOUS" | "MISSING" | "SELF_ASSERTED";
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -267,6 +582,226 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+        };
+    };
+    list_profile_imports_api_v2_profile_imports_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileImportList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_profile_import_api_v2_profile_imports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_create_profile_import_api_v2_profile_imports_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileImportRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_profile_import_api_v2_profile_imports__import_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                import_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileImportDetailRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_profile_import_api_v2_profile_imports__import_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                import_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileConflictRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_profile_import_api_v2_profile_imports__import_id__apply_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                import_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileApplyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileApplyRead"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileConflictRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parse_profile_import_api_v2_profile_imports__import_id__parse_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                import_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileImportParseRead"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileConflictRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
