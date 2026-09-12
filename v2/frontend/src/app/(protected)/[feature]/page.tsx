@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { FeatureScreen } from "@/features/navigation/feature-screen";
+import { DEMO_MODE } from "@/lib/api";
 
 const features: Record<string, { eyebrow: string; title: string; description: string }> = {
   "ho-so": { eyebrow: "Hồ sơ 360°", title: "Hồ sơ năng lực", description: "Kỹ năng, kinh nghiệm, dự án và chứng chỉ sẽ được tập hợp tại đây." },
@@ -12,10 +13,22 @@ const features: Record<string, { eyebrow: string; title: string; description: st
   "cai-dat": { eyebrow: "Cá nhân hóa", title: "Cài đặt", description: "Tài khoản, thông báo và các kết nối an toàn của bạn." },
 };
 
-export default async function FeaturePlaceholderPage({ params }: { params: Promise<{ feature: string }> }) {
+const forcedStates = new Set(["loading", "empty", "error", "stale"]);
+
+export default async function FeaturePlaceholderPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ feature: string }>;
+  searchParams: Promise<{ state?: string }>;
+}) {
   const { feature } = await params;
   const detail = features[feature];
   if (!detail) notFound();
+  const requestedState = (await searchParams).state;
+  const forceState = DEMO_MODE && requestedState && forcedStates.has(requestedState)
+    ? requestedState as "loading" | "empty" | "error" | "stale"
+    : undefined;
 
-  return <FeatureScreen feature={feature} detail={detail} />;
+  return <FeatureScreen feature={feature} detail={detail} forceState={forceState} />;
 }
