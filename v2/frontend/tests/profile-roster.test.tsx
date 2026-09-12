@@ -11,6 +11,10 @@ import type { Session } from "@/lib/types";
 const apiMocks = vi.hoisted(() => ({
   getOwnProfile: vi.fn(),
   updateOwnProfile: vi.fn(),
+  createProfileResource: vi.fn(),
+  updateProfileResource: vi.fn(),
+  deleteProfileResource: vi.fn(),
+  replaceEmployeeSkills: vi.fn(),
   listPeople: vi.fn(),
   getPerson: vi.fn(),
   listAvailableCompanies: vi.fn(),
@@ -99,12 +103,16 @@ const profile = {
   companyName: "Acme Việt Nam",
   profileVersion: 4,
   updatedAt: "2026-09-11T08:30:00.000Z",
-  skills: [{ id: "skill-1", name: "Product discovery", level: 4, sourceType: "SELF" }],
+  skills: [{ id: "employee-skill-1", skillId: "skill-1", name: "Product discovery", level: 4, sourceType: "SELF" }],
   experiences: [{ id: "experience-1", title: "Product Designer", organization: "Acme Việt Nam", startDate: "2024-01-01", endDate: null }],
   projects: [{ id: "project-1", name: "CareerMate", role: "Product Designer", startDate: "2026-06-01", endDate: null }],
   certifications: [],
-  awards: [],
-  timeline: [{ id: "timeline-1", kind: "PROJECT", title: "Ra mắt CareerMate", subtitle: "Product Designer", startDate: "2026-06-01", endDate: null, sourceType: "IMPORT" }],
+  awards: [{ id: "award-1", name: "Team Impact", issuer: "Acme Việt Nam", type: "WORK", awardedAt: "2026-01-01", sourceType: "ADMIN" }],
+  employments: [],
+  timeline: [
+    { id: "timeline-1", kind: "PROJECT", title: "Ra mắt CareerMate", subtitle: "Product Designer", startDate: "2026-06-01", endDate: null, sourceType: "IMPORT" },
+    { id: "timeline-2", kind: "AWARD", title: "Team Impact", subtitle: "Acme Việt Nam", startDate: "2026-01-01", endDate: null, sourceType: "ADMIN" },
+  ],
 };
 
 const people = {
@@ -152,6 +160,10 @@ describe("core profile and tenant roster", () => {
     testSession = employeeSession;
     apiMocks.getOwnProfile.mockResolvedValue(profile);
     apiMocks.updateOwnProfile.mockResolvedValue({ ...profile, profileVersion: 5 });
+    apiMocks.createProfileResource.mockResolvedValue({ id: "experience-new" });
+    apiMocks.updateProfileResource.mockResolvedValue({ id: "award-1" });
+    apiMocks.deleteProfileResource.mockResolvedValue(undefined);
+    apiMocks.replaceEmployeeSkills.mockResolvedValue({ profileVersion: 5, items: [] });
     apiMocks.listPeople.mockResolvedValue(people);
     apiMocks.listAvailableCompanies.mockResolvedValue([
       { id: "company-1", name: "Acme Việt Nam" },
@@ -166,8 +178,144 @@ describe("core profile and tenant roster", () => {
     expect(screen.getByText("Phiên hồ sơ 4")).toBeVisible();
     expect(screen.getByRole("heading", { name: "Dòng thời gian nghề nghiệp" })).toBeVisible();
     expect(screen.getByText("Ra mắt CareerMate")).toBeVisible();
+    expect(screen.getByText("HR cập nhật")).toBeVisible();
     expect(screen.getByRole("complementary", { name: "Gợi ý từ Milo" })).toBeVisible();
     expect(screen.getByRole("link", { name: /Nhập hồ sơ từ tài liệu/ })).toHaveAttribute("href", "/ho-so/import");
+  });
+
+  it("creates a profile experience with the current aggregate version", async () => {
+    const user = userEvent.setup();
+    renderFeature("ho-so");
+
+    await user.click(await screen.findByRole("button", { name: "Thêm nội dung hồ sơ" }));
+    expect(screen.getByRole("textbox", { name: "Tiêu đề" })).toHaveFocus();
+    await user.selectOptions(screen.getByRole("combobox", { name: "Loại nội dung" }), "experiences");
+    await user.type(screen.getByRole("textbox", { name: "Tiêu đề" }), "Community Mentor");
+    await user.type(screen.getByRole("textbox", { name: "Tổ chức" }), "Tech Community");
+    await user.type(screen.getByLabelText("Ngày bắt đầu"), "2025-05-01");
+    await user.click(screen.getByRole("button", { name: "Lưu kinh nghiệm" }));
+
+    await waitFor(() => expect(apiMocks.createProfileResource).toHaveBeenCalledWith(
+      employeeSession,
+      "experiences",
+      expect.objectContaining({
+        profileVersion: 4,
+        title: "Community Mentor",
+        organization: "Tech Community",
+        startDate: "2025-05-01",
+      }),
+    ));
+    const notice = await screen.findByText("Đã thêm nội dung hồ sơ");
+    await waitFor(() => expect(notice.closest('[role="status"]')).toHaveFocus());
+  });
+
+  it("submits every project field exposed by the resource contract", async () => {
+    const user = userEvent.setup();
+    renderFeature("ho-so");
+
+    await user.click(await screen.findByRole("button", { name: "Thêm nội dung hồ sơ" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Loại nội dung" }), "projects");
+    await user.type(screen.getByRole("textbox", { name: "Tên dự án" }), "Career Graph");
+    await user.type(screen.getByRole("textbox", { name: "Vai trò" }), "Tech Lead");
+    await user.type(screen.getByRole("textbox", { name: "Lĩnh vực" }), "People Analytics");
+    await user.type(screen.getByRole("textbox", { name: "Công nghệ, cách nhau bằng dấu phẩy" }), "React, PostgreSQL");
+    await user.type(screen.getByRole("textbox", { name: "Đóng góp" }), "Thiết kế kiến trúc");
+    await user.type(screen.getByRole("textbox", { name: "Mô tả" }), "Hồ sơ năng lực có cấu trúc");
+    await user.type(screen.getByRole("textbox", { name: "URL dự án" }), "https://example.invalid/project");
+    await user.type(screen.getByLabelText("Ngày bắt đầu"), "2025-01-01");
+    await user.type(screen.getByLabelText("Ngày kết thúc"), "2025-12-01");
+    await user.click(screen.getByRole("button", { name: "Lưu dự án" }));
+
+    await waitFor(() => expect(apiMocks.createProfileResource).toHaveBeenCalledWith(
+      employeeSession,
+      "projects",
+      expect.objectContaining({
+        profileVersion: 4,
+        name: "Career Graph",
+        role: "Tech Lead",
+        domain: "People Analytics",
+        techStack: ["React", "PostgreSQL"],
+        contribution: "Thiết kế kiến trúc",
+        description: "Hồ sơ năng lực có cấu trúc",
+        url: "https://example.invalid/project",
+        startDate: "2025-01-01",
+        endDate: "2025-12-01",
+      }),
+    ));
+  });
+
+  it("edits and deletes an existing resource with optimistic profile version", async () => {
+    const user = userEvent.setup();
+    renderFeature("ho-so");
+
+    await user.click(await screen.findByRole("button", { name: "Giải thưởng (1)" }));
+    await user.click(screen.getByRole("button", { name: "Chỉnh sửa Team Impact" }));
+    const name = screen.getByRole("textbox", { name: "Tên giải thưởng" });
+    const issuer = screen.getByRole("textbox", { name: "Đơn vị trao" });
+    const awardedAt = screen.getByLabelText("Ngày nhận");
+    expect(issuer.compareDocumentPosition(awardedAt) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    await user.clear(name);
+    await user.type(name, "Company Impact");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Loại" }), "PERSONAL");
+    expect(screen.getByRole("option", { name: "Cá nhân" })).toBeVisible();
+    await user.type(screen.getByRole("textbox", { name: "URL minh chứng" }), "https://example.invalid/evidence");
+    await user.type(screen.getByRole("textbox", { name: "Mô tả" }), "Được đồng nghiệp bình chọn");
+    await user.click(screen.getByRole("button", { name: "Lưu giải thưởng" }));
+
+    await waitFor(() => expect(apiMocks.updateProfileResource).toHaveBeenCalledWith(
+      employeeSession,
+      "awards",
+      "award-1",
+      expect.objectContaining({
+        profileVersion: 4,
+        name: "Company Impact",
+        type: "PERSONAL",
+        description: "Được đồng nghiệp bình chọn",
+        evidenceUrl: "https://example.invalid/evidence",
+        awardedAt: "2026-01-01",
+      }),
+    ));
+
+    await user.click(screen.getByRole("button", { name: "Xóa Team Impact" }));
+    expect(apiMocks.deleteProfileResource).not.toHaveBeenCalled();
+    const confirmDelete = screen.getByRole("button", { name: "Xác nhận xóa Team Impact" });
+    expect(confirmDelete).toHaveFocus();
+    await user.click(confirmDelete);
+    await waitFor(() => expect(apiMocks.deleteProfileResource).toHaveBeenCalledWith(
+      employeeSession,
+      "awards",
+      "award-1",
+      4,
+    ));
+  });
+
+  it("shows a recoverable error when deleting a resource fails", async () => {
+    const user = userEvent.setup();
+    apiMocks.deleteProfileResource.mockRejectedValue(new ApiError("Mất kết nối", 503));
+    renderFeature("ho-so");
+
+    await user.click(await screen.findByRole("button", { name: "Giải thưởng (1)" }));
+    await user.click(screen.getByRole("button", { name: "Xóa Team Impact" }));
+    await user.click(screen.getByRole("button", { name: "Xác nhận xóa Team Impact" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Chưa thể xóa nội dung");
+  });
+
+  it("saves skills as one full-replace command", async () => {
+    const user = userEvent.setup();
+    renderFeature("ho-so");
+
+    await user.click(await screen.findByRole("button", { name: "Kỹ năng (1)" }));
+    const rating = screen.getByRole("spinbutton", { name: "Mức Product discovery" });
+    await user.clear(rating);
+    await user.type(rating, "5");
+    await user.click(screen.getByRole("button", { name: "Lưu toàn bộ kỹ năng" }));
+
+    await waitFor(() => expect(apiMocks.replaceEmployeeSkills).toHaveBeenCalledWith(
+      employeeSession,
+      "demo-employee",
+      { profileVersion: 4, skills: [{ skillId: "skill-1", rating: 5, note: null }] },
+    ));
   });
 
   it("edits only name and job title with optimistic profile version", async () => {
@@ -237,6 +385,24 @@ describe("core profile and tenant roster", () => {
     expect(await screen.findByText("Chưa tải được bản mới. Hồ sơ vẫn đang khóa để bảo vệ thay đổi.")).toBeVisible();
     expect(screen.getByRole("button", { name: "Lưu thay đổi" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Tải lại hồ sơ" })).toBeVisible();
+  });
+
+  it("locks resource creation after a typed demo-compatible conflict", async () => {
+    const user = userEvent.setup();
+    apiMocks.createProfileResource.mockRejectedValue(new ApiError("Phiên hồ sơ đã thay đổi", 409, {
+      detail: "Phiên hồ sơ đã thay đổi",
+      currentProfileVersion: 5,
+    }));
+    renderFeature("ho-so");
+
+    await user.click(await screen.findByRole("button", { name: "Thêm nội dung hồ sơ" }));
+    await user.type(screen.getByRole("textbox", { name: "Tiêu đề" }), "Mentor");
+    await user.type(screen.getByRole("textbox", { name: "Tổ chức" }), "Community");
+    await user.click(screen.getByRole("button", { name: "Lưu kinh nghiệm" }));
+
+    expect(await screen.findByRole("heading", { name: "Hồ sơ đã thay đổi ở nơi khác" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Thêm nội dung hồ sơ" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Chỉnh sửa hồ sơ" })).toBeDisabled();
   });
 
   it("gives HR a searchable, read-only roster and a specific filtered-empty state", async () => {

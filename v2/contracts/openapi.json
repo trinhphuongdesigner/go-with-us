@@ -11,6 +11,300 @@
         "title": "AiStatus",
         "type": "string"
       },
+      "AwardCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "awardedAt": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Awardedat"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "evidenceUrl": {
+            "anyOf": [
+              {
+                "format": "uri",
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidenceurl"
+          },
+          "issuer": {
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Issuer",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "profileVersion": {
+            "minimum": 1.0,
+            "title": "Profileversion",
+            "type": "integer"
+          },
+          "type": {
+            "$ref": "#/components/schemas/AwardType"
+          }
+        },
+        "required": [
+          "profileVersion",
+          "name",
+          "type",
+          "issuer"
+        ],
+        "title": "AwardCreate",
+        "type": "object"
+      },
+      "AwardPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "awardedAt": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Awardedat"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "evidenceUrl": {
+            "anyOf": [
+              {
+                "format": "uri",
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidenceurl"
+          },
+          "issuer": {
+            "anyOf": [
+              {
+                "maxLength": 180,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issuer"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 180,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "profileVersion": {
+            "minimum": 1.0,
+            "title": "Profileversion",
+            "type": "integer"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AwardType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "profileVersion"
+        ],
+        "title": "AwardPatch",
+        "type": "object"
+      },
+      "AwardRead": {
+        "additionalProperties": false,
+        "properties": {
+          "awardedAt": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Awardedat"
+          },
+          "createdAt": {
+            "title": "Createdat",
+            "type": "string"
+          },
+          "createdBy": {
+            "format": "uuid",
+            "title": "Createdby",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "evidenceUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidenceurl"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "issuer": {
+            "title": "Issuer",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "proposalItemId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposalitemid"
+          },
+          "selfReported": {
+            "title": "Selfreported",
+            "type": "boolean"
+          },
+          "sourceImportId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sourceimportid"
+          },
+          "sourceType": {
+            "$ref": "#/components/schemas/ProfileSourceType"
+          },
+          "type": {
+            "$ref": "#/components/schemas/AwardType"
+          },
+          "updatedAt": {
+            "title": "Updatedat",
+            "type": "string"
+          },
+          "updatedBy": {
+            "format": "uuid",
+            "title": "Updatedby",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sourceType",
+          "sourceImportId",
+          "proposalItemId",
+          "createdBy",
+          "updatedBy",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "id",
+          "name",
+          "type",
+          "issuer",
+          "description",
+          "evidenceUrl",
+          "awardedAt",
+          "selfReported"
+        ],
+        "title": "AwardRead",
+        "type": "object"
+      },
+      "AwardType": {
+        "enum": [
+          "WORK",
+          "PERSONAL"
+        ],
+        "title": "AwardType",
+        "type": "string"
+      },
       "Body_create_profile_import_api_v2_profile_imports_post": {
         "properties": {
           "file": {
@@ -24,6 +318,334 @@
         ],
         "title": "Body_create_profile_import_api_v2_profile_imports_post",
         "type": "object"
+      },
+      "CertificationCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "credentialUrl": {
+            "anyOf": [
+              {
+                "format": "uri",
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Credentialurl"
+          },
+          "expiresAt": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiresat"
+          },
+          "issuedAt": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issuedat"
+          },
+          "issuer": {
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Issuer",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "profileVersion": {
+            "minimum": 1.0,
+            "title": "Profileversion",
+            "type": "integer"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "type": {
+            "$ref": "#/components/schemas/CertificationType"
+          }
+        },
+        "required": [
+          "profileVersion",
+          "name",
+          "type",
+          "issuer"
+        ],
+        "title": "CertificationCreate",
+        "type": "object"
+      },
+      "CertificationPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "credentialUrl": {
+            "anyOf": [
+              {
+                "format": "uri",
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Credentialurl"
+          },
+          "expiresAt": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiresat"
+          },
+          "issuedAt": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issuedat"
+          },
+          "issuer": {
+            "anyOf": [
+              {
+                "maxLength": 180,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issuer"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 180,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "profileVersion": {
+            "minimum": 1.0,
+            "title": "Profileversion",
+            "type": "integer"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CertificationType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "profileVersion"
+        ],
+        "title": "CertificationPatch",
+        "type": "object"
+      },
+      "CertificationRead": {
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": {
+            "title": "Createdat",
+            "type": "string"
+          },
+          "createdBy": {
+            "format": "uuid",
+            "title": "Createdby",
+            "type": "string"
+          },
+          "credentialUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Credentialurl"
+          },
+          "expiresAt": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiresat"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "issuedAt": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issuedat"
+          },
+          "issuer": {
+            "title": "Issuer",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "proposalItemId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposalitemid"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "sourceImportId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sourceimportid"
+          },
+          "sourceType": {
+            "$ref": "#/components/schemas/ProfileSourceType"
+          },
+          "type": {
+            "$ref": "#/components/schemas/CertificationType"
+          },
+          "updatedAt": {
+            "title": "Updatedat",
+            "type": "string"
+          },
+          "updatedBy": {
+            "format": "uuid",
+            "title": "Updatedby",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sourceType",
+          "sourceImportId",
+          "proposalItemId",
+          "createdBy",
+          "updatedBy",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "id",
+          "name",
+          "type",
+          "issuer",
+          "score",
+          "credentialUrl",
+          "issuedAt",
+          "expiresAt"
+        ],
+        "title": "CertificationRead",
+        "type": "object"
+      },
+      "CertificationType": {
+        "enum": [
+          "DEGREE",
+          "LANGUAGE",
+          "PROFESSIONAL",
+          "OTHER"
+        ],
+        "title": "CertificationType",
+        "type": "string"
       },
       "CompanyOptionListRead": {
         "additionalProperties": false,
@@ -62,6 +684,112 @@
         "title": "CompanyOptionRead",
         "type": "object"
       },
+      "CompetencyProfileRead": {
+        "additionalProperties": false,
+        "properties": {
+          "awards": {
+            "items": {
+              "$ref": "#/components/schemas/AwardRead"
+            },
+            "title": "Awards",
+            "type": "array"
+          },
+          "certifications": {
+            "items": {
+              "$ref": "#/components/schemas/CertificationRead"
+            },
+            "title": "Certifications",
+            "type": "array"
+          },
+          "employments": {
+            "items": {
+              "$ref": "#/components/schemas/EmploymentRead"
+            },
+            "title": "Employments",
+            "type": "array"
+          },
+          "experiences": {
+            "items": {
+              "$ref": "#/components/schemas/ExperienceRead"
+            },
+            "title": "Experiences",
+            "type": "array"
+          },
+          "projects": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectRead"
+            },
+            "title": "Projects",
+            "type": "array"
+          },
+          "skills": {
+            "items": {
+              "$ref": "#/components/schemas/EmployeeSkillRead"
+            },
+            "title": "Skills",
+            "type": "array"
+          },
+          "timeline": {
+            "items": {
+              "$ref": "#/components/schemas/TimelineItemRead"
+            },
+            "title": "Timeline",
+            "type": "array"
+          },
+          "user": {
+            "$ref": "#/components/schemas/CompetencyUserRead"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "user",
+          "skills",
+          "experiences",
+          "projects",
+          "certifications",
+          "awards",
+          "employments",
+          "timeline",
+          "version"
+        ],
+        "title": "CompetencyProfileRead",
+        "type": "object"
+      },
+      "CompetencyUserRead": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "jobTitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Jobtitle"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "jobTitle"
+        ],
+        "title": "CompetencyUserRead",
+        "type": "object"
+      },
       "CoreProfileConflictRead": {
         "additionalProperties": false,
         "properties": {
@@ -81,6 +809,242 @@
         "title": "CoreProfileConflictRead",
         "type": "object"
       },
+      "EmployeeSkillInput": {
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "rating": {
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Rating",
+            "type": "integer"
+          },
+          "skillId": {
+            "format": "uuid",
+            "title": "Skillid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "skillId",
+          "rating"
+        ],
+        "title": "EmployeeSkillInput",
+        "type": "object"
+      },
+      "EmployeeSkillListRead": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/EmployeeSkillRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "profileVersion": {
+            "title": "Profileversion",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "profileVersion"
+        ],
+        "title": "EmployeeSkillListRead",
+        "type": "object"
+      },
+      "EmployeeSkillRead": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "createdAt": {
+            "title": "Createdat",
+            "type": "string"
+          },
+          "createdBy": {
+            "format": "uuid",
+            "title": "Createdby",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "proposalItemId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposalitemid"
+          },
+          "rating": {
+            "title": "Rating",
+            "type": "integer"
+          },
+          "selfAssessed": {
+            "title": "Selfassessed",
+            "type": "boolean"
+          },
+          "skillId": {
+            "format": "uuid",
+            "title": "Skillid",
+            "type": "string"
+          },
+          "sourceImportId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sourceimportid"
+          },
+          "sourceType": {
+            "$ref": "#/components/schemas/ProfileSourceType"
+          },
+          "updatedAt": {
+            "title": "Updatedat",
+            "type": "string"
+          },
+          "updatedBy": {
+            "format": "uuid",
+            "title": "Updatedby",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sourceType",
+          "sourceImportId",
+          "proposalItemId",
+          "createdBy",
+          "updatedBy",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "id",
+          "skillId",
+          "name",
+          "category",
+          "rating",
+          "note",
+          "selfAssessed"
+        ],
+        "title": "EmployeeSkillRead",
+        "type": "object"
+      },
+      "EmployeeSkillReplace": {
+        "additionalProperties": false,
+        "properties": {
+          "profileVersion": {
+            "minimum": 1.0,
+            "title": "Profileversion",
+            "type": "integer"
+          },
+          "skills": {
+            "items": {
+              "$ref": "#/components/schemas/EmployeeSkillInput"
+            },
+            "maxItems": 200,
+            "title": "Skills",
+            "type": "array"
+          }
+        },
+        "required": [
+          "profileVersion",
+          "skills"
+        ],
+        "title": "EmployeeSkillReplace",
+        "type": "object"
+      },
+      "EmploymentRead": {
+        "additionalProperties": false,
+        "properties": {
+          "endDate": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enddate"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "startDate": {
+            "format": "date-time",
+            "title": "Startdate",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "startDate",
+          "endDate"
+        ],
+        "title": "EmploymentRead",
+        "type": "object"
+      },
       "ErrorDetailRead": {
         "additionalProperties": false,
         "properties": {
@@ -93,6 +1057,305 @@
           "detail"
         ],
         "title": "ErrorDetailRead",
+        "type": "object"
+      },
+      "ExperienceCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "employmentId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employmentid"
+          },
+          "endDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enddate"
+          },
+          "organization": {
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Organization",
+            "type": "string"
+          },
+          "profileVersion": {
+            "minimum": 1.0,
+            "title": "Profileversion",
+            "type": "integer"
+          },
+          "startDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Startdate"
+          },
+          "title": {
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "profileVersion",
+          "title",
+          "organization"
+        ],
+        "title": "ExperienceCreate",
+        "type": "object"
+      },
+      "ExperiencePatch": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "employmentId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employmentid"
+          },
+          "endDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enddate"
+          },
+          "organization": {
+            "anyOf": [
+              {
+                "maxLength": 180,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization"
+          },
+          "profileVersion": {
+            "minimum": 1.0,
+            "title": "Profileversion",
+            "type": "integer"
+          },
+          "startDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Startdate"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 180,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "required": [
+          "profileVersion"
+        ],
+        "title": "ExperiencePatch",
+        "type": "object"
+      },
+      "ExperienceRead": {
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": {
+            "title": "Createdat",
+            "type": "string"
+          },
+          "createdBy": {
+            "format": "uuid",
+            "title": "Createdby",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "employmentId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employmentid"
+          },
+          "endDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enddate"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "organization": {
+            "title": "Organization",
+            "type": "string"
+          },
+          "proposalItemId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposalitemid"
+          },
+          "sourceImportId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sourceimportid"
+          },
+          "sourceType": {
+            "$ref": "#/components/schemas/ProfileSourceType"
+          },
+          "startDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Startdate"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updatedAt": {
+            "title": "Updatedat",
+            "type": "string"
+          },
+          "updatedBy": {
+            "format": "uuid",
+            "title": "Updatedby",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sourceType",
+          "sourceImportId",
+          "proposalItemId",
+          "createdBy",
+          "updatedBy",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "id",
+          "title",
+          "organization",
+          "employmentId",
+          "description",
+          "startDate",
+          "endDate"
+        ],
+        "title": "ExperienceRead",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -940,6 +2203,520 @@
         "title": "ProfileRead",
         "type": "object"
       },
+      "ProfileResourceConflictRead": {
+        "additionalProperties": false,
+        "properties": {
+          "currentProfileVersion": {
+            "title": "Currentprofileversion",
+            "type": "integer"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "detail",
+          "currentProfileVersion"
+        ],
+        "title": "ProfileResourceConflictRead",
+        "type": "object"
+      },
+      "ProfileSourceType": {
+        "enum": [
+          "SELF",
+          "ADMIN",
+          "IMPORT"
+        ],
+        "title": "ProfileSourceType",
+        "type": "string"
+      },
+      "ProfileTimelineKind": {
+        "enum": [
+          "EMPLOYMENT",
+          "EXPERIENCE",
+          "PROJECT",
+          "CERTIFICATION",
+          "AWARD"
+        ],
+        "title": "ProfileTimelineKind",
+        "type": "string"
+      },
+      "ProjectCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "contribution": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contribution"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "domain": {
+            "anyOf": [
+              {
+                "maxLength": 180,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain"
+          },
+          "employmentId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employmentid"
+          },
+          "endDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enddate"
+          },
+          "name": {
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "profileVersion": {
+            "minimum": 1.0,
+            "title": "Profileversion",
+            "type": "integer"
+          },
+          "role": {
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Role",
+            "type": "string"
+          },
+          "startDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Startdate"
+          },
+          "techStack": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Techstack",
+            "type": "array"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "format": "uri",
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "profileVersion",
+          "name",
+          "role"
+        ],
+        "title": "ProjectCreate",
+        "type": "object"
+      },
+      "ProjectPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "contribution": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contribution"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "domain": {
+            "anyOf": [
+              {
+                "maxLength": 180,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain"
+          },
+          "employmentId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employmentid"
+          },
+          "endDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enddate"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 180,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "profileVersion": {
+            "minimum": 1.0,
+            "title": "Profileversion",
+            "type": "integer"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "maxLength": 180,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "startDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Startdate"
+          },
+          "techStack": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Techstack"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "format": "uri",
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "profileVersion"
+        ],
+        "title": "ProjectPatch",
+        "type": "object"
+      },
+      "ProjectRead": {
+        "additionalProperties": false,
+        "properties": {
+          "contribution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contribution"
+          },
+          "createdAt": {
+            "title": "Createdat",
+            "type": "string"
+          },
+          "createdBy": {
+            "format": "uuid",
+            "title": "Createdby",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "domain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain"
+          },
+          "employmentId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employmentid"
+          },
+          "endDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enddate"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "proposalItemId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposalitemid"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "sourceImportId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sourceimportid"
+          },
+          "sourceType": {
+            "$ref": "#/components/schemas/ProfileSourceType"
+          },
+          "startDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Startdate"
+          },
+          "techStack": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Techstack",
+            "type": "array"
+          },
+          "updatedAt": {
+            "title": "Updatedat",
+            "type": "string"
+          },
+          "updatedBy": {
+            "format": "uuid",
+            "title": "Updatedby",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sourceType",
+          "sourceImportId",
+          "proposalItemId",
+          "createdBy",
+          "updatedBy",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "id",
+          "name",
+          "role",
+          "employmentId",
+          "domain",
+          "description",
+          "techStack",
+          "contribution",
+          "url",
+          "startDate",
+          "endDate"
+        ],
+        "title": "ProjectRead",
+        "type": "object"
+      },
+      "ResourceListRead": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ExperienceRead"
+                },
+                {
+                  "$ref": "#/components/schemas/ProjectRead"
+                },
+                {
+                  "$ref": "#/components/schemas/CertificationRead"
+                },
+                {
+                  "$ref": "#/components/schemas/AwardRead"
+                }
+              ]
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "profileVersion": {
+            "title": "Profileversion",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "profileVersion"
+        ],
+        "title": "ResourceListRead",
+        "type": "object"
+      },
       "Role": {
         "enum": [
           "SUPER_ADMIN",
@@ -1149,6 +2926,99 @@
         "title": "SessionUserRead",
         "type": "object"
       },
+      "SkillCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "SkillCreate",
+        "type": "object"
+      },
+      "SkillListRead": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SkillRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pageSize": {
+            "title": "Pagesize",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ],
+        "title": "SkillListRead",
+        "type": "object"
+      },
+      "SkillRead": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "category"
+        ],
+        "title": "SkillRead",
+        "type": "object"
+      },
       "SupportStatus": {
         "enum": [
           "SUPPORTED",
@@ -1158,6 +3028,65 @@
         ],
         "title": "SupportStatus",
         "type": "string"
+      },
+      "TimelineItemRead": {
+        "additionalProperties": false,
+        "properties": {
+          "endDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enddate"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ProfileTimelineKind"
+          },
+          "sourceType": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProfileSourceType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "startDate": {
+            "format": "date",
+            "title": "Startdate",
+            "type": "string"
+          },
+          "subtitle": {
+            "title": "Subtitle",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "subtitle",
+          "startDate",
+          "endDate",
+          "sourceType"
+        ],
+        "title": "TimelineItemRead",
+        "type": "object"
       },
       "ValidationError": {
         "properties": {
@@ -1197,6 +3126,21 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "VersionedCommand": {
+        "additionalProperties": false,
+        "properties": {
+          "profileVersion": {
+            "minimum": 1.0,
+            "title": "Profileversion",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "profileVersion"
+        ],
+        "title": "VersionedCommand",
         "type": "object"
       }
     },
@@ -1352,6 +3296,1474 @@
         "summary": "List Company Options",
         "tags": [
           "companies"
+        ]
+      }
+    },
+    "/api/v2/competency-profile": {
+      "get": {
+        "description": "Returns 422 when any profile collection exceeds the supported 200 items.",
+        "operationId": "get_competency_profile_api_v2_competency_profile_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "userId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Userid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompetencyProfileRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Competency Profile",
+        "tags": [
+          "competency profile"
+        ]
+      }
+    },
+    "/api/v2/competency-profile/awards": {
+      "get": {
+        "description": "Capped at 200 items.",
+        "operationId": "list_awards_api_v2_competency_profile_awards_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "userId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Userid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceListRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Awards",
+        "tags": [
+          "competency profile"
+        ]
+      },
+      "post": {
+        "operationId": "create_award_api_v2_competency_profile_awards_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "userId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Userid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AwardCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AwardRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResourceConflictRead"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Award",
+        "tags": [
+          "competency profile"
+        ]
+      }
+    },
+    "/api/v2/competency-profile/awards/{resource_id}": {
+      "delete": {
+        "operationId": "delete_award_api_v2_competency_profile_awards__resource_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Resource Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "userId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Userid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionedCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResourceConflictRead"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Award",
+        "tags": [
+          "competency profile"
+        ]
+      },
+      "get": {
+        "operationId": "get_award_api_v2_competency_profile_awards__resource_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Resource Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "userId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Userid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AwardRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Award",
+        "tags": [
+          "competency profile"
+        ]
+      },
+      "patch": {
+        "operationId": "update_award_api_v2_competency_profile_awards__resource_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Resource Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "userId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Userid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AwardPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AwardRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResourceConflictRead"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Award",
+        "tags": [
+          "competency profile"
+        ]
+      }
+    },
+    "/api/v2/competency-profile/certifications": {
+      "get": {
+        "description": "Capped at 200 items.",
+        "operationId": "list_certifications_api_v2_competency_profile_certifications_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "userId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Userid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceListRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Certifications",
+        "tags": [
+          "competency profile"
+        ]
+      },
+      "post": {
+        "operationId": "create_certification_api_v2_competency_profile_certifications_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "userId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Userid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificationCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificationRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResourceConflictRead"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Certification",
+        "tags": [
+          "competency profile"
+        ]
+      }
+    },
+    "/api/v2/competency-profile/certifications/{resource_id}": {
+      "delete": {
+        "operationId": "delete_certification_api_v2_competency_profile_certifications__resource_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Resource Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "userId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Userid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionedCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResourceConflictRead"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Certification",
+        "tags": [
+          "competency profile"
+        ]
+      },
+      "get": {
+        "operationId": "get_certification_api_v2_competency_profile_certifications__resource_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Resource Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "userId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Userid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificationRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Certification",
+        "tags": [
+          "competency profile"
+        ]
+      },
+      "patch": {
+        "operationId": "update_certification_api_v2_competency_profile_certifications__resource_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Resource Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "userId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Userid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificationPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificationRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResourceConflictRead"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Certification",
+        "tags": [
+          "competency profile"
+        ]
+      }
+    },
+    "/api/v2/competency-profile/experiences": {
+      "get": {
+        "description": "Capped at 200 items.",
+        "operationId": "list_experiences_api_v2_competency_profile_experiences_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "userId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Userid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceListRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Experiences",
+        "tags": [
+          "competency profile"
+        ]
+      },
+      "post": {
+        "operationId": "create_experience_api_v2_competency_profile_experiences_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "userId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Userid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExperienceCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperienceRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResourceConflictRead"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Experience",
+        "tags": [
+          "competency profile"
+        ]
+      }
+    },
+    "/api/v2/competency-profile/experiences/{resource_id}": {
+      "delete": {
+        "operationId": "delete_experience_api_v2_competency_profile_experiences__resource_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Resource Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "userId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Userid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionedCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResourceConflictRead"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Experience",
+        "tags": [
+          "competency profile"
+        ]
+      },
+      "get": {
+        "operationId": "get_experience_api_v2_competency_profile_experiences__resource_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Resource Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "userId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Userid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperienceRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Experience",
+        "tags": [
+          "competency profile"
+        ]
+      },
+      "patch": {
+        "operationId": "update_experience_api_v2_competency_profile_experiences__resource_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Resource Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "userId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Userid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExperiencePatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperienceRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResourceConflictRead"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Experience",
+        "tags": [
+          "competency profile"
+        ]
+      }
+    },
+    "/api/v2/competency-profile/projects": {
+      "get": {
+        "description": "Capped at 200 items.",
+        "operationId": "list_projects_api_v2_competency_profile_projects_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "userId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Userid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceListRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Projects",
+        "tags": [
+          "competency profile"
+        ]
+      },
+      "post": {
+        "operationId": "create_project_api_v2_competency_profile_projects_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "userId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Userid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResourceConflictRead"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Project",
+        "tags": [
+          "competency profile"
+        ]
+      }
+    },
+    "/api/v2/competency-profile/projects/{resource_id}": {
+      "delete": {
+        "operationId": "delete_project_api_v2_competency_profile_projects__resource_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Resource Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "userId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Userid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionedCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResourceConflictRead"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Project",
+        "tags": [
+          "competency profile"
+        ]
+      },
+      "get": {
+        "operationId": "get_project_api_v2_competency_profile_projects__resource_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Resource Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "userId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Userid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Project",
+        "tags": [
+          "competency profile"
+        ]
+      },
+      "patch": {
+        "operationId": "update_project_api_v2_competency_profile_projects__resource_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Resource Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "userId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Userid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResourceConflictRead"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Project",
+        "tags": [
+          "competency profile"
         ]
       }
     },
@@ -2051,6 +5463,230 @@
         "summary": "Patch Self Profile",
         "tags": [
           "profile"
+        ]
+      }
+    },
+    "/api/v2/skills-competency/skills": {
+      "get": {
+        "description": "Paginated skill catalog.",
+        "operationId": "list_skills_api_v2_skills_competency_skills_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 10000,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Pagesize",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SkillListRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Skills",
+        "tags": [
+          "skills competency"
+        ]
+      },
+      "post": {
+        "operationId": "create_skill_api_v2_skills_competency_skills_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkillCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SkillRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Skill",
+        "tags": [
+          "skills competency"
+        ]
+      }
+    },
+    "/api/v2/skills-competency/users/{user_id}": {
+      "get": {
+        "description": "Capped at 200 items.",
+        "operationId": "get_employee_skills_api_v2_skills_competency_users__user_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmployeeSkillListRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Employee Skills",
+        "tags": [
+          "skills competency"
+        ]
+      }
+    },
+    "/api/v2/skills-competency/users/{user_id}/skills": {
+      "put": {
+        "operationId": "replace_employee_skills_api_v2_skills_competency_users__user_id__skills_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmployeeSkillReplace"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmployeeSkillListRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResourceConflictRead"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Replace Employee Skills",
+        "tags": [
+          "skills competency"
         ]
       }
     }

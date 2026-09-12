@@ -25,6 +25,32 @@ class ProfileImportStatus(StrEnum):
     FAILED = "FAILED"
 
 
+class ProfileSourceType(StrEnum):
+    SELF = "SELF"
+    ADMIN = "ADMIN"
+    IMPORT = "IMPORT"
+
+
+class ProfileTimelineKind(StrEnum):
+    EMPLOYMENT = "EMPLOYMENT"
+    EXPERIENCE = "EXPERIENCE"
+    PROJECT = "PROJECT"
+    CERTIFICATION = "CERTIFICATION"
+    AWARD = "AWARD"
+
+
+class CertificationType(StrEnum):
+    DEGREE = "DEGREE"
+    LANGUAGE = "LANGUAGE"
+    PROFESSIONAL = "PROFESSIONAL"
+    OTHER = "OTHER"
+
+
+class AwardType(StrEnum):
+    WORK = "WORK"
+    PERSONAL = "PERSONAL"
+
+
 class AdminPermission(StrEnum):
     COMPANY_READ = "COMPANY_READ"
     COMPANY_WRITE = "COMPANY_WRITE"
