@@ -35,6 +35,7 @@ from scripts.seed_demo import (
     DEMO_SUPER,
     resolve_demo_passwords,
 )
+from scripts.seed_qc_workflows import seed_ai_connection, seed_company_workflows
 
 QC_DATABASE = "careermate_v2_qc"
 QC_BOD = "bod@acme.dev"
@@ -246,6 +247,7 @@ async def seed() -> None:
                 raise RuntimeError("Connected database is not careermate_v2_qc")
             # Serialize repeated/concurrent seed invocations while keeping all inserts atomic.
             await session.execute(text("SELECT pg_advisory_xact_lock(62626312001)"))
+            await seed_ai_connection(session)
             await ensure_user(
                 session, email=DEMO_SUPER, name="QC Platform Admin", title="Platform Admin",
                 role=Role.SUPER_ADMIN, company=None, password=passwords[Role.SUPER_ADMIN],
@@ -255,20 +257,23 @@ async def seed() -> None:
                 ("northstar", "Northstar QC Studio", "northstar.dev"),
             ):
                 company = await ensure_company(session, company_key, company_name)
-                await ensure_user(
+                company_admin = await ensure_user(
                     session, email=DEMO_ADMIN if company_key == "acme" else f"admin@{domain}",
                     name=f"QC {company_key.title()} Admin", title="Company Admin",
                     role=Role.COMPANY_ADMIN, company=company, password=passwords[Role.COMPANY_ADMIN],
                 )
+                personas = [company_admin]
                 for role, email, name, title in (
                     (Role.BOD, QC_BOD if company_key == "acme" else f"bod@{domain}", "QC Director", "Director"),
                     (Role.HR, QC_HR if company_key == "acme" else f"hr@{domain}", "QC People Partner", "HR Manager"),
                     (Role.EMPLOYEE, DEMO_EMPLOYEE if company_key == "acme" else f"alex@{domain}", "QC Alice" if company_key == "acme" else "QC Alex", "Software Engineer"),
                 ):
                     user = await ensure_user(session, email=email, name=name, title=title, role=role, company=company, password=passwords[role])
+                    personas.append(user)
                     if user.role in {Role.BOD, Role.HR, Role.EMPLOYEE}:
                         await ensure_profile(session, user, company)
                         await ensure_roadmaps(session, user)
+                await seed_company_workflows(session, company, personas)
     finally:
         await engine.dispose()
     print("QC seed complete: two synthetic companies and five role levels; existing rows preserved. Credentials were not printed.")

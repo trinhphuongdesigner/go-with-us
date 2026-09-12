@@ -13,6 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/features/auth/auth-provider";
+import { ProfileExtensionsPanel } from "@/features/profile-extensions/profile-extensions-panel";
+import { EmploymentsPanel } from "@/features/profile-extensions/employments-panel";
+import { SkillsEditor } from "./skills-editor";
 import {
   ApiError,
   createProfileResource,
@@ -329,41 +332,7 @@ function SkillReplacePanel({
   error: boolean;
   onSave: (skills: Array<{ skillId: string; rating: number; note: string | null }>) => void;
 }) {
-  const [ratings, setRatings] = useState(() => Object.fromEntries(profile.skills.map((skill) => [skill.id, skill.level])));
-  const validSkills = profile.skills.filter((skill) => skill.skillId);
-
-  if (validSkills.length === 0) {
-    return <p className="rounded-xl bg-background p-4 text-sm leading-6 text-muted">Chưa có kỹ năng trong hồ sơ để đánh giá.</p>;
-  }
-  return (
-    <form
-      className="grid gap-4"
-      onSubmit={(event) => {
-        event.preventDefault();
-        onSave(validSkills.map((skill) => ({
-          skillId: skill.skillId!,
-          rating: Math.max(1, Math.min(5, ratings[skill.id] ?? skill.level)),
-          note: skill.note ?? null,
-        })));
-      }}
-    >
-      {validSkills.map((skill) => (
-        <label key={skill.id} className="grid gap-2 rounded-xl border border-border p-4 text-sm font-semibold sm:grid-cols-[1fr_88px] sm:items-center">
-          <span>{skill.name}<span className="mt-1 block text-xs font-normal text-muted">Thang điểm từ 1 đến 5</span></span>
-          <Input
-            type="number"
-            min={1}
-            max={5}
-            aria-label={`Mức ${skill.name}`}
-            value={ratings[skill.id] ?? skill.level}
-            onChange={(event) => setRatings((current) => ({ ...current, [skill.id]: Number(event.target.value) }))}
-          />
-        </label>
-      ))}
-      {error ? <p role="alert" className="text-sm font-semibold text-danger">Chưa thể lưu kỹ năng. Hãy tải lại hồ sơ và thử lại.</p> : null}
-      <Button className="w-fit" type="submit" disabled={pending || stale}><Save size={16} aria-hidden="true" /> {pending ? "Đang lưu…" : "Lưu toàn bộ kỹ năng"}</Button>
-    </form>
-  );
+  return <SkillsEditor profile={profile} stale={stale} pending={pending} error={error} onSave={onSave} />;
 }
 
 function ProfileResourcesPanel({
@@ -615,6 +584,9 @@ export function ProfileView({ forceState }: { forceState?: CoreUiForcedState }) 
   return (
     <div className="space-y-6">
       <ProfileHeader profile={profile} editing={editing} stale={stale} onEdit={startEdit} />
+      <div className="flex flex-wrap gap-3"><Button asChild><Link href="/ho-so/nhap-da-nguon">Nhập hồ sơ đa nguồn</Link></Button><Button asChild variant="secondary"><Link href="/yeu-cau-nang-luc">Gửi minh chứng cho HR</Link></Button><Button asChild variant="secondary"><Link href="/ho-chieu">Hộ chiếu nghề nghiệp</Link></Button></div>
+      <ProfileExtensionsPanel />
+      {session ? <EmploymentsPanel userId={session.user.id} canManage={false} /> : null}
 
       {saved ? <div role="status" className="flex items-center gap-2 rounded-xl border border-[#D7E7DA] bg-[#F5FAF6] px-4 py-3 text-sm font-semibold text-sage-strong"><CheckCircle2 size={18} aria-hidden="true" /> Đã lưu hồ sơ</div> : null}
       {resourceNotice ? <div ref={resourceNoticeRef} tabIndex={-1} role="status" className="flex items-center gap-2 rounded-xl border border-[#D7E7DA] bg-[#F5FAF6] px-4 py-3 text-sm font-semibold text-sage-strong"><CheckCircle2 size={18} aria-hidden="true" /> {resourceNotice}</div> : null}

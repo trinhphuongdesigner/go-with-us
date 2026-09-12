@@ -8,7 +8,9 @@ RUN uv sync --locked --no-dev --no-install-project
 
 FROM python:3.12-slim-bookworm AS runtime
 ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
-RUN useradd --create-home --uid 10001 qc
+RUN apt-get update && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-vie \
+    && apt-get clean && useradd --create-home --uid 10001 qc \
+    && mkdir -p /app/uploads && chown qc:qc /app/uploads
 WORKDIR /app
 COPY --from=dependencies /app/.venv /app/.venv
 COPY --chown=qc:qc backend/app ./app

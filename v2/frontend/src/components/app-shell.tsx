@@ -207,7 +207,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const inCompanyArea = pathname === "/cong-ty" || pathname.startsWith("/cong-ty/") || pathname === "/nhan-su" || pathname.startsWith("/nhan-su/");
+  const inCompanyArea = ["/cong-ty", "/nhan-su", "/danh-gia", "/ho-chieu", "/job-requirements"].some((area) => pathname === area || pathname.startsWith(`${area}/`));
   const isSuperAdmin = session?.user.role === "SUPER_ADMIN";
   const companyScopeId = isSuperAdmin && inCompanyArea ? searchParams.get("companyId") : null;
   const companiesQuery = useQuery({

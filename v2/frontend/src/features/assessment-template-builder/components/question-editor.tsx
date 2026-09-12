@@ -36,6 +36,9 @@ export function QuestionEditor({
       data-testid={`question-card-${question.id}`}
       className="relative min-w-0 w-full rounded-xl border border-border bg-white p-4 transition-all hover:border-muted/50"
     >
+      <label className="mb-3 grid max-w-40 gap-2 text-xs font-semibold text-ink">Điểm tối đa (1–100)
+        <Input type="number" min={1} max={100} value={question.maxScore ?? 10} onChange={(event) => onUpdate({ maxScore: event.target.valueAsNumber })} />
+      </label>
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-center gap-2">
           <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-background text-xs font-bold text-muted tabular-nums">

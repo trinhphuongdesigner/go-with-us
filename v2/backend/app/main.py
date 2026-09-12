@@ -22,6 +22,12 @@ from app.api.v2 import (
 from app.core.config import Settings, get_settings
 from app.api.v2.development_plans import router as development_plans_router
 from app.people_search.router import router as people_search_router
+from app.organization import router as organization_router
+from app.dashboard import router as dashboard_router
+from app.profile_extensions.router import router as profile_extensions_router
+from app.career_ai.routes import router as career_ai_router
+from app.talent_workflows.router import router as talent_router
+from app.rich_profile_import.routes import router as rich_profile_import_router
 
 
 def configure_profile_import_ai_runtime(
@@ -108,6 +114,12 @@ app.include_router(skills_competency_router, prefix="/api/v2")
 app.include_router(competency_profile_router, prefix="/api/v2")
 app.include_router(people_search_router, prefix="/api/v2")
 app.include_router(development_plans_router, prefix="/api/v2")
+app.include_router(organization_router, prefix="/api/v2")
+app.include_router(dashboard_router, prefix="/api/v2")
+app.include_router(profile_extensions_router, prefix="/api/v2")
+app.include_router(career_ai_router, prefix="/api/v2")
+app.include_router(talent_router, prefix="/api/v2")
+app.include_router(rich_profile_import_router, prefix="/api/v2")
 
 
 @app.get("/api/v2/health", tags=["system"])

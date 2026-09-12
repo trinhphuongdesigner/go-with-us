@@ -135,6 +135,7 @@ class IntentCompiler:
         domain_catalog: DomainCatalog | None = None,
         circuit_breaker: CircuitBreaker | None = None,
         sleep: Sleep = async_sleep,
+        provider_factory=None,
     ) -> None:
         self._settings = settings
         self._client = client
@@ -142,6 +143,7 @@ class IntentCompiler:
         self._domain_catalog = domain_catalog or StaticDomainCatalog()
         self._breaker = circuit_breaker or CircuitBreaker()
         self._sleep = sleep
+        self._provider_factory = provider_factory
 
     async def compile(
         self, query: str, *, tenant_id: uuid.UUID, actor_id: uuid.UUID
@@ -154,7 +156,7 @@ class IntentCompiler:
         if _has_protected_constraints(query):
             return self._protected_result()
         gateway = AiGateway(
-            {"madison": MadisonIntentProvider(self._settings, query=query, client=self._client)},
+            {"madison": self._provider_factory(query) if self._provider_factory else MadisonIntentProvider(self._settings, query=query, client=self._client)},
             default_provider="madison",
             prompt_version="people-search-intent-v1",
             schema_version="people-search-intent-v1",

@@ -83,11 +83,13 @@ def get_document_extractor(request: Request) -> DocumentExtractor:
 Extractor = Annotated[DocumentExtractor, Depends(get_document_extractor)]
 
 
-def get_profile_import_ai_gateway(request: Request) -> AiGateway:
+def get_profile_import_ai_gateway(request: Request, db: DbSession) -> AiGateway:
     configured = getattr(request.app.state, "profile_import_ai_gateway", None)
     if configured is not None:
         return cast(AiGateway, configured)
-    return unavailable_profile_import_ai_gateway()
+    from app.ai.shared_provider import SharedProfileProvider
+    return AiGateway({"v2": SharedProfileProvider(db)}, default_provider="v2",
+                     prompt_version="profile-import-v2-shared", schema_version="profile-import-v1")
 
 
 ProfileImportAi = Annotated[AiGateway, Depends(get_profile_import_ai_gateway)]

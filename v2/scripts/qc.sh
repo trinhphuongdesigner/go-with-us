@@ -45,6 +45,25 @@ if [[ ! -f "$qc_env" || -L "$qc_env" ]]; then
 fi
 chmod 600 "$qc_env"
 
+# Optional explicit local import; never echo or copy the token to the checkout.
+# Seed stores a new provider encrypted in the QC database, and preserves any existing one.
+if [[ -n "${QC_CLAUDE_SETTINGS:-}" && ( "$qc_action" == up || "$qc_action" == build ) ]]; then
+  if [[ ! -f "$QC_CLAUDE_SETTINGS" || -L "$QC_CLAUDE_SETTINGS" ]]; then
+    printf 'QC_CLAUDE_SETTINGS must be a regular, non-symlink settings file.\n' >&2; exit 1
+  fi
+  command -v jq >/dev/null || { printf 'jq is required for the optional AI settings import.\n' >&2; exit 1; }
+  if [[ -z "${CAREERMATE_AI_API_KEY:-}" ]]; then
+    CAREERMATE_AI_API_KEY="$(jq -er '.env.ANTHROPIC_AUTH_TOKEN | select(type == "string" and length > 0)' "$QC_CLAUDE_SETTINGS" 2>/dev/null)" || {
+      printf 'Selected settings file has no usable Anthropic token.\n' >&2; exit 1;
+    }
+    CAREERMATE_AI_BASE_URL="$(jq -er '.env.ANTHROPIC_BASE_URL | select(type == "string" and length > 0)' "$QC_CLAUDE_SETTINGS" 2>/dev/null)"
+    CAREERMATE_AI_MODEL="$(jq -er '.env.ANTHROPIC_DEFAULT_SONNET_MODEL | select(type == "string" and length > 0)' "$QC_CLAUDE_SETTINGS" 2>/dev/null)"
+    export CAREERMATE_AI_API_KEY CAREERMATE_AI_BASE_URL CAREERMATE_AI_MODEL
+    export CAREERMATE_AI_PROVIDER=ANTHROPIC
+    printf 'Imported selected AI settings privately for the QC process.\n'
+  fi
+fi
+
 qc_compose=(docker compose --project-name careermate-v2-qc --env-file "$qc_env" --file "$qc_root/compose.qc.yaml")
 case "$qc_action" in
   build)
@@ -53,6 +72,7 @@ case "$qc_action" in
   up)
     "${qc_compose[@]}" build backend frontend
     "${qc_compose[@]}" up -d --wait db
+    "${qc_compose[@]}" up -d clamav
     "${qc_compose[@]}" run --rm --no-deps backend alembic upgrade head
     "${qc_compose[@]}" run --rm --no-deps backend python -m scripts.seed_qc
     "${qc_compose[@]}" up -d --wait backend frontend

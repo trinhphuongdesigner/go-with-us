@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/app-state";
 import { useAuth } from "@/features/auth/auth-provider";
-import { getDashboardSummary } from "@/lib/api";
+import { DEMO_MODE, getDashboardSummary } from "@/lib/api";
+import { LiveDashboard } from "./live-dashboard";
 
 type ForcedState = "loading" | "empty" | "error" | undefined;
 
@@ -52,6 +53,11 @@ function MetricCard({ icon: Icon, label, value, detail, tone }: { icon: typeof T
 }
 
 export function DashboardView({ forceState }: { forceState?: ForcedState }) {
+  if (!DEMO_MODE && !forceState) return <LiveDashboard />;
+  return <PreviewDashboard forceState={forceState} />;
+}
+
+function PreviewDashboard({ forceState }: { forceState?: ForcedState }) {
   const { session } = useAuth();
   const summary = useQuery({
     queryKey: ["dashboard-summary", session?.user.id],

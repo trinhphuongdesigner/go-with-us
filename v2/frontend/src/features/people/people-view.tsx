@@ -1,5 +1,8 @@
 "use client";
 
+import { ProfileExtensionsPanel } from "@/features/profile-extensions/profile-extensions-panel";
+import { EmploymentsPanel } from "@/features/profile-extensions/employments-panel";
+
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, BriefcaseBusiness, CalendarDays, Search, ShieldCheck, UsersRound, X } from "lucide-react";
 import Link from "next/link";
@@ -83,7 +86,7 @@ export function PeopleListView({ forceState, initialCompanyId }: { forceState?: 
         <div className="flex flex-wrap items-center gap-3">
           <Badge tone="neutral"><ShieldCheck size={13} aria-hidden="true" /> Chỉ đọc · {peopleQuery.data.total} nhân sự</Badge>
           <Button asChild variant="secondary">
-            <Link href="/nhan-su/tim-kiem" prefetch={false}><Search size={16} aria-hidden="true" /> Tìm theo yêu cầu</Link>
+            <Link href={`/nhan-su/tim-kiem${selectedCompanyId ? `?companyId=${encodeURIComponent(selectedCompanyId)}` : ""}`} prefetch={false}><Search size={16} aria-hidden="true" /> Tìm theo yêu cầu</Link>
           </Button>
         </div>
       </div>
@@ -240,6 +243,8 @@ export function PeopleDetailView({ employeeId, forceState, companyId }: { employ
         </CardContent>
       </Card>
       <ProfileSections profile={person} />
+      <ProfileExtensionsPanel userId={employeeId} />
+      <EmploymentsPanel userId={employeeId} canManage={Boolean(session?.user.permissions.includes("people:write"))} />
       <p className="flex items-center gap-2 text-xs leading-5 text-muted"><UsersRound size={15} aria-hidden="true" /> Chỉ hiển thị thông tin nghề nghiệp cần thiết trong phạm vi công ty.</p>
     </div>
   );

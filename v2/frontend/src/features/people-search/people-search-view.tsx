@@ -2,6 +2,9 @@
 
 import { AlertTriangle, LayoutGrid, List, Search, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { listAvailableCompanies } from "@/lib/api";
 
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/app-state";
 import { Badge } from "@/components/ui/badge";
@@ -221,6 +224,9 @@ function ResultsBody({ data, onRetry, layout, onLayoutChange }: { data: PeopleSe
 
 export function PeopleSearchView() {
   const { session } = useAuth();
+  const params = useSearchParams();
+  const [companyId, setCompanyId] = useState(params.get("companyId") ?? "");
+  const companies = useQuery({ queryKey: ["company-options", session?.user.id], queryFn: () => listAvailableCompanies(session!), enabled: session?.user.role === "SUPER_ADMIN" });
   const [filters, setFilters] = useState(initialFilters);
   const [resultLayout, setResultLayout] = useState<ResultLayout>("cards");
   const [state, setState] = useState<{ status: "idle" | "loading" | "success" | "error"; data?: PeopleSearchResponse; error?: string }>({ status: "idle" });
@@ -239,7 +245,7 @@ export function PeopleSearchView() {
     lastRequest.current = query;
     setState({ status: "loading" });
     try {
-      const data = await searchPeople({ query, accessToken: session.accessToken, signal: nextController.signal });
+      const data = await searchPeople({ query, accessToken: session.accessToken, signal: nextController.signal, companyId: session.user.role === "SUPER_ADMIN" ? companyId : undefined });
       if (currentId === requestId.current) setState({ status: "success", data });
     } catch (error) {
       if (nextController.signal.aborted || currentId !== requestId.current) return;
@@ -260,6 +266,7 @@ export function PeopleSearchView() {
 
   return (
     <div>
+      {session?.user.role === "SUPER_ADMIN" ? <label className="mb-6 block max-w-xl text-sm font-semibold">Công ty tìm kiếm<select className="mt-2 min-h-11 w-full rounded-xl border border-border bg-surface px-3" value={companyId} onChange={(event) => { controller.current?.abort(); requestId.current += 1; setCompanyId(event.target.value); setState({ status: "idle" }); }}><option value="">Chọn công ty</option>{companies.data?.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}</select>{companies.isError ? <span role="alert" className="mt-2 block text-danger">Chưa tải được công ty. Hãy tải lại trang.</span> : null}</label> : null}
       <header>
         <Badge tone="ai">People Intelligence</Badge>
         <h1 className="mt-3 text-balance text-2xl font-bold tracking-[-0.03em] text-ink sm:text-3xl">Tìm kiếm nhân sự</h1>

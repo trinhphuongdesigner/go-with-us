@@ -95,10 +95,10 @@ export function compileQuery(filters: PeopleSearchFilters): string {
   return parts.filter(Boolean).join("; ");
 }
 
-export async function searchPeople({ query, accessToken, signal }: PeopleSearchRequest): Promise<PeopleSearchResponse> {
+export async function searchPeople({ query, accessToken, signal, companyId }: PeopleSearchRequest & { companyId?: string }): Promise<PeopleSearchResponse> {
   let response: Response;
   try {
-    response = await fetch(`${API_URL}/people-search/query`, {
+    response = await fetch(`${API_URL}/people-search/query${companyId ? `?companyId=${encodeURIComponent(companyId)}` : ""}`, {
       method: "POST",
       credentials: "include",
       signal,

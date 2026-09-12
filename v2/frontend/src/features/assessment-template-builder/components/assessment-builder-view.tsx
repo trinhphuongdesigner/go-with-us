@@ -36,10 +36,19 @@ import { GroupEditor } from "./group-editor";
 import { LivePreview } from "./live-preview";
 import { TemplateMetaEditor } from "./template-meta-editor";
 
-export function AssessmentBuilderView() {
+export function AssessmentBuilderView({ initialTemplate, onSave }: { initialTemplate?: AssessmentTemplate; onSave?: (template: AssessmentTemplate, publish: boolean) => Promise<void> } = {}) {
   const [template, setTemplate] = useState<AssessmentTemplate>(() =>
-    structuredClone(SAMPLE_ASSESSMENT_TEMPLATE),
+    structuredClone(initialTemplate ?? SAMPLE_ASSESSMENT_TEMPLATE),
   );
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const persist = async (publish: boolean) => {
+    if (!onSave) return;
+    setSaving(true); setSaveError("");
+    try { await onSave(template, publish); setAnnouncement(publish ? "Đã lưu và phát hành mẫu." : "Đã lưu mẫu trên máy chủ."); }
+    catch (error) { setSaveError(error instanceof Error ? error.message : "Không lưu được mẫu."); }
+    finally { setSaving(false); }
+  };
   const [errors, setErrors] = useState<ValidationError[]>([]);
   const [activeTab, setActiveTab] = useState<ActiveTab>("editor");
   const [announcement, setAnnouncement] = useState<string>("");
@@ -441,8 +450,8 @@ export function AssessmentBuilderView() {
       <div className="flex min-w-0 flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge tone="warning">Bản nháp cục bộ (In-Memory Draft)</Badge>
-            <span className="text-xs text-muted">Không lưu trữ vĩnh viễn trên máy chủ</span>
+            <Badge tone="warning">{onSave ? "Đang biên tập" : "Bản nháp cục bộ (In-Memory Draft)"}</Badge>
+            <span className="text-xs text-muted">{onSave ? "Lưu bản nháp hoặc phát hành khi hoàn tất" : "Không lưu trữ vĩnh viễn trên máy chủ"}</span>
           </div>
 
           <h1 className="mt-3 min-w-0 text-2xl font-bold tracking-tight text-ink sm:text-3xl break-words [overflow-wrap:anywhere] [word-break:break-word]">
@@ -451,13 +460,13 @@ export function AssessmentBuilderView() {
 
           <p className="mt-2 min-w-0 max-w-3xl text-sm leading-6 text-muted break-words [overflow-wrap:anywhere] [word-break:break-word]">
             Xây dựng và xem trước cấu trúc nhóm năng lực, tiêu chuẩn đánh giá và phân bổ trọng số
-            cho chu kỳ khảo sát. Dữ liệu đang được biên tập trong phiên làm việc hiện tại phục vụ
-            kiểm thử giao diện.
+            cho chu kỳ khảo sát. {onSave ? "Các phiên bản đã sử dụng được giữ nguyên để bảo toàn lịch sử đánh giá." : "Dữ liệu đang được biên tập trong phiên làm việc hiện tại phục vụ kiểm thử giao diện."}
           </p>
         </div>
 
         {/* Global actions */}
         <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {onSave && <><Button type="button" variant="secondary" disabled={saving} onClick={() => void persist(false)}>Lưu bản nháp</Button><Button type="button" disabled={saving} onClick={() => void persist(true)}>Lưu & phát hành</Button></>}
           <Button
             id="load-sample-button"
             variant="secondary"
@@ -494,6 +503,8 @@ export function AssessmentBuilderView() {
           </Button>
         </div>
       </div>
+
+      {saveError && <p role="alert" className="mt-4 rounded-xl bg-danger-soft p-3 text-sm text-danger">{saveError}</p>}
 
       {/* Responsive View Switcher for Tablet/Mobile */}
       <div className="mt-6 flex min-w-0 items-center gap-2 lg:hidden">

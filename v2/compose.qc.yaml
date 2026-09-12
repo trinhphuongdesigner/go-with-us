@@ -17,6 +17,18 @@ services:
     volumes:
       - qc-postgres:/var/lib/postgresql/data
 
+  clamav:
+    image: clamav/clamav:stable
+    platform: linux/amd64
+    volumes:
+      - qc-clamav:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "clamdcheck.sh"]
+      interval: 10s
+      timeout: 10s
+      start_period: 180s
+      retries: 30
+
   backend:
     build:
       context: .
@@ -31,8 +43,16 @@ services:
       CAREERMATE_DEMO_EMPLOYEE_PASSWORD: ${QC_EMPLOYEE_PASSWORD:?Missing QC_EMPLOYEE_PASSWORD}
       QC_BOD_PASSWORD: ${QC_BOD_PASSWORD:?Missing QC_BOD_PASSWORD}
       QC_HR_PASSWORD: ${QC_HR_PASSWORD:?Missing QC_HR_PASSWORD}
-      CAREERMATE_MALWARE_SCANNER: unavailable
-      CAREERMATE_OCR_ENGINE: unavailable
+      CAREERMATE_MALWARE_SCANNER: clamav
+      CAREERMATE_CLAMAV_HOST: clamav
+      CAREERMATE_OCR_ENGINE: tesseract
+      CAREERMATE_UPLOAD_DIR: /app/uploads
+      CAREERMATE_AI_PROVIDER: ${CAREERMATE_AI_PROVIDER:-anthropic}
+      CAREERMATE_AI_BASE_URL: ${CAREERMATE_AI_BASE_URL:-https://api.anthropic.com}
+      CAREERMATE_AI_MODEL: ${CAREERMATE_AI_MODEL:-}
+      CAREERMATE_AI_API_KEY: ${CAREERMATE_AI_API_KEY:-}
+    volumes:
+      - qc-uploads:/app/uploads
     ports:
       - "127.0.0.1:${QC_API_PORT:-8140}:8000"
     depends_on:
@@ -65,3 +85,5 @@ services:
 
 volumes:
   qc-postgres:
+  qc-uploads:
+  qc-clamav:

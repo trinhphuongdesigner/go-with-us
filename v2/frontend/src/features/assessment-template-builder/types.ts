@@ -3,6 +3,7 @@ export interface AssessmentQuestion {
   title: string;
   helpText: string;
   weight: number;
+  maxScore?: number;
 }
 
 export interface AssessmentGroup {
@@ -10,6 +11,7 @@ export interface AssessmentGroup {
   name: string;
   description: string;
   weight: number;
+  scoreDimension?: "CONTRIBUTION" | "ATTITUDE";
   questions: AssessmentQuestion[];
 }
 
@@ -130,4 +132,3 @@ export function syncErrorsWithTemplate(
 
   return nextErrors;
 }
-

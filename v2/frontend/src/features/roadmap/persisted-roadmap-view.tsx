@@ -8,6 +8,10 @@ import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import type { Session } from "@/lib/types";
+import { CareerPlanPanel } from "@/features/career-ai/plan-panel";
+import { AssistantWorkspace } from "@/features/career-ai/assistant";
+import { careerRequest } from "@/features/career-ai/api";
+import { RoadmapTreeEditor } from "./tree-editor";
 import {
   createSaveIntent, getRoadmapSettings, listRoadmaps, saveRoadmap,
   updateRoadmapSettings, updateRoadmapTask,
@@ -60,7 +64,7 @@ function RoadmapEditor({ category, pending, onSave, onCancel }: {
   return <form aria-label="Tạo lộ trình" className="rounded-2xl border border-border bg-surface p-5 sm:p-7" onSubmit={(event) => {
     event.preventDefault();
     if (!valid || pending) return;
-    onSave({ category, title: title.trim(), durationWeeks: weeks, hoursPerWeek: hours,
+    onSave({ category, title: title.trim(), durationWeeks: weeks, hoursPerWeek: hours, aiSuggested: false,
       milestones: milestones.map((step) => ({ title: step.title.trim(), dueDate: step.dueDate || null,
         tasks: step.tasks.split("\n").map((line) => line.trim()).filter(Boolean).map((task) => ({ title: task })),
       })) });
@@ -99,11 +103,12 @@ function DisplaySettings({ settings, token, identity }: { settings: RoadmapSetti
   const [draft, setDraft] = useState(settings);
   const mutation = useMutation({ mutationFn: () => updateRoadmapSettings(token, {
     expectedVersion: settings.version, viewMode: draft.viewMode, costumeColor: draft.costumeColor,
-    reduceMotion: draft.reduceMotion, fontSize: draft.fontSize,
+    reduceMotion: draft.reduceMotion, fontSize: draft.fontSize, character: draft.character,
   }), onSuccess: (saved) => client.setQueryData(["roadmap-settings", identity], { settings: saved }) });
   return <details className="rounded-2xl border border-border bg-surface p-5">
     <summary className="min-h-8 cursor-pointer font-bold">Tùy chỉnh hiển thị cùng Milo</summary>
     <form className="mt-4 grid gap-4 sm:grid-cols-2" onSubmit={(event) => { event.preventDefault(); mutation.mutate(); }}>
+      <label className="text-sm font-semibold">Nhân vật đồng hành<select className={inputClass} value={draft.character} onChange={(event) => setDraft({ ...draft, character: event.target.value })}><option value="milo">Milo</option><option value="milo-guide">Milo hướng dẫn</option><option value="milo-standing">Milo đứng</option><option value="an">An</option><option value="none">Ẩn nhân vật</option></select></label>
       <label className="text-sm font-semibold">Cách xem<select className={inputClass} value={draft.viewMode} onChange={(event) => setDraft({ ...draft, viewMode: event.target.value as "stair" | "diagram" })}><option value="stair">Hành trình</option><option value="diagram">Sơ đồ chặng</option></select></label>
       <label className="text-sm font-semibold">Cỡ chữ<select className={inputClass} value={draft.fontSize} onChange={(event) => setDraft({ ...draft, fontSize: event.target.value as "sm" | "md" | "lg" })}><option value="sm">Nhỏ</option><option value="md">Vừa</option><option value="lg">Lớn</option></select></label>
       <label className="text-sm font-semibold">Màu đánh dấu hành trình<input type="color" className={inputClass} value={draft.costumeColor} onChange={(event) => setDraft({ ...draft, costumeColor: event.target.value })} /></label>
@@ -122,6 +127,8 @@ export function PersistedRoadmapView({ session }: { session: Session }) {
     <header className="flex flex-wrap items-center justify-between gap-4"><div><p className="text-sm font-semibold text-primary">Phát triển cùng Milo</p><h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Lộ trình phát triển của bạn</h1><p className="mt-2 text-sm text-muted">Từng việc nhỏ, tiến bộ rõ ràng. Bạn quyết định khi nào lưu và hoàn thành.</p></div><Button disabled={editing} onClick={() => setEditing(true)}><Plus size={18} /> Tạo lộ trình</Button></header>
     <CategoryPicker category={category} onChange={setCategory} disabled={editing} />
     <RoadmapContent key={`${identity}:${category}`} identity={identity} session={session} category={category} editing={editing} onCloseEditor={() => setEditing(false)} />
+    <CareerPlanPanel key={`plan:${identity}:${category}`} session={session} category={category} />
+    <details className="rounded-2xl border border-border bg-surface p-5"><summary className="cursor-pointer font-bold">Cùng Milo xây dựng đề xuất lộ trình</summary><div className="mt-5"><AssistantWorkspace initialFocus="ROADMAP" category={category} /></div></details>
   </div>;
 }
 
@@ -132,6 +139,8 @@ function RoadmapContent({ identity, session, category, editing, onCloseEditor }:
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [saveIntent, setSaveIntent] = useState(createSaveIntent);
   const [announcement, setAnnouncement] = useState("");
+  const [editStructure, setEditStructure] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const listKey = ["roadmaps", identity, category];
   const query = useQuery({ queryKey: listKey, queryFn: () => listRoadmaps(session.accessToken, category) });
   const settingsQuery = useQuery({ queryKey: ["roadmap-settings", identity], queryFn: () => getRoadmapSettings(session.accessToken) });
@@ -147,16 +156,23 @@ function RoadmapContent({ identity, session, category, editing, onCloseEditor }:
     } });
   const selected = query.data?.find((roadmap) => roadmap.id === selectedId) ?? query.data?.[0];
   const settings = settingsQuery.data?.settings;
+  const structure = useMutation({ mutationFn: (draft: Parameters<Parameters<typeof RoadmapTreeEditor>[0]["onSave"]>[0]) => careerRequest<Roadmap>(session.accessToken, `/development-plans/me/roadmaps/${selected!.id}`, "PUT", { expectedVersion: selected!.version, title: draft.title, durationWeeks: draft.durationWeeks, hoursPerWeek: draft.hoursPerWeek, milestones: draft.milestones.map((step) => ({ title: step.title, description: step.description, dueDate: step.dueDate, tasks: step.tasks.map((item) => ({ title: item.title, metric: item.metric, done: item.done ?? false })) })) }), onSuccess: () => { setEditStructure(false); void query.refetch(); } });
+  const remove = useMutation({ mutationFn: () => careerRequest(session.accessToken, `/development-plans/me/roadmaps/${selected!.id}?expected_version=${selected!.version}`, "DELETE"), onSuccess: () => { setConfirmDelete(false); setSelectedId(null); void query.refetch(); } });
+  const characterAsset = settings?.character === "an" ? "/brand/an/an-welcome.png" : settings?.character === "milo-guide" ? "/brand/milo/milo-guide.png" : settings?.character === "milo-standing" ? "/brand/milo/milo-standing.png" : "/brand/milo/milo-purple-tablet.webp";
   return <>
+    {structure.error || remove.error ? <p role="alert" className="text-danger">{errorMessage(structure.error ?? remove.error)}</p> : null}
+    {selected && <div className="flex flex-wrap gap-2"><Button variant="secondary" disabled={editing || editStructure || task.isPending} onClick={() => setEditStructure(true)}>Chỉnh sửa chặng & công việc</Button><Button variant="ghost" disabled={editing || editStructure || task.isPending} onClick={() => setConfirmDelete(true)}>Xóa lộ trình</Button></div>}
+    {confirmDelete && <div role="alert" className="rounded-xl border border-border p-4"><p className="mb-3">Xóa lộ trình và toàn bộ chặng/công việc? Mục tiêu liên kết được giữ.</p><Button variant="danger" disabled={remove.isPending} onClick={() => remove.mutate()}>Xác nhận xóa</Button> <Button variant="secondary" onClick={() => setConfirmDelete(false)}>Hủy</Button></div>}
+    {editStructure && selected && <RoadmapTreeEditor key={selected.id} initial={{ title: selected.title, category: selected.category, durationWeeks: selected.durationWeeks, hoursPerWeek: selected.hoursPerWeek, milestones: selected.milestones }} pending={structure.isPending} onSave={(draft) => structure.mutate(draft)} onCancel={() => setEditStructure(false)} />}
     {announcement ? <p role="status" className="rounded-xl border border-border bg-surface p-4 text-sm text-sage-strong">{announcement}</p> : null}
     {editing ? <RoadmapEditor category={category} pending={save.isPending} onSave={(draft) => save.mutate(draft)} onCancel={() => { onCloseEditor(); save.reset(); setSaveIntent(() => createSaveIntent()); }} /> : null}
     {save.error || task.error ? <div role="alert" className="space-y-3 rounded-xl border border-border bg-surface p-4 text-danger"><p>{errorMessage(save.error ?? task.error)}</p><Button variant="secondary" onClick={async () => { const result = await query.refetch(); if (!result.isError) { task.reset(); save.reset(); } }}>Tải lộ trình mới nhất</Button></div> : null}
     {query.isPending ? <p role="status">Đang tải lộ trình…</p> : query.isError ? <div role="alert" className="space-y-3 rounded-xl border border-border p-5"><p>Chưa tải được lộ trình. Không thay đổi dữ liệu đã lưu.</p><Button onClick={() => void query.refetch()}>Thử lại</Button></div> : !selected ? <section className="flex flex-col items-center rounded-2xl border border-border bg-surface p-8 text-center"><Image src="/brand/milo/milo-purple-tablet.webp" alt="Milo sẵn sàng đồng hành" width={144} height={144} /><h2 className="mt-4 text-xl font-bold">Bắt đầu lộ trình {categoryLabels[category].toLowerCase()}</h2><p className="mt-2 max-w-md text-sm leading-6 text-muted">Chưa có lộ trình trong nhóm này. Tạo mục tiêu, chia thành các chặng và thêm việc cần làm.</p></section> : <>
-      <label className="block max-w-xl text-sm font-semibold">Lộ trình đã lưu · {categoryLabels[category]}<select className={inputClass} value={selected.id} onChange={(event) => { setSelectedId(event.target.value); task.reset(); }}>
+      <label className="block max-w-xl text-sm font-semibold">Lộ trình đã lưu · {categoryLabels[category]}<select disabled={editStructure} className={inputClass} value={selected.id} onChange={(event) => { setSelectedId(event.target.value); task.reset(); }}>
         {query.data?.map((roadmap) => <option key={roadmap.id} value={roadmap.id}>{roadmap.title} · {roadmap.completedTasks}/{roadmap.totalTasks} việc</option>)}
       </select></label>
       <section aria-label={selected.title} className={cn("overflow-hidden rounded-2xl border border-border bg-surface p-5 sm:p-7", settings?.fontSize === "lg" ? "text-lg" : settings?.fontSize === "sm" ? "text-sm" : "text-base")}>
-        <div className="flex items-center justify-between gap-4"><div className="min-w-0"><p className="text-sm font-semibold text-primary">{categoryLabels[selected.category]} · Phiên {selected.version}</p><h2 className="mt-2 break-words text-2xl font-bold">{selected.title}</h2><p className="mt-2 text-sm text-muted">{selected.durationWeeks ? `${selected.durationWeeks} tuần` : "Chưa đặt thời lượng"}{selected.hoursPerWeek ? ` · ${selected.hoursPerWeek} giờ/tuần` : ""}</p></div><Image src="/brand/milo/milo-purple-tablet.webp" alt="" width={96} height={96} className="hidden shrink-0 sm:block" /></div>
+        <div className="flex items-center justify-between gap-4"><div className="min-w-0"><p className="text-sm font-semibold text-primary">{categoryLabels[selected.category]} · Phiên {selected.version}</p><h2 className="mt-2 break-words text-2xl font-bold">{selected.title}</h2><p className="mt-2 text-sm text-muted">{selected.durationWeeks ? `${selected.durationWeeks} tuần` : "Chưa đặt thời lượng"}{selected.hoursPerWeek ? ` · ${selected.hoursPerWeek} giờ/tuần` : ""}</p></div>{settings?.character !== "none" && <Image src={characterAsset} alt="" width={96} height={96} className="hidden shrink-0 object-contain sm:block" />}</div>
         <div className="mt-5 flex justify-between gap-3 text-sm"><span>{selected.completedTasks}/{selected.totalTasks} việc hoàn thành</span><strong>{selected.progress}%</strong></div>
         <progress className="mt-2 h-3 w-full accent-primary" max={100} value={selected.progress} aria-label="Tiến độ lộ trình" />
         <ol className={cn("mt-7 gap-4", settings?.viewMode === "diagram" ? "grid md:grid-cols-2" : "grid")}>
@@ -169,6 +185,6 @@ function RoadmapContent({ identity, session, category, editing, onCloseEditor }:
       </section>
     </>}
     {settings ? <DisplaySettings key={settings.version} settings={settings} token={session.accessToken} identity={identity} /> : settingsQuery.isError ? <div role="alert"><p>Chưa tải được cài đặt hiển thị.</p><Button variant="secondary" onClick={() => void settingsQuery.refetch()}>Tải lại cài đặt</Button></div> : null}
-    <p className="text-xs leading-5 text-muted">Bản tích hợp này hỗ trợ lộ trình do bạn tạo và lưu. Đề xuất AI, kế hoạch văn bản và liên kết mục tiêu đang chờ migrate; không có thao tác AI ngầm khi bạn lưu.</p>
+    <p className="text-xs leading-5 text-muted">Công việc / Cá nhân được lưu riêng. AI chỉ đề xuất; mỗi lần lưu lộ trình mới tạo mục tiêu từ chặng cuối. Cài đặt hiển thị không thay đổi nội dung.</p>
   </>;
 }

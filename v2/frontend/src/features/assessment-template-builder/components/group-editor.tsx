@@ -105,6 +105,11 @@ export function GroupEditor({
       </CardHeader>
 
       <CardContent className="min-w-0 space-y-4 pt-4">
+        <label className="grid gap-2 text-xs font-bold text-ink">Nhóm điểm tổng hợp
+          <select className="min-h-11 rounded-xl border border-border bg-white px-3" value={group.scoreDimension ?? "CONTRIBUTION"} onChange={(event) => onUpdateGroup({ scoreDimension: event.target.value as "CONTRIBUTION" | "ATTITUDE" })}>
+            <option value="CONTRIBUTION">Đóng góp</option><option value="ATTITUDE">Thái độ</option>
+          </select>
+        </label>
         <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-12">
           <div className="min-w-0 sm:col-span-9">
             <label htmlFor={`group-${group.id}-name`} className="block text-xs font-bold text-ink">

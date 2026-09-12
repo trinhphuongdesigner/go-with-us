@@ -31,6 +31,23 @@ class RoadmapSave(ApiModel):
     duration_weeks: int | None = Field(default=None, ge=1, le=520, strict=True)
     hours_per_week: int | None = Field(default=None, ge=1, le=168, strict=True)
     milestones: list[RoadmapMilestoneDraft] = Field(min_length=1, max_length=30)
+    ai_suggested: bool = False
+
+
+class RoadmapStructureTask(RoadmapTaskDraft):
+    done: StrictBool = False
+
+
+class RoadmapStructureMilestone(RoadmapMilestoneDraft):
+    tasks: list[RoadmapStructureTask] = Field(min_length=1, max_length=50)
+
+
+class RoadmapStructurePatch(ApiModel):
+    expected_version: int = Field(ge=1)
+    title: Title
+    duration_weeks: int | None = Field(default=None, ge=1, le=520)
+    hours_per_week: int | None = Field(default=None, ge=1, le=168)
+    milestones: list[RoadmapStructureMilestone] = Field(min_length=1, max_length=30)
 
 
 class RoadmapTaskRead(RoadmapTaskDraft):

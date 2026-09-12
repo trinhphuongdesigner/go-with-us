@@ -1,5 +1,10 @@
 # Candidate hợp nhất v2 — bàn giao QC sớm
 
+> **Bản ghi lịch sử của đợt assembly trước.** Các mục PARTIAL/chưa port bên dưới
+> mô tả checkpoint `95090c7`/`190d7f7`, không phải trạng thái runtime mới nhất.
+> Xem [RUNTIME-MIGRATION.md](./RUNTIME-MIGRATION.md) và
+> [QC-QUICKSTART.md](./QC-QUICKSTART.md) cho gói migrate đầy đủ tiếp theo.
+
 Nhánh: `codex/v2-qa-consolidation`. Worktree: `.claude/worktrees/v2-qa`.
 **Chưa phải bản bàn giao đầy đủ nghiệp vụ master.** Giữ toàn bộ stack v2; không chạy NestJS/MUI.
 

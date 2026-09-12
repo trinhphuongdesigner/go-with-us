@@ -10,6 +10,7 @@ const features: Record<string, { eyebrow: string; title: string; description: st
   "nhan-su": { eyebrow: "People Intelligence", title: "Đội ngũ", description: "Tìm kiếm nhân sự và theo dõi năng lực đội ngũ theo quyền truy cập." },
   "cong-ty": { eyebrow: "Quản trị", title: "Quản lý công ty", description: "Nhân sự, quyền và cấu hình tổ chức sẽ được quản lý tại đây." },
   "he-thong": { eyebrow: "Super Admin", title: "Quản trị hệ thống", description: "Quản lý doanh nghiệp và trạng thái nền tảng CareerMate." },
+  "tai-khoan": { eyebrow: "Quản trị", title: "Quản lý tài khoản", description: "Tạo, chỉnh sửa và khóa tài khoản trong phạm vi được giao." },
   "cai-dat": { eyebrow: "Cá nhân hóa", title: "Cài đặt", description: "Tài khoản, thông báo và các kết nối an toàn của bạn." },
 };
 

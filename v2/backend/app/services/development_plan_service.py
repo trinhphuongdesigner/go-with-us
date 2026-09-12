@@ -9,6 +9,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.sql import Select
 
 from app.domain.models import User, utc_now
+from app.career_ai.models import CareerGoal
 from app.domain.roadmap_models import (
     DevelopmentMilestone,
     DevelopmentPlanSettings,
@@ -154,6 +155,21 @@ class DevelopmentPlanService:
         self.db.add(row)
         try:
             await self.db.flush()
+            end = payload.milestones[-1]
+            self.db.add(
+                CareerGoal(
+                    owner_user_id=self.owner_id,
+                    company_id=self.company_id,
+                    roadmap_id=row.id,
+                    category=payload.category,
+                    title=end.title,
+                    description=end.description,
+                    due_date=end.due_date,
+                    ai_suggested=payload.ai_suggested,
+                    progress=0,
+                    status="NOT_STARTED",
+                )
+            )
             result = roadmap_read(row)
             await self.db.commit()
             return result
