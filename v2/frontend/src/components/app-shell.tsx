@@ -2,7 +2,7 @@
 
 import * as Dialog from "@radix-ui/react-dialog";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Bell, Building2, CheckCircle2, LogOut, Menu, Search, X } from "lucide-react";
+import { ArrowLeft, Bell, Building2, CheckCircle2, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Search, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
@@ -221,6 +221,30 @@ function AppShellContent({ children }: { children: ReactNode }) {
     ? getCompanyNavigation(companyScopeId, session?.user.permissions ?? [])
     : getAllowedNavigation(session?.user.permissions ?? []), [session, companyScopeId]);
   const demoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("careermate_sidebar_collapsed");
+      if (saved !== null) {
+        setCollapsed(saved === "true");
+      }
+    } catch {
+      // Ignore storage errors
+    }
+  }, []);
+
+  function toggleCollapsed() {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("careermate_sidebar_collapsed", String(next));
+      } catch {
+        // Ignore storage errors
+      }
+      return next;
+    });
+  }
 
   useEffect(() => {
     if (status === "anonymous") router.replace("/login");
@@ -244,27 +268,106 @@ function AppShellContent({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background md:flex">
-      <aside className="sticky top-0 hidden h-screen w-20 shrink-0 flex-col border-r border-border bg-surface px-3 py-5 md:flex lg:w-68 lg:px-5">
-        <BrandLogo compact className="mx-auto lg:hidden" />
-        <BrandLogo className="hidden lg:inline-flex" />
-        <nav aria-label="Điều hướng chính" className="mt-6 min-h-0 flex-1 space-y-1.5 overflow-y-auto">
-          {companyScopeName ? <><div className="lg:hidden"><CompanyScopeHeading name={companyScopeName} compact /></div><div className="hidden lg:block"><CompanyScopeHeading name={companyScopeName} /></div></> : null}
+      <aside
+        className={cn(
+          "sticky top-0 hidden h-screen shrink-0 flex-col border-r border-border bg-surface transition-[width] duration-200 ease-in-out md:flex",
+          collapsed ? "w-20" : "w-20 lg:w-68"
+        )}
+      >
+        <div
+          className={cn(
+            "flex h-16 shrink-0 items-center border-b border-border transition-colors lg:h-18",
+            collapsed ? "justify-center px-3" : "justify-between px-4 lg:px-5"
+          )}
+        >
+          {collapsed ? (
+            <button
+              type="button"
+              onClick={toggleCollapsed}
+              title="Mở rộng thanh bên"
+              aria-label="Mở rộng thanh bên"
+              className="group flex size-10 items-center justify-center rounded-xl hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
+            >
+              <BrandLogo compact />
+            </button>
+          ) : (
+            <>
+              <div className="flex items-center gap-2">
+                <BrandLogo compact className="lg:hidden" />
+                <BrandLogo className="hidden lg:inline-flex" />
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleCollapsed}
+                aria-label="Thu gọn thanh bên"
+                title="Thu gọn thanh bên"
+                className="hidden size-9 text-muted hover:text-ink lg:flex"
+              >
+                <PanelLeftClose size={18} aria-hidden="true" />
+              </Button>
+            </>
+          )}
+        </div>
+
+        <nav aria-label="Điều hướng chính" className="min-h-0 flex-1 space-y-1.5 overflow-y-auto px-3 py-3 lg:px-4">
+          {companyScopeName ? (
+            collapsed ? (
+              <CompanyScopeHeading name={companyScopeName} compact />
+            ) : (
+              <>
+                <div className="lg:hidden"><CompanyScopeHeading name={companyScopeName} compact /></div>
+                <div className="hidden lg:block"><CompanyScopeHeading name={companyScopeName} /></div>
+              </>
+            )
+          ) : null}
           {items.map((item) => (
-            <span key={item.href} className="block lg:hidden"><NavigationLink item={item} compact /></span>
-          ))}
-          {items.map((item) => (
-            <span key={`wide-${item.href}`} className="hidden lg:block"><NavigationLink item={item} /></span>
+            <span key={item.href} className="block">
+              {collapsed ? (
+                <NavigationLink item={item} compact />
+              ) : (
+                <>
+                  <span className="block lg:hidden"><NavigationLink item={item} compact /></span>
+                  <span className="hidden lg:block"><NavigationLink item={item} /></span>
+                </>
+              )}
+            </span>
           ))}
         </nav>
-        <div className="border-t border-border pt-4">
-          <div className="lg:hidden"><UserCard compact /></div>
-          <div className="hidden lg:block"><UserCard /></div>
-          <Button variant="ghost" size="icon" className="mx-auto mt-3 text-danger lg:hidden" aria-label="Đăng xuất" onClick={handleSignOut}>
-            <LogOut size={18} aria-hidden="true" />
-          </Button>
-          <Button variant="ghost" className="mt-3 hidden w-full justify-start text-danger lg:flex" onClick={handleSignOut}>
-            <LogOut size={18} aria-hidden="true" /> Đăng xuất
-          </Button>
+
+        <div className={cn("shrink-0 border-t border-border p-3", !collapsed && "lg:p-4")}>
+          <UserCard compact={collapsed} />
+          {collapsed ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="mx-auto mt-3 flex text-danger"
+              aria-label="Đăng xuất"
+              title="Đăng xuất"
+              onClick={handleSignOut}
+            >
+              <LogOut size={18} aria-hidden="true" />
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="mx-auto mt-3 flex text-danger lg:hidden"
+                aria-label="Đăng xuất"
+                onClick={handleSignOut}
+              >
+                <LogOut size={18} aria-hidden="true" />
+              </Button>
+              <Button
+                variant="ghost"
+                className="mt-3 hidden w-full justify-start text-danger lg:flex"
+                onClick={handleSignOut}
+              >
+                <LogOut size={18} aria-hidden="true" /> Đăng xuất
+              </Button>
+            </>
+          )}
         </div>
       </aside>
 
@@ -273,6 +376,16 @@ function AppShellContent({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-2">
             <MobileNavigation items={items} companyScopeName={companyScopeName} />
             <BrandLogo className="md:hidden" />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden text-muted hover:text-ink md:flex"
+              onClick={toggleCollapsed}
+              aria-label={collapsed ? "Mở rộng thanh bên" : "Thu gọn thanh bên"}
+              title={collapsed ? "Mở rộng thanh bên" : "Thu gọn thanh bên"}
+            >
+              {collapsed ? <PanelLeftOpen size={19} aria-hidden="true" /> : <PanelLeftClose size={19} aria-hidden="true" />}
+            </Button>
             <div className="hidden md:block">
               <p className="text-xs font-medium text-muted">{companyScopeName ?? session.user.companyName}</p>
               <p className="text-sm font-semibold text-ink">{companyScopeId ? "Không gian công ty" : "Không gian làm việc"}</p>

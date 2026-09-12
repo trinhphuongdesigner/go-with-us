@@ -1,19 +1,33 @@
-import { Sparkles } from "lucide-react";
+import Image from "next/image";
 
 import { cn } from "@/lib/cn";
 
 export function BrandLogo({ compact = false, className }: { compact?: boolean; className?: string }) {
+  if (compact) {
+    return (
+      <div className={cn("inline-flex items-center", className)}>
+        <Image
+          src="/mark-black.svg"
+          alt="CareerMate"
+          width={36}
+          height={36}
+          className="size-9 object-contain"
+          priority
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className={cn("inline-flex items-center gap-3", className)}>
-      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary text-white shadow-[0_8px_24px_rgb(49_94_129_/_22%)]">
-        <Sparkles size={20} strokeWidth={2.2} aria-hidden="true" />
-      </span>
-      {compact ? null : (
-        <span>
-          <span className="block text-[17px] font-bold tracking-[-0.02em] text-ink">CareerMate</span>
-          <span className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-[#596579]">Rõ hướng phát triển</span>
-        </span>
-      )}
+    <div className={cn("inline-flex items-center", className)}>
+      <Image
+        src="/lockup-black.svg"
+        alt="CareerMate"
+        width={150}
+        height={28}
+        className="h-7 w-auto object-contain"
+        priority
+      />
     </div>
   );
 }

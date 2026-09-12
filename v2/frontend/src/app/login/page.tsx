@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { CheckCircle2, ShieldCheck, Sparkles } from "lucide-react";
+import { CheckCircle2, ShieldCheck } from "lucide-react";
 
 import { BrandLogo } from "@/components/brand-logo";
 import { LoginForm } from "@/features/auth/login-form";
@@ -15,15 +15,9 @@ export default function LoginPage() {
         <div className="absolute -right-24 -top-24 size-96 rounded-full bg-white/50 blur-3xl" aria-hidden="true" />
         <div className="relative z-10">
           <BrandLogo />
-          <span className="mt-16 inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1.5 text-xs font-semibold text-primary">
-            <Sparkles size={15} aria-hidden="true" /> Đồng hành phát triển sự nghiệp
-          </span>
-          <h1 id="welcome-title" className="mt-5 max-w-xl text-balance text-4xl font-bold leading-[1.16] tracking-[-0.035em] text-ink xl:text-5xl">
+          <h1 id="welcome-title" className="mt-12 max-w-xl text-balance text-4xl font-bold leading-[1.16] tracking-[-0.035em] text-ink xl:mt-16 xl:text-5xl">
             Nhìn rõ năng lực.<br />Đi đúng lộ trình.
           </h1>
-          <p className="mt-5 max-w-lg text-base leading-7 text-[#596579]">
-            CareerMate giúp mỗi người hiểu mình đang ở đâu, cần phát triển điều gì và tiến lên bằng những bước có thể kiểm chứng.
-          </p>
           <ul className="mt-8 space-y-3 text-sm font-medium text-ink">
             {[
               "Mọi gợi ý AI đều gắn với nguồn dữ liệu",
