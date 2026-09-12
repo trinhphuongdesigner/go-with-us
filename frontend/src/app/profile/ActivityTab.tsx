@@ -16,11 +16,13 @@ import PageSkeleton from '@/components/ui/PageSkeleton';
 import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import Link from '@mui/material/Link';
 import {
   listActivityLogs,
   createActivityLog,
   updateActivityLog,
   deleteActivityLog,
+  uploadActivityEvidence,
   type ActivityLog,
 } from '@/lib/api/activityLogsApi';
 import { ApiError } from '@/lib/api/client';
@@ -42,6 +44,7 @@ interface FormState {
   category: string;
   date: string;
   description: string;
+  evidenceUrl: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -49,6 +52,7 @@ const EMPTY_FORM: FormState = {
   category: '',
   date: new Date().toISOString().slice(0, 10),
   description: '',
+  evidenceUrl: '',
 };
 
 export default function ActivityTab() {
@@ -60,6 +64,8 @@ export default function ActivityTab() {
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [formError, setFormError] = React.useState<string | null>(null);
+  const [uploading, setUploading] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const loadLogs = React.useCallback(() => {
     return listActivityLogs()
@@ -90,8 +96,26 @@ export default function ActivityTab() {
       category: log.category ?? '',
       date: toDateInputValue(log.date),
       description: log.description ?? '',
+      evidenceUrl: log.evidenceUrl ?? '',
     });
     setFormError(null);
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setUploading(true);
+    setFormError(null);
+    try {
+      const { url } = await uploadActivityEvidence(file);
+      setForm((prev) => ({ ...prev, evidenceUrl: url }));
+    } catch (err) {
+      setFormError(err instanceof ApiError ? err.message : 'Không tải được minh chứng');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleCancelEdit = () => {
@@ -126,6 +150,7 @@ export default function ActivityTab() {
         title: form.title.trim(),
         description: form.description.trim() || undefined,
         category: form.category || undefined,
+        evidenceUrl: form.evidenceUrl.trim() || undefined,
         date: form.date,
       };
 
@@ -193,6 +218,30 @@ export default function ActivityTab() {
               minRows={3}
               fullWidth
             />
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ alignItems: { sm: 'flex-start' } }}>
+              <TextField
+                label="Minh chứng"
+                helperText="Link ảnh/giấy chứng nhận, hoặc tải file lên"
+                value={form.evidenceUrl}
+                onChange={handleFieldChange('evidenceUrl')}
+                fullWidth
+              />
+              <Button
+                variant="outlined"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                sx={{ whiteSpace: 'nowrap', mt: { sm: '8px' } }}
+              >
+                {uploading ? 'Đang tải...' : 'Chọn file'}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.doc,.docx,.xls,.xlsx"
+                hidden
+                onChange={handleFileChange}
+              />
+            </Stack>
             <Stack direction="row" spacing={1.5}>
               <Button type="submit" variant="contained" disabled={saving}>
                 {editingId ? 'Lưu thay đổi' : 'Thêm hoạt động'}
@@ -222,7 +271,7 @@ export default function ActivityTab() {
             {logs.map((log) => (
               <Box
                 key={log.id}
-                sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2 }}
+                sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}
               >
                 <Box sx={{ minWidth: 0, flex: 1 }}>
                   <Stack
@@ -238,6 +287,11 @@ export default function ActivityTab() {
                     <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
                       {log.description}
                     </Typography>
+                  ) : null}
+                  {log.evidenceUrl ? (
+                    <Link href={log.evidenceUrl} target="_blank" rel="noopener" variant="body2">
+                      Xem minh chứng
+                    </Link>
                   ) : null}
                 </Box>
                 <Stack direction="row" spacing={0.5}>

@@ -159,46 +159,25 @@ export default function ProjectsTab({
       ) : (
         <Stack divider={<Divider />} spacing={2}>
           {projects.map((project) => (
-            <Box key={project.id} sx={{ pt: 1 }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  gap: 2,
-                  flexDirection: { xs: 'column', sm: 'row' },
-                }}
-              >
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                    {project.name}
-                  </Typography>
-                  <Typography variant="body2">
-                    {project.role}
-                    {project.domain ? ` · ${project.domain}` : ''} ·{' '}
-                    {toInputDate(project.startDate)} →{' '}
-                    {toInputDate(project.endDate) || 'nay'}
-                  </Typography>
-                </Box>
-                <Stack direction="row" spacing={1}>
-                  <Button size="sm" onClick={() => openEdit(project)}>
-                    Sửa
-                  </Button>
-                  <Button
-                    size="sm"
-                    color="error"
-                    onClick={() =>
-                      ask({
-                        title: 'Xóa dự án',
-                        description: `Xóa “${project.name}” khỏi hồ sơ? Hành động này không thể hoàn tác.`,
-                        confirmLabel: 'Xóa',
-                        danger: true,
-                        onConfirm: () => handleDelete(project.id),
-                      })
-                    }
-                  >
-                    Xóa
-                  </Button>
-                </Stack>
+            <Box
+              key={project.id}
+              sx={{
+                pt: 1,
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', sm: 'minmax(0, 1fr) auto' },
+                columnGap: 2,
+              }}
+            >
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                  {project.name}
+                </Typography>
+                <Typography variant="body2">
+                  {project.role}
+                  {project.domain ? ` · ${project.domain}` : ''} ·{' '}
+                  {toInputDate(project.startDate)} →{' '}
+                  {toInputDate(project.endDate) || 'nay'}
+                </Typography>
               </Box>
 
               {project.contribution ? (
@@ -218,6 +197,35 @@ export default function ProjectsTab({
                   ))}
                 </Stack>
               ) : null}
+
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{
+                  mt: { xs: 1.5, sm: 0 },
+                  gridColumn: { sm: 2 },
+                  gridRow: { sm: 1 },
+                }}
+              >
+                <Button size="sm" onClick={() => openEdit(project)}>
+                  Sửa
+                </Button>
+                <Button
+                  size="sm"
+                  color="error"
+                  onClick={() =>
+                    ask({
+                      title: 'Xóa dự án',
+                      description: `Xóa “${project.name}” khỏi hồ sơ? Hành động này không thể hoàn tác.`,
+                      confirmLabel: 'Xóa',
+                      danger: true,
+                      onConfirm: () => handleDelete(project.id),
+                    })
+                  }
+                >
+                  Xóa
+                </Button>
+              </Stack>
             </Box>
           ))}
         </Stack>

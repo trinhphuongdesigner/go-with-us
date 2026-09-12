@@ -22,6 +22,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ApiError } from '@/lib/api/client';
 import * as skillsCompetencyApi from '@/lib/api/skillsCompetencyApi';
 import type { EmployeeSkill, Skill } from '@/lib/api/skillsCompetencyApi';
+import { colorTokens, radiusTokens } from '@/theme/theme';
 
 /** Skill self-management — moved in from the old standalone /skills page. */
 export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
@@ -106,23 +107,23 @@ export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
     <Box>
       <Stack spacing={2} sx={{ mb: 3 }}>
         <Stack
-          direction={{ xs: 'column', md: 'row' }}
+          direction={{ xs: 'column', sm: 'row' }}
           spacing={2}
-          sx={{ alignItems: { md: 'center' } }}
+          sx={{ alignItems: { sm: 'center' } }}
         >
           <Autocomplete
             freeSolo
             options={(catalog ?? []).map((s) => s.name)}
             value={skillName}
             onInputChange={(_e, value) => setSkillName(value)}
-            sx={{ minWidth: 260, flex: 1 }}
+            sx={{ minWidth: { xs: 0, md: 260 }, flex: 1 }}
             renderInput={(params) => (
               <TextField {...params} label="Tên kỹ năng" placeholder="ví dụ TypeScript" size="small" />
             )}
           />
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', rowGap: 0.5 }}>
             <Typography variant="body2">Cấp độ</Typography>
-            <SkillLevelMeter value={level} onChange={setLevel} />
+            <SkillLevelMeter value={level} onChange={setLevel} size="sm" />
           </Box>
         </Stack>
         <TextField
@@ -140,7 +141,7 @@ export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
           </Typography>
         ) : null}
         <Box>
-          <Button variant="contained" onClick={handleSave} disabled={saving}>
+          <Button variant="contained" onClick={handleSave} disabled={saving} sx={{ width: { xs: '100%', sm: 'auto' } }}>
             {saving ? 'Đang lưu...' : 'Lưu kỹ năng'}
           </Button>
         </Box>
@@ -151,46 +152,102 @@ export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
       ) : mySkills.length === 0 ? (
         <Typography variant="body1">Chưa có kỹ năng nào — thêm ở trên.</Typography>
       ) : (
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Kỹ năng</TableCell>
-              <TableCell>Cấp độ</TableCell>
-              <TableCell>Ghi chú</TableCell>
-              <TableCell align="right">Thao tác</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
+        <>
+          <Stack
+            spacing={1.5}
+            sx={{ display: { xs: 'flex', md: 'none' } }}
+          >
             {mySkills.map((row) => (
-              <TableRow key={row.id}>
-                <TableCell>{row.skill.name}</TableCell>
-                <TableCell>
-                  <SkillLevelMeter value={row.level} size="sm" />
-                </TableCell>
-                <TableCell>{row.note ?? '—'}</TableCell>
-                <TableCell align="right">
-                  <IconButton size="small" onClick={() => handleEditRow(row)}>
-                    <EditOutlinedIcon fontSize="small" />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={() =>
-                      ask({
-                        title: 'Xóa kỹ năng',
-                        description: `Xóa "${row.skill.name}"? Hành động này không thể hoàn tác.`,
-                        confirmLabel: 'Xóa',
-                        danger: true,
-                        onConfirm: () => handleDelete(row),
-                      })
-                    }
-                  >
-                    <DeleteOutlineIcon fontSize="small" />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
+              <Box
+                key={row.id}
+                sx={{
+                  p: 1.5,
+                  borderRadius: `${radiusTokens.sm}px`,
+                  border: `1px solid ${colorTokens.border}`,
+                  bgcolor: colorTokens.surface,
+                }}
+              >
+                <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start', mb: 1 }}>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                      {row.skill.name}
+                    </Typography>
+                    <Box sx={{ mt: 0.75 }}>
+                      <SkillLevelMeter value={row.level} size="sm" />
+                    </Box>
+                  </Box>
+                  <Stack direction="row" spacing={0.5}>
+                    <IconButton size="sm" onClick={() => handleEditRow(row)}>
+                      <EditOutlinedIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="sm"
+                      onClick={() =>
+                        ask({
+                          title: 'Xóa kỹ năng',
+                          description: `Xóa "${row.skill.name}"? Hành động này không thể hoàn tác.`,
+                          confirmLabel: 'Xóa',
+                          danger: true,
+                          onConfirm: () => handleDelete(row),
+                        })
+                      }
+                    >
+                      <DeleteOutlineIcon fontSize="small" />
+                    </IconButton>
+                  </Stack>
+                </Stack>
+                {row.note ? (
+                  <Typography variant="body2" sx={{ color: colorTokens.secondary }}>
+                    {row.note}
+                  </Typography>
+                ) : null}
+              </Box>
             ))}
-          </TableBody>
-        </Table>
+          </Stack>
+
+          <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Kỹ năng</TableCell>
+                  <TableCell>Cấp độ</TableCell>
+                  <TableCell>Ghi chú</TableCell>
+                  <TableCell align="right">Thao tác</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {mySkills.map((row) => (
+                  <TableRow key={row.id}>
+                    <TableCell>{row.skill.name}</TableCell>
+                    <TableCell>
+                      <SkillLevelMeter value={row.level} size="sm" />
+                    </TableCell>
+                    <TableCell>{row.note ?? '—'}</TableCell>
+                    <TableCell align="right">
+                      <IconButton size="small" onClick={() => handleEditRow(row)}>
+                        <EditOutlinedIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() =>
+                          ask({
+                            title: 'Xóa kỹ năng',
+                            description: `Xóa "${row.skill.name}"? Hành động này không thể hoàn tác.`,
+                            confirmLabel: 'Xóa',
+                            danger: true,
+                            onConfirm: () => handleDelete(row),
+                          })
+                        }
+                      >
+                        <DeleteOutlineIcon fontSize="small" />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Box>
+        </>
       )}
       {dialog}
     </Box>

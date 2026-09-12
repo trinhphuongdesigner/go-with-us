@@ -14,8 +14,6 @@ import {
 } from 'class-validator';
 import { MilestoneStatus } from '@prisma/client';
 
-type LifeCategory = 'WORK' | 'PERSONAL';
-
 export class CreateTaskDto {
   @IsString()
   @MinLength(1)
@@ -28,6 +26,10 @@ export class CreateTaskDto {
 }
 
 export class CreateMilestoneDto {
+  @IsString()
+  @MinLength(1)
+  roadmapId!: string;
+
   @IsString()
   @MinLength(1)
   title!: string;
@@ -64,10 +66,6 @@ export class UpdateMilestoneDto {
   @IsOptional()
   @IsEnum(MilestoneStatus)
   status?: MilestoneStatus;
-
-  @IsOptional()
-  @IsIn(['WORK', 'PERSONAL'])
-  category?: LifeCategory;
 
   @IsOptional()
   @IsInt()
@@ -115,10 +113,6 @@ export class RoadmapMilestoneDto {
  * confirmed" shape as the rest of the app's AI features.
  */
 export class SaveRoadmapDto {
-  @IsOptional()
-  @IsIn(['WORK', 'PERSONAL'])
-  category?: 'WORK' | 'PERSONAL';
-
   @IsOptional()
   @IsInt()
   @Min(1)

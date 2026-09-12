@@ -12,6 +12,7 @@ interface AuthContextValue {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  updateCurrentUser: (user: User) => void;
 }
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined);
@@ -59,7 +60,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
-  const value = React.useMemo(() => ({ user, loading, login, logout }), [user, loading, login, logout]);
+  const updateCurrentUser = React.useCallback((nextUser: User) => {
+    setUser(nextUser);
+  }, []);
+
+  const value = React.useMemo(
+    () => ({ user, loading, login, logout, updateCurrentUser }),
+    [user, loading, login, logout, updateCurrentUser],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

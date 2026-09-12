@@ -53,14 +53,6 @@ enum GoalStatus {
   ACHIEVED
 }
 
-/// Work vs. personal — the idea doc splits goals/awards into these two
-/// buckets: personal ones don't serve the job directly but give the AI and
-/// the organisation extra context about the person.
-enum LifeCategory {
-  WORK
-  PERSONAL
-}
-
 /// A person's account outlives any single company, so an employment period
 /// is its own record — see docs/careermate-scope.md section 2.3.
 enum EmploymentStatus {
@@ -160,6 +152,7 @@ model Company {
   projectExperiences  ProjectExperience[]
   passportShares      CareerPassportShare[]
   roleDefinitions     RoleDefinition[]
+  competencyRequests  CompetencyRequest[]
 }
 
 /// Dynamic role definitions per company (or global for SUPER_ADMIN).
@@ -242,6 +235,9 @@ model User {
   assessmentsGiven           Assessment[]            @relation("assessmentReviewer")
   assessmentsApproved        Assessment[]            @relation("assessmentApprover")
   assessmentTemplatesCreated AssessmentTemplate[]
+
+  competencyRequestsSent     CompetencyRequest[] @relation("CompetencyRequestSender")
+  competencyRequestsReceived CompetencyRequest[] @relation("CompetencyRequestRecipient")
 }
 
 model Skill {
@@ -273,6 +269,8 @@ model ActivityLog {
   title       String
   description String?
   category    String?
+  /// URL to a photo/certificate (outside Spaces) OR Spaces upload (prefix careermate/activity-evidence/).
+  evidenceUrl String?
   date        DateTime
   createdAt   DateTime @default(now())
 }
@@ -283,9 +281,6 @@ model DevelopmentGoal {
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   title        String
   description  String?
-  // WORK = skills/certifications serving the job; PERSONAL = health, sport,
-  // volunteering — context for the AI, not direct job output.
-  category     LifeCategory @default(WORK)
   metric       String?
   targetValue  Float?
   currentValue Float?
@@ -305,17 +300,14 @@ model DevelopmentPlan {
   content     String // markdown
   aiGenerated Boolean  @default(false)
   status      String   @default("draft")
-  // Roadmap-level pacing the AI factors into milestone generation.
-  durationWeeks Int?
-  hoursPerWeek  Int?
   // Roadmap UI prefs (character, view mode, costume color, reduce motion,
   // font size) — a display concern, not queryable business data.
   displaySettings Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  versions   DevelopmentPlanVersion[]
-  milestones DevelopmentMilestone[]
+  versions DevelopmentPlanVersion[]
+  roadmaps DevelopmentRoadmap[]
 }
 
 model DevelopmentPlanVersion {
@@ -484,24 +476,67 @@ model ProjectExperience {
   @@index([userId])
 }
 
-/// Awards and competitions — both work (best staff, internal hackathon) and
-/// personal (sport, volunteering), self-reportable with evidence.
+/// Awards and competitions — best staff, internal hackathon, competitions,
+/// etc. — self-reportable with evidence.
 model Award {
   id           String       @id @default(cuid())
   userId       String
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   title        String
-  category     LifeCategory @default(WORK)
   issuer       String?
   description  String?
-  /// Link to a certificate/photo — no object storage in this project, so we
-  /// keep a URL the user supplies rather than hosting the file.
+  /// External URL or Spaces upload under careermate/award-evidence/.
   evidenceUrl  String?
   awardedAt    DateTime?
   selfReported Boolean      @default(true)
   createdAt    DateTime     @default(now())
 
   @@index([userId])
+}
+
+enum CompetencyRequestSourceType {
+  CERTIFICATION
+  AWARD
+}
+
+enum CompetencyRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// An employee asking a specific HR at one of their current companies to
+/// review a certification/award and (optionally) award points. Not an
+/// auto-scoring mechanism — HR decides the amount, if any, on approval.
+model CompetencyRequest {
+  id          String @id @default(cuid())
+  senderId    String
+  sender      User   @relation("CompetencyRequestSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient   User   @relation("CompetencyRequestRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  companyId   String
+  company     Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  sourceType CompetencyRequestSourceType
+  sourceId   String
+  /// Frozen copy of the source record's display fields at request time
+  /// (title/name, issuer, score/description, evidenceUrl) — survives the
+  /// source being edited or deleted later, same idea as
+  /// Assessment.templateSnapshot.
+  sourceSnapshot Json
+
+  message String?
+
+  status        CompetencyRequestStatus @default(PENDING)
+  pointsAwarded Int?
+  reviewNote    String?
+  reviewedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([recipientId, status])
+  @@index([senderId])
 }
 
 /// A CV paste / uploaded CV text / LinkedIn URL that the AI turns into
@@ -664,26 +699,41 @@ model AssessmentAnswer {
 // CareerMate — development roadmap milestones (M6)
 // ---------------------------------------------------------------------------
 
-/// Measurable checkpoints under a DevelopmentPlan — the markdown plan stays
-/// the narrative, these are the trackable parts of it.
+/// One saved roadmap "attempt" for a category. Every explicit save (AI
+/// proposal or the customize panel) creates a new row instead of
+/// overwriting — see development-plans.service.ts#saveRoadmap — so a person
+/// can keep several roadmaps side by side instead of losing history.
+model DevelopmentRoadmap {
+  id            String          @id @default(cuid())
+  planId        String
+  plan          DevelopmentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  durationWeeks Int?
+  hoursPerWeek  Int?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  milestones DevelopmentMilestone[]
+
+  @@index([planId])
+}
+
+/// Measurable checkpoints under a DevelopmentRoadmap — the markdown plan
+/// stays the narrative, these are the trackable parts of one roadmap attempt.
 model DevelopmentMilestone {
-  id          String          @id @default(cuid())
-  planId      String
-  plan        DevelopmentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  id          String             @id @default(cuid())
+  roadmapId   String
+  roadmap     DevelopmentRoadmap @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
   title       String
   description String?
   dueDate     DateTime?
-  status      MilestoneStatus @default(NOT_STARTED)
-  // WORK vs PERSONAL roadmap — lets a single plan hold two independent
-  // milestone tracks, same split as DevelopmentGoal.category.
-  category    LifeCategory    @default(WORK)
-  order       Int             @default(0)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  status      MilestoneStatus    @default(NOT_STARTED)
+  order       Int                @default(0)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
 
   tasks DevelopmentTask[]
 
-  @@index([planId])
+  @@index([roadmapId])
 }
 
 model DevelopmentTask {
@@ -734,7 +784,7 @@ model AssistantMessage {
   /// Structured roadmap proposal (ROADMAP focus only) — set when the model
   /// decided it has enough context to propose milestones/tasks instead of
   /// asking a clarifying question. Shape: { milestones: [{ title,
-  /// description?, dueDate?, category, tasks: [{ title, metric? }] }] }.
+  /// description?, dueDate?, tasks: [{ title, metric? }] }] }.
   proposalData      Json?
   createdAt         DateTime              @default(now())
 

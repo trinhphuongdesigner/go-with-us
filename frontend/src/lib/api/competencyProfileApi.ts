@@ -1,4 +1,4 @@
-import { apiRequest } from './client';
+import { apiRequest, ApiError, getStoredToken } from './client';
 
 export type CertificationType = 'DEGREE' | 'LANGUAGE' | 'PROFESSIONAL' | 'OTHER';
 export type LifeCategory = 'WORK' | 'PERSONAL';
@@ -219,4 +219,34 @@ export function deleteAward(id: string) {
   return apiRequest<{ id: string }>(`/competency-profile/awards/${id}`, {
     method: 'DELETE',
   });
+}
+
+/** Upload evidence file for an award (image/PDF/Office). Returns { url: string } */
+export async function uploadAwardEvidence(file: File): Promise<{ url: string }> {
+  return uploadEvidenceFile('/competency-profile/awards/evidence', file);
+}
+
+/** Upload evidence file for a certification (image/PDF/Office). Returns { url: string } */
+export async function uploadCertificationEvidence(file: File): Promise<{ url: string }> {
+  return uploadEvidenceFile('/competency-profile/certifications/evidence', file);
+}
+
+async function uploadEvidenceFile(path: string, file: File): Promise<{ url: string }> {
+  const form = new FormData();
+  form.append('evidence', file);
+  const token = getStoredToken();
+  const res = await fetch((process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api') + path, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    body: form,
+  });
+  const payload = await res.json().catch(() => null);
+  if (!res.ok) {
+    const message =
+      payload && typeof payload === 'object' && 'message' in payload
+        ? String((payload as { message: unknown }).message)
+        : 'Tải minh chứng thất bại';
+    throw new ApiError(res.status, message, payload);
+  }
+  return payload;
 }

@@ -1,5 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service';
+import { StorageService } from '../../storage/storage.service';
 import { assertCanViewUser } from '../../common/access/user-scope';
 import type { AuthenticatedUser } from '../auth/jwt.strategy';
 import {
@@ -11,6 +17,19 @@ import {
   UpdateProjectExperienceDto,
 } from './dto/project-experience.dto';
 import { CreateAwardDto, UpdateAwardDto } from './dto/award.dto';
+
+const EVIDENCE_EXTENSION_BY_MIME: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+  'application/pdf': 'pdf',
+  'application/msword': 'doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+    'docx',
+  'application/vnd.ms-excel': 'xls',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+};
 
 /** One entry on the merged profile timeline the frontend renders. */
 export interface TimelineEntry {
@@ -28,7 +47,10 @@ const optionalDate = (value?: string) =>
 
 @Injectable()
 export class CompetencyProfileService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: StorageService,
+  ) {}
 
   // --- Certifications ------------------------------------------------------
 
@@ -61,6 +83,32 @@ export class CompetencyProfileService {
     });
   }
 
+  /** Upload evidence file for a certification (image/PDF/Office). */
+  async uploadCertificationEvidence(
+    file: Express.Multer.File,
+    caller: AuthenticatedUser,
+  ) {
+    const extension = EVIDENCE_EXTENSION_BY_MIME[file.mimetype];
+    if (!extension) {
+      throw new BadRequestException(
+        'Evidence must be JPEG, PNG, WebP, GIF, PDF, DOC, DOCX, XLS or XLSX',
+      );
+    }
+
+    const key = [
+      'careermate',
+      'certification-evidence',
+      caller.id,
+      `${randomUUID()}.${extension}`,
+    ];
+    const credentialUrl = await this.storage.writePublic(
+      key,
+      file.buffer,
+      file.mimetype,
+    );
+    return { url: credentialUrl };
+  }
+
   async updateCertification(
     id: string,
     dto: UpdateCertificationDto,
@@ -72,7 +120,7 @@ export class CompetencyProfileService {
     if (!existing || existing.userId !== caller.id) {
       throw new NotFoundException(`Certification ${id} not found`);
     }
-    return this.prisma.certification.update({
+    const updated = await this.prisma.certification.update({
       where: { id },
       data: {
         name: dto.name,
@@ -84,6 +132,20 @@ export class CompetencyProfileService {
         credentialUrl: dto.credentialUrl,
       },
     });
+
+    if (
+      dto.credentialUrl !== undefined &&
+      existing.credentialUrl &&
+      existing.credentialUrl !== updated.credentialUrl
+    ) {
+      void this.deleteOwnedEvidence(
+        existing.credentialUrl,
+        caller.id,
+        'certification-evidence',
+      );
+    }
+
+    return updated;
   }
 
   async removeCertification(id: string, caller: AuthenticatedUser) {
@@ -94,6 +156,11 @@ export class CompetencyProfileService {
       throw new NotFoundException(`Certification ${id} not found`);
     }
     await this.prisma.certification.delete({ where: { id } });
+    void this.deleteOwnedEvidence(
+      existing.credentialUrl,
+      caller.id,
+      'certification-evidence',
+    );
     return { id };
   }
 
@@ -178,12 +245,29 @@ export class CompetencyProfileService {
     });
   }
 
+  async uploadEvidence(file: Express.Multer.File, caller: AuthenticatedUser) {
+    const extension = EVIDENCE_EXTENSION_BY_MIME[file.mimetype];
+    if (!extension) {
+      throw new BadRequestException(
+        'Evidence must be JPEG, PNG, WebP, GIF, PDF, DOC, DOCX, XLS or XLSX',
+      );
+    }
+
+    const key = [
+      'careermate',
+      'award-evidence',
+      caller.id,
+      `${randomUUID()}.${extension}`,
+    ];
+    const evidenceUrl = await this.storage.writePublic(key, file.buffer, file.mimetype);
+    return { url: evidenceUrl };
+  }
+
   createAward(dto: CreateAwardDto, caller: AuthenticatedUser) {
     return this.prisma.award.create({
       data: {
         userId: caller.id,
         title: dto.title,
-        category: dto.category,
         issuer: dto.issuer,
         description: dto.description,
         evidenceUrl: dto.evidenceUrl,
@@ -202,17 +286,28 @@ export class CompetencyProfileService {
     if (!existing || existing.userId !== caller.id) {
       throw new NotFoundException(`Award ${id} not found`);
     }
-    return this.prisma.award.update({
+
+    const updated = await this.prisma.award.update({
       where: { id },
       data: {
         title: dto.title,
-        category: dto.category,
         issuer: dto.issuer,
         description: dto.description,
         evidenceUrl: dto.evidenceUrl,
         awardedAt: optionalDate(dto.awardedAt),
       },
     });
+
+    // Only delete old Spaces object when evidenceUrl actually changes.
+    if (
+      dto.evidenceUrl !== undefined &&
+      existing.evidenceUrl &&
+      existing.evidenceUrl !== updated.evidenceUrl
+    ) {
+      void this.deleteOwnedEvidence(existing.evidenceUrl, caller.id, 'award-evidence');
+    }
+
+    return updated;
   }
 
   async removeAward(id: string, caller: AuthenticatedUser) {
@@ -221,7 +316,20 @@ export class CompetencyProfileService {
       throw new NotFoundException(`Award ${id} not found`);
     }
     await this.prisma.award.delete({ where: { id } });
+    void this.deleteOwnedEvidence(existing.evidenceUrl, caller.id, 'award-evidence');
     return { id };
+  }
+
+  /** Deletes a Spaces evidence object only if it's actually ours (matches prefix/userId) — never touches externally-pasted URLs. */
+  private deleteOwnedEvidence(
+    url: string | null,
+    userId: string,
+    prefix: 'award-evidence' | 'certification-evidence',
+  ) {
+    const key = this.storage.keyFromPublicUrl(url);
+    if (key?.startsWith(`careermate/${prefix}/${userId}/`)) {
+      void this.storage.delete(key).catch(() => undefined);
+    }
   }
 
   // --- Aggregate profile ---------------------------------------------------
@@ -328,7 +436,7 @@ export class CompetencyProfileService {
           subtitle: a.issuer,
           date: a.awardedAt!.toISOString(),
           endDate: null,
-          meta: { category: a.category, evidenceUrl: a.evidenceUrl },
+          meta: { evidenceUrl: a.evidenceUrl },
         })),
       ...activities.map((a) => ({
         id: a.id,

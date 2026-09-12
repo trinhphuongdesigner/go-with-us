@@ -315,7 +315,7 @@ Current title: ${me.jobTitle ?? 'n/a'}
 Skills: ${me.skills.map((s) => `${s.skill.name} (lvl ${s.level}/5)`).join(', ') || 'none recorded'}
 Certifications: ${me.certifications.map((c) => `${c.name}${c.score ? ` ${c.score}` : ''}`).join(', ') || 'none'}
 Projects: ${me.projectExperiences.map((p) => `${p.name} as ${p.role}${p.domain ? ` [${p.domain}]` : ''}${p.techStack.length ? ` (${p.techStack.join('/')})` : ''}`).join('; ') || 'none recorded'}
-Goals: ${me.goals.map((g) => `${g.title} [${g.category}, ${g.status}, ${g.progress}%]`).join('; ') || 'none set'}
+Goals: ${me.goals.map((g) => `${g.title} [${g.status}, ${g.progress}%]`).join('; ') || 'none set'}
 Recent approved assessments: ${me.assessmentsReceived.map((a) => `${a.cycle?.period ?? 'n/a'}: ${a.totalScore ?? 'n/a'}/10${a.highlights ? ` — ${a.highlights}` : ''}`).join('; ') || 'none yet'}
 
 Reply with ONLY a JSON object, no prose, no markdown code fences:
@@ -339,7 +339,7 @@ Rules:
   private async buildRoadmapContext(caller: AuthenticatedUser) {
     const me = await this.loadOwnProfile(caller);
     const existingMilestones = await this.prisma.developmentMilestone.findMany({
-      where: { plan: { userId: caller.id } },
+      where: { roadmap: { plan: { userId: caller.id } } },
       select: { title: true, status: true },
       orderBy: { order: 'asc' },
     });
@@ -363,7 +363,7 @@ Current title: ${me.jobTitle ?? 'n/a'}
 Skills: ${me.skills.map((s) => `${s.skill.name} (lvl ${s.level}/5)`).join(', ') || 'none recorded'}
 Certifications: ${certs}
 Recent projects: ${projects}
-Existing goals: ${me.goals.map((g) => `${g.title} [${g.category}, ${g.status}]`).join('; ') || 'none set'}
+Existing goals: ${me.goals.map((g) => `${g.title} [${g.status}]`).join('; ') || 'none set'}
 Existing roadmap milestones: ${existingMilestones.map((m) => `${m.title} [${m.status}]`).join('; ') || 'none yet'}
 Recent approved assessment highlights: ${
       me.assessmentsReceived

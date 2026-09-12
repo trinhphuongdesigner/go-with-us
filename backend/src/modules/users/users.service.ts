@@ -6,8 +6,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { randomUUID } from 'node:crypto';
 import { Role } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { StorageService } from '../../storage/storage.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthenticatedUser } from '../auth/jwt.strategy';
@@ -43,7 +45,10 @@ const PUBLIC_USER_SELECT = {
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: StorageService,
+  ) {}
 
   /**
    * SUPER_ADMIN sees every user. EMPLOYEE sees the full same-company
@@ -53,9 +58,16 @@ export class UsersService {
    * manage (see role-hierarchy.ts) — this list doubles as the roster for
    * their user-management UI, so it should never show a peer or superior.
    */
-  findAll(caller: AuthenticatedUser) {
+  findAll(
+    caller: AuthenticatedUser,
+    filter: { role?: Role; companyId?: string } = {},
+  ) {
     if (caller.role === Role.SUPER_ADMIN) {
       return this.prisma.user.findMany({
+        where: {
+          ...(filter.role ? { role: filter.role } : {}),
+          ...(filter.companyId ? { companyId: filter.companyId } : {}),
+        },
         select: PUBLIC_USER_SELECT,
         orderBy: { createdAt: 'desc' },
       });
@@ -67,7 +79,10 @@ export class UsersService {
 
     if (caller.role === Role.EMPLOYEE) {
       return this.prisma.user.findMany({
-        where: { companyId: caller.companyId },
+        where: {
+          companyId: caller.companyId,
+          ...(filter.role ? { role: filter.role } : {}),
+        },
         select: PUBLIC_USER_SELECT,
         orderBy: { createdAt: 'desc' },
       });
@@ -76,7 +91,11 @@ export class UsersService {
     return this.prisma.user.findMany({
       where: {
         companyId: caller.companyId,
-        role: { in: getManageableRoles(caller.role) },
+        role: {
+          in: filter.role
+            ? getManageableRoles(caller.role).filter((r) => r === filter.role)
+            : getManageableRoles(caller.role),
+        },
       },
       select: PUBLIC_USER_SELECT,
       orderBy: { createdAt: 'desc' },
@@ -195,6 +214,17 @@ export class UsersService {
       throw new ForbiddenException('Only an admin can set onboardDate');
     }
 
+    if (dto.email !== undefined && dto.email !== target.email) {
+      const existing = await this.prisma.user.findUnique({
+        where: { email: dto.email },
+      });
+      if (existing) {
+        throw new ConflictException(
+          `A user with email ${dto.email} already exists`,
+        );
+      }
+    }
+
     const { dateOfBirth, onboardDate, ...rest } = dto;
     return this.prisma.user.update({
       where: { id },
@@ -205,6 +235,47 @@ export class UsersService {
       },
       select: PUBLIC_USER_SELECT,
     });
+  }
+
+  async uploadAvatar(file: Express.Multer.File, caller: AuthenticatedUser) {
+    const target = await this.prisma.user.findUnique({
+      where: { id: caller.id },
+      select: { id: true, avatarUrl: true },
+    });
+    if (!target) {
+      throw new NotFoundException(`User ${caller.id} not found`);
+    }
+
+    const extensionByMime: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+    };
+    const extension = extensionByMime[file.mimetype];
+    if (!extension) {
+      throw new BadRequestException('Avatar must be a JPEG, PNG or WebP image');
+    }
+
+    const prefix = `careermate/avatars/${caller.id}/`;
+    const oldKey = this.storage.keyFromPublicUrl(target.avatarUrl);
+    const key = ['careermate', 'avatars', caller.id, `${randomUUID()}.${extension}`];
+    const avatarUrl = await this.storage.writePublic(key, file.buffer, file.mimetype);
+
+    try {
+      const updated = await this.prisma.user.update({
+        where: { id: caller.id },
+        data: { avatarUrl },
+        select: PUBLIC_USER_SELECT,
+      });
+
+      if (oldKey?.startsWith(prefix)) {
+        void this.storage.delete(oldKey).catch(() => undefined);
+      }
+      return updated;
+    } catch (error) {
+      await this.storage.delete(key.join('/')).catch(() => undefined);
+      throw error;
+    }
   }
 
   async remove(id: string, caller: AuthenticatedUser) {

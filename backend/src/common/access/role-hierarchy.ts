@@ -25,3 +25,12 @@ export function getManageableRoles(callerRole: Role): Role[] {
     canManageRole(callerRole, role),
   );
 }
+
+/**
+ * Employee-like roles: BOD, HR, and EMPLOYEE all maintain personal records
+ * (profile, skills, passport, assessments as participant, AI companion).
+ * Only SUPER_ADMIN and COMPANY_ADMIN are pure system-management roles.
+ */
+export function isEmployeeRole(role: Role): boolean {
+  return role !== Role.SUPER_ADMIN && role !== Role.COMPANY_ADMIN;
+}

@@ -96,7 +96,7 @@ export default function AssessmentDetailPage() {
     })();
   }, [load]);
 
-  const isAdmin = user?.role === 'COMPANY_ADMIN' || user?.role === 'SUPER_ADMIN';
+  const isAdmin = user?.role === 'BOD' || user?.role === 'COMPANY_ADMIN' || user?.role === 'SUPER_ADMIN';
   const isAuthor = assessment?.reviewerId === user?.id;
   const editable = assessment?.status === 'DRAFT' && isAuthor;
   const canReview = isAdmin && assessment?.status === 'SUBMITTED';

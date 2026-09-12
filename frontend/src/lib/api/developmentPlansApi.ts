@@ -62,8 +62,6 @@ export interface DevelopmentPlan {
   content: string;
   aiGenerated: boolean;
   status: string;
-  durationWeeks: number | null;
-  hoursPerWeek: number | null;
   displaySettings: RoadmapDisplaySettings | null;
   createdAt: string;
   updatedAt: string;
@@ -95,14 +93,24 @@ export interface DevelopmentTask {
 
 export interface DevelopmentMilestone {
   id: string;
-  planId: string;
+  roadmapId: string;
   title: string;
   description: string | null;
   dueDate: string | null;
   status: MilestoneStatus;
-  category: LifeCategory;
   order: number;
   tasks: DevelopmentTask[];
+}
+
+export interface DevelopmentRoadmap {
+  id: string;
+  planId: string;
+  category: LifeCategory;
+  durationWeeks: number | null;
+  hoursPerWeek: number | null;
+  createdAt: string;
+  updatedAt: string;
+  milestones: DevelopmentMilestone[];
 }
 
 export interface CreateTaskPayload {
@@ -195,10 +203,10 @@ export function getMyPlan() {
 
 // ---- Milestones & tasks ----
 
-export function listMilestones(category?: LifeCategory) {
+export function listRoadmaps(category?: LifeCategory) {
   const query = category ? `?category=${category}` : '';
-  return apiRequest<DevelopmentMilestone[]>(
-    `/development-plans/me/milestones${query}`,
+  return apiRequest<DevelopmentRoadmap[]>(
+    `/development-plans/me/roadmaps${query}`,
   );
 }
 
@@ -242,9 +250,9 @@ export function deleteTask(id: string) {
   });
 }
 
-/** Explicit save of a reviewed AI roadmap proposal — replaces the tree. */
+/** Explicit save of a reviewed roadmap proposal — creates a new section. */
 export function saveRoadmap(payload: SaveRoadmapPayload) {
-  return apiRequest<DevelopmentMilestone[]>('/development-plans/me/roadmap', {
+  return apiRequest<DevelopmentRoadmap>('/development-plans/me/roadmap', {
     method: 'POST',
     body: payload,
   });

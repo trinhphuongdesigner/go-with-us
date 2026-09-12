@@ -35,6 +35,7 @@ import {
   type ReferencedPerson,
 } from '@/lib/api/assistantApi';
 import { colorTokens } from '@/theme/theme';
+import { isEmployeeRole } from '@/lib/roles';
 
 /**
  * M5 — one assistant, two audiences. Admins/sales get roster search grounded
@@ -44,7 +45,7 @@ import { colorTokens } from '@/theme/theme';
 export default function AssistantPage() {
   const { ask, dialog } = useConfirmDialog();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'COMPANY_ADMIN' || user?.role === 'SUPER_ADMIN';
+  const isAdmin = !isEmployeeRole(user?.role) || user?.role === 'HR' || user?.role === 'BOD';
 
   const [conversations, setConversations] = React.useState<
     AssistantConversation[]
