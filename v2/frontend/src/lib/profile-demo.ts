@@ -64,6 +64,7 @@ const engineerProfile: CoreProfile = {
   initials: "HN",
   profileVersion: 7,
   skills: [
+    { id: "employee-skill-react", skillId: "skill-react", name: "React", level: 4, sourceType: "IMPORT" },
     { id: "employee-skill-typescript", skillId: "skill-typescript", name: "TypeScript", level: 5, sourceType: "SELF" },
     { id: "employee-skill-system-design", skillId: "skill-system-design", name: "System design", level: 4, sourceType: "SELF" },
   ],

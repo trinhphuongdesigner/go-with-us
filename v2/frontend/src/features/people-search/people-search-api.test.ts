@@ -63,6 +63,23 @@ describe("people search API contract", () => {
     }));
   });
 
+  it("keeps the local demo login usable with evidence-backed fallback data", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await askPeople({
+      query: "Ai có kinh nghiệm React?",
+      accessToken: "demo-token-hr",
+    });
+
+    expect(result.status).toBe("ok");
+    expect(result.answer_source).toBe("deterministic_fallback");
+    expect(result.warnings).toEqual(["demo_data"]);
+    expect(result.candidates.map((candidate) => candidate.name)).toEqual(["Lê Hoàng Nam"]);
+    expect(result.candidates[0].evidence[0]).toMatchObject({ source_type: "skill", verified: true });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("accepts a detailed interpretation and preserves strict skill duration", async () => {
     const payload = { ...canonicalSearchResponse, plan: { ...canonicalSearchResponse.plan, interpretation: searchInterpretation } };
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(payload))));

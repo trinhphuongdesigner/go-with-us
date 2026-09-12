@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CareerMate · Smart People Search</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { colors: { ink: "#14231D", sage: "#3F806E", mint: "#EAF7F1", violet: "#6D5BD0", lilac: "#F3F0FF" } } } };
+  </script>
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #eef4f0; color: #14231d; }
+    body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .slide { display: none; height: 100vh; width: 100vw; }
+    .slide.active { display: flex; }
+    .eyebrow { letter-spacing: .16em; text-transform: uppercase; font-weight: 800; }
+    .card { border: 1px solid #dce8e2; background: rgba(255,255,255,.92); border-radius: 1.5rem; }
+    .speaker-note { display: none; }
+  </style>
+</head>
+<body>
+  <main id="deck" aria-live="polite">
+    <section class="slide active items-center bg-[radial-gradient(circle_at_80%_15%,#ddd6fe_0,transparent_30%),radial-gradient(circle_at_10%_80%,#d1fae5_0,transparent_32%),#f8fbf9] px-[8vw]" data-title="Pain point">
+      <div class="max-w-6xl">
+        <p class="eyebrow text-sm text-sage">CareerMate · People Intelligence</p>
+        <h1 class="mt-6 max-w-5xl text-6xl font-black leading-[1.05] tracking-[-.045em]">Người phù hợp đang ở trong công ty.<br><span class="text-violet">Nhưng HR không tìm thấy họ.</span></h1>
+        <p class="mt-8 max-w-3xl text-2xl leading-relaxed text-slate-600">Dữ liệu năng lực nằm rải rác trong CV, dự án, đánh giá và ghi chú. Tìm bằng từ khóa bỏ sót ngữ cảnh; hỏi chatbot lại khó biết câu trả lời dựa vào đâu.</p>
+        <div class="mt-10 inline-flex rounded-2xl border border-violet/20 bg-white px-6 py-4 text-lg font-semibold shadow-sm">“Tôi biết người giỏi có ở đây — nhưng ai có bằng chứng phù hợp?”</div>
+      </div>
+      <aside class="speaker-note">Mở đầu: Doanh nghiệp không thiếu nhân tài; họ thiếu khả năng nhìn thấy năng lực đang có. Hệ quả là tuyển ngoài khi nội bộ đã có người phù hợp, phân công theo cảm tính và nhân viên bỏ lỡ cơ hội phát triển.</aside>
+    </section>
+
+    <section class="slide items-center bg-white px-[8vw]" data-title="Solution">
+      <div class="w-full max-w-6xl">
+        <p class="eyebrow text-sm text-sage">Giải pháp</p>
+        <h2 class="mt-4 text-5xl font-black tracking-[-.04em]">Hỏi như con người. Nhận câu trả lời có bằng chứng.</h2>
+        <div class="mt-10 grid grid-cols-[1fr_auto_1fr] items-stretch gap-6">
+          <div class="card p-8">
+            <p class="font-bold text-slate-400">Trước đây</p>
+            <ul class="mt-5 space-y-4 text-xl text-slate-600"><li>• Lọc nhiều trường thủ công</li><li>• Đọc từng hồ sơ</li><li>• Không rõ dữ liệu nào đáng tin</li></ul>
+          </div>
+          <div class="grid place-items-center text-4xl text-sage">→</div>
+          <div class="card border-violet/20 bg-lilac p-8 shadow-lg shadow-violet/10">
+            <p class="font-bold text-violet">Với CareerMate</p>
+            <p class="mt-5 text-2xl font-bold">“Ai có kinh nghiệm React để dẫn dắt dự án quý tới?”</p>
+            <p class="mt-5 text-lg leading-relaxed text-slate-600">Milo truy xuất hồ sơ được phép xem, trả ứng viên cùng kỹ năng, dự án và trạng thái xác minh.</p>
+          </div>
+        </div>
+      </div>
+      <aside class="speaker-note">CareerMate biến câu hỏi nghiệp vụ thành tìm kiếm trên hồ sơ năng lực 360 độ. Người dùng không cần hiểu schema dữ liệu; họ vẫn nhìn thấy chính xác nguồn nào tạo nên kết quả.</aside>
+    </section>
+
+    <section class="slide items-center bg-[#F6FAF8] px-[8vw]" data-title="Demo">
+      <div class="grid w-full max-w-6xl grid-cols-[.85fr_1.15fr] gap-10">
+        <div class="self-center">
+          <p class="eyebrow text-sm text-sage">Live demo · 45 giây</p>
+          <h2 class="mt-4 text-5xl font-black tracking-[-.04em]">Một câu hỏi.<br>Một người phù hợp.<br>Nguồn rõ ràng.</h2>
+          <ol class="mt-8 space-y-5 text-xl"><li><span class="mr-3 text-violet">01</span>Chọn tab <b>Hỏi AI</b></li><li><span class="mr-3 text-violet">02</span>Nhập nhu cầu bằng tiếng Việt</li><li><span class="mr-3 text-violet">03</span>Mở bằng chứng kỹ năng</li></ol>
+        </div>
+        <div class="card overflow-hidden shadow-2xl shadow-sage/15">
+          <div class="border-b border-violet/10 bg-lilac p-6"><p class="font-bold text-violet">✦ Milo People Intelligence</p><p class="mt-2 text-slate-600">Ai có kinh nghiệm React?</p></div>
+          <div class="p-6">
+            <p class="text-sm font-bold text-slate-400">KẾT QUẢ CÓ BẰNG CHỨNG</p>
+            <div class="mt-4 rounded-2xl border border-slate-200 p-5">
+              <div class="flex justify-between"><div><h3 class="text-xl font-black">Lê Hoàng Nam</h3><p class="text-slate-500">Senior Engineer</p></div><span class="h-fit rounded-full bg-lilac px-3 py-1 text-sm font-bold text-violet">react</span></div>
+              <div class="mt-5 rounded-xl bg-mint p-4"><div class="flex justify-between"><b>Kỹ năng: React</b><span class="text-sm font-bold text-sage">Đã xác minh</span></div><p class="mt-2 text-slate-600">React · mức độ 4/5</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <aside class="speaker-note">Trong demo, HR hỏi ai biết React. CareerMate trả Lê Hoàng Nam và chỉ ra bằng chứng kỹ năng. Nhãn Đã xác minh hoặc Tự khai báo giúp người ra quyết định hiểu mức độ tin cậy thay vì nhìn một điểm số mơ hồ.</aside>
+    </section>
+
+    <section class="slide items-center bg-white px-[8vw]" data-title="Unique point">
+      <div class="w-full max-w-6xl">
+        <p class="eyebrow text-sm text-violet">Unique point</p>
+        <h2 class="mt-4 max-w-5xl text-5xl font-black tracking-[-.04em]">Không phải chatbot HR.<br><span class="text-sage">Đây là lớp tin cậy cho quyết định nhân sự.</span></h2>
+        <div class="mt-10 grid grid-cols-3 gap-5">
+          <div class="card p-6"><div class="text-3xl">🔎</div><h3 class="mt-4 text-xl font-black">Evidence-first RAG</h3><p class="mt-3 leading-relaxed text-slate-600">Mọi kết quả phải nối về kỹ năng, kinh nghiệm hoặc dự án thật.</p></div>
+          <div class="card p-6"><div class="text-3xl">🛡️</div><h3 class="mt-4 text-xl font-black">Permission before AI</h3><p class="mt-3 leading-relaxed text-slate-600">Lọc tenant và quyền trước khi dữ liệu được đưa vào bước tổng hợp.</p></div>
+          <div class="card p-6"><div class="text-3xl">🧭</div><h3 class="mt-4 text-xl font-black">Từ tìm người đến phát triển người</h3><p class="mt-3 leading-relaxed text-slate-600">Cùng dữ liệu 360° kết nối đánh giá, lộ trình và hộ chiếu nghề nghiệp.</p></div>
+        </div>
+      </div>
+      <aside class="speaker-note">Điểm khác biệt không nằm ở ô chat. Nó nằm ở trust layer: dữ liệu được giới hạn quyền trước, AI không được thêm ứng viên hoặc đổi thứ tự truy xuất, và người dùng luôn kiểm tra được nguồn.</aside>
+    </section>
+
+    <section class="slide items-center bg-[#101D18] px-[8vw] text-white" data-title="Technology">
+      <div class="w-full max-w-6xl">
+        <p class="eyebrow text-sm text-emerald-300">Công nghệ & production mindset</p>
+        <h2 class="mt-4 text-5xl font-black tracking-[-.04em]">AI hữu ích phải an toàn khi AI không ổn định.</h2>
+        <div class="mt-10 grid grid-cols-[1fr_1.25fr] gap-6">
+          <div class="rounded-3xl border border-white/10 bg-white/5 p-7"><p class="font-bold text-emerald-300">STACK</p><p class="mt-4 text-2xl font-bold">Next.js + TypeScript</p><p class="mt-2 text-2xl font-bold">FastAPI + PostgreSQL</p><p class="mt-2 text-2xl font-bold">Madison · Anthropic-compatible</p><p class="mt-5 text-slate-300">OpenAPI contract · Structured Profile RAG</p></div>
+          <div class="rounded-3xl border border-white/10 bg-white/5 p-7"><p class="font-bold text-emerald-300">PRODUCTION BY DESIGN</p><div class="mt-4 grid grid-cols-2 gap-4 text-lg"><p>✓ Tenant isolation</p><p>✓ RBAC</p><p>✓ PII minimization</p><p>✓ Strict JSON schema</p><p>✓ Timeout + fallback</p><p>✓ Evidence auditability</p></div><p class="mt-6 rounded-xl bg-white/10 p-4 text-slate-200">Hiện tại: RAG hồ sơ có cấu trúc. Tiếp theo: embeddings/pgvector chỉ khi evaluation chứng minh tăng chất lượng.</p></div>
+        </div>
+      </div>
+      <aside class="speaker-note">Kiến trúc hiện tại ưu tiên sự thật hơn hiệu ứng. Provider chỉ thấy bằng chứng tối thiểu, response bị kiểm tra schema và reference. Nếu AI chậm hoặc sai, timeout kích hoạt deterministic fallback để demo và nghiệp vụ không bị treo. Embedding là bước tiếp theo, nhưng chỉ thêm khi có bộ đánh giá chứng minh lợi ích.</aside>
+    </section>
+
+    <section class="slide items-center bg-[radial-gradient(circle_at_75%_20%,#ddd6fe_0,transparent_32%),#f8fbf9] px-[8vw]" data-title="Close">
+      <div class="max-w-6xl">
+        <p class="eyebrow text-sm text-sage">Tác động</p>
+        <h2 class="mt-4 max-w-5xl text-6xl font-black leading-[1.05] tracking-[-.045em]">Biến dữ liệu nhân sự thành<br><span class="text-violet">cơ hội đúng người, đúng lúc.</span></h2>
+        <div class="mt-10 grid grid-cols-3 gap-5 text-lg"><div class="card p-6"><b>Nhân viên</b><p class="mt-2 text-slate-600">Được nhìn thấy và có lộ trình rõ ràng.</p></div><div class="card p-6"><b>HR</b><p class="mt-2 text-slate-600">Tìm người trong vài giây, có bằng chứng.</p></div><div class="card p-6"><b>Lãnh đạo</b><p class="mt-2 text-slate-600">Ra quyết định dựa trên năng lực thật.</p></div></div>
+        <p class="mt-10 text-2xl font-bold">CareerMate — Grow with clarity.</p>
+      </div>
+      <aside class="speaker-note">Kết: CareerMate không chỉ giúp công ty tìm người. Nó giúp mỗi nhân viên được nhìn thấy bằng năng lực thật, giúp HR hành động nhanh và giúp lãnh đạo ra quyết định có thể giải thích. CareerMate: Grow with clarity.</aside>
+    </section>
+  </main>
+
+  <footer class="fixed inset-x-0 bottom-0 z-20 flex items-center justify-between px-6 py-4 text-xs font-semibold text-slate-500">
+    <span>← → chuyển slide · F toàn màn hình</span>
+    <span id="counter">1 / 6</span>
+  </footer>
+  <script>
+    const slides = [...document.querySelectorAll(".slide")];
+    const counter = document.getElementById("counter");
+    let current = 0;
+    function show(index) {
+      current = Math.max(0, Math.min(slides.length - 1, index));
+      slides.forEach((slide, position) => slide.classList.toggle("active", position === current));
+      counter.textContent = `${current + 1} / ${slides.length}`;
+      document.title = `${slides[current].dataset.title} · CareerMate`;
+    }
+    document.addEventListener("keydown", async (event) => {
+      if (["ArrowRight", "PageDown", " "].includes(event.key)) { event.preventDefault(); show(current + 1); }
+      if (["ArrowLeft", "PageUp"].includes(event.key)) { event.preventDefault(); show(current - 1); }
+      if (event.key.toLowerCase() === "f") {
+        if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+        else await document.exitFullscreen();
+      }
+    });
+    show(0);
+  </script>
+</body>
+</html>

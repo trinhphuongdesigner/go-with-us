@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { findDemoAccountByToken } from "@/features/auth/demo-accounts";
+import { getDemoPerson, listDemoPeople } from "@/lib/profile-demo";
 import { canonicalCandidateSchema } from "./canonical-search-schema";
 import { searchInterpretationSchema } from "./search-interpretation-schema";
 
@@ -91,6 +93,64 @@ export const ragSearchResponseSchema = z.object({
 export type RagSearchResponse = z.infer<typeof ragSearchResponseSchema>;
 export type RagSearchCandidate = RagSearchResponse["candidates"][number];
 
+const demoStopWords = new Set(["ai", "co", "cua", "cho", "duoc", "kinh", "nghiem", "la", "mot", "nhan", "nguoi", "phu", "hop", "tim", "trong", "toi", "va", "voi"]);
+
+function normalizedTerms(value: string): string[] {
+  const normalized = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("vi-VN");
+  return [...new Set(normalized.match(/[a-z0-9+#.]{2,}/g)?.filter((term) => !demoStopWords.has(term)) ?? [])].slice(0, 30);
+}
+
+function demoUuid(sequence: number): string {
+  return `00000000-0000-5000-8000-${String(sequence).padStart(12, "0")}`;
+}
+
+function demoRagSearch(query: string, accessToken: string): RagSearchResponse | undefined {
+  const account = findDemoAccountByToken(accessToken);
+  if (!account) return undefined;
+  if (!account.user.permissions.includes("people:read")) {
+    throw new PeopleSearchApiError("Phiên đăng nhập không có quyền hỏi đáp nhân sự.", 403);
+  }
+  if (!account.user.companyId) {
+    return { status: "empty", answer: "Vui lòng chọn công ty trước khi hỏi AI tìm nhân sự.", candidates: [], retrieval_mode: "STRUCTURED_PROFILE_RAG", answer_source: "deterministic_fallback", warnings: ["company_required"] };
+  }
+
+  const session = { accessToken, user: account.user };
+  const terms = normalizedTerms(query);
+  const candidates = listDemoPeople(session, { pageSize: 100 }).items.flatMap((person, personIndex) => {
+    const profile = getDemoPerson(session, person.id);
+    const rawEvidence = [
+      ...profile.skills.map((skill) => ({ source_type: "skill" as const, label: `Kỹ năng: ${skill.name}`, excerpt: `${skill.name}, mức độ ${skill.level}/5${skill.note ? `. ${skill.note}` : ""}`, verified: skill.sourceType !== "SELF" })),
+      ...profile.experiences.map((experience) => ({ source_type: "experience" as const, label: `Kinh nghiệm: ${experience.title}`, excerpt: `${experience.title} tại ${experience.organization}${experience.description ? `. ${experience.description}` : ""}`, verified: experience.sourceType !== undefined && experience.sourceType !== "SELF" })),
+      ...profile.projects.map((project) => ({ source_type: "project" as const, label: `Dự án: ${project.name}`, excerpt: `${project.name}; vai trò ${project.role}${project.domain ? `; lĩnh vực ${project.domain}` : ""}${project.techStack?.length ? `; công nghệ ${project.techStack.join(", ")}` : ""}`, verified: project.sourceType !== undefined && project.sourceType !== "SELF" })),
+    ];
+    const evidence = rawEvidence.flatMap((item, evidenceIndex) => {
+      const haystack = normalizedTerms(`${item.label} ${item.excerpt}`);
+      const matches = terms.filter((term) => haystack.includes(term));
+      return matches.length ? [{ ...item, source_id: demoUuid(1000 + personIndex * 100 + evidenceIndex), matches }] : [];
+    });
+    if (!evidence.length) return [];
+    const matchedTerms = terms.filter((term) => evidence.some((item) => item.matches.includes(term)));
+    return [{
+      user_id: demoUuid(200 + personIndex),
+      name: profile.name,
+      title: profile.jobTitle || null,
+      company_id: account.user.companyId,
+      matched_terms: matchedTerms,
+      reason: `Dữ liệu hồ sơ khớp trực tiếp với: ${matchedTerms.join(", ")}.`,
+      evidence: evidence.slice(0, 5).map((item) => ({
+        source_type: item.source_type,
+        source_id: item.source_id,
+        label: item.label,
+        excerpt: item.excerpt,
+        verified: item.verified,
+      })),
+    }];
+  });
+  return candidates.length
+    ? { status: "ok", answer: `Tìm thấy ${candidates.length} nhân sự có dữ liệu hồ sơ khớp trực tiếp với yêu cầu.`, candidates: candidates.slice(0, 8), retrieval_mode: "STRUCTURED_PROFILE_RAG", answer_source: "deterministic_fallback", warnings: ["demo_data"] }
+    : { status: "empty", answer: "Chưa tìm thấy dữ liệu hồ sơ phù hợp với câu hỏi này.", candidates: [], retrieval_mode: "STRUCTURED_PROFILE_RAG", answer_source: "deterministic_fallback", warnings: ["demo_data"] };
+}
+
 export interface PeopleSearchFilters {
   query: string;
   requiredSkills: string;
@@ -165,6 +225,8 @@ export async function searchPeople({ query, accessToken, signal, companyId }: Pe
 }
 
 export async function askPeople({ query, accessToken, signal, companyId }: PeopleSearchRequest & { companyId?: string }): Promise<RagSearchResponse> {
+  const demoResult = demoRagSearch(query, accessToken);
+  if (demoResult) return ragSearchResponseSchema.parse(demoResult);
   let response: Response;
   try {
     response = await fetch(`${API_URL}/people-search/ask${companyId ? `?companyId=${encodeURIComponent(companyId)}` : ""}`, {
