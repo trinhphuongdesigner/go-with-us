@@ -38,16 +38,29 @@ class AuthService:
             return None
 
         valid, upgraded_hash = verify_and_upgrade_password(password, user.hashed_password)
-        if (
-            not valid
-            or not user.is_active
-            or (user.company is not None and user.company.status != CompanyStatus.ACTIVE)
-        ):
+        if not valid or not self._is_login_eligible(user):
             return None
 
+        if upgraded_hash is not None:
+            user.hashed_password = upgraded_hash
+        return await self._issue_session(user, request_id, action="auth.login")
+
+    async def demo_login(self, email: str, request_id: str | None) -> LoginResult | None:
+        user = await self.user_repo.get_by_email(email.strip().casefold())
+        if user is None or not self._is_login_eligible(user):
+            return None
+        return await self._issue_session(user, request_id, action="auth.demo_login")
+
+    @staticmethod
+    def _is_login_eligible(user: User) -> bool:
+        return user.is_active and (
+            user.company is None or user.company.status == CompanyStatus.ACTIVE
+        )
+
+    async def _issue_session(
+        self, user: User, request_id: str | None, *, action: str
+    ) -> LoginResult:
         try:
-            if upgraded_hash is not None:
-                user.hashed_password = upgraded_hash
             issued_token = issue_access_token(user.id)
             await self.auth_session_repo.add(
                 AuthSession(
@@ -60,7 +73,7 @@ class AuthService:
             await self.activity_repo.log(
                 actor_id=user.id,
                 company_id=user.company_id,
-                action="auth.login",
+                action=action,
                 entity_type="user",
                 entity_id=str(user.id),
                 changes={},

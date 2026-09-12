@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
-import { getCurrentSession, login as loginRequest, logout as logoutRequest } from "@/lib/api";
+import { getCurrentSession, login as loginRequest, loginToQcDemo, logout as logoutRequest } from "@/lib/api";
 import type { Session } from "@/lib/types";
 
 const SESSION_KEY = "careermate-v2-session";
@@ -13,6 +13,7 @@ interface AuthContextValue {
   logoutState: "idle" | "revoking" | "failed";
   logoutError: string | null;
   signIn: (email: string, password: string) => Promise<Session>;
+  signInDemo: (email: string) => Promise<Session>;
   signOut: () => Promise<void>;
   retryLogout: () => Promise<void>;
 }
@@ -61,6 +62,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback(async (email: string, password: string) => {
     const nextSession = await loginRequest(email, password);
+    window.localStorage.setItem(SESSION_KEY, nextSession.accessToken);
+    setSession(nextSession);
+    setStatus("authenticated");
+    return nextSession;
+  }, []);
+
+  const signInDemo = useCallback(async (email: string) => {
+    const nextSession = await loginToQcDemo(email);
     window.localStorage.setItem(SESSION_KEY, nextSession.accessToken);
     setSession(nextSession);
     setStatus("authenticated");
@@ -132,8 +141,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [retryLogout, session]);
 
   const value = useMemo(
-    () => ({ session, status, logoutState, logoutError, signIn, signOut, retryLogout }),
-    [session, status, logoutState, logoutError, signIn, signOut, retryLogout],
+    () => ({ session, status, logoutState, logoutError, signIn, signInDemo, signOut, retryLogout }),
+    [session, status, logoutState, logoutError, signIn, signInDemo, signOut, retryLogout],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -247,6 +247,56 @@ async def test_login_audit_keeps_sanitized_request_id(
 
 
 @pytest.mark.asyncio
+async def test_qc_demo_login_is_hidden_unless_explicitly_enabled(client: AsyncClient) -> None:
+    accounts = await client.get("/api/v2/auth/demo-accounts")
+    login = await client.post(
+        "/api/v2/auth/demo-login", json={"email": "alice@acme.dev"}
+    )
+
+    assert accounts.status_code == login.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_qc_demo_picker_lists_only_seed_allowlist_and_issues_session(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from app.api.v2 import auth
+
+    monkeypatch.setattr(auth._settings, "environment", "local")
+    monkeypatch.setattr(auth._settings, "demo_login_enabled", True)
+    company = await CompanyRepository(db_session).add(Company(name="Acme QC"))
+    await db_session.flush()
+    alice = await create_user(
+        db_session, email="alice@acme.dev", password="random-secret", company=company
+    )
+    await create_user(
+        db_session, email="not-a-demo@acme.dev", password="random-secret", company=company
+    )
+
+    accounts = await client.get("/api/v2/auth/demo-accounts")
+    assert accounts.status_code == 200
+    assert [item["email"] for item in accounts.json()["items"]] == ["alice@acme.dev"]
+
+    rejected = await client.post(
+        "/api/v2/auth/demo-login", json={"email": "not-a-demo@acme.dev"}
+    )
+    assert rejected.status_code == 404
+
+    login = await client.post(
+        "/api/v2/auth/demo-login", json={"email": "alice@acme.dev"}
+    )
+    assert login.status_code == 200
+    assert login.json()["user"]["id"] == str(alice.id)
+    assert login.json()["accessToken"]
+    audit = await db_session.scalar(
+        select(ActivityLog).where(ActivityLog.action == "auth.demo_login")
+    )
+    assert audit is not None and audit.actor_id == alice.id
+
+
+@pytest.mark.asyncio
 async def test_invalid_request_id_is_replaced_with_uuid(client: AsyncClient) -> None:
     response = await client.get("/api/v2/health", headers={"X-Request-ID": "x" * 65})
 

@@ -6,12 +6,13 @@ RUN npm ci --no-audit --no-fund
 COPY frontend/ ./
 COPY contracts/ /app/contracts/
 ARG NEXT_PUBLIC_API_URL=http://localhost:8140/api/v2
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL NEXT_PUBLIC_DEMO_MODE=false
+ARG NEXT_PUBLIC_QC_DEMO_LOGIN_ENABLED=true
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL NEXT_PUBLIC_DEMO_MODE=false NEXT_PUBLIC_QC_DEMO_LOGIN_ENABLED=$NEXT_PUBLIC_QC_DEMO_LOGIN_ENABLED
 RUN npm run build
 
 FROM node:22-bookworm-slim AS runtime
 WORKDIR /app/frontend
-ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 NEXT_PUBLIC_DEMO_MODE=false
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 NEXT_PUBLIC_DEMO_MODE=false NEXT_PUBLIC_QC_DEMO_LOGIN_ENABLED=true
 COPY --from=build --chown=node:node /app/frontend/.next ./.next
 COPY --from=build --chown=node:node /app/frontend/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/frontend/public ./public

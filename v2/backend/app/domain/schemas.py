@@ -21,6 +21,23 @@ class LoginRequest(ApiModel):
     password: str = Field(min_length=8, max_length=256)
 
 
+class DemoLoginRequest(ApiModel):
+    email: EmailStr
+
+
+class DemoAccountRead(ApiModel):
+    email: EmailStr
+    name: str
+    title: str
+    company_name: str
+    role: Role
+    initials: str
+
+
+class DemoAccountListRead(ApiModel):
+    items: list[DemoAccountRead]
+
+
 class SessionUserRead(ApiModel):
     id: uuid.UUID
     email: EmailStr

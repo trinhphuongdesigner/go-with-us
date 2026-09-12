@@ -1,8 +1,8 @@
 "use client";
 
-import { ArrowRight, BriefcaseBusiness, Building2, Check, LoaderCircle, RefreshCw, ShieldCheck, UserRound, UsersRound } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, Building2, Check, ChevronDown, LoaderCircle, RefreshCw, ShieldCheck, UserRound, UsersRound } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -10,8 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/features/auth/auth-provider";
 import { demoAccounts, type DemoAccount } from "@/features/auth/demo-accounts";
-import { ApiError, DEMO_MODE } from "@/lib/api";
+import { ApiError, DEMO_MODE, listQcDemoAccounts, QC_DEMO_LOGIN_ENABLED, type QcDemoAccount } from "@/lib/api";
 import { cn } from "@/lib/cn";
+import { roleLabels, type UserRole } from "@/lib/types";
 
 const loginSchema = z.object({
   email: z.email("Nhập email hợp lệ."),
@@ -70,10 +71,125 @@ export function DemoAccountPicker({ selectedId, onSelect }: { selectedId: string
   );
 }
 
+const qcAccountGroups: Array<{ label: string; roles: UserRole[] }> = [
+  { label: "Nhân sự", roles: ["EMPLOYEE"] },
+  { label: "Công ty", roles: ["COMPANY_ADMIN", "HR", "BOD"] },
+  { label: "Hệ thống", roles: ["SUPER_ADMIN"] },
+];
+
+function QcDemoAccountPicker({
+  pendingEmail,
+  onSelect,
+}: {
+  pendingEmail: string | null;
+  onSelect: (account: QcDemoAccount) => Promise<void>;
+}) {
+  const detailsRef = useRef<HTMLDetailsElement>(null);
+  const [accounts, setAccounts] = useState<QcDemoAccount[]>([]);
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "unavailable">("loading");
+
+  useEffect(() => {
+    if (!QC_DEMO_LOGIN_ENABLED) return;
+    let cancelled = false;
+    void listQcDemoAccounts()
+      .then((items) => {
+        if (cancelled) return;
+        setAccounts(items);
+        setLoadState(items.length > 0 ? "ready" : "unavailable");
+      })
+      .catch(() => {
+        if (!cancelled) setLoadState("unavailable");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!QC_DEMO_LOGIN_ENABLED) return null;
+  if (loadState === "unavailable") {
+    return (
+      <p role="status" className="rounded-xl border border-border bg-background px-4 py-3 text-xs leading-5 text-muted">
+        Không tải được tài khoản demo. Bạn vẫn có thể đăng nhập bằng email và mật khẩu bên dưới.
+      </p>
+    );
+  }
+
+  return (
+    <section aria-labelledby="qc-demo-account-label">
+      <label id="qc-demo-account-label" className="mb-2 block text-sm font-semibold text-ink">
+        Tài khoản demo
+      </label>
+      <details ref={detailsRef} className="group relative">
+        <summary
+          className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl border border-primary/60 bg-white px-4 text-sm font-semibold text-ink shadow-[0_4px_18px_rgb(39_94_128_/_8%)] transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 [&::-webkit-details-marker]:hidden"
+        >
+          <span>{loadState === "loading" ? "Đang tải tài khoản demo…" : "Chọn người muốn đăng nhập"}</span>
+          {loadState === "loading"
+            ? <LoaderCircle className="motion-safe:animate-spin text-primary" size={18} aria-hidden="true" />
+            : <ChevronDown className="text-primary transition-transform group-open:rotate-180 motion-reduce:transition-none" size={18} aria-hidden="true" />}
+        </summary>
+        {loadState === "ready" ? (
+          <div className="absolute left-0 right-0 z-30 mt-2 max-h-[min(420px,55vh)] overflow-y-auto rounded-2xl border border-border bg-white p-2 shadow-[0_18px_55px_rgb(22_32_51_/_18%)]">
+            <button
+              type="button"
+              className="flex min-h-11 w-full items-center rounded-xl px-3 text-left text-sm font-semibold text-primary hover:bg-primary-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+              onClick={() => {
+                detailsRef.current?.removeAttribute("open");
+                document.getElementById("email")?.focus();
+              }}
+            >
+              Dùng tài khoản của tôi
+            </button>
+            {qcAccountGroups.map((group, groupIndex) => {
+              const groupAccounts = accounts.filter((account) => group.roles.includes(account.role));
+              if (groupAccounts.length === 0) return null;
+              return (
+                <div key={group.label} className={cn("mt-2", groupIndex > 0 && "border-t border-border pt-2")}>
+                  <p className="px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-muted">{group.label}</p>
+                  <div className="grid gap-1">
+                    {groupAccounts.map((account) => {
+                      const isPending = pendingEmail === account.email;
+                      return (
+                        <button
+                          key={account.email}
+                          type="button"
+                          disabled={pendingEmail !== null}
+                          className="flex min-h-16 w-full items-center gap-3 rounded-xl px-3 py-2 text-left hover:bg-[#F3F8F5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-wait disabled:opacity-60"
+                          onClick={() => {
+                            detailsRef.current?.removeAttribute("open");
+                            void onSelect(account);
+                          }}
+                        >
+                          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#EAF6EF] text-sm font-bold text-sage">
+                            {isPending ? <LoaderCircle className="motion-safe:animate-spin" size={18} aria-hidden="true" /> : account.initials}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-bold text-ink">{account.name}</span>
+                            <span className="mt-0.5 block truncate text-xs text-muted">{account.title} · {account.companyName}</span>
+                          </span>
+                          <span className="shrink-0 rounded-full bg-[#EAF6EF] px-2.5 py-1 text-[11px] font-semibold text-sage">
+                            {roleLabels[account.role]}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
+      </details>
+      <p className="mt-2 text-xs leading-5 text-muted">Chọn một người để vào thẳng dữ liệu mẫu, không cần nhập mật khẩu.</p>
+    </section>
+  );
+}
+
 export function LoginForm() {
   const router = useRouter();
-  const { signIn, status, logoutState, logoutError, retryLogout } = useAuth();
+  const { signIn, signInDemo, status, logoutState, logoutError, retryLogout } = useAuth();
   const [selected, setSelected] = useState<DemoAccount>(demoAccounts[0]);
+  const [pendingDemoEmail, setPendingDemoEmail] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const {
     register,
@@ -96,6 +212,19 @@ export function LoginForm() {
     setValue("email", account.email, { shouldValidate: false });
     setValue("password", account.password, { shouldValidate: false });
     setFormError(null);
+  }
+
+  async function selectQcDemoAccount(account: QcDemoAccount) {
+    setFormError(null);
+    setPendingDemoEmail(account.email);
+    try {
+      await signInDemo(account.email);
+    } catch (error) {
+      setFormError(error instanceof ApiError ? error.message : "Không thể đăng nhập tài khoản demo lúc này.");
+      requestAnimationFrame(() => document.getElementById("login-error-summary")?.focus());
+    } finally {
+      setPendingDemoEmail(null);
+    }
   }
 
   const submit = handleSubmit(async (values) => {
@@ -149,8 +278,9 @@ export function LoginForm() {
       ) : null}
 
       {DEMO_MODE ? <DemoAccountPicker selectedId={selected.id} onSelect={selectAccount} /> : null}
+      {!DEMO_MODE ? <QcDemoAccountPicker pendingEmail={pendingDemoEmail} onSelect={selectQcDemoAccount} /> : null}
 
-      <div className={cn("grid gap-4", DEMO_MODE && "border-t border-border pt-5")}>
+      <div className={cn("grid gap-4", (DEMO_MODE || QC_DEMO_LOGIN_ENABLED) && "border-t border-border pt-5")}>
         <div>
           <label htmlFor="email" className="mb-2 block text-sm font-semibold text-ink">Email</label>
           <Input id="email" type="email" autoComplete="username" aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? "email-error" : undefined} {...register("email")} />

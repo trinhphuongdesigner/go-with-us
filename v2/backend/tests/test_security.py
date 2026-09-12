@@ -28,6 +28,18 @@ def test_deployed_environments_require_shared_postgres_rate_limit_storage(
         )
 
 
+@pytest.mark.parametrize("environment", ["test", "staging", "production"])
+def test_passwordless_demo_login_is_rejected_outside_local(environment: str) -> None:
+    with pytest.raises(ValidationError, match="only allowed in the local environment"):
+        Settings(
+            _env_file=None,
+            environment=environment,
+            database_url="postgresql+asyncpg://user:pass@localhost/careermate",
+            jwt_secret="test-only-secret-that-is-at-least-32-characters",
+            demo_login_enabled=True,
+        )
+
+
 def test_new_passwords_are_argon2id() -> None:
     encoded = hash_password("DemoPass123!")
     assert encoded.startswith("$argon2id$")

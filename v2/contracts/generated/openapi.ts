@@ -304,6 +304,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/auth/demo-accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Demo Accounts */
+        get: operations["list_demo_accounts_api_v2_auth_demo_accounts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/auth/demo-login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Demo Login */
+        post: operations["demo_login_api_v2_auth_demo_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/auth/login": {
         parameters: {
             query?: never;
@@ -2579,6 +2613,36 @@ export interface components {
             templateId: string;
             /** Version */
             version: number;
+        };
+        /** DemoAccountListRead */
+        DemoAccountListRead: {
+            /** Items */
+            items: components["schemas"]["DemoAccountRead"][];
+        };
+        /** DemoAccountRead */
+        DemoAccountRead: {
+            /** Companyname */
+            companyName: string;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Initials */
+            initials: string;
+            /** Name */
+            name: string;
+            role: components["schemas"]["Role"];
+            /** Title */
+            title: string;
+        };
+        /** DemoLoginRequest */
+        DemoLoginRequest: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
         };
         /** DetailsPatch */
         DetailsPatch: {
@@ -5475,6 +5539,66 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AssistantReply"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_demo_accounts_api_v2_auth_demo_accounts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemoAccountListRead"];
+                };
+            };
+        };
+    };
+    demo_login_api_v2_auth_demo_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DemoLoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginResponse"];
+                };
+            };
+            /** @description Demo login is disabled */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

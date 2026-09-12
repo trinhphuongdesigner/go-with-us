@@ -1,5 +1,9 @@
 # CareerMate
 
+> **Chạy bản v2 trên máy mới / bàn giao QC:** xem [v2/README.md](./v2/README.md).
+> Dùng nhánh `codex/v2-qa-consolidation`: FastAPI + Next.js, Docker tự build/migrate/seed.
+> Các hướng dẫn NestJS/MUI bên dưới là cho source v1, không dùng để chạy bản QC v2.
+
 A competency / HR profile management platform, two sides:
 
 - **Super Admin** (platform level, no `companyId`) — manages Companies

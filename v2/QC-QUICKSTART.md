@@ -1,7 +1,8 @@
 # CareerMate v2 — khởi động và bàn giao QC
 
-Checkout: branch `codex/v2-qa-consolidation`, worktree `.claude/worktrees/v2-qa`.
-Chạy lệnh **trong worktree này**, không dùng root checkout cũ. Tính năng và đường đi
+Checkout: branch `codex/v2-qa-consolidation`. Máy mới xem [README.md](./README.md)
+để clone và cài Docker; không cần tạo worktree. Trên máy phát triển hiện tại dùng
+worktree `.claude/worktrees/v2-qa`, không dùng root checkout v1 cũ. Tính năng và đường đi
 chi tiết: [RUNTIME-MIGRATION.md](./RUNTIME-MIGRATION.md). Nguồn/provenance và các lát
 cắt trước đó: [CONSOLIDATION.md](./CONSOLIDATION.md).
 
@@ -10,7 +11,8 @@ thực hiện live AI calls, và chưa kết luận PASS QC cho các luồng đ�
 
 Checkpoint **2026-09-12**: đã build và chạy Docker thành công, migration
 `0016_company_memberships`, seed thành công; web/API/PostgreSQL/ClamAV healthy.
-Nguồn master chốt tại `8f6a7fb`; bản runtime cuối ở nhánh QC local, chưa push.
+Nguồn master chốt tại `8f6a7fb`. Dùng `git rev-parse --short HEAD` để ghi đúng mốc
+runtime đang chạy; PR #7 `3a6a75f` chưa migrate vào mốc runtime này.
 
 ## Khởi động
 
@@ -30,6 +32,8 @@ chưa sẵn sàng. OCR dùng Tesseract trong image backend.
 Mở [CareerMate QC](http://localhost:3140/login).
 API docs: [localhost:8140/api/v2/docs](http://localhost:8140/api/v2/docs).
 Demo mode frontend **tắt**; dữ liệu lấy từ FastAPI local.
+Menu **Tài khoản demo** trên trang login tạo phiên backend thật cho đúng 9 persona seed,
+không dùng mock frontend và không lộ mật khẩu. Chọn người để vào thẳng dashboard.
 
 ## Tài khoản
 

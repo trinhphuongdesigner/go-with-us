@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     demo_super_admin_password: SecretStr | None = None
     demo_company_admin_password: SecretStr | None = None
     demo_employee_password: SecretStr | None = None
+    demo_login_enabled: bool = False
     login_rate_limit_attempts: int = Field(default=5, ge=1, le=100)
     login_rate_limit_ip_attempts: int = Field(default=25, ge=1, le=1_000)
     login_rate_limit_window_seconds: int = Field(default=60, ge=1, le=3600)
@@ -56,6 +57,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def require_shared_security_storage_when_deployed(self) -> Self:
+        if self.demo_login_enabled and self.environment != "local":
+            raise ValueError("Passwordless demo login is only allowed in the local environment")
         if self.environment in {"staging", "production"} and not self.database_url.startswith(
             ("postgresql://", "postgresql+asyncpg://")
         ):

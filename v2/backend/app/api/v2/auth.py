@@ -1,12 +1,18 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy import case, select
+from sqlalchemy.orm import selectinload
 
 from app.api.v2.dependencies import CurrentAuthentication, CurrentUser, DbSession
 from app.core.config import get_settings
 from app.core.database import async_session
+from app.domain.enums import CompanyStatus
 from app.domain.models import User
 from app.domain.schemas import (
+    DemoAccountListRead,
+    DemoAccountRead,
+    DemoLoginRequest,
     LoginRequest,
     LoginResponse,
     MeResponse,
@@ -25,6 +31,17 @@ from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 _settings = get_settings()
+_DEMO_EMAILS = (
+    "alice@acme.dev",
+    "hr@acme.dev",
+    "bod@acme.dev",
+    "admin@acme.dev",
+    "alex@northstar.dev",
+    "hr@northstar.dev",
+    "bod@northstar.dev",
+    "admin@northstar.dev",
+    "superadmin@careermate.dev",
+)
 _rate_limit_secret = derive_rate_limit_secret(_settings.jwt_secret.get_secret_value())
 if _settings.database_url.startswith(("postgresql://", "postgresql+asyncpg://")):
     _login_rate_limiter: LoginRateLimiter = PostgresLoginRateLimiter(
@@ -66,6 +83,61 @@ def session_user(user: User) -> SessionUserRead:
         permissions=permissions,
         initials=initials,
     )
+
+
+def _require_demo_login() -> None:
+    if not _settings.demo_login_enabled or _settings.environment != "local":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy")
+
+
+def demo_account(user: User) -> DemoAccountRead:
+    name_parts = [part for part in user.name.split() if part]
+    initials = "".join(part[0].upper() for part in name_parts[-2:]) or "CM"
+    return DemoAccountRead(
+        email=user.email,
+        name=user.name,
+        title=user.job_title or "Nhân viên",
+        company_name=user.company.name if user.company else "CareerMate",
+        role=user.role,
+        initials=initials,
+    )
+
+
+@router.get("/demo-accounts", response_model=DemoAccountListRead, response_model_by_alias=True)
+async def list_demo_accounts(db: DbSession) -> DemoAccountListRead:
+    _require_demo_login()
+    order = case({_email: index for index, _email in enumerate(_DEMO_EMAILS)}, value=User.email)
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.company))
+        .where(User.email.in_(_DEMO_EMAILS), User.is_active.is_(True))
+        .order_by(order)
+    )
+    users = [
+        user
+        for user in result.scalars().all()
+        if user.company is None or user.company.status == CompanyStatus.ACTIVE
+    ]
+    return DemoAccountListRead(items=[demo_account(user) for user in users])
+
+
+@router.post(
+    "/demo-login",
+    response_model=LoginResponse,
+    response_model_by_alias=True,
+    responses={status.HTTP_404_NOT_FOUND: {"description": "Demo login is disabled"}},
+)
+async def demo_login(payload: DemoLoginRequest, request: Request, db: DbSession) -> LoginResponse:
+    _require_demo_login()
+    normalized_email = str(payload.email).strip().casefold()
+    if normalized_email not in _DEMO_EMAILS:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tài khoản demo không tồn tại")
+    result = await AuthService(db).demo_login(
+        normalized_email, getattr(request.state, "request_id", None)
+    )
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tài khoản demo không tồn tại")
+    return LoginResponse(access_token=result.access_token, user=session_user(result.user))
 
 
 @router.post(

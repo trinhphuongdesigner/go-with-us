@@ -2634,6 +2634,77 @@
         "title": "CycleRead",
         "type": "object"
       },
+      "DemoAccountListRead": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DemoAccountRead"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "DemoAccountListRead",
+        "type": "object"
+      },
+      "DemoAccountRead": {
+        "additionalProperties": false,
+        "properties": {
+          "companyName": {
+            "title": "Companyname",
+            "type": "string"
+          },
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "initials": {
+            "title": "Initials",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "name",
+          "title",
+          "companyName",
+          "role",
+          "initials"
+        ],
+        "title": "DemoAccountRead",
+        "type": "object"
+      },
+      "DemoLoginRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "DemoLoginRequest",
+        "type": "object"
+      },
       "DetailsPatch": {
         "additionalProperties": false,
         "properties": {
@@ -10018,6 +10089,71 @@
         "summary": "Ask Assistant",
         "tags": [
           "career-ai"
+        ]
+      }
+    },
+    "/api/v2/auth/demo-accounts": {
+      "get": {
+        "operationId": "list_demo_accounts_api_v2_auth_demo_accounts_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoAccountListRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Demo Accounts",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v2/auth/demo-login": {
+      "post": {
+        "operationId": "demo_login_api_v2_auth_demo_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DemoLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Demo login is disabled"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Demo Login",
+        "tags": [
+          "auth"
         ]
       }
     },

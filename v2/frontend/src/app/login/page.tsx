@@ -7,7 +7,8 @@ import { LoginForm } from "@/features/auth/login-form";
 export const metadata = { title: "Đăng nhập" };
 
 export default function LoginPage() {
-  const demoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+  const demoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true"
+    || process.env.NEXT_PUBLIC_QC_DEMO_LOGIN_ENABLED === "true";
   return (
     <main id="main-content" className="min-h-screen bg-background px-4 py-5 sm:px-6 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(440px,560px)] lg:gap-8 lg:p-8">
       <section className="relative hidden min-h-[calc(100vh-64px)] overflow-hidden rounded-[24px] bg-[#EAF1F6] lg:flex lg:flex-col lg:justify-between lg:p-10 xl:p-14" aria-labelledby="welcome-title">

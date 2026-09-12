@@ -20,6 +20,8 @@ import {
 import type { components } from "../../../contracts/generated/openapi";
 
 type ContractLoginResponse = components["schemas"]["LoginResponse"];
+type ContractDemoAccount = components["schemas"]["DemoAccountRead"];
+type ContractDemoAccountList = components["schemas"]["DemoAccountListRead"];
 type ContractMeResponse = components["schemas"]["MeResponse"];
 type ContractSessionUser = components["schemas"]["SessionUserRead"];
 type ContractProfileRead = components["schemas"]["ProfileRead"];
@@ -253,6 +255,9 @@ export function adaptRosterPerson(
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v2";
 export const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+export const QC_DEMO_LOGIN_ENABLED = process.env.NEXT_PUBLIC_QC_DEMO_LOGIN_ENABLED === "true";
+
+export type QcDemoAccount = ContractDemoAccount;
 
 export class ApiError<TDetails = unknown> extends Error {
   constructor(
@@ -318,6 +323,7 @@ const knownPermissions = new Set<Permission>([
   "assessment:review",
   "passport:approve",
   "platform:manage",
+  "roles:manage",
 ]);
 
 function isPermission(value: string): value is Permission {
@@ -384,6 +390,19 @@ export async function login(email: string, password: string): Promise<Session> {
   const response = await apiRequest<ContractLoginResponse>("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
+  });
+  return { accessToken: response.accessToken, user: normalizeSessionUser(response.user) };
+}
+
+export async function listQcDemoAccounts(): Promise<QcDemoAccount[]> {
+  const response = await apiRequest<ContractDemoAccountList>("/auth/demo-accounts");
+  return response.items;
+}
+
+export async function loginToQcDemo(email: string): Promise<Session> {
+  const response = await apiRequest<ContractLoginResponse>("/auth/demo-login", {
+    method: "POST",
+    body: JSON.stringify({ email }),
   });
   return { accessToken: response.accessToken, user: normalizeSessionUser(response.user) };
 }
