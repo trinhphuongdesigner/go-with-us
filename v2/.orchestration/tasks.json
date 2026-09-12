@@ -12,9 +12,16 @@
     {"id": "W6", "name": "Migration and hardening", "status": "PENDING", "depends_on": ["W1", "W2", "W3", "W4", "W5"]}
   ],
   "active_assignments": [
-    {"owner": "pi-desktop", "worktree": "v2-integration", "scope": "Wave 1 contract freeze, sau đó Employee 360 backend theo slice", "mode": "writer"},
-    {"owner": "codex-subagent", "worktree": "v2-integration", "scope": "read-only audit và review độc lập theo slice", "mode": "read-only"},
-    {"owner": "antigravity", "worktree": "v2-integration", "scope": "UI and UX persona review", "mode": "read-only"},
-    {"owner": "codex", "worktree": "v2-integration", "scope": "orchestration, integration and quality gates", "mode": "manager"}
+    {"owner": "codex", "worktree": "v2-integration", "scope": "Wave 1 core profile aggregate và roster; orchestration, integration và quality gates", "mode": "manager-writer"},
+    {"owner": "antigravity", "worktree": "v2-integration", "scope": "UI/UX persona review theo từng slice, chỉ đọc", "mode": "read-only-on-demand"}
+  ],
+  "completed_slices": [
+    {
+      "id": "W1-IMPORT",
+      "name": "Employee 360 document import, evidence và selective apply",
+      "status": "PASS",
+      "implementation_sha": "de246d8c74ec8425cec0172613012fc600811719",
+      "report": "../reports/01-employee-360-import/qa-report.json"
+    }
   ]
 }

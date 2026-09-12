@@ -15,5 +15,11 @@
     {"id": "independent-review", "status": "PASS", "evidence": "Antigravity exact-SHA correction: P0=0, P1=0, five personas PASS"},
     {"id": "report", "status": "PASS", "evidence": "qa-report.json bound to implementation SHA and tree"}
   ],
-  "next_gate": "Wave 1 contract freeze and Employee 360/import slice"
+  "latest_completed_slice": "W1-IMPORT",
+  "wave1_import": {
+    "status": "PASS",
+    "implementation_sha": "de246d8c74ec8425cec0172613012fc600811719",
+    "evidence": "205 PostgreSQL, 196 SQLite, 21 Vitest, 36 Playwright; Antigravity P0/P1/P2=0; report 01-employee-360-import"
+  },
+  "next_gate": "Wave 1 core profile aggregate and roster"
 }

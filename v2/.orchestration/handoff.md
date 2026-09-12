@@ -22,6 +22,9 @@
 
 - Wave 0 PASS tại SHA `01e1e87838d9cd4473a0e661b6dd75291b5119e6`; report chuẩn ở `../reports/00-foundation/qa-report.json`.
 - Toàn dự án vẫn IN_PROGRESS; không diễn giải Wave 0 PASS thành full rebuild hoàn tất.
-- Wave 1 bắt đầu bằng contract freeze: đúng ba role; HR/BOD legacy map sang COMPANY_ADMIN cộng permission rõ.
+- Slice import của Wave 1 PASS tại SHA `de246d8c74ec8425cec0172613012fc600811719`; report chuẩn ở `../reports/01-employee-360-import/qa-report.json`.
+- Wave 1 vẫn IN_PROGRESS vì profile aggregate và roster HR chưa hoàn tất.
+- Không gọi lại Pi Desktop trong trạng thái bàn giao hiện tại; Codex là writer duy nhất, Antigravity chỉ review đọc theo từng slice.
+- Bước tiếp theo: triển khai profile aggregate, kỹ năng, kinh nghiệm, dự án, chứng chỉ, giải thưởng, timeline và roster trong company scope.
 - Mọi endpoint v2 dùng `/api/v2`; inventory v1 chỉ là evidence, không phải executable contract.
 - File intake phải kiểm tra MIME/size/malware/hash cho PDF, DOCX, ảnh, text, CSV và XLSX; parse không tự persist; selective apply dùng transaction, version, idempotency và rollback.
