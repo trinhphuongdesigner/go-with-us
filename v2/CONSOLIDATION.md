@@ -61,10 +61,13 @@ Từ `v2/frontend` trong worktree QA:
 
 ```sh
 npm ci
-NEXT_PUBLIC_DEMO_MODE=true npm run dev -- --hostname 127.0.0.1 --port 3140
+NEXT_PUBLIC_DEMO_MODE=false \
+NEXT_PUBLIC_QC_DEMO_LOGIN_ENABLED=true \
+NEXT_PUBLIC_API_URL=http://127.0.0.1:8140/api/v2 \
+npm run dev -- --hostname 127.0.0.1 --port 3140
 ```
 
-Mở `http://127.0.0.1:3140/login`, chọn vai trò minh họa. Đây là **UI demo**, không phải kiểm tra database thật. Không gọi search bằng demo token rồi coi là lỗi auth production: token minh họa không phải token backend.
+Mở `http://127.0.0.1:3140/login`, chọn một tài khoản QC từ API để đăng nhập không mật khẩu vào dữ liệu synthetic trong PostgreSQL QC. Chỉ bật `NEXT_PUBLIC_DEMO_MODE=true` khi cố ý review fixture UI hoàn toàn offline; token minh họa của chế độ đó không phải token backend.
 
 ## Chạy API thật cho QC
 
