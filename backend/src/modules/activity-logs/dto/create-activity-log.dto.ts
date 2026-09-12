@@ -13,6 +13,11 @@ export class CreateActivityLogDto {
   @IsString()
   category?: string;
 
+  /** URL to a photo/certificate (outside Spaces) OR Spaces upload (prefix careermate/activity-evidence/). */
+  @IsOptional()
+  @IsString()
+  evidenceUrl?: string;
+
   @IsDateString()
   date!: string;
 }

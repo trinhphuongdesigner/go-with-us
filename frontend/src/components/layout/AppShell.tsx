@@ -25,6 +25,7 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutlineOutlined';
 import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined';
 import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
 import AssignmentTurnedInOutlinedIcon from '@mui/icons-material/AssignmentTurnedInOutlined';
+import ForwardToInboxOutlinedIcon from '@mui/icons-material/ForwardToInboxOutlined';
 import SecurityOutlinedIcon from '@mui/icons-material/SecurityOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
@@ -36,6 +37,7 @@ import { ROLE_LABEL } from '@/lib/labels';
 import { colorTokens, radiusTokens } from '@/theme/theme';
 import * as companiesApi from '@/lib/api/companiesApi';
 import type { Role } from '@/types';
+import { isEmployeeRole } from '@/lib/roles';
 
 const RAIL_WIDTH_COMPACT = 76;
 const RAIL_WIDTH_FULL = 248;
@@ -111,6 +113,12 @@ const NAV_ITEMS: NavItem[] = [
     icon: <FactCheckOutlinedIcon fontSize="small" />,
     roles: ['HR', 'BOD', 'EMPLOYEE'],
     requiresCompany: true,
+  },
+  {
+    label: 'Yêu cầu năng lực',
+    href: '/competency-requests',
+    icon: <ForwardToInboxOutlinedIcon fontSize="small" />,
+    roles: ['HR', 'BOD', 'COMPANY_ADMIN'],
   },
   {
     label: 'Phân quyền',
@@ -193,11 +201,10 @@ function Sidebar({
         flexShrink: 0,
         display: 'flex',
         flexDirection: 'column',
+        height: '100vh',
         bgcolor: colorTokens.surface,
         borderRight: isLg ? `1px solid ${colorTokens.border}` : 'none',
-        overflowX: 'hidden',
-        overflowY: 'auto',
-        height: isLg ? 'auto' : '100%',
+        overflow: 'hidden',
         transition: 'width 0.2s ease, border-color 0.2s ease',
       }}
     >
@@ -247,6 +254,7 @@ function Sidebar({
             alignItems: isFull ? 'stretch' : 'center',
             gap: 0.75,
             borderBottom: `1px solid ${colorTokens.border}`,
+            flexShrink: 0,
           }}
         >
           <Tooltip title="Tất cả công ty" placement="right" disableHoverListener={isFull}>
@@ -278,66 +286,59 @@ function Sidebar({
           ) : null}
         </Box>
       ) : null}
-      <List
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 0.5,
-          py: 2.5,
-          px: isFull ? 1.5 : 0,
-          alignItems: isFull ? 'stretch' : 'center',
-        }}
-      >
-        {visibleItems.map((item) => {
-          const selected = item.exact ? pathname === item.href : pathname?.startsWith(item.href);
-          const button = (
-            <ListItemButton
-              component={NextLink}
-              href={item.href}
-              selected={selected}
-              onClick={() => {
-                if (!isLg) onCloseMobile();
-              }}
-              sx={{
-                width: isFull ? '100%' : 44,
-                height: 44,
-                minWidth: 44,
-                gap: isFull ? 1.5 : 0,
-                borderRadius: `${radiusTokens.md}px`,
-                justifyContent: isFull ? 'flex-start' : 'center',
-                px: isFull ? 1.5 : 0,
-                transition: 'padding 0.2s ease',
-                color: colorTokens.secondary,
-                '&.Mui-selected': {
-                  backgroundColor: colorTokens.primarySubtle,
-                  color: colorTokens.primary,
-                  '&:hover': { backgroundColor: colorTokens.primarySubtle },
-                },
-              }}
-            >
-              {item.icon}
-              <ListItemText
-                primary={item.label}
-                sx={{
-                  m: 0,
-                  overflow: 'hidden',
-                  opacity: isFull ? 1 : 0,
-                  maxWidth: isFull ? 180 : 0,
-                  transition: isFull
-                    ? 'opacity 0.15s ease 0.08s, max-width 0.2s ease'
-                    : 'opacity 0.1s ease, max-width 0.2s ease',
+      <Box sx={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
+        <List sx={{ py: 2.5, px: isFull ? 1.5 : 0 }}>
+          {visibleItems.map((item) => {
+            const selected = item.exact ? pathname === item.href : pathname?.startsWith(item.href);
+            const button = (
+              <ListItemButton
+                component={NextLink}
+                href={item.href}
+                selected={selected}
+                onClick={() => {
+                  if (!isLg) onCloseMobile();
                 }}
-                slotProps={{ primary: { sx: { fontSize: 14.5, fontWeight: 700, whiteSpace: 'nowrap' } } }}
-              />
-            </ListItemButton>
-          );
-          return (
-            <Tooltip key={item.href} title={item.label} placement="right" disableHoverListener={isFull}>
-              {button}
-            </Tooltip>
-          );
-        })}
-      </List>
+                sx={{
+                  width: isFull ? '100%' : 44,
+                  height: 44,
+                  minWidth: 44,
+                  gap: isFull ? 1.5 : 0,
+                  borderRadius: `${radiusTokens.md}px`,
+                  justifyContent: isFull ? 'flex-start' : 'center',
+                  px: isFull ? 1.5 : 0,
+                  transition: 'padding 0.2s ease',
+                  color: colorTokens.secondary,
+                  '&.Mui-selected': {
+                    backgroundColor: colorTokens.primarySubtle,
+                    color: colorTokens.primary,
+                    '&:hover': { backgroundColor: colorTokens.primarySubtle },
+                  },
+                }}
+              >
+                {item.icon}
+                <ListItemText
+                  primary={item.label}
+                  sx={{
+                    m: 0,
+                    overflow: 'hidden',
+                    opacity: isFull ? 1 : 0,
+                    maxWidth: isFull ? 180 : 0,
+                    transition: isFull
+                      ? 'opacity 0.15s ease 0.08s, max-width 0.2s ease'
+                      : 'opacity 0.1s ease, max-width 0.2s ease',
+                  }}
+                  slotProps={{ primary: { sx: { fontSize: 14.5, fontWeight: 700, whiteSpace: 'nowrap' } } }}
+                />
+              </ListItemButton>
+            );
+            return (
+              <Tooltip key={item.href} title={item.label} placement="right" disableHoverListener={isFull}>
+                {button}
+              </Tooltip>
+            );
+          })}
+        </List>
+      </Box>
     </Box>
   );
 
@@ -387,6 +388,10 @@ function TopBar({ sidebarCollapsed, onToggleSidebar }: TopBarProps) {
         gap: 1.5,
         px: 3,
         borderBottom: `1px solid ${colorTokens.border}`,
+        position: 'sticky',
+        top: 0,
+        zIndex: 10,
+        bgcolor: colorTokens.canvas,
       }}
     >
       <Tooltip title={sidebarCollapsed ? 'Mở rộng menu' : 'Thu gọn menu'}>
@@ -410,12 +415,15 @@ function TopBar({ sidebarCollapsed, onToggleSidebar }: TopBarProps) {
           )}
         </Box>
         <IconButton onClick={(event) => setAnchorEl(event.currentTarget)} sx={{ p: 0.5 }}>
-          <Avatar sx={{ width: 36, height: 36, bgcolor: colorTokens.primary, color: '#ffffff' }}>
+          <Avatar
+            src={!isCompanyAdmin ? user?.avatarUrl ?? undefined : undefined}
+            sx={{ width: 36, height: 36, bgcolor: colorTokens.primary, color: '#ffffff' }}
+          >
             {isCompanyAdmin ? <ApartmentOutlinedIcon fontSize="small" /> : identityInitial}
           </Avatar>
         </IconButton>
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
-          {user?.role === 'EMPLOYEE' && (
+          {isEmployeeRole(user?.role) && (
             <MenuItem component={NextLink} href="/profile" onClick={() => setAnchorEl(null)}>
               <ListItemIcon>
                 <PersonOutlineIcon fontSize="small" />
@@ -471,18 +479,18 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <RequireAuth>
-      <Box sx={{ minHeight: '100vh', display: 'flex', bgcolor: colorTokens.canvas }}>
+      <Box sx={{ height: '100vh', display: 'flex', bgcolor: colorTokens.canvas, overflow: 'hidden' }}>
         <Sidebar
           collapsed={sidebarCollapsed}
           mobileOpen={mobileNavOpen}
           onCloseMobile={() => setMobileNavOpen(false)}
         />
-        <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', bgcolor: colorTokens.canvas }}>
+        <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', height: '100%', bgcolor: colorTokens.canvas, overflow: 'hidden' }}>
           <TopBar
             sidebarCollapsed={isLg ? sidebarCollapsed : !mobileNavOpen}
             onToggleSidebar={toggleSidebar}
           />
-          <Box sx={{ flex: 1, overflow: 'auto' }}>{children}</Box>
+          <Box sx={{ flex: 1, overflow: 'auto', minHeight: 0 }}>{children}</Box>
         </Box>
       </Box>
     </RequireAuth>

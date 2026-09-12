@@ -1,4 +1,4 @@
-import { apiRequest } from './client';
+import { ApiError, apiRequest, getStoredToken } from './client';
 import type { Role, ThemeConcept, User } from '@/types';
 
 export interface CreateUserPayload {
@@ -12,8 +12,8 @@ export interface CreateUserPayload {
 
 export interface UpdateUserPayload {
   name?: string;
+  email?: string;
   jobTitle?: string;
-  avatarUrl?: string;
   themeConcept?: ThemeConcept;
   contributionScore?: number;
   attitudeScore?: number;
@@ -27,8 +27,12 @@ export interface UpdateUserPayload {
   emergencyContactPhone?: string;
 }
 
-export function listUsers() {
-  return apiRequest<User[]>('/users');
+export function listUsers(filter?: { role?: Role; companyId?: string }) {
+  const params = new URLSearchParams();
+  if (filter?.role) params.set('role', filter.role);
+  if (filter?.companyId) params.set('companyId', filter.companyId);
+  const query = params.toString();
+  return apiRequest<User[]>(`/users${query ? `?${query}` : ''}`);
 }
 
 export function getUser(id: string) {
@@ -45,4 +49,25 @@ export function updateUser(id: string, payload: UpdateUserPayload) {
 
 export function deleteUser(id: string) {
   return apiRequest<{ id: string }>(`/users/${id}`, { method: 'DELETE' });
+}
+
+/** Upload avatar image for the current user. Returns updated User with new avatarUrl. */
+export async function uploadAvatar(file: File): Promise<User> {
+  const form = new FormData();
+  form.append('avatar', file);
+  const token = getStoredToken();
+  const res = await fetch((process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api') + '/users/me/avatar', {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    body: form,
+  });
+  const payload = await res.json().catch(() => null);
+  if (!res.ok) {
+    const message =
+      payload && typeof payload === 'object' && 'message' in payload
+        ? String((payload as { message: unknown }).message)
+        : 'Tải ảnh đại diện thất bại';
+    throw new ApiError(res.status, message, payload);
+  }
+  return payload as User;
 }

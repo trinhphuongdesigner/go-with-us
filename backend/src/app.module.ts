@@ -19,12 +19,15 @@ import { AssessmentsModule } from './modules/assessments/assessments.module';
 import { CareerPassportModule } from './modules/career-passport/career-passport.module';
 import { AssistantModule } from './modules/assistant/assistant.module';
 import { RolesModule } from './modules/roles/roles.module';
+import { CompetencyRequestsModule } from './modules/competency-requests/competency-requests.module';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
     CryptoModule,
+    StorageModule,
     // Real, backend-backed
     AuthModule,
     CompaniesModule,
@@ -44,6 +47,7 @@ import { RolesModule } from './modules/roles/roles.module';
     CareerPassportModule,
     AssistantModule,
     RolesModule,
+    CompetencyRequestsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

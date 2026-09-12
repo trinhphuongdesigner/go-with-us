@@ -8,6 +8,7 @@ import {
 import { Role } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AiChatService } from '../ai-chat/ai-chat.service';
+import { parseJsonReplyOrThrow } from '../ai-chat/ai-reply.utils';
 import { AuthenticatedUser } from '../auth/jwt.strategy';
 import { CreateJobRequirementDto } from './dto/create-job-requirement.dto';
 import { UpdateJobRequirementDto } from './dto/update-job-requirement.dto';
@@ -261,22 +262,10 @@ not in the candidate list above.`;
     matches: { userId: string; matchScore: number; rationale: string }[];
     summary: string;
   } {
-    let text = raw.trim();
-    // Strip ```json ... ``` or ``` ... ``` code fences some models add
-    // despite the instruction not to.
-    const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
-    if (fenceMatch) {
-      text = fenceMatch[1].trim();
-    }
-
-    let parsed: RawMatchReply;
-    try {
-      parsed = JSON.parse(text) as RawMatchReply;
-    } catch {
-      throw new BadGatewayException(
-        'AI provider returned an unparseable match result',
-      );
-    }
+    const parsed = parseJsonReplyOrThrow<RawMatchReply>(
+      raw,
+      'job requirement matching',
+    );
 
     if (
       !parsed ||

@@ -18,6 +18,7 @@ import ViewToggle, { type ViewMode } from '@/components/ui/ViewToggle';
 import { colorTokens, radiusTokens } from '@/theme/theme';
 import * as usersApi from '@/lib/api/usersApi';
 import { ApiError } from '@/lib/api/client';
+import { isEmployeeRole } from '@/lib/roles';
 import type { User } from '@/types';
 
 export default function EmployeesPage() {
@@ -29,7 +30,7 @@ export default function EmployeesPage() {
   React.useEffect(() => {
     usersApi
       .listUsers()
-      .then((users) => setEmployees(users.filter((u) => u.role === 'EMPLOYEE')))
+      .then((users) => setEmployees(users.filter((u) => isEmployeeRole(u.role))))
       .catch((err) => {
         setError(err instanceof ApiError ? err.message : 'Không tải được danh sách nhân sự');
       });
@@ -73,7 +74,10 @@ export default function EmployeesPage() {
                     '&:hover': { borderColor: colorTokens.primary },
                   }}
                 >
-                  <Avatar sx={{ width: 48, height: 48, bgcolor: colorTokens.primary, color: '#ffffff' }}>
+                  <Avatar
+                    src={employee.avatarUrl ?? undefined}
+                    sx={{ width: 48, height: 48, bgcolor: colorTokens.primary, color: '#ffffff' }}
+                  >
                     {employee.name?.[0]?.toUpperCase() ?? '?'}
                   </Avatar>
                   <Typography variant="body1" sx={{ fontWeight: 600, mt: 1 }}>

@@ -37,6 +37,7 @@ import {
   type PassportShare,
 } from '@/lib/api/careerPassportApi';
 import OffboardingQueue from './OffboardingQueue';
+import { isEmployeeRole } from '@/lib/roles';
 
 /**
  * The Career Passport tab within My Profile — employment periods, the AI
@@ -258,7 +259,7 @@ export default function CareerPassportTab() {
         <PageSkeleton variant="cards" />
       ) : (
         <>
-      {user?.role === 'COMPANY_ADMIN' || user?.role === 'SUPER_ADMIN' ? (
+      {user?.role === 'HR' || user?.role === 'BOD' || user?.role === 'COMPANY_ADMIN' || user?.role === 'SUPER_ADMIN' ? (
         <OffboardingQueue />
       ) : null}
 

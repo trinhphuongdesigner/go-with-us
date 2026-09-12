@@ -7,7 +7,7 @@ import PageSkeleton from '@/components/ui/PageSkeleton';
 import Stack from '@mui/material/Stack';
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
-import Rating from '@mui/material/Rating';
+import SkillLevelMeter from '@/components/ui/SkillLevelMeter';
 import Button from '@/components/ui/Button';
 import Table from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
@@ -16,14 +16,18 @@ import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@/components/ui/IconButton';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { ApiError } from '@/lib/api/client';
 import * as skillsCompetencyApi from '@/lib/api/skillsCompetencyApi';
 import type { EmployeeSkill, Skill } from '@/lib/api/skillsCompetencyApi';
+import { colorTokens, radiusTokens } from '@/theme/theme';
 
 /** Skill self-management — moved in from the old standalone /skills page. */
 export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
   const { user } = useAuth();
+  const { ask, dialog } = useConfirmDialog();
   const [catalog, setCatalog] = React.useState<Skill[] | null>(null);
   const [mySkills, setMySkills] = React.useState<EmployeeSkill[] | null>(null);
   const [error, setError] = React.useState<string | null>(null);
@@ -88,27 +92,38 @@ export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
     }
   };
 
+  const handleDelete = async (row: EmployeeSkill) => {
+    if (!user) return;
+    try {
+      await skillsCompetencyApi.deleteEmployeeSkill(user.id, row.skillId);
+      await loadMySkills(user.id);
+      onChanged();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Không xóa được kỹ năng');
+    }
+  };
+
   return (
     <Box>
       <Stack spacing={2} sx={{ mb: 3 }}>
         <Stack
-          direction={{ xs: 'column', md: 'row' }}
+          direction={{ xs: 'column', sm: 'row' }}
           spacing={2}
-          sx={{ alignItems: { md: 'center' } }}
+          sx={{ alignItems: { sm: 'center' } }}
         >
           <Autocomplete
             freeSolo
             options={(catalog ?? []).map((s) => s.name)}
             value={skillName}
             onInputChange={(_e, value) => setSkillName(value)}
-            sx={{ minWidth: 260, flex: 1 }}
+            sx={{ minWidth: { xs: 0, md: 260 }, flex: 1 }}
             renderInput={(params) => (
               <TextField {...params} label="Tên kỹ năng" placeholder="ví dụ TypeScript" size="small" />
             )}
           />
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', rowGap: 0.5 }}>
             <Typography variant="body2">Cấp độ</Typography>
-            <Rating value={level} max={5} onChange={(_e, value) => setLevel(value ?? 1)} />
+            <SkillLevelMeter value={level} onChange={setLevel} size="sm" />
           </Box>
         </Stack>
         <TextField
@@ -126,7 +141,7 @@ export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
           </Typography>
         ) : null}
         <Box>
-          <Button variant="contained" onClick={handleSave} disabled={saving}>
+          <Button variant="contained" onClick={handleSave} disabled={saving} sx={{ width: { xs: '100%', sm: 'auto' } }}>
             {saving ? 'Đang lưu...' : 'Lưu kỹ năng'}
           </Button>
         </Box>
@@ -137,33 +152,104 @@ export default function SkillsTab({ onChanged }: { onChanged: () => void }) {
       ) : mySkills.length === 0 ? (
         <Typography variant="body1">Chưa có kỹ năng nào — thêm ở trên.</Typography>
       ) : (
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Kỹ năng</TableCell>
-              <TableCell>Cấp độ</TableCell>
-              <TableCell>Ghi chú</TableCell>
-              <TableCell align="right">Sửa</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
+        <>
+          <Stack
+            spacing={1.5}
+            sx={{ display: { xs: 'flex', md: 'none' } }}
+          >
             {mySkills.map((row) => (
-              <TableRow key={row.id}>
-                <TableCell>{row.skill.name}</TableCell>
-                <TableCell>
-                  <Rating value={row.level} max={5} readOnly size="small" />
-                </TableCell>
-                <TableCell>{row.note ?? '—'}</TableCell>
-                <TableCell align="right">
-                  <IconButton size="small" onClick={() => handleEditRow(row)}>
-                    <EditOutlinedIcon fontSize="small" />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
+              <Box
+                key={row.id}
+                sx={{
+                  p: 1.5,
+                  borderRadius: `${radiusTokens.sm}px`,
+                  border: `1px solid ${colorTokens.border}`,
+                  bgcolor: colorTokens.surface,
+                }}
+              >
+                <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start', mb: 1 }}>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                      {row.skill.name}
+                    </Typography>
+                    <Box sx={{ mt: 0.75 }}>
+                      <SkillLevelMeter value={row.level} size="sm" />
+                    </Box>
+                  </Box>
+                  <Stack direction="row" spacing={0.5}>
+                    <IconButton size="sm" onClick={() => handleEditRow(row)}>
+                      <EditOutlinedIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="sm"
+                      onClick={() =>
+                        ask({
+                          title: 'Xóa kỹ năng',
+                          description: `Xóa "${row.skill.name}"? Hành động này không thể hoàn tác.`,
+                          confirmLabel: 'Xóa',
+                          danger: true,
+                          onConfirm: () => handleDelete(row),
+                        })
+                      }
+                    >
+                      <DeleteOutlineIcon fontSize="small" />
+                    </IconButton>
+                  </Stack>
+                </Stack>
+                {row.note ? (
+                  <Typography variant="body2" sx={{ color: colorTokens.secondary }}>
+                    {row.note}
+                  </Typography>
+                ) : null}
+              </Box>
             ))}
-          </TableBody>
-        </Table>
+          </Stack>
+
+          <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Kỹ năng</TableCell>
+                  <TableCell>Cấp độ</TableCell>
+                  <TableCell>Ghi chú</TableCell>
+                  <TableCell align="right">Thao tác</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {mySkills.map((row) => (
+                  <TableRow key={row.id}>
+                    <TableCell>{row.skill.name}</TableCell>
+                    <TableCell>
+                      <SkillLevelMeter value={row.level} size="sm" />
+                    </TableCell>
+                    <TableCell>{row.note ?? '—'}</TableCell>
+                    <TableCell align="right">
+                      <IconButton size="small" onClick={() => handleEditRow(row)}>
+                        <EditOutlinedIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() =>
+                          ask({
+                            title: 'Xóa kỹ năng',
+                            description: `Xóa "${row.skill.name}"? Hành động này không thể hoàn tác.`,
+                            confirmLabel: 'Xóa',
+                            danger: true,
+                            onConfirm: () => handleDelete(row),
+                          })
+                        }
+                      >
+                        <DeleteOutlineIcon fontSize="small" />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Box>
+        </>
       )}
+      {dialog}
     </Box>
   );
 }

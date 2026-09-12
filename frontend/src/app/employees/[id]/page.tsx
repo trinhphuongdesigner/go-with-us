@@ -10,7 +10,7 @@ import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import PageSkeleton from '@/components/ui/PageSkeleton';
 import Stack from '@mui/material/Stack';
-import Rating from '@mui/material/Rating';
+import SkillLevelMeter from '@/components/ui/SkillLevelMeter';
 import Button from '@/components/ui/Button';
 import Table from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
@@ -128,7 +128,7 @@ export default function EmployeeInsightPage() {
                       <TableRow key={row.id}>
                         <TableCell>{row.skill.name}</TableCell>
                         <TableCell>
-                          <Rating value={row.level} max={5} readOnly size="small" />
+                          <SkillLevelMeter value={row.level} size="sm" />
                         </TableCell>
                         <TableCell>{row.selfAssessed ? 'Có' : 'Không'}</TableCell>
                         <TableCell>{row.note ?? '—'}</TableCell>

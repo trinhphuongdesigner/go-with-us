@@ -16,6 +16,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AiChatService } from '../ai-chat/ai-chat.service';
+import { asStringArray, parseJsonReplyOrThrow } from '../ai-chat/ai-reply.utils';
 import {
   assertCanViewUser,
   resolveCompanyScope,
@@ -788,20 +789,10 @@ Other rules:
   }
 
   private parseOffboardingReply(raw: string): OffboardingProposal {
-    let text = raw.trim();
-    const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
-    if (fenceMatch) {
-      text = fenceMatch[1].trim();
-    }
-
-    let parsed: Record<string, unknown>;
-    try {
-      parsed = JSON.parse(text) as Record<string, unknown>;
-    } catch {
-      throw new BadGatewayException(
-        'AI provider returned an unparseable offboarding summary',
-      );
-    }
+    const parsed = parseJsonReplyOrThrow<Record<string, unknown>>(
+      raw,
+      'offboarding summary',
+    );
 
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
       throw new BadGatewayException(
@@ -837,11 +828,6 @@ Other rules:
       skill: clampScore(rawScores.skill),
       activityParticipation: clampScore(rawScores.activityParticipation),
     };
-
-    const asStringArray = (value: unknown): string[] =>
-      Array.isArray(value)
-        ? value.filter((v): v is string => typeof v === 'string')
-        : [];
 
     return {
       narrative,
@@ -993,20 +979,10 @@ Write the career recap JSON for this period now.`;
   }
 
   private parseSummaryReply(raw: string): CareerSummaryProposal {
-    let text = raw.trim();
-    const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
-    if (fenceMatch) {
-      text = fenceMatch[1].trim();
-    }
-
-    let parsed: Record<string, unknown>;
-    try {
-      parsed = JSON.parse(text) as Record<string, unknown>;
-    } catch {
-      throw new BadGatewayException(
-        'AI provider returned an unparseable career summary',
-      );
-    }
+    const parsed = parseJsonReplyOrThrow<Record<string, unknown>>(
+      raw,
+      'career summary',
+    );
 
     const content =
       typeof parsed.content === 'string' && parsed.content.trim().length > 0
@@ -1017,11 +993,6 @@ Write the career recap JSON for this period now.`;
         'AI provider returned an empty career summary',
       );
     }
-
-    const asStringArray = (value: unknown): string[] =>
-      Array.isArray(value)
-        ? value.filter((v): v is string => typeof v === 'string')
-        : [];
 
     return {
       content,

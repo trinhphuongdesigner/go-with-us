@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -53,6 +54,15 @@ export class SkillsCompetencyController {
       dto.skills,
       caller,
     );
+  }
+
+  @Delete('users/:userId/skills/:skillId')
+  removeOwnSkill(
+    @Param('userId') userId: string,
+    @Param('skillId') skillId: string,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
+    return this.skillsCompetencyService.removeOwnSkill(userId, skillId, caller);
   }
 
   @Get('insight/:userId')

@@ -7,10 +7,8 @@ import {
   Patch,
   Post,
   Put,
-  Query,
   UseGuards,
 } from '@nestjs/common';
-import { LifeCategory } from '@prisma/client';
 import { DevelopmentPlansService } from './development-plans.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -24,6 +22,7 @@ import {
   CreateTaskDto,
   SaveRoadmapDto,
   UpdateMilestoneDto,
+  UpdatePlanSettingsDto,
   UpdateTaskDto,
 } from './dto/milestone.dto';
 
@@ -46,11 +45,8 @@ export class DevelopmentPlansController {
   ) {}
 
   @Get('goals')
-  listGoals(
-    @CurrentUser() caller: AuthenticatedUser,
-    @Query('category') category?: LifeCategory,
-  ) {
-    return this.developmentPlansService.listGoals(caller, category);
+  listGoals(@CurrentUser() caller: AuthenticatedUser) {
+    return this.developmentPlansService.listGoals(caller);
   }
 
   @Post('goals')
@@ -101,9 +97,9 @@ export class DevelopmentPlansController {
 
   // ---- Milestones & tasks --------------------------------------------
 
-  @Get('me/milestones')
-  listMilestones(@CurrentUser() caller: AuthenticatedUser) {
-    return this.developmentPlansService.listMilestones(caller);
+  @Get('me/roadmaps')
+  listRoadmaps(@CurrentUser() caller: AuthenticatedUser) {
+    return this.developmentPlansService.listRoadmaps(caller);
   }
 
   @Post('me/milestones')
@@ -169,5 +165,13 @@ export class DevelopmentPlansController {
     @CurrentUser() caller: AuthenticatedUser,
   ) {
     return this.developmentPlansService.saveRoadmap(dto, caller);
+  }
+
+  @Patch('me/settings')
+  updatePlanSettings(
+    @Body() dto: UpdatePlanSettingsDto,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
+    return this.developmentPlansService.updatePlanSettings(dto, caller);
   }
 }

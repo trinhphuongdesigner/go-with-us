@@ -3,9 +3,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { LifeCategory, MilestoneStatus } from '@prisma/client';
+import { MilestoneStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AiChatService } from '../ai-chat/ai-chat.service';
+import { asString, parseJsonReplyOrThrow } from '../ai-chat/ai-reply.utils';
 import type { AuthenticatedUser } from '../auth/jwt.strategy';
 import { CreateGoalDto } from './dto/create-goal.dto';
 import { UpdateGoalDto } from './dto/update-goal.dto';
@@ -14,6 +15,7 @@ import {
   CreateMilestoneDto,
   SaveRoadmapDto,
   UpdateMilestoneDto,
+  UpdatePlanSettingsDto,
   UpdateTaskDto,
 } from './dto/milestone.dto';
 
@@ -41,10 +43,9 @@ export class DevelopmentPlansService {
 
   // ---- Goals ----
 
-  /** Optional `category` filter powers the Work/Personal split on the UI. */
-  listGoals(caller: AuthenticatedUser, category?: LifeCategory) {
+  listGoals(caller: AuthenticatedUser) {
     return this.prisma.developmentGoal.findMany({
-      where: { userId: caller.id, ...(category ? { category } : {}) },
+      where: { userId: caller.id },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -55,7 +56,6 @@ export class DevelopmentPlansService {
         userId: caller.id,
         title: dto.title,
         description: dto.description,
-        category: dto.category,
         metric: dto.metric,
         targetValue: dto.targetValue,
         currentValue: dto.currentValue,
@@ -74,7 +74,6 @@ export class DevelopmentPlansService {
       data: {
         title: dto.title,
         description: dto.description,
-        category: dto.category,
         metric: dto.metric,
         targetValue: dto.targetValue,
         currentValue: dto.currentValue,
@@ -208,39 +207,20 @@ Reply with ONLY a JSON object of the exact shape {"planMd": string, "summary": s
   }
 
   private parseGeneratePlanReply(raw: string): GeneratePlanResult {
-    const stripped = this.stripCodeFences(raw);
+    const parsed = parseJsonReplyOrThrow<Record<string, unknown>>(
+      raw,
+      'development plan generation',
+      { anchored: true },
+    );
 
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(stripped);
-    } catch {
-      throw new BadGatewayException(
-        'AI provider returned a non-JSON reply for development plan generation',
-      );
-    }
-
-    if (
-      !parsed ||
-      typeof parsed !== 'object' ||
-      typeof (parsed as Record<string, unknown>).planMd !== 'string' ||
-      ((parsed as Record<string, unknown>).planMd as string).trim().length === 0
-    ) {
+    const planMd = asString(parsed.planMd);
+    if (!planMd) {
       throw new BadGatewayException(
         'AI provider returned an empty or malformed development plan',
       );
     }
 
-    const planMd = (parsed as Record<string, unknown>).planMd as string;
-    const summaryRaw = (parsed as Record<string, unknown>).summary;
-    const summary = typeof summaryRaw === 'string' ? summaryRaw : '';
-
-    return { planMd, summary };
-  }
-
-  private stripCodeFences(raw: string): string {
-    const trimmed = raw.trim();
-    const fenceMatch = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
-    return fenceMatch ? fenceMatch[1].trim() : trimmed;
+    return { planMd, summary: asString(parsed.summary) ?? '' };
   }
 
   // ---- Plan: persistence ----
@@ -298,26 +278,32 @@ Reply with ONLY a JSON object of the exact shape {"planMd": string, "summary": s
   // as saveMyPlan) — the plan's markdown stays the narrative, milestones
   // are the "đo lường được" (measurable) part of it.
 
-  async listMilestones(caller: AuthenticatedUser) {
+  /** Every saved roadmap "attempt" for the caller, newest first — see the class doc on saveRoadmap. */
+  async listRoadmaps(caller: AuthenticatedUser) {
     const plan = await this.prisma.developmentPlan.findFirst({
       where: { userId: caller.id },
     });
     if (!plan) return [];
-    return this.prisma.developmentMilestone.findMany({
+    return this.prisma.developmentRoadmap.findMany({
       where: { planId: plan.id },
-      include: { tasks: { orderBy: { order: 'asc' } } },
-      orderBy: { order: 'asc' },
+      include: {
+        milestones: {
+          include: { tasks: { orderBy: { order: 'asc' } } },
+          orderBy: { order: 'asc' },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
   async createMilestone(dto: CreateMilestoneDto, caller: AuthenticatedUser) {
-    const plan = await this.getOrCreatePlan(caller);
+    await this.assertOwnRoadmap(dto.roadmapId, caller);
     const count = await this.prisma.developmentMilestone.count({
-      where: { planId: plan.id },
+      where: { roadmapId: dto.roadmapId },
     });
     return this.prisma.developmentMilestone.create({
       data: {
-        planId: plan.id,
+        roadmapId: dto.roadmapId,
         title: dto.title,
         description: dto.description,
         dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
@@ -349,6 +335,7 @@ Reply with ONLY a JSON object of the exact shape {"planMd": string, "summary": s
         description: dto.description,
         dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
         status: dto.status,
+        order: dto.order,
       },
       include: { tasks: true },
     });
@@ -394,37 +381,76 @@ Reply with ONLY a JSON object of the exact shape {"planMd": string, "summary": s
 
   /**
    * Explicit save of a roadmap the user has reviewed/edited — same
-   * "proposal until confirmed" convention as the markdown plan. Replaces
-   * the whole milestone/task tree rather than merging, since this is a
-   * one-shot "here's my roadmap" commit, not an incremental edit.
+   * "proposal until confirmed" convention as the markdown plan. Always
+   * creates a brand-new DevelopmentRoadmap attempt rather than overwriting
+   * an existing one, so a person can keep several roadmaps side by side
+   * (see the "multiple sections" UI in RoadmapSection.tsx).
    */
   async saveRoadmap(dto: SaveRoadmapDto, caller: AuthenticatedUser) {
     const plan = await this.getOrCreatePlan(caller);
 
-    await this.prisma.developmentMilestone.deleteMany({
-      where: { planId: plan.id },
-    });
-
-    for (const [index, milestone] of dto.milestones.entries()) {
-      await this.prisma.developmentMilestone.create({
+    // Also log the end goal as a DevelopmentGoal (context for the roadmap).
+    if (dto.milestones.length > 0) {
+      const endGoal = dto.milestones[dto.milestones.length - 1];
+      await this.prisma.developmentGoal.create({
         data: {
-          planId: plan.id,
-          title: milestone.title,
-          description: milestone.description,
-          dueDate: milestone.dueDate ? new Date(milestone.dueDate) : undefined,
-          order: index,
-          tasks: {
-            create: milestone.tasks.map((t, i) => ({
-              title: t.title,
-              metric: t.metric,
-              order: i,
-            })),
-          },
+          userId: caller.id,
+          title: endGoal.title,
+          description: endGoal.description ?? undefined,
+          dueDate: endGoal.dueDate ? new Date(endGoal.dueDate) : undefined,
+          status: 'NOT_STARTED',
+          progress: 0,
+          aiSuggested: true,
         },
       });
     }
 
-    return this.listMilestones(caller);
+    return this.prisma.developmentRoadmap.create({
+      data: {
+        planId: plan.id,
+        durationWeeks: dto.durationWeeks,
+        hoursPerWeek: dto.hoursPerWeek,
+        milestones: {
+          create: dto.milestones.map((milestone, index) => ({
+            title: milestone.title,
+            description: milestone.description,
+            dueDate: milestone.dueDate ? new Date(milestone.dueDate) : undefined,
+            order: index,
+            tasks: {
+              create: milestone.tasks.map((t, i) => ({
+                title: t.title,
+                metric: t.metric,
+                order: i,
+              })),
+            },
+          })),
+        },
+      },
+      include: { milestones: { include: { tasks: true }, orderBy: { order: 'asc' } } },
+    });
+  }
+
+  /**
+   * Merges roadmap UI prefs into DevelopmentPlan.displaySettings JSON —
+   * same get-or-create-plan pattern as saveRoadmap, but never touches
+   * milestones/content.
+   */
+  async updatePlanSettings(dto: UpdatePlanSettingsDto, caller: AuthenticatedUser) {
+    const plan = await this.getOrCreatePlan(caller);
+    const existing =
+      plan.displaySettings && typeof plan.displaySettings === 'object'
+        ? (plan.displaySettings as Record<string, unknown>)
+        : {};
+
+    const updates = Object.fromEntries(
+      Object.entries(dto).filter(([, v]) => v !== undefined),
+    );
+    const merged = { ...existing, ...updates };
+
+    return this.prisma.developmentPlan.update({
+      where: { id: plan.id },
+      data: { displaySettings: merged },
+    });
   }
 
   private async getOrCreatePlan(caller: AuthenticatedUser) {
@@ -437,12 +463,23 @@ Reply with ONLY a JSON object of the exact shape {"planMd": string, "summary": s
     });
   }
 
-  private async assertOwnMilestone(id: string, caller: AuthenticatedUser) {
-    const milestone = await this.prisma.developmentMilestone.findUnique({
+  private async assertOwnRoadmap(id: string, caller: AuthenticatedUser) {
+    const roadmap = await this.prisma.developmentRoadmap.findUnique({
       where: { id },
       include: { plan: { select: { userId: true } } },
     });
-    if (!milestone || milestone.plan.userId !== caller.id) {
+    if (!roadmap || roadmap.plan.userId !== caller.id) {
+      throw new NotFoundException(`Roadmap ${id} not found`);
+    }
+    return roadmap;
+  }
+
+  private async assertOwnMilestone(id: string, caller: AuthenticatedUser) {
+    const milestone = await this.prisma.developmentMilestone.findUnique({
+      where: { id },
+      include: { roadmap: { include: { plan: { select: { userId: true } } } } },
+    });
+    if (!milestone || milestone.roadmap.plan.userId !== caller.id) {
       throw new NotFoundException(`Milestone ${id} not found`);
     }
     return milestone;
@@ -452,10 +489,12 @@ Reply with ONLY a JSON object of the exact shape {"planMd": string, "summary": s
     const task = await this.prisma.developmentTask.findUnique({
       where: { id },
       include: {
-        milestone: { include: { plan: { select: { userId: true } } } },
+        milestone: {
+          include: { roadmap: { include: { plan: { select: { userId: true } } } } },
+        },
       },
     });
-    if (!task || task.milestone.plan.userId !== caller.id) {
+    if (!task || task.milestone.roadmap.plan.userId !== caller.id) {
       throw new NotFoundException(`Task ${id} not found`);
     }
     return task;

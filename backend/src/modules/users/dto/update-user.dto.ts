@@ -1,5 +1,6 @@
 import {
   IsDateString,
+  IsEmail,
   IsEnum,
   IsNumber,
   IsOptional,
@@ -11,6 +12,10 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   name?: string;
+
+  @IsOptional()
+  @IsEmail()
+  email?: string;
 
   // Role reassignment — UsersService enforces canManageRole() against both
   // the target's current role and this new role, so a caller can never
@@ -24,10 +29,6 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   jobTitle?: string;
-
-  @IsOptional()
-  @IsString()
-  avatarUrl?: string;
 
   @IsOptional()
   @IsEnum(ThemeConcept)

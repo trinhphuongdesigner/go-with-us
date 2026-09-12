@@ -48,12 +48,21 @@ export interface UpdateGoalPayload {
   status?: GoalStatus;
 }
 
+export interface RoadmapDisplaySettings {
+  character?: string;
+  viewMode?: 'stair' | 'diagram';
+  costumeColor?: string;
+  reduceMotion?: boolean;
+  fontSize?: 'sm' | 'md' | 'lg';
+}
+
 export interface DevelopmentPlan {
   id: string;
   userId: string;
   content: string;
   aiGenerated: boolean;
   status: string;
+  displaySettings: RoadmapDisplaySettings | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -84,13 +93,24 @@ export interface DevelopmentTask {
 
 export interface DevelopmentMilestone {
   id: string;
-  planId: string;
+  roadmapId: string;
   title: string;
   description: string | null;
   dueDate: string | null;
   status: MilestoneStatus;
   order: number;
   tasks: DevelopmentTask[];
+}
+
+export interface DevelopmentRoadmap {
+  id: string;
+  planId: string;
+  category: LifeCategory;
+  durationWeeks: number | null;
+  hoursPerWeek: number | null;
+  createdAt: string;
+  updatedAt: string;
+  milestones: DevelopmentMilestone[];
 }
 
 export interface CreateTaskPayload {
@@ -110,6 +130,8 @@ export interface UpdateMilestonePayload {
   description?: string;
   dueDate?: string;
   status?: MilestoneStatus;
+  category?: LifeCategory;
+  order?: number;
 }
 
 export interface UpdateTaskPayload {
@@ -126,6 +148,9 @@ export interface RoadmapMilestonePayload {
 }
 
 export interface SaveRoadmapPayload {
+  category?: LifeCategory;
+  durationWeeks?: number;
+  hoursPerWeek?: number;
   milestones: RoadmapMilestonePayload[];
 }
 
@@ -178,8 +203,11 @@ export function getMyPlan() {
 
 // ---- Milestones & tasks ----
 
-export function listMilestones() {
-  return apiRequest<DevelopmentMilestone[]>('/development-plans/me/milestones');
+export function listRoadmaps(category?: LifeCategory) {
+  const query = category ? `?category=${category}` : '';
+  return apiRequest<DevelopmentRoadmap[]>(
+    `/development-plans/me/roadmaps${query}`,
+  );
 }
 
 export function createMilestone(payload: CreateMilestonePayload) {
@@ -222,10 +250,18 @@ export function deleteTask(id: string) {
   });
 }
 
-/** Explicit save of a reviewed AI roadmap proposal — replaces the tree. */
+/** Explicit save of a reviewed roadmap proposal — creates a new section. */
 export function saveRoadmap(payload: SaveRoadmapPayload) {
-  return apiRequest<DevelopmentMilestone[]>('/development-plans/me/roadmap', {
+  return apiRequest<DevelopmentRoadmap>('/development-plans/me/roadmap', {
     method: 'POST',
+    body: payload,
+  });
+}
+
+/** Persists roadmap UI prefs (character, view mode, costume, etc). */
+export function updatePlanSettings(payload: RoadmapDisplaySettings) {
+  return apiRequest<DevelopmentPlan>('/development-plans/me/settings', {
+    method: 'PATCH',
     body: payload,
   });
 }

@@ -34,6 +34,7 @@ import {
   type AssistantMessage,
 } from '@/lib/api/assistantApi';
 import { colorTokens, radiusTokens, shadowTokens } from '@/theme/theme';
+import { isEmployeeRole } from '@/lib/roles';
 
 const PANEL_Z_INDEX = 1200;
 
@@ -47,7 +48,7 @@ const PANEL_Z_INDEX = 1200;
 export default function FloatingAssistant() {
   const { ask, dialog } = useConfirmDialog();
   const { user, loading } = useAuth();
-  const isAdmin = user?.role === 'COMPANY_ADMIN' || user?.role === 'SUPER_ADMIN';
+  const isAdmin = !isEmployeeRole(user?.role) || user?.role === 'HR' || user?.role === 'BOD';
 
   const [panelOpen, setPanelOpen] = React.useState(false);
   const [historyOpen, setHistoryOpen] = React.useState(false);

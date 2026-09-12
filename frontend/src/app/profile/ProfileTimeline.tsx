@@ -75,30 +75,43 @@ export default function ProfileTimeline({
   }
 
   return (
-    <Box sx={{ position: 'relative', pl: 3.5 }}>
+    <Box sx={{ position: 'relative' }}>
       <Box
         sx={{
           position: 'absolute',
-          left: 11,
+          left: { xs: 11, md: '50%' },
           top: 8,
           bottom: 8,
           width: '2px',
+          transform: { md: 'translateX(-1px)' },
           backgroundColor: colorTokens.border,
         }}
       />
-      <Stack spacing={2.5}>
-        {entries.map((entry) => {
+      <Stack spacing={3}>
+        {entries.map((entry, index) => {
           const meta = KIND_META[entry.kind];
           const techStack = Array.isArray(entry.meta.techStack)
             ? (entry.meta.techStack as string[])
             : [];
+          const isLeft = index % 2 === 0;
           return (
-            <Box key={`${entry.kind}-${entry.id}`} sx={{ position: 'relative' }}>
+            <Box
+              key={`${entry.kind}-${entry.id}`}
+              sx={{
+                position: 'relative',
+                display: { md: 'grid' },
+                gridTemplateColumns: { md: 'minmax(0, 1fr) 48px minmax(0, 1fr)' },
+                pl: { xs: 3.5, md: 0 },
+              }}
+            >
               <Box
                 sx={{
-                  position: 'absolute',
-                  left: -30,
-                  top: 2,
+                  position: { xs: 'absolute', md: 'relative' },
+                  left: { xs: 0, md: 'auto' },
+                  top: { xs: 2, md: 'auto' },
+                  gridColumn: { md: 2 },
+                  gridRow: { md: 1 },
+                  justifySelf: { md: 'center' },
                   width: 24,
                   height: 24,
                   borderRadius: '50%',
@@ -108,65 +121,85 @@ export default function ProfileTimeline({
                   backgroundColor: colorTokens.surface,
                   border: `2px solid ${meta.color}`,
                   color: meta.color,
+                  zIndex: 1,
                   '& svg': { fontSize: 13 },
                 }}
               >
                 {meta.icon}
               </Box>
 
-              <Stack
-                direction="row"
-                spacing={1}
-                sx={{ alignItems: 'center', flexWrap: 'wrap', mb: 0.25 }}
+              <Box
+                sx={{
+                  gridColumn: { md: isLeft ? 1 : 3 },
+                  gridRow: { md: 1 },
+                  px: { md: 2 },
+                  textAlign: { md: isLeft ? 'right' : 'left' },
+                }}
               >
-                <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                  {entry.title}
-                </Typography>
-                <Chip
-                  label={meta.label}
-                  size="small"
-                  variant="outlined"
-                  sx={{ height: 20, fontSize: 11 }}
-                />
-              </Stack>
-
-              <Typography variant="body2" sx={{ fontSize: 12.5 }}>
-                {formatRange(entry.date, entry.endDate)}
-                {entry.subtitle ? ` · ${entry.subtitle}` : ''}
-              </Typography>
-
-              {typeof entry.meta.contribution === 'string' ? (
-                <Typography variant="body2" sx={{ mt: 0.5 }}>
-                  {entry.meta.contribution}
-                </Typography>
-              ) : null}
-              {typeof entry.meta.description === 'string' ? (
-                <Typography variant="body2" sx={{ mt: 0.5 }}>
-                  {entry.meta.description}
-                </Typography>
-              ) : null}
-              {typeof entry.meta.score === 'string' && entry.meta.score ? (
-                <Typography variant="body2" sx={{ mt: 0.5 }}>
-                  Điểm: {entry.meta.score}
-                </Typography>
-              ) : null}
-
-              {techStack.length > 0 ? (
                 <Stack
                   direction="row"
-                  spacing={0.75}
-                  sx={{ flexWrap: 'wrap', gap: 0.75, mt: 1 }}
+                  spacing={1}
+                  sx={{
+                    alignItems: 'center',
+                    justifyContent: { md: isLeft ? 'flex-end' : 'flex-start' },
+                    flexWrap: 'wrap',
+                    mb: 0.25,
+                  }}
                 >
-                  {techStack.map((tech) => (
-                    <Chip
-                      key={tech}
-                      label={tech}
-                      size="small"
-                      sx={{ height: 22, fontSize: 11.5 }}
-                    />
-                  ))}
+                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                    {entry.title}
+                  </Typography>
+                  <Chip
+                    label={meta.label}
+                    size="small"
+                    variant="outlined"
+                    sx={{ height: 20, fontSize: 11 }}
+                  />
                 </Stack>
-              ) : null}
+
+                <Typography variant="body2" sx={{ fontSize: 12.5 }}>
+                  {formatRange(entry.date, entry.endDate)}
+                  {entry.subtitle ? ` · ${entry.subtitle}` : ''}
+                </Typography>
+
+                {typeof entry.meta.contribution === 'string' ? (
+                  <Typography variant="body2" sx={{ mt: 0.5 }}>
+                    {entry.meta.contribution}
+                  </Typography>
+                ) : null}
+                {typeof entry.meta.description === 'string' ? (
+                  <Typography variant="body2" sx={{ mt: 0.5 }}>
+                    {entry.meta.description}
+                  </Typography>
+                ) : null}
+                {typeof entry.meta.score === 'string' && entry.meta.score ? (
+                  <Typography variant="body2" sx={{ mt: 0.5 }}>
+                    Điểm: {entry.meta.score}
+                  </Typography>
+                ) : null}
+
+                {techStack.length > 0 ? (
+                  <Stack
+                    direction="row"
+                    spacing={0.75}
+                    sx={{
+                      justifyContent: { md: isLeft ? 'flex-end' : 'flex-start' },
+                      flexWrap: 'wrap',
+                      gap: 0.75,
+                      mt: 1,
+                    }}
+                  >
+                    {techStack.map((tech) => (
+                      <Chip
+                        key={tech}
+                        label={tech}
+                        size="small"
+                        sx={{ height: 22, fontSize: 11.5 }}
+                      />
+                    ))}
+                  </Stack>
+                ) : null}
+              </Box>
             </Box>
           );
         })}

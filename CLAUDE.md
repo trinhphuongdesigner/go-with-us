@@ -15,9 +15,12 @@ today).
 Built as a sibling project to `D:\Coding\AI_Tool` (Workflow Pro), reusing
 its architecture/conventions but with a completely different domain — see
 `docs/style-concept.md` for the UI style this was scaffolded from, and
-`D:\Coding\AI_Tool\docs\skills.md` for the "AI skill = proposal, never
-self-persists" convention this project's AI features follow (Development
-Plan generation, Job Requirement candidate matching).
+`docs/ai-skills.md` for the "AI skill = proposal, never self-persists"
+convention this project's AI features follow (Development Plan generation,
+Job Requirement candidate matching, Profile Import, AI Assistant, Career
+Passport summaries) — including the mandatory prompt/parse pipeline and the
+shared `backend/src/modules/ai-chat/ai-reply.utils.ts` helpers every new AI
+skill must build on.
 
 ## Structure
 
@@ -30,11 +33,17 @@ Monorepo, two independently-run servers — not one Next.js app with API routes:
   project's `frontend/src/theme/theme.ts` implements. Read before any
   visual/UI work.
 
-**No object storage** — unlike Workflow Pro (DigitalOcean Spaces for long
-file content), all content here — including AI-generated Markdown like a
-Development Plan — lives directly in Postgres `String`/`Text` columns on
-the relevant Prisma model. There is no `StorageService` and no `SPACES_*`
-env vars in this codebase; don't introduce one.
+**Object storage is avatar + evidence uploads only.** DigitalOcean Spaces
+stores uploaded user avatar image bytes under `careermate/avatars/`, award
+evidence under `careermate/award-evidence/`, activity log evidence under
+`careermate/activity-evidence/`, and certification evidence under
+`careermate/certification-evidence/`. Postgres stores the public URL in
+`User.avatarUrl`, `Award.evidenceUrl`, `ActivityLog.evidenceUrl`, and
+`Certification.credentialUrl`. All other content — including AI-generated
+Markdown like a Development Plan — remains directly in Postgres
+`String`/`Text` columns. Reuse `backend/src/storage/storage.service.ts`;
+don't put other domain content in Spaces without an explicit product
+requirement.
 
 ## Running locally
 
@@ -73,9 +82,10 @@ connected provider in order Anthropic → OpenAI → Gemini unless a specific
 one is requested. No module should call a provider SDK directly.
 
 **AI features are a proposal, never self-persisting** — the same
-convention as Workflow Pro's "skills" (`D:\Coding\AI_Tool\docs\skills.md`):
-an endpoint calls `AiChatService.send()`, defensively parses the JSON
-reply (strip code fences, validate shape, drop any hallucinated id not in
+convention as Workflow Pro's "skills" — see `docs/ai-skills.md` for the
+full pipeline: an endpoint calls `AiChatService.send()`, defensively parses
+the JSON reply via the shared `backend/src/modules/ai-chat/ai-reply.utils.ts`
+helpers (strip code fences, validate shape, drop any hallucinated id not in
 the input set, throw `BadGatewayException` only on a genuinely broken/empty
 reply), and returns `{ ...content, summary }` without writing to the DB.
 The frontend shows the proposal and only persists on an explicit user

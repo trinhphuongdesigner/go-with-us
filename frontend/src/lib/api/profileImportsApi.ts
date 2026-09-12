@@ -108,3 +108,134 @@ export function deleteProfileImport(id: string) {
     method: 'DELETE',
   });
 }
+
+// --- Rich profile update (Cập nhật hồ sơ năng lực) --------------------------
+
+export interface RichBasicInfo {
+  name?: string;
+  jobTitle?: string;
+  phone?: string;
+  summary?: string;
+}
+
+export interface RichSkill {
+  name: string;
+  level?: number;
+  note?: string;
+}
+
+export interface RichActivity {
+  title: string;
+  description?: string;
+  category?: string;
+  date: string;
+}
+
+export interface RichGoal {
+  title: string;
+  description?: string;
+  category?: 'WORK' | 'PERSONAL';
+  dueDate?: string;
+  metric?: string;
+}
+
+export interface RichRoadmapTask {
+  title: string;
+  metric?: string;
+}
+
+export interface RichRoadmapMilestone {
+  title: string;
+  description?: string;
+  dueDate?: string;
+  tasks: RichRoadmapTask[];
+}
+
+export interface RichIdentityCheck {
+  detectedSourceName?: string;
+  matches?: boolean;
+}
+
+export interface RichProfileProposal {
+  identityCheck?: RichIdentityCheck;
+  basicInfo?: RichBasicInfo;
+  skills?: RichSkill[];
+  projects?: ParsedProfile['projects'];
+  certifications?: ParsedProfile['certifications'];
+  awards?: ParsedProfile['awards'];
+  activities?: RichActivity[];
+  goals?: RichGoal[];
+  roadmap?: { milestones: RichRoadmapMilestone[] };
+  summary: string;
+  dedupNotes?: string;
+}
+
+export interface AnalyzeSourcesPayload {
+  urls?: string[];
+  pastedTexts?: string[];
+  // files handled via FormData separately
+}
+
+export interface RefinePayload {
+  proposal?: RichProfileProposal;
+  instruction: string;
+}
+
+export interface ApplyRichPayload {
+  basicInfo?: RichBasicInfo;
+  skills?: RichSkill[];
+  projects?: ParsedProfile['projects'];
+  certifications?: ParsedProfile['certifications'];
+  awards?: ParsedProfile['awards'];
+  activities?: RichActivity[];
+  goals?: RichGoal[];
+  roadmap?: { milestones: RichRoadmapMilestone[] };
+}
+
+export interface ApplyRichResult {
+  basic: number;
+  skills: number;
+  projects: number;
+  certifications: number;
+  awards: number;
+  activities: number;
+  goals: number;
+  roadmapMilestones: number;
+}
+
+/** Send sources (urls + texts + files) for AI analysis. Returns proposal only. */
+export async function analyzeSources(payload: AnalyzeSourcesPayload, files?: File[]) {
+  const form = new FormData();
+  if (payload.urls?.length) form.append('urls', JSON.stringify(payload.urls));
+  if (payload.pastedTexts?.length) form.append('pastedTexts', JSON.stringify(payload.pastedTexts));
+  if (files?.length) {
+    files.forEach((f) => form.append('files', f));
+  }
+  const token = typeof window !== 'undefined' ? localStorage.getItem('gwu_access_token') : null;
+  const res = await fetch((process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api') + '/profile-imports/analyze', {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    body: form,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || 'Phân tích thất bại');
+  }
+  return res.json() as Promise<RichProfileProposal>;
+}
+
+/** Refine current proposal with user instruction. */
+export function refineProposal(payload: RefinePayload) {
+  return apiRequest<RichProfileProposal>('/profile-imports/refine', {
+    method: 'POST',
+    body: payload,
+  });
+}
+
+/** Explicit save of edited rich proposal. */
+export function applyRichUpdates(payload: ApplyRichPayload) {
+  return apiRequest<ApplyRichResult>('/profile-imports/apply-rich', {
+    method: 'POST',
+    body: payload,
+  });
+}

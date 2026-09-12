@@ -68,6 +68,13 @@ export function bulkUpsertOwnSkills(userId: string, skills: EmployeeSkillInput[]
   });
 }
 
+export function deleteEmployeeSkill(userId: string, skillId: string) {
+  return apiRequest<{ id: string }>(
+    `/skills-competency/users/${userId}/skills/${skillId}`,
+    { method: 'DELETE' },
+  );
+}
+
 export function getInsight(userId: string) {
   return apiRequest<CompetencyInsight>(`/skills-competency/insight/${userId}`);
 }

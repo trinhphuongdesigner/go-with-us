@@ -9,13 +9,16 @@ import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@/components/ui/Button';
 import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
+import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import PageSkeleton from '@/components/ui/PageSkeleton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined';
 import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
@@ -26,7 +29,8 @@ import {
   getCompetencyProfile,
   type CompetencyProfile,
 } from '@/lib/api/competencyProfileApi';
-import { colorTokens, radiusTokens } from '@/theme/theme';
+import { uploadAvatar } from '@/lib/api/usersApi';
+import { colorTokens, radiusTokens, shadowTokens } from '@/theme/theme';
 import ProfileTimeline from './ProfileTimeline';
 import PersonalInfoTab from './PersonalInfoTab';
 import SkillsTab from './SkillsTab';
@@ -69,21 +73,29 @@ export default function ProfilePage() {
 /** Split out so useSearchParams (deep-linking ?tab=passport) has the
  * Suspense boundary Next.js requires for a statically prerendered page. */
 function ProfilePageContent() {
-  const { user } = useAuth();
+  const { user, updateCurrentUser } = useAuth();
   const searchParams = useSearchParams();
 
   const [profile, setProfile] = React.useState<CompetencyProfile | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = React.useState(false);
+  const avatarInputRef = React.useRef<HTMLInputElement>(null);
 
   const initialTab = TABS.findIndex((t) => t.key === searchParams.get('tab'));
   const [tab, setTab] = React.useState(initialTab >= 0 ? initialTab : 0);
 
+  // Tabs call this after a save/delete to refresh aggregate data (counts,
+  // timeline, etc). Only the *first* load shows the full-page skeleton —
+  // subsequent calls swap `profile` in place so the header/tab chrome never
+  // disappears, just the numbers/lists that actually changed.
+  const hasLoadedRef = React.useRef(false);
   const loadProfile = React.useCallback(async () => {
-    setLoading(true);
+    if (!hasLoadedRef.current) setLoading(true);
     setError(null);
     try {
       setProfile(await getCompetencyProfile());
+      hasLoadedRef.current = true;
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Không tải được hồ sơ');
     } finally {
@@ -104,6 +116,24 @@ function ProfilePageContent() {
     (e) => e.status === 'ACTIVE',
   );
 
+  const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setUploadingAvatar(true);
+    setError(null);
+    try {
+      const updated = await uploadAvatar(file);
+      setProfile((prev) => (prev ? { ...prev, user: { ...prev.user, avatarUrl: updated.avatarUrl } } : prev));
+      updateCurrentUser(updated);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Không tải được ảnh đại diện');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   return (
     <PageContainer>
         <PageHeader
@@ -116,7 +146,7 @@ function ProfilePageContent() {
               variant="contained"
               startIcon={<UploadFileOutlinedIcon />}
             >
-              Nhập CV
+              Cập nhật hồ sơ năng lực
             </Button>
           }
         />
@@ -132,18 +162,69 @@ function ProfilePageContent() {
         ) : profile ? (
           <>
             <Card sx={{ mb: 3 }}>
+              {/* Cover banner — avatar overlaps its bottom edge (offset up),
+                  mirroring the reference profile layout without adopting its
+                  top tab bar (that part of the page keeps the existing side
+                  nav below). */}
+              <Box
+                sx={{
+                  mx: -3,
+                  mt: -3,
+                  height: 104,
+                  borderRadius: `${radiusTokens.md}px ${radiusTokens.md}px 0 0`,
+                  background: `linear-gradient(135deg, ${colorTokens.primary} 0%, ${colorTokens.heading} 100%)`,
+                }}
+              />
               <Stack
                 direction={{ xs: 'column', sm: 'row' }}
                 spacing={2.5}
-                sx={{ alignItems: { sm: 'center' } }}
+                sx={{ alignItems: { sm: 'flex-start' } }}
               >
-                <Avatar
-                  src={profile.user.avatarUrl ?? undefined}
-                  sx={{ width: 64, height: 64, bgcolor: colorTokens.primary, color: '#ffffff' }}
-                >
-                  {profile.user.name?.[0]?.toUpperCase() ?? '?'}
-                </Avatar>
-                <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Box sx={{ mt: -6, flexShrink: 0, position: 'relative' }}>
+                  <Avatar
+                    src={profile.user.avatarUrl ?? undefined}
+                    sx={{
+                      width: 96,
+                      height: 96,
+                      bgcolor: colorTokens.primary,
+                      color: '#ffffff',
+                      border: `4px solid ${colorTokens.surface}`,
+                      boxShadow: shadowTokens.card,
+                      fontSize: 32,
+                    }}
+                  >
+                    {profile.user.name?.[0]?.toUpperCase() ?? '?'}
+                  </Avatar>
+                  <IconButton
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={uploadingAvatar}
+                    sx={{
+                      position: 'absolute',
+                      bottom: -4,
+                      right: -4,
+                      width: 30,
+                      height: 30,
+                      bgcolor: colorTokens.surface,
+                      border: `1px solid ${colorTokens.border}`,
+                      '&:hover': { bgcolor: colorTokens.surface },
+                    }}
+                    aria-label="Tải ảnh đại diện mới"
+                  >
+                    {uploadingAvatar ? (
+                      <CircularProgress size={14} />
+                    ) : (
+                      <PhotoCameraOutlinedIcon fontSize="small" />
+                    )}
+                  </IconButton>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    hidden
+                    onChange={handleAvatarChange}
+                  />
+                </Box>
+                <Box sx={{ flex: 1, minWidth: 0, pt: { sm: 2 } }}>
                   <Typography variant="h2">{profile.user.name}</Typography>
                   <Typography variant="body2" sx={{ mt: 0.25 }}>
                     {currentEmployment
@@ -156,7 +237,7 @@ function ProfilePageContent() {
                     {profile.user.email}
                   </Typography>
                 </Box>
-                <Stack direction="row" spacing={3} sx={{ pr: 1 }}>
+                <Stack direction="row" spacing={{ xs: 2, sm: 3 }} sx={{ pr: 1, pt: { sm: 2 }, flexWrap: 'wrap' }}>
                   <Stat label="Kỹ năng" value={profile.skills.length} />
                   <Stat label="Dự án" value={profile.projects.length} />
                   <Stat
@@ -265,11 +346,16 @@ function ProfilePageContent() {
                   {tab === 4 ? (
                     <CertificationsTab
                       certifications={profile.certifications}
+                      employments={profile.employments}
                       onChanged={loadProfile}
                     />
                   ) : null}
                   {tab === 5 ? (
-                    <AwardsTab awards={profile.awards} onChanged={loadProfile} />
+                    <AwardsTab
+                      awards={profile.awards}
+                      employments={profile.employments}
+                      onChanged={loadProfile}
+                    />
                   ) : null}
                   {tab === 6 ? <ActivityTab /> : null}
                   {tab === 7 ? <DevelopmentPlanTab /> : null}
@@ -286,7 +372,7 @@ function ProfilePageContent() {
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <Box sx={{ textAlign: 'center' }}>
-      <Typography variant="h2" sx={{ lineHeight: 1.2 }}>
+      <Typography variant="h2" sx={{ fontSize: 28, lineHeight: 1.2 }}>
         {value}
       </Typography>
       <Typography variant="caption">{label}</Typography>
