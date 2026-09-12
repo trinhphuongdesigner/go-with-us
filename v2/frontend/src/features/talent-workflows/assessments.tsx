@@ -8,7 +8,13 @@ import { useAuth } from "@/features/auth/auth-provider";
 import { Assessment, Cycle, Field, fieldClass, Loading, panelClass, statusLabel, TalentHeader, useTalentAction, useTalentQuery, useTalentScope } from "./shared";
 
 export function TalentAssessments() {
-  const {session, ready, selector, scope} = useTalentScope();
+  const scopeState = useTalentScope();
+  return <TalentAssessmentsContent key={`${scopeState.session?.user.id}:${scopeState.companyId}`} scopeState={scopeState} />;
+}
+
+function TalentAssessmentsContent({scopeState}: {scopeState: ReturnType<typeof useTalentScope>}) {
+  const {session, ready, selector, scope, companyId} = scopeState;
+  const ownCompany = session?.user.companyId === companyId;
   const self = !!session?.user.permissions.includes("assessment:self");
   const review = !!session?.user.permissions.includes("assessment:review");
   const [tab,setTab] = useState<"mine"|"received"|"pending">("received");
@@ -20,11 +26,11 @@ export function TalentAssessments() {
   const action = useTalentAction(() => list.refetch()); const router = useRouter();
   const open = cycles.data?.filter(c => c.status === "OPEN") ?? [];
   const chosenCycle = open.some(c => c.id === cycleId) ? cycleId : open[0]?.id ?? "";
-  const chosenType = self ? type : "MANAGER";
+  const chosenType = self ? (!ownCompany && type === "SELF" ? "PEER" : type) : "MANAGER";
   async function start() { const row = await action.run<Assessment>("/assessments","POST",{cycleId:chosenCycle,type:chosenType, ...(chosenType !== "SELF" ? {revieweeId} : {})}); if(row)router.push(`/danh-gia/${row.id}`); }
   return <main className="mx-auto max-w-6xl space-y-6"><TalentHeader title="Đánh giá năng lực" description="Tự nhìn lại, nhận phản hồi và ghi nhận tiến bộ qua từng chu kỳ. Kết quả chỉ đi vào hồ sơ đã xác nhận sau khi được duyệt." />{selector}
     {!self && !review && <p>Bạn chưa được cấp quyền đánh giá.</p>}
-    {(self || review) && <section className={panelClass}><h2 className="mb-4 text-lg font-bold">Bắt đầu một lượt đánh giá</h2><div className="grid gap-4 md:grid-cols-3"><Field label="Chu kỳ"><select className={fieldClass} value={chosenCycle} onChange={e=>setCycleId(e.target.value)}><option value="">Chọn chu kỳ mở</option>{open.map(c=><option key={c.id} value={c.id}>{c.name} · {c.period}</option>)}</select></Field><Field label="Hình thức"><select className={fieldClass} value={chosenType} onChange={e=>setType(e.target.value)}>{self&&<><option value="SELF">Tự đánh giá</option><option value="PEER">Đồng nghiệp</option></>}{review && <option value="MANAGER">Quản lý</option>}</select></Field>{chosenType !== "SELF" && <Field label="Người được đánh giá"><select className={fieldClass} value={revieweeId} onChange={e=>setRevieweeId(e.target.value)}><option value="">Chọn đồng nghiệp</option>{colleagues.data?.filter(p=>p.id!==session?.user.id).map(p=><option key={p.id} value={p.id}>{p.name} · {p.jobTitle}</option>)}</select></Field>}</div><Button className="mt-4" disabled={action.busy || !chosenCycle || (chosenType!=="SELF"&&!revieweeId)} onClick={()=>void start()}>Tạo bản nháp</Button>{open.length===0&&!cycles.isLoading&&<p className="mt-3 text-sm text-muted">Chưa có chu kỳ mở. HR có thể phát hành mẫu và mở chu kỳ tại Mẫu & chu kỳ.</p>}</section>}
+    {(self || review) && <section className={panelClass}><h2 className="mb-4 text-lg font-bold">Bắt đầu một lượt đánh giá</h2><div className="grid gap-4 md:grid-cols-3"><Field label="Chu kỳ"><select className={fieldClass} value={chosenCycle} onChange={e=>setCycleId(e.target.value)}><option value="">Chọn chu kỳ mở</option>{open.map(c=><option key={c.id} value={c.id}>{c.name} · {c.period}</option>)}</select></Field><Field label="Hình thức"><select className={fieldClass} value={chosenType} onChange={e=>setType(e.target.value)}>{self&&<>{ownCompany && <option value="SELF">Tự đánh giá</option>}<option value="PEER">Đồng nghiệp</option></>}{review && <option value="MANAGER">Quản lý</option>}</select></Field>{chosenType !== "SELF" && <Field label="Người được đánh giá"><select className={fieldClass} value={revieweeId} onChange={e=>setRevieweeId(e.target.value)}><option value="">Chọn đồng nghiệp</option>{colleagues.data?.filter(p=>p.id!==session?.user.id).map(p=><option key={p.id} value={p.id}>{p.name} · {p.jobTitle}</option>)}</select></Field>}</div><Button className="mt-4" disabled={action.busy || !chosenCycle || (chosenType!=="SELF"&&!revieweeId)} onClick={()=>void start()}>Tạo bản nháp</Button>{open.length===0&&!cycles.isLoading&&<p className="mt-3 text-sm text-muted">Chưa có chu kỳ mở. HR có thể phát hành mẫu và mở chu kỳ tại Mẫu & chu kỳ.</p>}</section>}
     {action.feedback}<Loading loading={ready&&list.isLoading} error={list.error||cycles.error||colleagues.error} retry={()=>list.refetch()} />
     <div className="flex flex-wrap gap-2">{(self || review)&&(["received","mine"] as const).filter(t=>self||t==="mine").map(t=><Button key={t} variant={activeTab===t?"primary":"secondary"} onClick={()=>setTab(t)}>{t==="mine"?"Tôi đã viết":"Đánh giá về tôi"}</Button>)}{review&&<Button variant={activeTab==="pending"?"primary":"secondary"} onClick={()=>setTab("pending")}>Chờ xét duyệt</Button>}</div>
     <div className="grid gap-4 md:grid-cols-2">{list.data?.map(row=><Link key={row.id} href={`/danh-gia/${row.id}`} className={`${panelClass} block transition-colors hover:border-primary`}><div className="flex items-center justify-between gap-3"><span className="text-xs font-semibold text-primary">{statusLabel[row.status]}</span><span className="text-sm font-bold">{row.totalScore===null?"Chưa chấm":`${row.totalScore}/10`}</span></div><h2 className="mt-3 text-lg font-bold">{row.revieweeName}</h2><p className="mt-2 text-sm text-muted">{statusLabel[row.type]} · Người viết: {row.reviewerName}</p><p className="mt-2 text-sm">{row.templateSnapshot.name}</p></Link>)}</div>{list.data?.length===0&&<p className={`${panelClass} text-muted`}>Chưa có lượt đánh giá trong mục này.</p>}</main>;
@@ -38,8 +44,9 @@ function AssessmentEditor({row,refresh}:{row:Assessment;refresh:()=>unknown}) {
   const {session}=useAuth(); const [answers,setAnswers]=useState(row.answers); const [mood,setMood]=useState(row.mood); const [highlights,setHighlights]=useState(row.highlights); const [comment,setComment]=useState(row.comment); const [reviewComment,setReviewComment]=useState(""); const action=useTalentAction(refresh);
   const writer=session?.user.id===row.reviewerId;
   const role=session?.user.role;
-  const hr=!!session?.user.permissions.includes("assessment:review")&&["HR","COMPANY_ADMIN","SUPER_ADMIN"].includes(role??"");
-  const approver=!!session?.user.permissions.includes("assessment:review")&&["BOD","COMPANY_ADMIN","SUPER_ADMIN"].includes(role??"")&&session?.user.id!==row.revieweeId;
+  const managementScope=role==="SUPER_ADMIN"||session?.user.companyId===row.companyId;
+  const hr=managementScope&&!!session?.user.permissions.includes("assessment:review")&&["HR","COMPANY_ADMIN","SUPER_ADMIN"].includes(role??"");
+  const approver=managementScope&&!!session?.user.permissions.includes("assessment:review")&&["BOD","COMPANY_ADMIN","SUPER_ADMIN"].includes(role??"")&&session?.user.id!==row.revieweeId;
   const editable=(writer&&["DRAFT","REJECTED"].includes(row.status))||(hr&&row.status==="SUBMITTED");
   const body={expectedVersion:row.version,answers,mood,highlights,comment};
   const setAnswer=(questionId:string,score:number,feedback?:string)=>setAnswers(previous=>{const found=previous.find(a=>a.questionId===questionId);return [...previous.filter(a=>a.questionId!==questionId),{questionId,score,comment:feedback??found?.comment??""}];});

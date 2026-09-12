@@ -12,12 +12,29 @@ PASS QC**: đợt này không thêm/chạy test suite và không gọi AI trực
 kết quả nhà cung cấp. Build, khởi động Docker, thao tác trình duyệt và AI với khóa được
 cấu hình là các bước cần được ghi nhận riêng theo bản chạy thực tế.
 
-Checkpoint local **2026-09-12**: Docker build backend/frontend thành công (Next production
-build gồm TypeScript); `qc.sh up` đã chạy migration tới `0015_rich_profile_import`, seed
+Checkpoint cuối local **2026-09-12**, nguồn master chốt tại **`8f6a7fb`**: Docker build
+backend/frontend thành công (Next production build gồm TypeScript); `qc.sh up` đã
+chạy migration tới `0016_company_memberships`, seed
 thành công và cả frontend/backend/db/ClamAV đều healthy. Kiểm tra trạng thái database
 ghi nhận 9 accounts, 18 assessments, 8 HR requests, 12 goals, 1 AI connection đã mã hóa.
 Kết nối Madison được nhập từ file cục bộ đã được người dùng chỉ định; không in token
 và chưa gọi provider. Các luồng form/approval/upload/AI chờ tester thao tác, không gắn PASS.
+Database có 8 membership công ty chính; seed không tự mở quyền chéo công ty.
+
+### Phạm vi gộp Git
+
+Toàn bộ HEAD của 9 worktree nguồn đã nằm trong lịch sử nhánh QC: root `af522f2`,
+appearance `a407f92`, assessment-builder/people-search `5d034e4`, core-profile
+`2c75a37`, core-profile-ui `6590f43`, frontend `48afb1b`, integration `6e1eafd`,
+profile-resources `c6dc00e`. Các merge `ae40ef6`, `1eda6fb`, `024b472` hòa giải lịch
+sử nguồn đã được tiếp nhận/cải tiến trước đó, giữ nguyên tree runtime v2 mới hơn.
+Merge `18f1d24` tiếp nhận master `8f6a7fb`; delta nghiệp vụ được port sang FastAPI,
+không chuyển runtime trở lại NestJS/MUI.
+
+Các file WIP và trạng thái Git của 9 worktree nguồn đã đối chiếu với snapshot, không
+bị thay đổi. Worktree cũ, stash và prototype vẫn giữ để khôi phục; không phải mọi file
+nháp đều được chạy trong v2. Nhánh remote `feature/user` mới hơn nhưng chưa nhập master
+không thuộc mốc bàn giao này. Không xóa worktree và không tự push bản runtime cuối.
 
 Nguồn nghiệp vụ đối chiếu là `origin/master:backend/src/modules/assessments`,
 `career-passport`, `job-requirements`, Prisma schema và các trang frontend tương ứng.
@@ -170,3 +187,43 @@ chưa kết nối; các luồng lưu tay vẫn sử dụng được.
 Khi kiểm tra thủ công, ghi lại commit/build đang chạy, tài khoản/role, công ty, đường dẫn,
 bước thao tác, kết quả thực tế và lỗi nếu có. Tách lỗi build/migration, lỗi nghiệp vụ và lỗi
 provider bên ngoài. Không ghi mật khẩu, token chia sẻ hay dữ liệu thật vào báo cáo.
+
+## Delta talent theo source `8f6a7fb`: membership nhiều công ty
+
+- `/danh-gia`, `/cong-ty/tieu-chi`, `/job-requirements`, `/ho-chieu` có chọn công ty.
+  Tài khoản thường lấy danh sách từ `/company-memberships/mine`; Super Admin chọn
+  trong danh sách công ty được quản trị. API kiểm membership còn hiệu lực và công ty
+  hoạt động tại mỗi thao tác, không thay `User.company_id` hay chủ sở hữu employment.
+- Cross assessment: reviewer có thể là thành viên bổ sung; người được đánh giá vẫn
+  thuộc công ty chính của chu kỳ. SELF chỉ có ở công ty chính, PEER/MANAGER theo quyền
+  và công ty đang chọn. Đổi công ty làm mới form/target, không mang nháp UI sang tenant khác.
+- HR quản lý mẫu/sửa phiếu đã gửi và BOD phê duyệt vẫn có phạm vi công ty chính
+  (giữ quyền COMPANY_ADMIN/SUPER_ADMIN hiện có của v2). Membership không tự cấp quyền
+  duyệt. Hàng chờ đánh giá đọc theo membership; chi tiết không phải phiếu mình tham gia
+  vẫn cần quyền quản lý ở công ty chính như nguồn.
+- Job requirements đọc/tạo/sửa/xóa/AI match theo membership công ty đã chọn và quyền
+  vai trò. Không đổi tenant của requirement đang tồn tại. AI không chạy khi đổi selector.
+- Passport giữ quy tắc owner, hierarchy và công ty chính. Chọn công ty membership khác
+  bị từ chối rõ ràng, không âm thầm trả hàng chờ của công ty chính. Share/thu hồi/export
+  và snapshot A4 vẫn giữ cơ chế đồng ý tường minh.
+- Sửa an toàn khác nguồn: source mới mở createAssessment theo membership nhưng
+  `getTemplate` nội bộ vẫn kiểm primary company, khiến flow cross assessment tự chặn.
+  V2 cho đọc mẫu nội bộ theo membership để flow chạy, không mở rộng quyền sửa mẫu/duyệt.
+  Giữ WORK/PERSONAL theo quyết định sản phẩm, không áp dụng việc source bỏ category.
+
+Delta này đã build Docker, migrate database tới `0016_company_memberships`, seed và
+khởi động healthy. Chưa QC trình duyệt hoặc gọi AI thật; build không phải PASS nghiệp vụ.
+
+### Quản trị và điều hướng bổ sung
+
+- `/cong-ty-cua-toi`: chọn membership và chuyển ngữ cảnh công ty; quản trị thêm/thu hồi
+  membership từ trang công ty. Không đổi công ty chính hay cấp thêm role chỉ vì membership.
+- `/vai-tro`: cấu hình quyền với `MANAGE_ROLES`; người được ủy quyền không cấp quyền
+  vượt quyền mình có. `/tai-khoan`: reset mật khẩu theo thứ bậc/công ty; thu hồi tất cả
+  phiên cũ của người bị reset. Tự đổi mật khẩu ở `/cai-dat` cần mật khẩu hiện tại.
+- `/nhan-su/{id}/ho-chieu`: hộ chiếu quản lý chỉ đọc theo quyền hồ sơ đầy đủ/công ty
+  chính, có employment và snapshot đã duyệt; không mở quyền xem chỉ bằng membership.
+- Assistant lưu công ty ngữ cảnh cùng hội thoại và kiểm lại membership khi truy cập;
+  roster ngữ cảnh vẫn lọc nhân sự thuộc công ty chính được chọn và role được quản lý.
+- Import hỗ trợ ngày thiếu độ chính xác với cảnh báo rõ ràng, sửa/xóa/sắp xếp mục đề
+  xuất; thay nguồn nhập phải xác nhận lại trước khi áp dụng.

@@ -43,6 +43,12 @@ Provider selection: explicit requested provider, otherwise first saved connectio
 
 Keep encryption secret stable across container rebuilds. Rotating the encryption/JWT secret used for encryption requires re-entering stored provider keys. No decrypted secret is returned or included in error messages. HTTP redirects, credentials in URLs and non-public endpoint addresses are rejected. Missing configuration returns 503; provider failure/malformed output returns explicit 502. No fake success or synthetic AI response.
 
+## Frozen source update 8f6a7fb
+
+Development-plans service, Anthropic adapter and ai-reply diff from 8d5eee37 are formatting-only. Upstream category removals are overridden by the explicit WORK/PERSONAL requirement. There is no SSE/streaming addition in this source; requests remain non-streaming. Anthropic compatibility includes a 16,384-token output cap and OpenAI-shaped `choices` replies from compatible Messages gateways; JSON fences with surrounding prose are extracted without returning or logging source prompts.
+
+Talent roster authorizes the caller through explicit company membership, while candidates remain filtered by primary User.company_id, active employee role, and caller role hierarchy. Secondary candidate membership does not expose private primary-company records. Existing transcript detail and list revalidate caller membership so revocation does not leave prior roster content readable. Conversation contextCompanyId scopes /nhan-su/:id?companyId= links and preserves company scope; switching company starts a new conversation.
+
 ## Verification boundary
 
 User requested build-only delivery. Module compile/import performed; no regression tests, provider network calls or browser QA performed by this worker. QC should exercise the flows using seeded accounts and an operator-configured AI provider.

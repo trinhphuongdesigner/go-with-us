@@ -17,6 +17,7 @@ _ADMIN_PERMISSION_MAP: dict[AdminPermission, Permission] = {
     AdminPermission.EMPLOYEE_WRITE: Permission.PEOPLE_WRITE,
     AdminPermission.ASSESSMENT_REVIEW: Permission.ASSESSMENT_REVIEW,
     AdminPermission.PASSPORT_APPROVE: Permission.PASSPORT_APPROVE,
+    AdminPermission.MANAGE_ROLES: Permission.ROLES_MANAGE,
 }
 
 _SUPER_ADMIN_PERMISSIONS = frozenset(Permission) - _SELF_SERVICE_PERMISSIONS
@@ -30,6 +31,8 @@ def effective_permissions(user: User) -> set[Permission]:
         return set(_SUPER_ADMIN_PERMISSIONS)
 
     result = {Permission.DASHBOARD_READ}
+    if user.role == Role.COMPANY_ADMIN:
+        result.add(Permission.ROLES_MANAGE)
     if is_employee_role(user.role):
         result.update(_SELF_SERVICE_PERMISSIONS)
     if user.role not in ADMIN_ROLES:
@@ -44,3 +47,9 @@ def effective_permissions(user: User) -> set[Permission]:
         if mapped is not None:
             result.add(mapped)
     return result
+
+
+def can_delegate_admin_grants(user: User, grants: list[AdminPermission]) -> bool:
+    """A delegated role editor cannot create powers it does not itself possess."""
+    held = effective_permissions(user)
+    return all(_ADMIN_PERMISSION_MAP[grant] in held for grant in grants)

@@ -573,9 +573,6 @@ export async function listAvailableCompaniesLive(session: Session): Promise<Comp
 }
 
 export async function listAvailableCompanies(session: Session): Promise<CompanyOption[]> {
-  if (!session.user.permissions.includes("platform:manage")) {
-    throw new ApiError("Bạn không có quyền chọn doanh nghiệp.", 403);
-  }
   if (DEMO_MODE) {
     return [{ id: "00000000-0000-5000-8000-000000000101", name: "Acme Việt Nam" }];
   }

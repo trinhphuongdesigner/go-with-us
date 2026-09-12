@@ -34,7 +34,12 @@ All eight groups are reviewed independently: basicInfo, skills, projects, certif
 - ClamAV must be configured and return CLEAN before file extraction or any AI call. Scanner absence/failure is 503 with paste/URL alternative. OCR images require configured Tesseract.
 - Up to five explicitly entered HTTPS URLs. Requests resolve only public IPs, pin the connection to one validated address while verifying the original TLS hostname, validate every redirect (maximum three), reject credentials/private targets, bound response to 2 MB, and accept HTML/plain text only. No cookies or authenticated browsing. Login-only pages should be pasted/uploaded by the user.
 - At least 30 and at most 60,000 extracted characters per analysis. Provider errors return real failure; no fake proposals.
-- Dates not known precisely are not fabricated by the migration prompt. They remain absent with original text retained in a note.
+- Source partial dates follow upstream: YYYY → January 1; YYYY-MM → day 1. Visible precision notes require users to check these convention dates before selecting/applying. Absent dates stay absent; invalid dates are rejected, not silently corrected.
+- Source form supports removing individual files and confirmed reset of current text/URLs/files without deleting server proposals or applied profile records. Proposal groups and roadmap tasks can be reordered or removed before explicit apply; selection follows the item when reordered.
+
+## Frozen source update 8f6a7fb
+
+Reviewed diff from 8d5eee37. Profile-import category removals are intentionally not copied: the user explicitly requires WORK/PERSONAL. Other service changes in this domain are formatting-only. Source cleanup/reset is local draft cleanup, not removal of previously applied records.
 
 ## Build-only handoff
 

@@ -5,6 +5,7 @@ import hashlib
 import ipaddress
 import json
 import os
+import re
 import socket
 from urllib.parse import quote, urlsplit
 import httpx
@@ -99,7 +100,7 @@ async def send_chat(
         )
         payload = {
             "model": model,
-            "max_tokens": 4096,
+            "max_tokens": 16384,
             "system": system_prompt,
             "messages": messages,
         }
@@ -130,7 +131,10 @@ async def send_chat(
             response = await client.post(url, headers=headers, json=payload)
             response.raise_for_status()
             data = response.json()
-        if provider == "ANTHROPIC":
+        if provider == "ANTHROPIC" and isinstance(data.get("choices"), list):
+            # Madison accepts Messages requests but can return chat.completion JSON.
+            content = data["choices"][0]["message"]["content"]
+        elif provider == "ANTHROPIC":
             content = "\n".join(
                 item["text"] for item in data["content"] if item.get("type") == "text"
             )
@@ -152,8 +156,9 @@ async def send_chat(
 
 def json_reply(content: str) -> dict:
     clean = content.strip()
-    if clean.startswith("```"):
-        clean = clean.split("\n", 1)[-1].rsplit("```", 1)[0]
+    fence = re.search(r"```(?:json)?\s*([\s\S]*?)```", clean, re.IGNORECASE)
+    if fence:
+        clean = fence.group(1).strip()
     try:
         data = json.loads(clean)
         if not isinstance(data, dict):

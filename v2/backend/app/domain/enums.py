@@ -60,6 +60,7 @@ class AdminPermission(StrEnum):
     EMPLOYEE_WRITE = "EMPLOYEE_WRITE"
     ASSESSMENT_REVIEW = "ASSESSMENT_REVIEW"
     PASSPORT_APPROVE = "PASSPORT_APPROVE"
+    MANAGE_ROLES = "MANAGE_ROLES"
 
 
 class Permission(StrEnum):
@@ -74,3 +75,4 @@ class Permission(StrEnum):
     ASSESSMENT_REVIEW = "assessment:review"
     PASSPORT_APPROVE = "passport:approve"
     PLATFORM_MANAGE = "platform:manage"
+    ROLES_MANAGE = "roles:manage"

@@ -21,6 +21,7 @@ from app.career_ai import models as career_ai_models  # noqa: F401
 from app.talent_workflows import models as talent_models  # noqa: F401
 from app import organization  # noqa: F401
 from app.rich_profile_import import models as rich_import_models  # noqa: F401
+from app import company_memberships  # noqa: F401
 
 target_metadata = Base.metadata
 

@@ -331,6 +331,21 @@
         "title": "ActivityWrite",
         "type": "object"
       },
+      "AddMember": {
+        "additionalProperties": false,
+        "properties": {
+          "userId": {
+            "format": "uuid",
+            "title": "Userid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "userId"
+        ],
+        "title": "AddMember",
+        "type": "object"
+      },
       "AdminDetailsPatch": {
         "additionalProperties": false,
         "properties": {
@@ -475,7 +490,8 @@
           "EMPLOYEE_READ",
           "EMPLOYEE_WRITE",
           "ASSESSMENT_REVIEW",
-          "PASSPORT_APPROVE"
+          "PASSPORT_APPROVE",
+          "MANAGE_ROLES"
         ],
         "title": "AdminPermission",
         "type": "string"
@@ -2312,6 +2328,18 @@
             "title": "Category",
             "type": "string"
           },
+          "contextCompanyId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contextcompanyid"
+          },
           "createdAt": {
             "format": "date-time",
             "title": "Createdat",
@@ -2349,6 +2377,7 @@
         },
         "required": [
           "id",
+          "contextCompanyId",
           "title",
           "focus",
           "category",
@@ -2385,6 +2414,18 @@
             "title": "Category",
             "type": "string"
           },
+          "contextCompanyId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contextcompanyid"
+          },
           "createdAt": {
             "format": "date-time",
             "title": "Createdat",
@@ -2415,6 +2456,7 @@
         },
         "required": [
           "id",
+          "contextCompanyId",
           "title",
           "focus",
           "category",
@@ -4059,6 +4101,98 @@
         "title": "MeResponse",
         "type": "object"
       },
+      "MemberRead": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "jobTitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Jobtitle"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "userId": {
+            "format": "uuid",
+            "title": "Userid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "userId",
+          "name",
+          "email",
+          "role"
+        ],
+        "title": "MemberRead",
+        "type": "object"
+      },
+      "MembershipCompanyRead": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "industry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Industry"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "MembershipCompanyRead",
+        "type": "object"
+      },
+      "MembershipRead": {
+        "additionalProperties": false,
+        "properties": {
+          "companyId": {
+            "format": "uuid",
+            "title": "Companyid",
+            "type": "string"
+          },
+          "userId": {
+            "format": "uuid",
+            "title": "Userid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "companyId",
+          "userId"
+        ],
+        "title": "MembershipRead",
+        "type": "object"
+      },
       "MessageRead": {
         "additionalProperties": false,
         "properties": {
@@ -4123,6 +4257,59 @@
         "title": "MessageResponse",
         "type": "object"
       },
+      "PasswordReset": {
+        "additionalProperties": false,
+        "properties": {
+          "currentPassword": {
+            "anyOf": [
+              {
+                "format": "password",
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currentpassword"
+          },
+          "password": {
+            "format": "password",
+            "maxLength": 256,
+            "minLength": 12,
+            "title": "Password",
+            "type": "string",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "password"
+        ],
+        "title": "PasswordReset",
+        "type": "object"
+      },
+      "PasswordResetRead": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "sessionsRevoked": {
+            "default": true,
+            "title": "Sessionsrevoked",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "PasswordResetRead",
+        "type": "object"
+      },
       "PeopleSearchRequest": {
         "additionalProperties": false,
         "properties": {
@@ -4151,7 +4338,8 @@
           "people:write",
           "assessment:review",
           "passport:approve",
-          "platform:manage"
+          "platform:manage",
+          "roles:manage"
         ],
         "title": "Permission",
         "type": "string"
@@ -7125,7 +7313,7 @@
             "items": {
               "$ref": "#/components/schemas/AdminPermission"
             },
-            "maxItems": 6,
+            "maxItems": 7,
             "title": "Permissions",
             "type": "array"
           }
@@ -10677,6 +10865,250 @@
         ]
       }
     },
+    "/api/v2/company-memberships/mine": {
+      "get": {
+        "operationId": "mine_api_v2_company_memberships_mine_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MembershipCompanyRead"
+                  },
+                  "title": "Response Mine Api V2 Company Memberships Mine Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Mine",
+        "tags": [
+          "company-memberships"
+        ]
+      }
+    },
+    "/api/v2/company-memberships/{company_id}": {
+      "get": {
+        "operationId": "company_for_member_api_v2_company_memberships__company_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "company_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Company Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembershipCompanyRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Company For Member",
+        "tags": [
+          "company-memberships"
+        ]
+      }
+    },
+    "/api/v2/company-memberships/{company_id}/members": {
+      "get": {
+        "operationId": "members_api_v2_company_memberships__company_id__members_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "company_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Company Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MemberRead"
+                  },
+                  "title": "Response Members Api V2 Company Memberships  Company Id  Members Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Members",
+        "tags": [
+          "company-memberships"
+        ]
+      },
+      "post": {
+        "operationId": "add_member_api_v2_company_memberships__company_id__members_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "company_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Company Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddMember"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembershipRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Add Member",
+        "tags": [
+          "company-memberships"
+        ]
+      }
+    },
+    "/api/v2/company-memberships/{company_id}/members/{user_id}": {
+      "delete": {
+        "operationId": "remove_member_api_v2_company_memberships__company_id__members__user_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "company_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Company Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembershipRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Remove Member",
+        "tags": [
+          "company-memberships"
+        ]
+      }
+    },
     "/api/v2/competency-profile": {
       "get": {
         "description": "Returns 422 when any profile collection exceeds the supported 200 items.",
@@ -13785,6 +14217,64 @@
           }
         ],
         "summary": "Patch Account",
+        "tags": [
+          "organization"
+        ]
+      }
+    },
+    "/api/v2/organization/users/{user_id}/reset-password": {
+      "post": {
+        "operationId": "reset_password_api_v2_organization_users__user_id__reset_password_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordReset"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasswordResetRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Reset Password",
         "tags": [
           "organization"
         ]

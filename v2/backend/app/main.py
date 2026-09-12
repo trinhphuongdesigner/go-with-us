@@ -28,6 +28,7 @@ from app.profile_extensions.router import router as profile_extensions_router
 from app.career_ai.routes import router as career_ai_router
 from app.talent_workflows.router import router as talent_router
 from app.rich_profile_import.routes import router as rich_profile_import_router
+from app.company_memberships import router as company_memberships_router
 
 
 def configure_profile_import_ai_runtime(
@@ -120,6 +121,7 @@ app.include_router(profile_extensions_router, prefix="/api/v2")
 app.include_router(career_ai_router, prefix="/api/v2")
 app.include_router(talent_router, prefix="/api/v2")
 app.include_router(rich_profile_import_router, prefix="/api/v2")
+app.include_router(company_memberships_router, prefix="/api/v2")
 
 
 @app.get("/api/v2/health", tags=["system"])

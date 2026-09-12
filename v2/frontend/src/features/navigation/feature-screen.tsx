@@ -10,6 +10,7 @@ import { useAuth } from "@/features/auth/auth-provider";
 import { AppearanceSettings } from "@/features/appearance";
 import { CareerAiSettings } from "@/features/career-ai/settings";
 import { OrganizationWorkspace } from "@/features/organization/organization-workspace";
+import { PasswordReset } from "@/features/organization/company-memberships";
 import { PeopleListView } from "@/features/people/people-view";
 import { ProfileView, type CoreUiForcedState } from "@/features/profile/profile-view";
 import { RoadmapView } from "@/features/roadmap/roadmap-view";
@@ -41,7 +42,8 @@ export function FeatureScreen({ feature, detail, forceState, initialCompanyId }:
     );
   }
 
-  if (feature === "cai-dat") return <div className="space-y-8"><AppearanceSettings /><CareerAiSettings /></div>;
+  if (feature === "cai-dat") return <div className="space-y-8"><AppearanceSettings /><PasswordReset userId={session.user.id} self /><CareerAiSettings /></div>;
+  if (feature === "vai-tro") return <OrganizationWorkspace initialCompanyId={initialCompanyId} initialPanel="roles" />;
   if (feature === "cong-ty" || feature === "he-thong" || feature === "tai-khoan") return <OrganizationWorkspace initialCompanyId={initialCompanyId} />;
 
   if (feature === "lo-trinh") {

@@ -7,12 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Cycle, Field, fieldClass, Loading, panelClass, statusLabel, TalentHeader, Template, useTalentAction, useTalentQuery, useTalentScope } from "./shared";
 
 export function TalentTemplates() {
-  const {session,ready,companyId,scope,selector}=useTalentScope();
+  const scopeState = useTalentScope();
+  return <TalentTemplatesContent key={`${scopeState.session?.user.id}:${scopeState.companyId}`} scopeState={scopeState} />;
+}
+
+function TalentTemplatesContent({scopeState}: {scopeState: ReturnType<typeof useTalentScope>}) {
+  const {session,ready,companyId,scope,selector} = scopeState;
   const rows=useTalentQuery<Template[]>(`/assessments/templates?${scope}`,ready);
   const cycles=useTalentQuery<Cycle[]>(`/assessments/cycles?${scope}`,ready);
   const [editing,setEditing]=useState<Template|"new"|null>(null);
   const [cycleName,setCycleName]=useState(""); const [period,setPeriod]=useState(""); const [dueDate,setDueDate]=useState(""); const [templateId,setTemplateId]=useState("");
-  const canManage=!!session?.user.permissions.includes("assessment:review")&&["HR","COMPANY_ADMIN","SUPER_ADMIN"].includes(session.user.role);
+  const canManage=(session?.user.role==="SUPER_ADMIN"||session?.user.companyId===companyId)&&!!session?.user.permissions.includes("assessment:review")&&["HR","COMPANY_ADMIN","SUPER_ADMIN"].includes(session.user.role);
   const action=useTalentAction(async()=>{await rows.refetch();await cycles.refetch();});
   async function saveTemplate(value:AssessmentTemplate,publish:boolean) {
     const payload={companyId,name:value.name,description:value.description,groups:value.groups.map(g=>({id:g.id,name:g.name,description:g.description,weight:g.weight,scoreDimension:g.scoreDimension??"CONTRIBUTION",questions:g.questions.map(q=>({id:q.id,text:q.title,guidance:q.helpText,weight:q.weight,maxScore:q.maxScore??10}))}))};

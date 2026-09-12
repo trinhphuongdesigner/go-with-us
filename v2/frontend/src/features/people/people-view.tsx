@@ -29,20 +29,20 @@ export function PeopleListView({ forceState, initialCompanyId }: { forceState?: 
   const deferredSearch = useDeferredValue(search.trim());
   const [page, setPage] = useState(1);
   const [selectedCompanyOverride, setSelectedCompanyOverride] = useState(
-    session?.user.role === "SUPER_ADMIN" ? initialCompanyId ?? "" : session?.user.companyId ?? "",
+    initialCompanyId ?? session?.user.companyId ?? "",
   );
   const canRead = Boolean(session?.user.permissions.includes("people:read"));
   const isSuperAdmin = session?.user.role === "SUPER_ADMIN";
   const companiesQuery = useQuery({
     queryKey: ["company-options", session?.user.id],
     queryFn: () => listAvailableCompanies(session!),
-    enabled: canRead && isSuperAdmin,
+    enabled: canRead,
   });
   const requestedCompany = companiesQuery.data?.find((company) => company.id === selectedCompanyOverride);
-  const selectedCompany = isSuperAdmin ? requestedCompany ?? companiesQuery.data?.[0] : undefined;
-  const selectedCompanyId = isSuperAdmin ? selectedCompany?.id ?? "" : selectedCompanyOverride;
-  const companyName = isSuperAdmin ? selectedCompany?.name : session?.user.companyName;
-  const scopeReady = !isSuperAdmin || Boolean(selectedCompanyId);
+  const selectedCompany = requestedCompany ?? (selectedCompanyOverride ? undefined : companiesQuery.data?.[0]);
+  const selectedCompanyId = selectedCompany?.id ?? "";
+  const companyName = selectedCompany?.name;
+  const scopeReady = Boolean(selectedCompany);
   const peopleQuery = useQuery({
     queryKey: ["people", session?.user.id, selectedCompanyId || session?.user.companyId, deferredSearch, page],
     queryFn: () => listPeople(session!, {
@@ -59,9 +59,9 @@ export function PeopleListView({ forceState, initialCompanyId }: { forceState?: 
   const totalPages = Math.max(1, Math.ceil((peopleQuery.data?.total ?? 0) / (peopleQuery.data?.pageSize ?? 20)));
 
   if (!canRead) return <EmptyState title="Khu vực này không thuộc vai trò của bạn" description="Bạn cần quyền xem nhân sự của công ty để mở danh sách này." />;
-  if (isSuperAdmin && companiesQuery.isPending) return <LoadingState label="Đang tải danh sách doanh nghiệp" />;
-  if (isSuperAdmin && companiesQuery.isError) return <ErrorState title="Chưa thể tải danh sách doanh nghiệp" description="Hãy thử lại trước khi mở dữ liệu nhân sự." onRetry={() => void companiesQuery.refetch()} />;
-  if (isSuperAdmin && companiesQuery.data?.length === 0) return <EmptyState title="Chưa có doanh nghiệp hoạt động" description="Danh sách nhân sự sẽ sẵn sàng sau khi có doanh nghiệp hoạt động." />;
+  if (companiesQuery.isPending) return <LoadingState label="Đang tải danh sách doanh nghiệp" />;
+  if (companiesQuery.isError) return <ErrorState title="Chưa thể tải danh sách doanh nghiệp" description="Hãy thử lại trước khi mở dữ liệu nhân sự." onRetry={() => void companiesQuery.refetch()} />;
+  if (!scopeReady) return <EmptyState title="Công ty không khả dụng" description="Chọn lại từ Công ty của tôi. Bạn có thể không còn tư cách thành viên ở công ty đang mở." />;
 
   if (forceState === "error") {
     const retryPath = isSuperAdmin && selectedCompanyId ? `/nhan-su?companyId=${encodeURIComponent(selectedCompanyId)}` : "/nhan-su";
@@ -243,6 +243,7 @@ export function PeopleDetailView({ employeeId, forceState, companyId }: { employ
         </CardContent>
       </Card>
       <ProfileSections profile={person} />
+      <Button asChild variant="secondary"><Link href={`/nhan-su/${encodeURIComponent(employeeId)}/ho-chieu?companyId=${encodeURIComponent(effectiveCompanyId)}`}>Xem hộ chiếu nghề nghiệp</Link></Button>
       <ProfileExtensionsPanel userId={employeeId} />
       <EmploymentsPanel userId={employeeId} canManage={Boolean(session?.user.permissions.includes("people:write"))} />
       <p className="flex items-center gap-2 text-xs leading-5 text-muted"><UsersRound size={15} aria-hidden="true" /> Chỉ hiển thị thông tin nghề nghiệp cần thiết trong phạm vi công ty.</p>

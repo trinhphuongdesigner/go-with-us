@@ -578,6 +578,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/company-memberships/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mine */
+        get: operations["mine_api_v2_company_memberships_mine_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/company-memberships/{company_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Company For Member */
+        get: operations["company_for_member_api_v2_company_memberships__company_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/company-memberships/{company_id}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Members */
+        get: operations["members_api_v2_company_memberships__company_id__members_get"];
+        put?: never;
+        /** Add Member */
+        post: operations["add_member_api_v2_company_memberships__company_id__members_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/company-memberships/{company_id}/members/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove Member */
+        delete: operations["remove_member_api_v2_company_memberships__company_id__members__user_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/competency-profile": {
         parameters: {
             query?: never;
@@ -1192,6 +1261,23 @@ export interface paths {
         patch: operations["patch_account_api_v2_organization_users__user_id__patch"];
         trace?: never;
     };
+    "/api/v2/organization/users/{user_id}/reset-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reset Password */
+        post: operations["reset_password_api_v2_organization_users__user_id__reset_password_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/passport/{token}": {
         parameters: {
             query?: never;
@@ -1735,6 +1821,14 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** AddMember */
+        AddMember: {
+            /**
+             * Userid
+             * Format: uuid
+             */
+            userId: string;
+        };
         /** AdminDetailsPatch */
         AdminDetailsPatch: {
             /** Attitudescore */
@@ -1764,7 +1858,7 @@ export interface components {
          * AdminPermission
          * @enum {string}
          */
-        AdminPermission: "COMPANY_READ" | "COMPANY_WRITE" | "EMPLOYEE_READ" | "EMPLOYEE_WRITE" | "ASSESSMENT_REVIEW" | "PASSPORT_APPROVE";
+        AdminPermission: "COMPANY_READ" | "COMPANY_WRITE" | "EMPLOYEE_READ" | "EMPLOYEE_WRITE" | "ASSESSMENT_REVIEW" | "PASSPORT_APPROVE" | "MANAGE_ROLES";
         /**
          * AiStatus
          * @enum {string}
@@ -2365,6 +2459,8 @@ export interface components {
              * @enum {string}
              */
             category: "WORK" | "PERSONAL";
+            /** Contextcompanyid */
+            contextCompanyId: string | null;
             /**
              * Createdat
              * Format: date-time
@@ -2401,6 +2497,8 @@ export interface components {
              * @enum {string}
              */
             category: "WORK" | "PERSONAL";
+            /** Contextcompanyid */
+            contextCompanyId: string | null;
             /**
              * Createdat
              * Format: date-time
@@ -2979,6 +3077,46 @@ export interface components {
         MeResponse: {
             user: components["schemas"]["SessionUserRead"];
         };
+        /** MemberRead */
+        MemberRead: {
+            /** Email */
+            email: string;
+            /** Jobtitle */
+            jobTitle?: string | null;
+            /** Name */
+            name: string;
+            role: components["schemas"]["Role"];
+            /**
+             * Userid
+             * Format: uuid
+             */
+            userId: string;
+        };
+        /** MembershipCompanyRead */
+        MembershipCompanyRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Industry */
+            industry?: string | null;
+            /** Name */
+            name: string;
+        };
+        /** MembershipRead */
+        MembershipRead: {
+            /**
+             * Companyid
+             * Format: uuid
+             */
+            companyId: string;
+            /**
+             * Userid
+             * Format: uuid
+             */
+            userId: string;
+        };
         /** MessageRead */
         MessageRead: {
             /** Content */
@@ -3004,6 +3142,29 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** PasswordReset */
+        PasswordReset: {
+            /** Currentpassword */
+            currentPassword?: string | null;
+            /**
+             * Password
+             * Format: password
+             */
+            password: string;
+        };
+        /** PasswordResetRead */
+        PasswordResetRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Sessionsrevoked
+             * @default true
+             */
+            sessionsRevoked: boolean;
+        };
         /** PeopleSearchRequest */
         PeopleSearchRequest: {
             /** Query */
@@ -3013,7 +3174,7 @@ export interface components {
          * Permission
          * @enum {string}
          */
-        Permission: "dashboard:read" | "profile:self" | "roadmap:self" | "assessment:self" | "company:read" | "company:manage" | "people:read" | "people:write" | "assessment:review" | "passport:approve" | "platform:manage";
+        Permission: "dashboard:read" | "profile:self" | "roadmap:self" | "assessment:self" | "company:read" | "company:manage" | "people:read" | "people:write" | "assessment:review" | "passport:approve" | "platform:manage" | "roles:manage";
         /** PlanProposal */
         PlanProposal: {
             /** Planmd */
@@ -5894,6 +6055,155 @@ export interface operations {
             };
         };
     };
+    mine_api_v2_company_memberships_mine_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipCompanyRead"][];
+                };
+            };
+        };
+    };
+    company_for_member_api_v2_company_memberships__company_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipCompanyRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    members_api_v2_company_memberships__company_id__members_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_member_api_v2_company_memberships__company_id__members_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddMember"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_member_api_v2_company_memberships__company_id__members__user_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: string;
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_competency_profile_api_v2_competency_profile_get: {
         parameters: {
             query?: {
@@ -7747,6 +8057,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AccountRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_password_api_v2_organization_users__user_id__reset_password_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordReset"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasswordResetRead"];
                 };
             };
             /** @description Validation Error */

@@ -140,7 +140,7 @@ function UserCard({ compact = false }: { compact?: boolean }) {
 function CompanyScopeHeading({ name, compact = false, onSelect }: { name: string; compact?: boolean; onSelect?: () => void }) {
   return (
     <div className="mb-4 border-b border-border pb-4">
-      <Link href="/cong-ty" prefetch={false} onClick={onSelect} title="Tất cả công ty" aria-label="Tất cả công ty" className={cn("flex min-h-11 items-center gap-2 rounded-xl text-sm font-semibold text-primary hover:bg-background", compact ? "justify-center" : "px-3")}>
+      <Link href="/cong-ty-cua-toi" prefetch={false} onClick={onSelect} title="Tất cả công ty" aria-label="Tất cả công ty" className={cn("flex min-h-11 items-center gap-2 rounded-xl text-sm font-semibold text-primary hover:bg-background", compact ? "justify-center" : "px-3")}>
         <ArrowLeft size={18} aria-hidden="true" />{compact ? null : "Tất cả công ty"}
       </Link>
       {compact ? null : <p className="mt-2 truncate px-3 text-sm font-bold text-ink" title={name}>{name}</p>}
@@ -207,13 +207,13 @@ function AppShellContent({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const inCompanyArea = ["/cong-ty", "/nhan-su", "/danh-gia", "/ho-chieu", "/job-requirements"].some((area) => pathname === area || pathname.startsWith(`${area}/`));
+  const inCompanyArea = ["/cong-ty", "/cong-ty-cua-toi", "/vai-tro", "/tai-khoan", "/nhan-su", "/danh-gia", "/ho-chieu", "/job-requirements"].some((area) => pathname === area || pathname.startsWith(`${area}/`));
   const isSuperAdmin = session?.user.role === "SUPER_ADMIN";
-  const companyScopeId = isSuperAdmin && inCompanyArea ? searchParams.get("companyId") : null;
+  const companyScopeId = inCompanyArea ? searchParams.get("companyId") : null;
   const companiesQuery = useQuery({
     queryKey: ["company-options", session?.user.id],
     queryFn: () => listAvailableCompanies(session!),
-    enabled: Boolean(session && isSuperAdmin && inCompanyArea),
+    enabled: Boolean(session && inCompanyArea),
   });
   const scopedCompany = companiesQuery.data?.find((company) => company.id === companyScopeId);
   const companyScopeName = companyScopeId ? scopedCompany?.name ?? (companiesQuery.isPending ? "Đang tải công ty…" : "Công ty không khả dụng") : undefined;

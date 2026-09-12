@@ -19,7 +19,8 @@ from app.domain.models import (
 )
 from app.domain.roadmap_schemas import RoadmapCategory
 from app.security.permissions import effective_permissions
-from app.security.roles import is_employee_role
+from app.security.roles import get_manageable_roles, is_employee_role
+from app.company_memberships import resolve_company_scope
 from app.career_ai.models import (
     AiConnection,
     AssistantConversation,
@@ -332,6 +333,8 @@ async def get_conversation(db, actor: User, conversation_id: uuid.UUID):
         raise HTTPException(404, "Không tìm thấy cuộc hội thoại")
     if row.uses_roster and Permission.PEOPLE_READ not in effective_permissions(actor):
         raise HTTPException(403, "Bạn không còn quyền xem nội dung nhân sự của hội thoại này")
+    if row.uses_roster:
+        await resolve_company_scope(db, actor, row.context_company_id)
     return row
 
 
@@ -340,13 +343,24 @@ async def conversations(db: DbSession, actor: CurrentUser):
     query = owned(AssistantConversation, actor)
     if Permission.PEOPLE_READ not in effective_permissions(actor):
         query = query.where(AssistantConversation.uses_roster.is_(False))
-    return (
+    rows = (
         await db.scalars(
             query.order_by(
                 AssistantConversation.pinned.desc(), AssistantConversation.updated_at.desc()
             )
         )
     ).all()
+    visible = []
+    for row in rows:
+        if row.uses_roster:
+            try:
+                await resolve_company_scope(db, actor, row.context_company_id)
+            except HTTPException as error:
+                if error.status_code in (400, 403, 404):
+                    continue
+                raise
+        visible.append(row)
+    return visible
 
 
 @router.get("/assistant/conversations/{conversation_id}", response_model=ConversationDetail)
@@ -401,10 +415,8 @@ async def ask_assistant(payload: AssistantQuery, db: DbSession, actor: CurrentUs
         raise HTTPException(403, "Tài khoản này không có lộ trình cá nhân")
     known = {}
     if focus == "GENERAL" and Permission.PEOPLE_READ in permissions:
-        company_id = (
-            (conversation.context_company_id if conversation else payload.company_id)
-            if actor.role == Role.SUPER_ADMIN
-            else actor.company_id
+        company_id = await resolve_company_scope(
+            db, actor, conversation.context_company_id if conversation else payload.company_id
         )
         if conversation and payload.company_id is not None and payload.company_id != company_id:
             raise HTTPException(409, "Hãy tạo hội thoại mới khi đổi doanh nghiệp")
@@ -417,6 +429,7 @@ async def ask_assistant(payload: AssistantQuery, db: DbSession, actor: CurrentUs
                     User.company_id == company_id,
                     User.is_active.is_(True),
                     User.role.in_([Role.EMPLOYEE, Role.HR, Role.BOD]),
+                    User.role.in_(get_manageable_roles(actor.role)),
                 )
                 .limit(80)
             )
@@ -493,8 +506,8 @@ async def ask_assistant(payload: AssistantQuery, db: DbSession, actor: CurrentUs
         conversation = AssistantConversation(
             owner_user_id=actor.id,
             company_id=actor.company_id,
-            context_company_id=payload.company_id
-            if actor.role == Role.SUPER_ADMIN
+            context_company_id=company_id
+            if focus == "GENERAL" and Permission.PEOPLE_READ in permissions
             else actor.company_id,
             uses_roster=focus == "GENERAL" and Permission.PEOPLE_READ in permissions,
             title=payload.question[:100],

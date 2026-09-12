@@ -25,7 +25,8 @@ export type Permission =
   | "company:manage"
   | "assessment:review"
   | "passport:approve"
-  | "platform:manage";
+  | "platform:manage"
+  | "roles:manage";
 
 export interface SessionUser {
   id: string;

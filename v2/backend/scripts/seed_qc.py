@@ -18,6 +18,7 @@ from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import Settings, get_settings
+from app.company_memberships import CompanyMembership
 from app.domain.enums import AdminPermission, EmploymentStatus, ProfileSourceType, Role
 from app.domain.models import Company, EmployeeSkill, Employment, Experience, Skill, User
 from app.domain.roadmap_models import (
@@ -131,6 +132,11 @@ async def ensure_user(
     )
     session.add(user)
     await session.flush()
+    # Seed only newly created personas. Existing memberships may have been
+    # intentionally removed by QC and must not be silently recreated on rerun.
+    if company_id is not None:
+        session.add(CompanyMembership(user_id=user.id, company_id=company_id))
+        await session.flush()
     return user
 
 

@@ -7,6 +7,6 @@ export type Goal = GoalDraft & { id: string; roadmapId: string | null; createdAt
 export type Plan = { id: string; category: RoadmapCategory; version: number; content: string; summary: string | null; aiGenerated: boolean; createdAt: string };
 // Proposals describe content; provenance is supplied only at the explicit save boundary.
 export type Proposal = Omit<RoadmapSave, "clientRequestId" | "aiSuggested">;
-export type Conversation = { id: string; title: string; focus: "GENERAL" | "ROADMAP"; category: RoadmapCategory; pinned: boolean; updatedAt: string };
+export type Conversation = { id: string; contextCompanyId: string | null; title: string; focus: "GENERAL" | "ROADMAP"; category: RoadmapCategory; pinned: boolean; updatedAt: string };
 export type Message = { id: string; role: string; content: string; referencedUserIds: string[]; proposalData: Proposal | null; createdAt: string };
 export const careerRequest = <T,>(token: string, path: string, method = "GET", body?: unknown) => apiRequest<T>(path, { method, ...(body === undefined ? {} : { body: JSON.stringify(body) }) }, token);

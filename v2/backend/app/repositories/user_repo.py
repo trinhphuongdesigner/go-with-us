@@ -16,6 +16,15 @@ class UserRepository(BaseRepository[User]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session, User)
 
+    async def add(self, entity: User) -> User:
+        from app.company_memberships import CompanyMembership
+
+        user = await super().add(entity)
+        if user.company_id is not None:
+            self.session.add(CompanyMembership(user_id=user.id, company_id=user.company_id))
+            await self.session.flush()
+        return user
+
     async def get_by_id(self, user_id: uuid.UUID) -> User | None:
         result = await self.session.execute(
             select(User).options(selectinload(User.company)).where(User.id == user_id)

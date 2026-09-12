@@ -12,14 +12,25 @@ export const panelClass = "rounded-2xl border border-border bg-surface p-5 shado
 export function Field({ label, children }: { label: string; children: ReactNode }) { return <label className="grid gap-2 text-sm font-semibold text-ink">{label}{children}</label>; }
 export function Notice({ error }: { error: unknown }) { return error ? <p role="alert" className="rounded-xl border border-danger/30 bg-danger-soft p-3 text-sm text-danger">{error instanceof Error ? error.message : String(error)}</p> : null; }
 export function TalentHeader({ title, description }: { title: string; description: string }) { return <header className="space-y-3"><p className="text-xs font-semibold uppercase tracking-[.18em] text-primary">CareerMate · Phát triển bền vững</p><h1 className="text-3xl font-bold text-ink">{title}</h1><p className="max-w-3xl text-sm leading-6 text-muted">{description}</p><nav className="flex flex-wrap gap-2 text-sm"><Link className="rounded-lg border border-border px-3 py-2" href="/danh-gia">Đánh giá</Link><Link className="rounded-lg border border-border px-3 py-2" href="/cong-ty/tieu-chi">Mẫu & chu kỳ</Link><Link className="rounded-lg border border-border px-3 py-2" href="/ho-chieu">Hộ chiếu</Link><Link className="rounded-lg border border-border px-3 py-2" href="/job-requirements">Nhu cầu nhân sự</Link></nav></header>; }
+type TalentCompany = { id: string; name: string };
+
 export function useTalentScope() {
   const { session } = useAuth();
-  const [selected, setSelected] = useState("");
+  const [selected, setSelected] = useState<string | null>(null);
   const isSuper = session?.user.role === "SUPER_ADMIN";
-  const companies = useQuery({ queryKey: ["talent-companies", session?.accessToken], queryFn: () => listAvailableCompaniesLive(session!), enabled: !!session && isSuper });
-  const companyId = isSuper ? selected : session?.user.companyId ?? "";
+  const companies = useQuery<TalentCompany[]>({
+    queryKey: ["talent-companies", session?.accessToken, isSuper],
+    queryFn: () => isSuper
+      ? listAvailableCompaniesLive(session!)
+      : apiRequest<TalentCompany[]>("/company-memberships/mine", undefined, session?.accessToken),
+    enabled: !!session,
+  });
+  const available = companies.data ?? [];
+  // An explicit selection that was revoked must not fall back to a different tenant.
+  const preferred = selected ?? (!isSuper ? session?.user.companyId ?? "" : "");
+  const companyId = !companies.isError && available.some(company => company.id === preferred) ? preferred : "";
   const scope = companyId ? `companyId=${encodeURIComponent(companyId)}` : "";
-  const selector = isSuper ? <div className="max-w-md space-y-2"><Field label="Doanh nghiệp"><select className={fieldClass} value={selected} onChange={(event) => setSelected(event.target.value)}><option value="">Chọn doanh nghiệp</option>{companies.data?.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}</select></Field><Notice error={companies.error} /></div> : null;
+  const selector = <div className="max-w-md space-y-2"><Field label="Doanh nghiệp đang xem"><select className={fieldClass} value={companyId} disabled={companies.isLoading} onChange={(event) => setSelected(event.target.value)}><option value="">Chọn doanh nghiệp</option>{available.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}</select></Field><p className="text-xs text-muted">Lựa chọn này không chuyển công ty chính hoặc quyền xét duyệt của tài khoản.</p><Notice error={companies.error} />{!companies.isLoading && !companies.isError && available.length === 0 && <p role="status" className="text-sm text-muted">Chưa có công ty đang hoạt động mà bạn được truy cập.</p>}</div>;
   return { session, companyId, scope, ready: !!session && !!companyId, selector };
 }
 export function useTalentQuery<T>(path: string, enabled = true) {

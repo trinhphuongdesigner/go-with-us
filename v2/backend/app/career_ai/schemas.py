@@ -96,6 +96,7 @@ class ConversationPatch(ApiModel):
 
 class ConversationRead(ApiModel):
     id: uuid.UUID
+    context_company_id: uuid.UUID | None
     title: str
     focus: str
     category: RoadmapCategory

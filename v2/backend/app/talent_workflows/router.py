@@ -57,6 +57,7 @@ from app.talent_workflows.service import (
     manage,
     permit,
     person,
+    primary_company,
     redact_text,
     scoped_row,
     score,
@@ -87,7 +88,7 @@ async def delete_template(
     expected_version: int = Query(ge=1, alias="expectedVersion"),
 ) -> Any:
     row = await scoped_row(db, AssessmentTemplate, identifier, actor, True)
-    manage(actor, row.company_id, "templates")
+    await manage(db, actor, row.company_id, "templates")
     version_check(row, expected_version)
     used = await db.scalar(
         select(AssessmentCycle.id).where(AssessmentCycle.template_id == row.id).limit(1)
@@ -114,7 +115,7 @@ async def commit(db: DbSession) -> None:
 async def templates(
     db: DbSession, actor: CurrentUser, company_id: uuid.UUID | None = Query(None, alias="companyId")
 ) -> Any:
-    scope = company_scope(actor, company_id)
+    scope = await company_scope(db, actor, company_id)
     if Permission.ASSESSMENT_SELF not in effective_permissions(actor):
         permit(actor, Permission.ASSESSMENT_REVIEW)
     return (
@@ -128,8 +129,8 @@ async def templates(
 
 @router.post("/assessments/templates", response_model=TemplateRead, status_code=201)
 async def create_template(payload: TemplateInput, db: DbSession, actor: CurrentUser) -> Any:
-    scope = company_scope(actor, payload.company_id)
-    manage(actor, scope, "templates")
+    scope = await company_scope(db, actor, payload.company_id)
+    await manage(db, actor, scope, "templates")
     if await db.get(Company, scope) is None:
         raise HTTPException(404, "Không tìm thấy doanh nghiệp")
     row = AssessmentTemplate(
@@ -149,7 +150,7 @@ async def edit_template(
     identifier: uuid.UUID, payload: TemplateEdit, db: DbSession, actor: CurrentUser
 ) -> Any:
     row = await scoped_row(db, AssessmentTemplate, identifier, actor, True)
-    manage(actor, row.company_id, "templates")
+    await manage(db, actor, row.company_id, "templates")
     version_check(row, payload.expected_version)
     if row.status == "ARCHIVED":
         raise HTTPException(409, "Phiên bản đã lưu trữ; mở phiên bản mới nhất để sửa")
@@ -179,7 +180,7 @@ async def template_action(
     actor: CurrentUser,
 ) -> Any:
     row = await scoped_row(db, AssessmentTemplate, identifier, actor, True)
-    manage(actor, row.company_id, "templates")
+    await manage(db, actor, row.company_id, "templates")
     version_check(row, payload.expected_version)
     if action == "publish" and row.status != "DRAFT":
         raise HTTPException(409, "Chỉ phát hành mẫu đang ở trạng thái nháp")
@@ -207,7 +208,7 @@ async def cycle_read(db: DbSession, row: AssessmentCycle) -> CycleRead:
 async def cycles(
     db: DbSession, actor: CurrentUser, company_id: uuid.UUID | None = Query(None, alias="companyId")
 ) -> Any:
-    scope = company_scope(actor, company_id)
+    scope = await company_scope(db, actor, company_id)
     from app.security.permissions import effective_permissions
 
     if Permission.ASSESSMENT_SELF not in effective_permissions(actor):
@@ -224,8 +225,8 @@ async def cycles(
 
 @router.post("/assessments/cycles", response_model=CycleRead, status_code=201)
 async def create_cycle(payload: CycleInput, db: DbSession, actor: CurrentUser) -> Any:
-    scope = company_scope(actor, payload.company_id)
-    manage(actor, scope, "templates")
+    scope = await company_scope(db, actor, payload.company_id)
+    await manage(db, actor, scope, "templates")
     template = await scoped_row(db, AssessmentTemplate, payload.template_id, actor, True)
     if template.company_id != scope or template.status != "ACTIVE":
         raise HTTPException(422, "Chọn mẫu đã phát hành của doanh nghiệp")
@@ -246,7 +247,7 @@ async def edit_cycle(
     identifier: uuid.UUID, payload: CyclePatch, db: DbSession, actor: CurrentUser
 ) -> Any:
     row = await scoped_row(db, AssessmentCycle, identifier, actor, True)
-    manage(actor, row.company_id, "templates")
+    await manage(db, actor, row.company_id, "templates")
     version_check(row, payload.expected_version)
     row.status, row.version = payload.status, row.version + 1
     await commit(db)
@@ -257,7 +258,7 @@ async def edit_cycle(
 async def colleagues(
     db: DbSession, actor: CurrentUser, company_id: uuid.UUID | None = Query(None, alias="companyId")
 ) -> Any:
-    scope = company_scope(actor, company_id)
+    scope = await company_scope(db, actor, company_id)
     from app.security.permissions import effective_permissions
 
     if Permission.ASSESSMENT_SELF not in effective_permissions(actor):
@@ -285,7 +286,7 @@ async def assessments(
     company_id: uuid.UUID | None = Query(None, alias="companyId"),
     user_id: uuid.UUID | None = Query(None, alias="userId"),
 ) -> Any:
-    tenant = company_scope(actor, company_id)
+    tenant = await company_scope(db, actor, company_id)
     query = select(Assessment).where(Assessment.company_id == tenant)
     if scope == "pending":
         permit(actor, Permission.ASSESSMENT_REVIEW)
@@ -354,6 +355,7 @@ async def create_assessment(payload: AssessmentInput, db: DbSession, actor: Curr
 async def get_assessment(identifier: uuid.UUID, db: DbSession, actor: CurrentUser) -> Any:
     row = await scoped_row(db, Assessment, identifier, actor)
     if actor.id not in {row.reviewee_id, row.reviewer_id}:
+        primary_company(actor, row.company_id)
         permit(actor, Permission.ASSESSMENT_REVIEW)
     else:
         permit(
@@ -380,7 +382,7 @@ async def edit_assessment(
     if row.status == "APPROVED" or (submitting and row.status == "SUBMITTED"):
         raise HTTPException(409, "Đánh giá không còn ở trạng thái có thể sửa")
     if row.status == "SUBMITTED":
-        manage(actor, row.company_id, "templates")
+        await manage(db, actor, row.company_id, "templates")
     elif actor.id != row.reviewer_id:
         raise HTTPException(404, "Không tìm thấy bản nháp")
     else:
@@ -419,7 +421,7 @@ async def review_assessment(
     actor: CurrentUser,
 ) -> Any:
     row = await scoped_row(db, Assessment, identifier, actor, True)
-    manage(actor, row.company_id, "approve")
+    await manage(db, actor, row.company_id, "approve")
     version_check(row, payload.expected_version)
     if row.status != "SUBMITTED":
         raise HTTPException(409, "Chỉ xét duyệt đánh giá đã gửi")
@@ -450,8 +452,26 @@ async def passport(
             .order_by(Employment.start_date.desc())
         )
     ).all()
+    approved_summaries = (
+        await db.scalars(
+            select(CareerSummary)
+            .where(
+                CareerSummary.owner_user_id == user.id,
+                CareerSummary.company_id == user.company_id,
+                CareerSummary.status == "APPROVED",
+            )
+            .order_by(CareerSummary.approved_at.desc())
+            .limit(100)
+        )
+    ).all()
     return {
         **context,
+        "person": {**context["person"], "companyId": str(user.company_id)},
+        # Authorized private read only: never expose drafts, share tokens or approval actions.
+        "approvedSummaries": [
+            {"id": str(row.id), "source": row.source, "snapshot": row.snapshot}
+            for row in approved_summaries
+        ],
         "employments": [
             {
                 "id": str(e.id),
@@ -518,8 +538,11 @@ async def summaries(
     pending: bool = False,
     company_id: uuid.UUID | None = Query(None, alias="companyId"),
 ) -> Any:
-    scope = company_scope(actor, company_id)
+    scope = await company_scope(db, actor, company_id)
     query = select(CareerSummary).where(CareerSummary.company_id == scope)
+    # Source passport authority remains primary-company based, unlike cross assessment.
+    # Never silently substitute the primary company for an explicitly selected company.
+    primary_company(actor, scope)
     if pending:
         permit(actor, Permission.PASSPORT_APPROVE)
         query = query.where(CareerSummary.status == "DRAFT")
@@ -613,7 +636,7 @@ async def trigger_summary(
     identifier: uuid.UUID, payload: VersionInput, db: DbSession, actor: CurrentUser
 ) -> Any:
     row = await scoped_row(db, CareerSummary, identifier, actor, True)
-    manage(actor, row.company_id, "passport")
+    await manage(db, actor, row.company_id, "passport")
     version_check(row, payload.expected_version)
     if row.status != "DRAFT" or row.generated_at or row.source != "ORGANIZATION_OFFBOARDING":
         raise HTTPException(409, "Tổng kết này đã tạo hoặc không phải yêu cầu tổng kết tổ chức")
@@ -675,7 +698,7 @@ async def edit_summary(
     if row.status != "DRAFT":
         raise HTTPException(409, "Bản đã duyệt không thể chỉnh sửa")
     if row.source == "ORGANIZATION_OFFBOARDING":
-        manage(actor, row.company_id, "narrative")
+        await manage(db, actor, row.company_id, "narrative")
         if row.generated_at is None:
             raise HTTPException(409, "Tạo tổng kết trước khi chỉnh sửa phần diễn giải")
     elif row.owner_user_id != actor.id:
@@ -692,7 +715,7 @@ async def approve_summary(
     identifier: uuid.UUID, payload: VersionInput, db: DbSession, actor: CurrentUser
 ) -> Any:
     row = await scoped_row(db, CareerSummary, identifier, actor, True)
-    manage(actor, row.company_id, "passport")
+    await manage(db, actor, row.company_id, "passport")
     version_check(row, payload.expected_version)
     if row.owner_user_id == actor.id:
         raise HTTPException(403, "Không tự phê duyệt hộ chiếu của mình")
@@ -716,6 +739,7 @@ async def approve_summary(
 @router.get("/career-passport/shares")
 async def shares(db: DbSession, actor: CurrentUser) -> Any:
     permit(actor, Permission.PROFILE_SELF)
+    await company_scope(db, actor, actor.company_id)
     rows = (
         await db.scalars(
             select(PassportShare)
@@ -816,7 +840,7 @@ async def public_passport(token: str, db: DbSession) -> Response:
 async def requirements(
     db: DbSession, actor: CurrentUser, company_id: uuid.UUID | None = Query(None, alias="companyId")
 ) -> Any:
-    scope = company_scope(actor, company_id)
+    scope = await company_scope(db, actor, company_id)
     permit(actor, Permission.PEOPLE_READ)
     return (
         await db.scalars(
@@ -829,8 +853,8 @@ async def requirements(
 
 @router.post("/job-requirements", response_model=RequirementRead, status_code=201)
 async def create_requirement(payload: RequirementInput, db: DbSession, actor: CurrentUser) -> Any:
-    scope = company_scope(actor, payload.company_id)
-    manage(actor, scope, "requirements")
+    scope = await company_scope(db, actor, payload.company_id)
+    await manage(db, actor, scope, "requirements")
     row = JobRequirement(
         company_id=scope,
         created_by_id=actor.id,
@@ -848,7 +872,7 @@ async def edit_requirement(
     identifier: uuid.UUID, payload: RequirementEdit, db: DbSession, actor: CurrentUser
 ) -> Any:
     row = await scoped_row(db, JobRequirement, identifier, actor, True)
-    manage(actor, row.company_id, "requirements")
+    await manage(db, actor, row.company_id, "requirements")
     version_check(row, payload.expected_version)
     if payload.company_id not in {None, row.company_id}:
         raise HTTPException(404, "Không tìm thấy doanh nghiệp")
@@ -871,7 +895,7 @@ async def delete_requirement(
     expected_version: int = Query(ge=1, alias="expectedVersion"),
 ) -> Any:
     row = await scoped_row(db, JobRequirement, identifier, actor, True)
-    manage(actor, row.company_id, "requirements")
+    await manage(db, actor, row.company_id, "requirements")
     version_check(row, expected_version)
     await db.delete(row)
     await commit(db)
@@ -881,7 +905,7 @@ async def delete_requirement(
 @router.post("/job-requirements/{identifier}/match")
 async def match_requirement(identifier: uuid.UUID, db: DbSession, actor: CurrentUser) -> Any:
     row = await scoped_row(db, JobRequirement, identifier, actor)
-    manage(actor, row.company_id, "requirements")
+    await manage(db, actor, row.company_id, "requirements")
     candidates = (
         await db.scalars(
             select(User)

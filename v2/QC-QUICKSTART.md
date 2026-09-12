@@ -8,6 +8,10 @@ cắt trước đó: [CONSOLIDATION.md](./CONSOLIDATION.md).
 Đợt này triển khai theo yêu cầu **build-only**: không thêm/chạy test suite mới, không
 thực hiện live AI calls, và chưa kết luận PASS QC cho các luồng được chuyển mới.
 
+Checkpoint **2026-09-12**: đã build và chạy Docker thành công, migration
+`0016_company_memberships`, seed thành công; web/API/PostgreSQL/ClamAV healthy.
+Nguồn master chốt tại `8f6a7fb`; bản runtime cuối ở nhánh QC local, chưa push.
+
 ## Khởi động
 
 Cần Docker Desktop đang chạy, Docker Compose v2 hỗ trợ `--wait`, Git và OpenSSL.
@@ -114,3 +118,36 @@ Nếu build/migration/seed lỗi, script dừng trước các bước sau. Giữ
 đọc lỗi và xử lý rồi chạy lại. Không chạy `docker compose config` nếu thiếu `--quiet`
 vì cấu hình mở rộng chứa secrets. Gói này chỉ dành cho dữ liệu QC tổng hợp ở local,
 không phải hướng dẫn triển khai production.
+
+## QC bổ sung: talent nhiều membership (`8f6a7fb`)
+
+Sau khi bản build mới đã chạy, dùng UI quản trị membership để thêm một tài khoản QC
+vào công ty thứ hai; seed không tự tạo membership chéo. Không chuyển công ty chính
+của tài khoản. Đây là checklist cần kiểm thủ công, chưa phải kết quả PASS:
+
+1. Tài khoản vừa được thêm → `/danh-gia` → chọn công ty thứ hai → chọn chu kỳ mở,
+   đồng nghiệp và PEER (hoặc MANAGER nếu có quyền) → lưu/gửi phiếu. Người nhận phải
+   thuộc công ty chính của chu kỳ; SELF chỉ xuất hiện ở công ty chính của người viết.
+2. BOD/HR có membership bổ sung không được duyệt/quản lý mẫu của công ty thứ hai;
+   dùng BOD/HR đúng công ty chính để hoàn tất chu kỳ. Quyền COMPANY_ADMIN/SUPER_ADMIN
+   hiện có của v2 vẫn được giữ. Đổi công ty phải làm mới form và danh sách.
+3. HR/BOD có quyền → `/job-requirements` → chọn membership thứ hai → CRUD nhu cầu;
+   AI match là bước tùy chọn riêng khi đã có provider, không tự gọi khi đổi công ty.
+4. `/ho-chieu` → chọn membership khác công ty chính: phải thấy thông báo giới hạn,
+   không có quyền xem/duyệt hộ chiếu của công ty đó chỉ nhờ membership.
+5. Quản trị thu hồi membership → thao tác mới vào công ty đó phải bị từ chối; tải
+   lại danh sách công ty để cập nhật selector. Không reset volume hoặc account để thử.
+
+Hộ chiếu approved/share/thu hồi/in A4 và WORK/PERSONAL vẫn giữ hợp đồng trước đó.
+
+## Đường vào chức năng quản trị mới
+
+- `/cong-ty-cua-toi`: chọn công ty theo membership; Company Admin của công ty hoặc
+  Super Admin quản lý danh sách thành viên tại trang công ty.
+- `/vai-tro`: phân quyền được ủy quyền; `/tai-khoan`: reset mật khẩu theo thứ bậc.
+  Reset thu hồi tất cả phiên cũ của tài khoản đích. Tự đổi tại `/cai-dat` cần mật khẩu
+  hiện tại và đăng nhập lại sau khi hoàn tất.
+- Mở nhân sự được phép xem → **Hộ chiếu**: dữ liệu/snapshot đã duyệt, chỉ đọc.
+  Membership bổ sung không tự cho phép mở hồ sơ riêng của nhân sự khác công ty chính.
+
+Các mục trên là phạm vi cần QC thủ công, không phải chứng nhận các thao tác đã PASS.

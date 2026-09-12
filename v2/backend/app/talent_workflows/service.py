@@ -9,11 +9,13 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.company_memberships import resolve_company_scope
 from app.domain.enums import Permission, Role
 from app.domain.models import Company, EmployeeSkill, Employment, Project, Skill, User
 from app.security.permissions import effective_permissions
-from app.talent_workflows.models import Assessment, AssessmentTemplate, CareerSummary
-from app.talent_workflows.schemas import AssessmentRead, SummaryRead, TemplateRead
+from app.security.roles import can_manage_role
+from app.talent_workflows.models import Assessment, CareerSummary
+from app.talent_workflows.schemas import AssessmentRead, SummaryRead
 
 
 def permit(actor: User, permission: Permission) -> None:
@@ -21,18 +23,24 @@ def permit(actor: User, permission: Permission) -> None:
         raise HTTPException(403, "Bạn không có quyền thực hiện thao tác này")
 
 
-def company_scope(actor: User, requested: uuid.UUID | None = None) -> uuid.UUID:
-    if actor.role == Role.SUPER_ADMIN:
-        if requested is None:
-            raise HTTPException(422, "Chọn doanh nghiệp để tiếp tục")
-        return requested
-    if actor.company_id is None or requested not in {None, actor.company_id}:
-        raise HTTPException(404, "Không tìm thấy doanh nghiệp")
-    return actor.company_id
+async def company_scope(
+    db: AsyncSession, actor: User, requested: uuid.UUID | None = None
+) -> uuid.UUID:
+    scope = await resolve_company_scope(db, actor, requested)
+    assert scope is not None  # This package always requires a concrete selected tenant.
+    return scope
 
 
-def manage(actor: User, company_id: uuid.UUID, action: str) -> None:
-    company_scope(actor, company_id)
+def primary_company(actor: User, company_id: uuid.UUID) -> None:
+    """Membership access does not grant another company's management authority."""
+    if actor.role != Role.SUPER_ADMIN and actor.company_id != company_id:
+        raise HTTPException(403, "Thao tác này chỉ dành cho công ty quản lý chính của bạn")
+
+
+async def manage(db: AsyncSession, actor: User, company_id: uuid.UUID, action: str) -> None:
+    await company_scope(db, actor, company_id)
+    if action != "requirements":
+        primary_company(actor, company_id)
     allowed = {
         "templates": (
             {Role.HR, Role.COMPANY_ADMIN, Role.SUPER_ADMIN},
@@ -61,13 +69,12 @@ async def scoped_row(
     db: AsyncSession, model: Any, identifier: uuid.UUID, actor: User, lock: bool = False
 ) -> Any:
     query = select(model).where(model.id == identifier)
-    if actor.role != Role.SUPER_ADMIN:
-        query = query.where(model.company_id == actor.company_id)
     if lock:
         query = query.with_for_update()
     row = await db.scalar(query)
     if row is None:
         raise HTTPException(404, "Không tìm thấy bản ghi")
+    await company_scope(db, actor, row.company_id)
     return row
 
 
@@ -75,8 +82,11 @@ async def person(db: AsyncSession, actor: User, identifier: uuid.UUID | None = N
     user = await db.get(User, identifier or actor.id)
     if user is None or user.company_id is None:
         raise HTTPException(404, "Không tìm thấy hồ sơ")
-    company_scope(actor, user.company_id)
+    await company_scope(db, actor, user.company_id)
     if user.id != actor.id:
+        primary_company(actor, user.company_id)
+        if not can_manage_role(actor.role, user.role):
+            raise HTTPException(403, "Không có quyền xem hồ sơ của vai trò này")
         permit(actor, Permission.PEOPLE_READ)
     else:
         permit(actor, Permission.PROFILE_SELF)

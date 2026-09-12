@@ -76,19 +76,24 @@ async def list_people(
     page: PageQuery = 1,
     page_size: PageSizeQuery = 20,
 ) -> RosterPageRead:
+    from app.company_memberships import resolve_company_scope
+    from app.repositories.user_repo import UserRepository
+    from app.security.roles import get_manageable_roles
+
     query = normalize("NFC", q).strip() if q is not None else None
     query = query or None
-    try:
-        users, total = await ProfileService(db).list_roster(
-            actor=actor,
-            requested_company_id=company_id,
-            query=query,
-            active=active,
-            page=page,
-            page_size=page_size,
-        )
-    except (RosterScopeRequired, RosterTenantDenied, RosterCompanyNotFound) as error:
-        raise_roster_error(error)
+    scope = await resolve_company_scope(db, actor, company_id)
+    roles = get_manageable_roles(actor.role)
+    repository = UserRepository(db)
+    total = await repository.count_roster(scope, query=query, active=active, roles=roles)
+    users = await repository.list_roster(
+        scope,
+        query=query,
+        active=active,
+        offset=(page - 1) * page_size,
+        limit=page_size,
+        roles=roles,
+    )
     return RosterPageRead(
         items=[roster_person(user) for user in users],
         total=total,

@@ -8,8 +8,13 @@ import {Field,fieldClass,Loading,panelClass,TalentHeader,useTalentAction,useTale
 
 type Requirement={id:string;companyId:string;title:string;description:string;requiredSkills:string[];status:"open"|"closed";version:number};
 type Matches={summary:string;matches:Array<{userId:string;name:string;jobTitle:string|null;matchScore:number;rationale:string}>};
-export function TalentRequirements(){
-  const {session,ready,scope,companyId,selector}=useTalentScope();
+export function TalentRequirements() {
+  const scopeState = useTalentScope();
+  return <TalentRequirementsContent key={`${scopeState.session?.user.id}:${scopeState.companyId}`} scopeState={scopeState} />;
+}
+
+function TalentRequirementsContent({scopeState}: {scopeState: ReturnType<typeof useTalentScope>}) {
+  const {session,ready,scope,companyId,selector} = scopeState;
   const allowed=!!session?.user.permissions.includes("people:read");const manage=!!session?.user.permissions.includes("people:write");
   const rows=useTalentQuery<Requirement[]>(`/job-requirements?${scope}`,ready&&allowed);const action=useTalentAction(()=>rows.refetch());
   const [editing,setEditing]=useState<Requirement|null>(null);const [title,setTitle]=useState("");const [description,setDescription]=useState("");const [skills,setSkills]=useState("");const [status,setStatus]=useState("open");const [removing,setRemoving]=useState<Requirement|null>(null);const [matches,setMatches]=useState<Record<string,Matches>>({});
