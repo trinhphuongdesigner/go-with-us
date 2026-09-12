@@ -4,17 +4,22 @@ import base64
 import hashlib
 import ipaddress
 import json
+import logging
 import os
 import re
 import socket
 from urllib.parse import quote, urlsplit
+
 import httpx
 from cryptography.fernet import Fernet, InvalidToken
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.config import get_settings
 from app.career_ai.models import AiConnection
+
+logger = logging.getLogger(__name__)
 
 PROVIDERS = ("ANTHROPIC", "OPENAI", "GEMINI")
 DEFAULTS = {
@@ -101,6 +106,7 @@ async def send_chat(
         payload = {
             "model": model,
             "max_tokens": 16384,
+            "stream": False,
             "system": system_prompt,
             "messages": messages,
         }
@@ -111,6 +117,7 @@ async def send_chat(
             "model": model,
             "messages": [{"role": "system", "content": system_prompt}, *messages],
             "max_tokens": 4096,
+            "stream": False,
         }
     else:
         url = base + "/models/" + quote(model, safe="-._") + ":generateContent"
@@ -147,7 +154,8 @@ async def send_chat(
         if not isinstance(content, str) or not content.strip():
             raise ValueError("empty")
         return {"content": content, "provider": provider}
-    except (httpx.HTTPError, KeyError, IndexError, TypeError, ValueError):
+    except (httpx.HTTPError, KeyError, IndexError, TypeError, ValueError) as _exc:
+        logger.warning("AI provider call failed: %s: %s", type(_exc).__name__, _exc)
         raise HTTPException(
             502,
             "Nhà cung cấp AI chưa trả lời hợp lệ. Không có dữ liệu nghiệp vụ nào được thay đổi.",

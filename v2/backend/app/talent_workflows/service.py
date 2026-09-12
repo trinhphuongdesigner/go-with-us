@@ -268,11 +268,17 @@ async def ai_json(db: AsyncSession, system_prompt: str, context: dict[str, Any])
     )
     try:
         content = str(result["content"]).strip()
-        if content.startswith("```"):
-            content = re.sub(r"^```(?:json)?\s*|\s*```$", "", content)
+        # Extract from code fence if present (```json ... ``` or ``` ... ```)
+        fence = re.search(r"```(?:json)?\s*([\s\S]*?)```", content, re.IGNORECASE)
+        if fence:
+            content = fence.group(1).strip()
+        elif content.startswith("```"):
+            # Fallback: strip leading/trailing fence markers
+            content = re.sub(r"^```(?:json)?\s*", "", content)
+            content = re.sub(r"\s*```\s*$", "", content)
         data = json.loads(content)
         if not isinstance(data, dict):
             raise ValueError("Expected object")
         return data
-    except (ValueError, KeyError, TypeError):
+    except (ValueError, KeyError, TypeError, json.JSONDecodeError):
         raise HTTPException(502, "AI trả về dữ liệu không hợp lệ; chưa lưu thay đổi") from None
