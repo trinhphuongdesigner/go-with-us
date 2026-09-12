@@ -17,7 +17,7 @@ const buttonVariants = cva(
       size: {
         default: "min-h-11 py-2.5",
         sm: "min-h-10 px-3 text-xs",
-        icon: "size-11 p-0",
+        icon: "size-11 shrink-0 p-0",
       },
     },
     defaultVariants: { variant: "primary", size: "default" },

@@ -7,11 +7,16 @@ import {
   parseDemoProfileImport,
 } from "@/lib/profile-import-demo";
 import type { DashboardSummary, Permission, Session, SessionUser } from "@/lib/types";
+import { getDemoOwnProfile, getDemoPerson, listDemoPeople, updateDemoOwnProfile } from "@/lib/profile-demo";
 import type { components } from "../../../contracts/generated/openapi";
 
 type ContractLoginResponse = components["schemas"]["LoginResponse"];
 type ContractMeResponse = components["schemas"]["MeResponse"];
 type ContractSessionUser = components["schemas"]["SessionUserRead"];
+type ContractProfileRead = components["schemas"]["ProfileRead"];
+type ContractRosterPage = components["schemas"]["RosterPageRead"];
+type ContractRosterPerson = components["schemas"]["RosterPersonDetailRead"];
+type ContractCompanyOptions = components["schemas"]["CompanyOptionListRead"];
 export type AiStatus = components["schemas"]["AiStatus"];
 export type ProfileApplyRead = components["schemas"]["ProfileApplyRead"];
 export type ProfileApplyRequest = components["schemas"]["ProfileApplyRequest"];
@@ -23,6 +28,125 @@ export type ProfileImportRead = components["schemas"]["ProfileImportRead"];
 export type ProfileImportStatus = components["schemas"]["ProfileImportStatus"];
 export type ProfileProposalItem = components["schemas"]["ProfileProposalItemRead"];
 export type ProfileConflict = components["schemas"]["ProfileConflictRead"];
+
+export type ProfileSourceType = "SELF" | "ADMIN" | "IMPORT";
+export type ProfileTimelineKind = "EXPERIENCE" | "PROJECT" | "CERTIFICATION" | "AWARD";
+
+export interface CoreProfile {
+  id: string;
+  name: string;
+  jobTitle: string;
+  initials: string;
+  companyName: string;
+  profileVersion: number;
+  updatedAt: string;
+  skills: Array<{ id: string; name: string; level: number; sourceType: ProfileSourceType }>;
+  experiences: Array<{ id: string; title: string; organization: string; startDate: string; endDate: string | null }>;
+  projects: Array<{ id: string; name: string; role: string; startDate: string; endDate: string | null }>;
+  certifications: Array<{ id: string; name: string; issuer: string; issuedAt: string }>;
+  awards: Array<{ id: string; name: string; issuer: string; issuedAt: string }>;
+  timeline: Array<{ id: string; kind: ProfileTimelineKind; title: string; subtitle: string; startDate: string; endDate: string | null; sourceType: ProfileSourceType }>;
+}
+
+export interface ProfileUpdateRequest {
+  name: string;
+  jobTitle: string | null;
+  profileVersion: number;
+}
+
+export interface ProfileUpdateConflict {
+  detail: string;
+  currentProfileVersion: number;
+}
+
+export interface PersonSummary {
+  id: string;
+  name: string;
+  jobTitle: string;
+  department: string;
+  initials: string;
+  skillCount: number | null;
+  profileVersion: number;
+  updatedAt: string;
+}
+
+export interface PeopleList { items: PersonSummary[]; total: number; page: number; pageSize: number }
+export interface PersonDetail extends CoreProfile { department: string }
+export interface CompanyOption { id: string; name: string }
+export interface PeopleQuery {
+  companyId?: string | null;
+  q?: string;
+  page?: number;
+  pageSize?: number;
+}
+export interface PeopleCompanyScope { companyId?: string | null; companyName?: string }
+
+function initialsFromName(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(-2)
+    .map((part) => Array.from(part)[0] ?? "")
+    .join("")
+    .toLocaleUpperCase("vi-VN");
+}
+
+export function adaptProfileRead(profile: ContractProfileRead): CoreProfile {
+  return {
+    id: profile.id,
+    name: profile.name,
+    jobTitle: profile.jobTitle ?? "",
+    initials: initialsFromName(profile.name),
+    companyName: profile.companyName ?? "Chưa thuộc doanh nghiệp",
+    profileVersion: profile.profileVersion,
+    updatedAt: profile.updatedAt,
+    skills: [],
+    experiences: [],
+    projects: [],
+    certifications: [],
+    awards: [],
+    timeline: [],
+  };
+}
+
+function adaptRosterSummary(person: components["schemas"]["RosterPersonRead"]): PersonSummary {
+  return {
+    id: person.id,
+    name: person.name,
+    jobTitle: person.jobTitle ?? "Chưa cập nhật chức danh",
+    department: "Chưa cập nhật",
+    initials: initialsFromName(person.name),
+    skillCount: null,
+    profileVersion: person.profileVersion,
+    updatedAt: person.updatedAt,
+  };
+}
+
+export function adaptRosterPage(page: ContractRosterPage): PeopleList {
+  return { items: page.items.map(adaptRosterSummary), total: page.total, page: page.page, pageSize: page.pageSize };
+}
+
+export function adaptRosterPerson(
+  person: ContractRosterPerson,
+  companyName: string,
+): PersonDetail {
+  return {
+    id: person.id,
+    name: person.name,
+    jobTitle: person.jobTitle ?? "",
+    initials: initialsFromName(person.name),
+    companyName,
+    department: "Chưa cập nhật",
+    profileVersion: person.profileVersion,
+    updatedAt: person.updatedAt,
+    skills: [],
+    experiences: [],
+    projects: [],
+    certifications: [],
+    awards: [],
+    timeline: [],
+  };
+}
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v2";
 export const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
@@ -45,12 +169,25 @@ export class ProfileConflictError extends ApiError<ProfileConflict> {
   }
 }
 
+export class ProfileUpdateConflictError extends ApiError<ProfileUpdateConflict> {
+  constructor(details: ProfileUpdateConflict) {
+    super(details.detail, 409, details);
+    this.name = "ProfileUpdateConflictError";
+  }
+}
+
 function isProfileConflict(value: unknown): value is ProfileConflict {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Record<string, unknown>;
   return typeof candidate.detail === "string"
     && (candidate.currentProfileVersion === undefined || candidate.currentProfileVersion === null || typeof candidate.currentProfileVersion === "number")
     && (candidate.currentProposalVersion === undefined || candidate.currentProposalVersion === null || typeof candidate.currentProposalVersion === "number");
+}
+
+function isProfileUpdateConflict(value: unknown): value is ProfileUpdateConflict {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Record<string, unknown>;
+  return typeof candidate.detail === "string" && typeof candidate.currentProfileVersion === "number";
 }
 
 const knownPermissions = new Set<Permission>([
@@ -206,6 +343,118 @@ export async function applyProfileImport(
     }
     throw error;
   }
+}
+
+export async function getOwnProfile(session: Session): Promise<CoreProfile> {
+  if (DEMO_MODE) return getDemoOwnProfile(session);
+  return adaptProfileRead(
+    await apiRequest<ContractProfileRead>("/profile/me", undefined, session.accessToken),
+  );
+}
+
+export async function updateOwnProfile(session: Session, request: ProfileUpdateRequest): Promise<CoreProfile> {
+  if (DEMO_MODE) {
+    try {
+      return updateDemoOwnProfile(session, request);
+    } catch (error) {
+      if (error && typeof error === "object" && "status" in error && error.status === 409 && "details" in error && isProfileUpdateConflict(error.details)) {
+        throw new ProfileUpdateConflictError(error.details);
+      }
+      throw error;
+    }
+  }
+  try {
+    const response = await apiRequest<ContractProfileRead>("/profile/me", {
+      method: "PATCH",
+      body: JSON.stringify(request),
+    }, session.accessToken);
+    return adaptProfileRead(response);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 409 && isProfileUpdateConflict(error.details)) {
+      throw new ProfileUpdateConflictError(error.details);
+    }
+    throw error;
+  }
+}
+
+function assertPeopleRead(session: Session) {
+  if (!session.user.permissions.includes("people:read")) {
+    throw new ApiError("Bạn không có quyền xem danh sách nhân sự.", 403);
+  }
+}
+
+function resolvePeopleCompanyId(session: Session, requestedCompanyId?: string | null) {
+  const companyId = requestedCompanyId ?? session.user.companyId;
+  if (!companyId) {
+    throw new ApiError("Hãy chọn doanh nghiệp trước khi xem danh sách nhân sự.", 400);
+  }
+  return companyId;
+}
+
+export async function listAvailableCompaniesLive(session: Session): Promise<CompanyOption[]> {
+  const response = await apiRequest<ContractCompanyOptions>(
+    "/companies/options",
+    undefined,
+    session.accessToken,
+  );
+  return response.items;
+}
+
+export async function listAvailableCompanies(session: Session): Promise<CompanyOption[]> {
+  if (!session.user.permissions.includes("platform:manage")) {
+    throw new ApiError("Bạn không có quyền chọn doanh nghiệp.", 403);
+  }
+  if (DEMO_MODE) {
+    return [{ id: "00000000-0000-5000-8000-000000000101", name: "Acme Việt Nam" }];
+  }
+  return listAvailableCompaniesLive(session);
+}
+
+export async function listPeopleLive(session: Session, query: PeopleQuery = {}): Promise<PeopleList> {
+  const params = new URLSearchParams({ companyId: resolvePeopleCompanyId(session, query.companyId) });
+  const normalizedQuery = query.q?.trim();
+  if (normalizedQuery) params.set("q", normalizedQuery);
+  params.set("page", String(query.page ?? 1));
+  params.set("pageSize", String(query.pageSize ?? 20));
+  return adaptRosterPage(
+    await apiRequest<ContractRosterPage>(`/people?${params.toString()}`, undefined, session.accessToken),
+  );
+}
+
+export async function listPeople(session: Session, query: PeopleQuery = {}): Promise<PeopleList> {
+  assertPeopleRead(session);
+  if (DEMO_MODE) return listDemoPeople(session, query);
+  return listPeopleLive(session, query);
+}
+
+export async function getPersonLive(
+  session: Session,
+  employeeId: string,
+  scope: PeopleCompanyScope = {},
+): Promise<PersonDetail> {
+  const companyId = resolvePeopleCompanyId(session, scope.companyId);
+  const response = await apiRequest<ContractRosterPerson>(
+    `/people/${encodeURIComponent(employeeId)}?companyId=${encodeURIComponent(companyId)}`,
+    undefined,
+    session.accessToken,
+  );
+  return adaptRosterPerson(response, scope.companyName ?? session.user.companyName);
+}
+
+export async function getPerson(
+  session: Session,
+  employeeId: string,
+  scope: PeopleCompanyScope = {},
+): Promise<PersonDetail> {
+  assertPeopleRead(session);
+  if (DEMO_MODE) {
+    try {
+      return getDemoPerson(session, employeeId, scope);
+    } catch (error) {
+      throw new ApiError(error instanceof Error ? error.message : "Không tìm thấy nhân sự", 404);
+    }
+  }
+  return getPersonLive(session, employeeId, scope);
 }
 
 export async function getDashboardSummary(session: Session): Promise<DashboardSummary> {
