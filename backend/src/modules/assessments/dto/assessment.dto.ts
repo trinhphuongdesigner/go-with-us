@@ -72,6 +72,13 @@ export class CreateAssessmentDto {
   @IsString()
   revieweeId?: string;
 
+  /** Which company this assessment belongs to — needed when the caller
+   * holds a CompanyMembership for more than one company. Defaults to the
+   * reviewee's own companyId when omitted. */
+  @IsOptional()
+  @IsString()
+  companyId?: string;
+
   @IsEnum(AssessmentType)
   type!: AssessmentType;
 

@@ -106,10 +106,16 @@ export class CompetencyRequestsService {
     });
   }
 
-  /** HR's inbox — only what was addressed to them directly (v1: no company-wide visibility). */
+  /** HR/BOD/COMPANY_ADMIN's inbox — only what was addressed to them directly (v1: no company-wide visibility). */
   listReceived(caller: AuthenticatedUser, status?: CompetencyRequestStatus) {
-    if (caller.role !== Role.HR) {
-      throw new ForbiddenException('Only HR can view received requests');
+    if (
+      caller.role !== Role.HR &&
+      caller.role !== Role.BOD &&
+      caller.role !== Role.COMPANY_ADMIN
+    ) {
+      throw new ForbiddenException(
+        'Only HR, BOD, or Company Admin can view received requests',
+      );
     }
     return this.prisma.competencyRequest.findMany({
       where: { recipientId: caller.id, ...(status ? { status } : {}) },
@@ -155,7 +161,8 @@ export class CompetencyRequestsService {
         await tx.user.update({
           where: { id: request.senderId },
           data: {
-            contributionScore: (sender?.contributionScore ?? 0) + dto.pointsAwarded,
+            contributionScore:
+              (sender?.contributionScore ?? 0) + dto.pointsAwarded,
           },
         });
       }

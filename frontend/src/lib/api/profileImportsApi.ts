@@ -24,7 +24,6 @@ export interface ParsedProfile {
   }[];
   awards: {
     title: string;
-    category?: string;
     issuer?: string;
     description?: string;
     awardedAt?: string;
@@ -134,7 +133,6 @@ export interface RichActivity {
 export interface RichGoal {
   title: string;
   description?: string;
-  category?: 'WORK' | 'PERSONAL';
   dueDate?: string;
   metric?: string;
 }

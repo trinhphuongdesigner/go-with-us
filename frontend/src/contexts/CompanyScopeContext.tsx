@@ -14,7 +14,7 @@ interface CompanyScopeValue {
 
 const CompanyScopeContext = React.createContext<CompanyScopeValue | null>(null);
 
-/** Shared company fetch for every tab under /companies/[id] — set by CompanyScopeProvider. */
+/** Shared company fetch for every tab under a per-company scope (/companies/[id], /my-companies/[id]) — set by CompanyScopeProvider. */
 export function useCompanyScope() {
   const ctx = React.useContext(CompanyScopeContext);
   if (!ctx) {

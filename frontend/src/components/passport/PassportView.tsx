@@ -243,7 +243,6 @@ export default function PassportView({
               <Typography key={award.id} variant="body2">
                 🏆 {award.title}
                 {award.issuer ? ` · ${award.issuer}` : ''}
-                {award.category === 'PERSONAL' ? ' · cá nhân' : ''}
               </Typography>
             ))}
           </Stack>

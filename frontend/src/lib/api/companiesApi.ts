@@ -1,5 +1,5 @@
 import { apiRequest } from './client';
-import type { Company } from '@/types';
+import type { Company, User } from '@/types';
 
 export interface CreateCompanyPayload {
   name: string;
@@ -14,12 +14,43 @@ export interface UpdateCompanyPayload {
   industry?: string;
 }
 
+export interface CompanyMember {
+  id: string;
+  userId: string;
+  companyId: string;
+  createdAt: string;
+  user: Pick<User, 'id' | 'name' | 'email' | 'role' | 'jobTitle'>;
+}
+
 export function listCompanies() {
   return apiRequest<Company[]>('/companies');
 }
 
+/** Companies the current user belongs to — feeds the employee-facing "Công ty" nav. */
+export function listMyCompanies() {
+  return apiRequest<Company[]>('/companies/mine');
+}
+
 export function getCompany(id: string) {
   return apiRequest<Company>(`/companies/${id}`);
+}
+
+export function listMembers(companyId: string) {
+  return apiRequest<CompanyMember[]>(`/companies/${companyId}/members`);
+}
+
+export function addMember(companyId: string, userId: string) {
+  return apiRequest<CompanyMember>(`/companies/${companyId}/members`, {
+    method: 'POST',
+    body: { userId },
+  });
+}
+
+export function removeMember(companyId: string, userId: string) {
+  return apiRequest<{ companyId: string; userId: string }>(
+    `/companies/${companyId}/members/${userId}`,
+    { method: 'DELETE' },
+  );
 }
 
 /** Company Admin's own company — scoped server-side from the JWT, no id needed. */

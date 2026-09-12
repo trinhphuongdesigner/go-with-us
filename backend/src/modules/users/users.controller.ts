@@ -19,6 +19,7 @@ import { Role } from '@prisma/client';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/jwt.strategy';
@@ -39,7 +40,9 @@ export class UsersController {
 
   @Post('me/avatar')
   @UseInterceptors(
-    FileInterceptor('avatar', { limits: { files: 1, fileSize: 5 * 1024 * 1024 } }),
+    FileInterceptor('avatar', {
+      limits: { files: 1, fileSize: 5 * 1024 * 1024 },
+    }),
   )
   uploadAvatar(
     @UploadedFile(
@@ -85,5 +88,14 @@ export class UsersController {
   @Delete(':id')
   remove(@Param('id') id: string, @CurrentUser() caller: AuthenticatedUser) {
     return this.usersService.remove(id, caller);
+  }
+
+  @Patch(':id/password')
+  resetPassword(
+    @Param('id') id: string,
+    @Body() dto: ResetPasswordDto,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
+    return this.usersService.resetPassword(id, dto.password, caller);
   }
 }

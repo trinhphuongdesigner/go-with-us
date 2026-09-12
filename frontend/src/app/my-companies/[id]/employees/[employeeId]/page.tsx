@@ -24,9 +24,9 @@ import { ApiError } from '@/lib/api/client';
 import { GOAL_STATUS_LABEL } from '@/lib/labels';
 
 export default function EmployeeInsightPage() {
-  const params = useParams<{ id: string }>();
+  const params = useParams<{ id: string; employeeId: string }>();
   const router = useRouter();
-  const userId = params.id;
+  const userId = params.employeeId;
 
   const [insight, setInsight] = React.useState<CompetencyInsight | null>(null);
   const [error, setError] = React.useState<string | null>(null);
@@ -52,14 +52,14 @@ export default function EmployeeInsightPage() {
                 variant="outlined"
                 size="small"
                 startIcon={<ArrowBackOutlinedIcon fontSize="small" />}
-                onClick={() => router.push('/employees')}
+                onClick={() => router.push(`/my-companies/${params.id}/employees`)}
               >
                 Quay lại nhân sự
               </Button>
               <Button
                 variant="contained"
                 size="small"
-                onClick={() => router.push(`/employees/${params.id}/passport`)}
+                onClick={() => router.push(`/my-companies/${params.id}/employees/${params.employeeId}/passport`)}
               >
                 Hộ chiếu nghề nghiệp
               </Button>

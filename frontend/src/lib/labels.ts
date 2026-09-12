@@ -69,11 +69,6 @@ export const CERT_TYPE_LABEL: Record<string, string> = {
   OTHER: 'Khác',
 };
 
-export const LIFE_CATEGORY_LABEL: Record<string, string> = {
-  WORK: 'Công việc',
-  PERSONAL: 'Cá nhân',
-};
-
 export const JOB_STATUS_LABEL: Record<string, string> = {
   open: 'Đang mở',
   closed: 'Đã đóng',

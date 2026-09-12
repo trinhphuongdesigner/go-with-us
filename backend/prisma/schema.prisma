@@ -26,6 +26,7 @@ enum AdminPermission {
   APPROVE
   EDIT
   FULL
+  MANAGE_ROLES
 }
 
 /// Explicit mapping to profile scores; never infer a dimension from a name.
@@ -153,6 +154,26 @@ model Company {
   passportShares      CareerPassportShare[]
   roleDefinitions     RoleDefinition[]
   competencyRequests  CompetencyRequest[]
+  companyMemberships  CompanyMembership[]
+}
+
+/// Many-to-many User<->Company membership/ACL — "which companies can this
+/// person act inside" (e.g. Cross Assessment). Deliberately separate from
+/// Employment (career-history timeline that Assessment/ProjectExperience/
+/// CareerSummary hang off) and from User.companyId (the single CURRENT-
+/// employer pointer every other module still reads unchanged) — this table
+/// only answers "can user X operate inside company Y's scoped UI".
+model CompanyMembership {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, companyId])
+  @@index([userId])
+  @@index([companyId])
 }
 
 /// Dynamic role definitions per company (or global for SUPER_ADMIN).
@@ -238,6 +259,8 @@ model User {
 
   competencyRequestsSent     CompetencyRequest[] @relation("CompetencyRequestSender")
   competencyRequestsReceived CompetencyRequest[] @relation("CompetencyRequestRecipient")
+
+  companyMemberships CompanyMembership[]
 }
 
 model Skill {

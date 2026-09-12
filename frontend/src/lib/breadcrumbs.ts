@@ -17,33 +17,40 @@ const ROOT_ROUTES = new Set(['/', '']);
 /** Routes that are "list" pages — their children are detail pages */
 const LIST_ROUTES = [
   '/companies',
-  '/employees',
-  '/assessments',
+  '/my-companies',
   '/settings',
   '/profile',
 ];
 
 /** Map a pathname to its parent route for back-button purposes */
 function getParentRoute(pathname: string): string | null {
-  // /companies/:id/employees → /companies/:id
-  if (/^\/companies\/[^/]+\/[^/]+/.test(pathname)) {
-    return pathname.split('/').slice(0, 3).join('/');
-  }
-  // /companies/:id → /companies
+  // /companies/:id → /companies (single trimmed screen, no further nesting)
   if (/^\/companies\/[^/]+$/.test(pathname)) {
     return '/companies';
   }
-  // /employees/:id/passport → /employees/:id
-  if (/^\/employees\/[^/]+\/passport$/.test(pathname)) {
+  // /my-companies/:id/assessments/:assessmentId → /my-companies/:id/assessments
+  if (/^\/my-companies\/[^/]+\/assessments\/[^/]+/.test(pathname)) {
+    return pathname.split('/').slice(0, 4).join('/');
+  }
+  // /my-companies/:id/employees/:employeeId/passport → /my-companies/:id/employees/:employeeId
+  if (/^\/my-companies\/[^/]+\/employees\/[^/]+\/passport$/.test(pathname)) {
+    return pathname.split('/').slice(0, 5).join('/');
+  }
+  // /my-companies/:id/employees/:employeeId → /my-companies/:id/employees
+  if (/^\/my-companies\/[^/]+\/employees\/[^/]+$/.test(pathname)) {
+    return pathname.split('/').slice(0, 4).join('/');
+  }
+  // /my-companies/:id/(assessments|employees|job-requirements|competency-requests|roles) → /my-companies/:id
+  if (
+    /^\/my-companies\/[^/]+\/(assessments|employees|job-requirements|competency-requests|roles)$/.test(
+      pathname,
+    )
+  ) {
     return pathname.split('/').slice(0, 3).join('/');
   }
-  // /employees/:id → /employees
-  if (/^\/employees\/[^/]+$/.test(pathname)) {
-    return '/employees';
-  }
-  // /assessments/:id → /assessments
-  if (/^\/assessments\/[^/]+$/.test(pathname)) {
-    return '/assessments';
+  // /my-companies/:id → /my-companies
+  if (/^\/my-companies\/[^/]+$/.test(pathname)) {
+    return '/my-companies';
   }
   // /profile/import → /profile
   if (pathname === '/profile/import') {
@@ -65,7 +72,11 @@ function isLeafRoute(pathname: string): boolean {
   // List pages themselves are not leaves
   if (LIST_ROUTES.includes(pathname)) return false;
   // Company-scoped list pages are not leaves
-  if (/^\/companies\/[^/]+\/(employees|assessments|requests|settings)$/.test(pathname)) {
+  if (
+    /^\/my-companies\/[^/]+\/(assessments|employees|job-requirements|competency-requests|roles)$/.test(
+      pathname,
+    )
+  ) {
     return false;
   }
   // Everything else with depth is a leaf
@@ -101,10 +112,13 @@ export function buildBreadcrumbs(pathname: string | null): BreadcrumbResult {
     const label = getSegmentLabel(parts[i]);
 
     // For company-scoped routes, show company name context differently
-    // (handled by sidebar "Tất cả công ty" link), so we collapse the :id here
-    if (/^\/companies\/[^/]+$/.test(current) && parts[i] !== 'companies') {
-      // This is /companies/:id — label as "Công ty" context is in sidebar
-      // We still add it so deep children can link back
+    // (handled by sidebar back link), so we collapse the :id here
+    if (
+      (/^\/companies\/[^/]+$/.test(current) && parts[i] !== 'companies') ||
+      (/^\/my-companies\/[^/]+$/.test(current) && parts[i] !== 'my-companies')
+    ) {
+      // This is /companies/:id or /my-companies/:id — company name context
+      // is in the sidebar. We still add it so deep children can link back.
       items.push({ label: 'Công ty', href: current });
       continue;
     }
@@ -113,7 +127,7 @@ export function buildBreadcrumbs(pathname: string | null): BreadcrumbResult {
     if (parts[i].length > 8 && /^[a-z0-9]+$/i.test(parts[i])) {
       // Use a contextual label based on parent
       const parentPart = parts[i - 1];
-      if (parentPart === 'companies') {
+      if (parentPart === 'companies' || parentPart === 'my-companies') {
         items.push({ label: 'Chi tiết công ty', href: current });
       } else if (parentPart === 'employees') {
         items.push({ label: 'Chi tiết nhân sự', href: current });

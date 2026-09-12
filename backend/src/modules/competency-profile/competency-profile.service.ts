@@ -259,7 +259,11 @@ export class CompetencyProfileService {
       caller.id,
       `${randomUUID()}.${extension}`,
     ];
-    const evidenceUrl = await this.storage.writePublic(key, file.buffer, file.mimetype);
+    const evidenceUrl = await this.storage.writePublic(
+      key,
+      file.buffer,
+      file.mimetype,
+    );
     return { url: evidenceUrl };
   }
 
@@ -304,7 +308,11 @@ export class CompetencyProfileService {
       existing.evidenceUrl &&
       existing.evidenceUrl !== updated.evidenceUrl
     ) {
-      void this.deleteOwnedEvidence(existing.evidenceUrl, caller.id, 'award-evidence');
+      void this.deleteOwnedEvidence(
+        existing.evidenceUrl,
+        caller.id,
+        'award-evidence',
+      );
     }
 
     return updated;
@@ -316,7 +324,11 @@ export class CompetencyProfileService {
       throw new NotFoundException(`Award ${id} not found`);
     }
     await this.prisma.award.delete({ where: { id } });
-    void this.deleteOwnedEvidence(existing.evidenceUrl, caller.id, 'award-evidence');
+    void this.deleteOwnedEvidence(
+      existing.evidenceUrl,
+      caller.id,
+      'award-evidence',
+    );
     return { id };
   }
 

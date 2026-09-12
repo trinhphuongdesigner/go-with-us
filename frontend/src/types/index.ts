@@ -5,7 +5,7 @@
 
 export type Role = 'SUPER_ADMIN' | 'COMPANY_ADMIN' | 'BOD' | 'HR' | 'EMPLOYEE';
 
-export type AdminPermission = 'VIEW' | 'COLLECT' | 'CROSS_ASSESS' | 'APPROVE' | 'EDIT' | 'FULL';
+export type AdminPermission = 'VIEW' | 'COLLECT' | 'CROSS_ASSESS' | 'APPROVE' | 'EDIT' | 'FULL' | 'MANAGE_ROLES';
 
 export interface RoleDefinition {
   id: string;

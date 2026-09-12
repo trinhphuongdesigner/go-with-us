@@ -1,8 +1,10 @@
 export const ROUTE_SEGMENT_LABELS: Record<string, string> = {
   '': 'Trang chủ',
   companies: 'Công ty',
+  'my-companies': 'Công ty',
   employees: 'Nhân sự',
-  'job-requirements': 'Yêu cầu công việc',
+  'job-requirements': 'Careers',
+  'competency-requests': 'Yêu cầu',
   assistant: 'Trợ lý AI',
   assessments: 'Đánh giá chéo',
   profile: 'Hồ sơ của tôi',

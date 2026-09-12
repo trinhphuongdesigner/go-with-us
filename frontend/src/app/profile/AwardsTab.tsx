@@ -6,10 +6,8 @@ import Box from '@mui/material/Box';
 import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
 import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
-import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import Link from '@mui/material/Link';
-import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -24,14 +22,12 @@ import {
   uploadAwardEvidence,
   type Award,
   type EmploymentEntry,
-  type LifeCategory,
 } from '@/lib/api/competencyProfileApi';
 import { listSentCompetencyRequests, type CompetencyRequest } from '@/lib/api/competencyRequestsApi';
 import SendToHrDialog from './SendToHrDialog';
 
 interface FormState {
   title: string;
-  category: LifeCategory;
   issuer: string;
   description: string;
   evidenceUrl: string;
@@ -40,7 +36,6 @@ interface FormState {
 
 const EMPTY: FormState = {
   title: '',
-  category: 'WORK',
   issuer: '',
   description: '',
   evidenceUrl: '',
@@ -50,9 +45,9 @@ const EMPTY: FormState = {
 const toInputDate = (value: string | null) => (value ? value.slice(0, 10) : '');
 
 /**
- * Awards and competitions, work and personal alike — the point of the idea
- * doc's "nhân viên tự ghi nhận" is that this does not wait for HR to enter
- * it, so everything here is self-reported with an optional evidence link.
+ * Awards and competitions — the point of the idea doc's "nhân viên tự ghi
+ * nhận" is that this does not wait for HR to enter it, so everything here
+ * is self-reported with an optional evidence link.
  */
 const REQUEST_STATUS_LABEL: Record<CompetencyRequest['status'], string> = {
   PENDING: 'Đang chờ HR duyệt',
@@ -106,7 +101,6 @@ export default function AwardsTab({
     setEditingId(award.id);
     setForm({
       title: award.title,
-      category: award.category,
       issuer: award.issuer ?? '',
       description: award.description ?? '',
       evidenceUrl: award.evidenceUrl ?? '',
@@ -126,7 +120,6 @@ export default function AwardsTab({
     setError(null);
     const payload = {
       title: form.title.trim(),
-      category: form.category,
       issuer: form.issuer.trim() || undefined,
       description: form.description.trim() || undefined,
       evidenceUrl: form.evidenceUrl.trim() || undefined,
@@ -192,8 +185,8 @@ export default function AwardsTab({
 
       {awards.length === 0 ? (
         <Typography variant="body2">
-          Chưa có thành tích. Cả công việc (nhân viên xuất sắc, hackathon nội bộ)
-          và cá nhân (thể thao, tình nguyện) đều ghi ở đây.
+          Chưa có thành tích. Ghi nhận giải thưởng, cuộc thi, hackathon nội bộ...
+          ở đây.
         </Typography>
       ) : (
         <Stack divider={<Divider />} spacing={2}>
@@ -213,13 +206,6 @@ export default function AwardsTab({
                   <Typography variant="body1" sx={{ fontWeight: 600 }}>
                     {award.title}
                   </Typography>
-                  <Chip
-                    label={award.category === 'WORK' ? 'Công việc' : 'Cá nhân'}
-                    size="small"
-                    color={award.category === 'WORK' ? 'primary' : 'default'}
-                    variant="outlined"
-                    sx={{ height: 20, fontSize: 11 }}
-                  />
                 </Stack>
                 <Typography variant="body2">
                   {award.issuer ?? 'Tự ghi nhận'}
@@ -306,28 +292,14 @@ export default function AwardsTab({
               required
               fullWidth
             />
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <TextField
-                select
-                label="Danh mục"
-                value={form.category}
-                onChange={(e) =>
-                  setForm({ ...form, category: e.target.value as LifeCategory })
-                }
-                fullWidth
-              >
-                <MenuItem value="WORK">Công việc</MenuItem>
-                <MenuItem value="PERSONAL">Cá nhân</MenuItem>
-              </TextField>
-              <TextField
-                label="Ngày nhận"
-                type="date"
-                value={form.awardedAt}
-                onChange={(e) => setForm({ ...form, awardedAt: e.target.value })}
-                slotProps={{ inputLabel: { shrink: true } }}
-                fullWidth
-              />
-            </Stack>
+            <TextField
+              label="Ngày nhận"
+              type="date"
+              value={form.awardedAt}
+              onChange={(e) => setForm({ ...form, awardedAt: e.target.value })}
+              slotProps={{ inputLabel: { shrink: true } }}
+              fullWidth
+            />
             <TextField
               label="Đơn vị trao"
               value={form.issuer}
