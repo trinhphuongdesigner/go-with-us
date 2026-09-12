@@ -28,11 +28,11 @@ export function PeopleListView({ forceState, initialCompanyId }: { forceState?: 
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search.trim());
   const [page, setPage] = useState(1);
+  const isSuperAdmin = session?.user.role === "SUPER_ADMIN";
   const [selectedCompanyOverride, setSelectedCompanyOverride] = useState(
-    initialCompanyId ?? session?.user.companyId ?? "",
+    (isSuperAdmin ? initialCompanyId : undefined) ?? session?.user.companyId ?? "",
   );
   const canRead = Boolean(session?.user.permissions.includes("people:read"));
-  const isSuperAdmin = session?.user.role === "SUPER_ADMIN";
   const companiesQuery = useQuery({
     queryKey: ["company-options", session?.user.id],
     queryFn: () => listAvailableCompanies(session!),

@@ -227,6 +227,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
     try {
       const saved = localStorage.getItem("careermate_sidebar_collapsed");
       if (saved !== null) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setCollapsed(saved === "true");
       }
     } catch {

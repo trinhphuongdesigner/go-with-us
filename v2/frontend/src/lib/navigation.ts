@@ -39,7 +39,7 @@ export const navigationItems: NavigationItem[] = [
   { label: "Quản lý tài khoản", shortLabel: "Tài khoản", href: "/tai-khoan", icon: UsersRound, permission: "people:write" },
   { label: "Công ty của tôi", shortLabel: "Công ty tôi", href: "/cong-ty-cua-toi", icon: Building2, permission: "dashboard:read" },
   { label: "Phân quyền vai trò", shortLabel: "Phân quyền", href: "/vai-tro", icon: ShieldCheck, permission: "roles:manage" },
-  { label: "Mẫu & chu kỳ đánh giá", shortLabel: "Mẫu đánh giá", href: "/cong-ty/tieu-chi", icon: BadgeCheck, permission: "assessment:review" },
+  { label: "Mẫu & chu kỳ đánh giá", shortLabel: "Mẫu đánh giá", href: "/cong-ty/tieu-chi", icon: BadgeCheck, permission: "assessment:review", anyPermissions: ["assessment:review", "company:manage"] },
   { label: "Quản lý công ty", shortLabel: "Công ty", href: "/cong-ty", icon: Building2, permission: "company:manage", exact: true },
   { label: "Quản trị hệ thống", shortLabel: "Hệ thống", href: "/he-thong", icon: ShieldCheck, permission: "platform:manage" },
   { label: "Cài đặt", shortLabel: "Cài đặt", href: "/cai-dat", icon: Settings2, permission: "dashboard:read" },

@@ -113,6 +113,7 @@ function demoRagSearch(query: string, accessToken: string): RagSearchResponse | 
   if (!account.user.companyId) {
     return { status: "empty", answer: "Vui lòng chọn công ty trước khi hỏi AI tìm nhân sự.", candidates: [], retrieval_mode: "STRUCTURED_PROFILE_RAG", answer_source: "deterministic_fallback", warnings: ["company_required"] };
   }
+  const companyId = account.user.companyId;
 
   const session = { accessToken, user: account.user };
   const terms = normalizedTerms(query);
@@ -134,7 +135,7 @@ function demoRagSearch(query: string, accessToken: string): RagSearchResponse | 
       user_id: demoUuid(200 + personIndex),
       name: profile.name,
       title: profile.jobTitle || null,
-      company_id: account.user.companyId,
+      company_id: companyId,
       matched_terms: matchedTerms,
       reason: `Dữ liệu hồ sơ khớp trực tiếp với: ${matchedTerms.join(", ")}.`,
       evidence: evidence.slice(0, 5).map((item) => ({

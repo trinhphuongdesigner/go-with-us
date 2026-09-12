@@ -23,7 +23,7 @@ const apiMocks = vi.hoisted(() => ({
 let testSession: Session;
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
 
 vi.mock("@/features/auth/auth-provider", () => ({
