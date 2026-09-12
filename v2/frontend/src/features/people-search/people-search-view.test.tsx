@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { searchPeople, type PeopleSearchResponse } from "@/features/people-search/people-search-api";
+import { askPeople, searchPeople, type PeopleSearchResponse, type RagSearchResponse } from "@/features/people-search/people-search-api";
 import { PeopleSearchView } from "@/features/people-search/people-search-view";
 import { canonicalSearchResponse } from "./__fixtures__/canonical-search";
 import { searchInterpretation } from "./__fixtures__/search-interpretation";
@@ -14,6 +14,7 @@ vi.mock("@/features/auth/auth-provider", () => ({
 }));
 vi.mock("@/features/people-search/people-search-api", async (importOriginal) => ({
   ...await importOriginal<typeof import("@/features/people-search/people-search-api")>(),
+  askPeople: vi.fn(),
   searchPeople: vi.fn(),
 }));
 
@@ -49,7 +50,10 @@ async function submit(query = "React trên 2 năm") {
 }
 
 describe("PeopleSearchView", () => {
-  beforeEach(() => vi.mocked(searchPeople).mockReset());
+  beforeEach(() => {
+    vi.mocked(askPeople).mockReset();
+    vi.mocked(searchPeople).mockReset();
+  });
 
   it("offers separate criteria and AI question tabs with keyboard navigation", async () => {
     render(<PeopleSearchView />);
@@ -71,15 +75,35 @@ describe("PeopleSearchView", () => {
   });
 
   it("uses the evidence-backed people search API for an AI question", async () => {
-    vi.mocked(searchPeople).mockResolvedValue({ status: "empty", plan, candidates: [], unsupported_reasons: [], explanation: null, explanation_source: null });
+    const response: RagSearchResponse = {
+      status: "ok",
+      answer: "Nguyễn An có bằng chứng kỹ năng React phù hợp.",
+      candidates: [{
+        user_id: "3a65de39-49f1-40c7-8f1d-df80a565d46e",
+        name: "Nguyễn An",
+        title: "Frontend Engineer",
+        company_id: "11395991-a669-475f-9af5-912afbbe554b",
+        matched_terms: ["react"],
+        reason: "Có kỹ năng React trong hồ sơ.",
+        evidence: [{ source_type: "skill", source_id: "3a65de39-49f1-40c7-8f1d-df80a565d47e", label: "Kỹ năng: React", excerpt: "React, mức độ 4/5", verified: false }],
+      }],
+      retrieval_mode: "STRUCTURED_PROFILE_RAG",
+      answer_source: "ai",
+      warnings: [],
+    };
+    vi.mocked(askPeople).mockResolvedValue(response);
     render(<PeopleSearchView />);
     await userEvent.setup().click(screen.getByRole("tab", { name: "Hỏi AI" }));
     const question = "Ai phù hợp dẫn dắt dự án React trong quý tới?";
     await userEvent.setup().type(screen.getByLabelText("Câu hỏi cho AI"), question);
     await userEvent.setup().click(screen.getByRole("button", { name: "Hỏi AI" }));
 
-    await waitFor(() => expect(searchPeople).toHaveBeenCalledWith(expect.objectContaining({ accessToken: "actual-session-token", query: question, signal: expect.any(AbortSignal) })));
-    expect(await screen.findByText("Không tìm thấy nhân sự phù hợp")).toBeVisible();
+    await waitFor(() => expect(askPeople).toHaveBeenCalledWith(expect.objectContaining({ accessToken: "actual-session-token", query: question, signal: expect.any(AbortSignal) })));
+    expect(searchPeople).not.toHaveBeenCalled();
+    expect(await screen.findByText("Nguyễn An")).toBeVisible();
+    expect(screen.getByText("Nguyễn An có bằng chứng kỹ năng React phù hợp.")).toBeVisible();
+    expect(screen.getByText("React, mức độ 4/5")).toBeVisible();
+    expect(screen.getByText("Tự khai báo")).toBeVisible();
     expect(screen.getByText(question, { selector: "div" })).toBeVisible();
   });
 

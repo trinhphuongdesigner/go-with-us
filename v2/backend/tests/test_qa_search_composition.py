@@ -1,11 +1,12 @@
 """Verify search is mounted on the real v2 app, not only the isolated test app."""
 
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
 
-from app.domain.enums import AdminPermission, Role
-from app.domain.models import Company, User
+from app.domain.enums import AdminPermission, EmploymentStatus, ProfileSourceType, Role
+from app.domain.models import Company, EmployeeSkill, Employment, Skill, User
 from app.main import app
 from app.people_search.intent import IntentCompilation, get_intent_compiler
 from app.people_search.schemas import EmployeeSearchPlan
@@ -69,3 +70,70 @@ async def test_main_app_search_rejects_anonymous_request(client):
 def test_main_app_openapi_has_one_search_operation():
     path = app.openapi()["paths"]["/api/v2/people-search/query"]
     assert set(path) == {"post"}
+
+
+def test_main_app_openapi_exposes_grounded_rag_search():
+    assert "/api/v2/people-search/ask" in app.openapi()["paths"]
+
+
+async def test_rag_search_retrieves_only_authorized_company_profile_data(client, db_session):
+    company = Company(name="RAG tenant")
+    other_company = Company(name="Other tenant")
+    db_session.add_all([company, other_company])
+    await db_session.flush()
+    actor = User(
+        email="rag-admin@example.com",
+        name="RAG Admin",
+        role=Role.COMPANY_ADMIN,
+        company_id=company.id,
+        hashed_password=hash_password("CompositionTest123!"),
+        admin_permissions=[AdminPermission.EMPLOYEE_READ.value],
+    )
+    candidate = User(
+        email="rag-candidate@example.com",
+        name="Nguyen An",
+        job_title="Frontend Engineer",
+        role=Role.EMPLOYEE,
+        company_id=company.id,
+        hashed_password=hash_password("CandidateTest123!"),
+    )
+    outsider = User(
+        email="rag-outsider@example.com",
+        name="Other Tenant Person",
+        job_title="React Engineer",
+        role=Role.EMPLOYEE,
+        company_id=other_company.id,
+        hashed_password=hash_password("OutsiderTest123!"),
+    )
+    db_session.add_all([actor, candidate, outsider])
+    await db_session.flush()
+    now = datetime.now(UTC)
+    db_session.add_all([
+        Employment(user_id=candidate.id, company_id=company.id, title="Frontend Engineer", start_date=now, status=EmploymentStatus.ACTIVE),
+        Employment(user_id=outsider.id, company_id=other_company.id, title="React Engineer", start_date=now, status=EmploymentStatus.ACTIVE),
+    ])
+    react = Skill(name="React", normalized_key="react", category="Engineering")
+    db_session.add(react)
+    await db_session.flush()
+    db_session.add_all([
+        EmployeeSkill(user_id=candidate.id, company_id=company.id, skill_id=react.id, rating=4, note="Built React design systems", self_assessed=True, source_type=ProfileSourceType.SELF, created_by=candidate.id, updated_by=candidate.id),
+        EmployeeSkill(user_id=outsider.id, company_id=other_company.id, skill_id=react.id, rating=5, note="Leads React projects", self_assessed=False, source_type=ProfileSourceType.ADMIN, created_by=outsider.id, updated_by=outsider.id),
+    ])
+    await db_session.commit()
+
+    login = await client.post("/api/v2/auth/login", json={"email": actor.email, "password": "CompositionTest123!"})
+    response = await client.post(
+        "/api/v2/people-search/ask",
+        headers={"Authorization": f"Bearer {login.json()['accessToken']}"},
+        json={"query": "Ai có kinh nghiệm React?"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "ok"
+    assert body["retrieval_mode"] == "STRUCTURED_PROFILE_RAG"
+    assert body["answer_source"] == "deterministic_fallback"
+    assert [item["name"] for item in body["candidates"]] == ["Nguyen An"]
+    assert body["candidates"][0]["matched_terms"] == ["react"]
+    assert body["candidates"][0]["evidence"][0]["source_type"] == "skill"
+    assert "Other Tenant Person" not in response.text

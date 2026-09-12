@@ -5806,6 +5806,172 @@
         "title": "Question",
         "type": "object"
       },
+      "RagCandidateRead": {
+        "additionalProperties": false,
+        "properties": {
+          "company_id": {
+            "format": "uuid",
+            "title": "Company Id",
+            "type": "string"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/RagEvidenceRead"
+            },
+            "maxItems": 5,
+            "minItems": 1,
+            "title": "Evidence",
+            "type": "array"
+          },
+          "matched_terms": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 30,
+            "title": "Matched Terms",
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 1200,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "name",
+          "company_id",
+          "reason",
+          "evidence"
+        ],
+        "title": "RagCandidateRead",
+        "type": "object"
+      },
+      "RagEvidenceRead": {
+        "additionalProperties": false,
+        "properties": {
+          "excerpt": {
+            "maxLength": 1200,
+            "minLength": 1,
+            "title": "Excerpt",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "source_id": {
+            "format": "uuid",
+            "title": "Source Id",
+            "type": "string"
+          },
+          "source_type": {
+            "enum": [
+              "profile",
+              "skill",
+              "experience",
+              "project"
+            ],
+            "title": "Source Type",
+            "type": "string"
+          },
+          "verified": {
+            "title": "Verified",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "source_type",
+          "source_id",
+          "label",
+          "excerpt",
+          "verified"
+        ],
+        "title": "RagEvidenceRead",
+        "type": "object"
+      },
+      "RagSearchResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "answer": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Answer",
+            "type": "string"
+          },
+          "answer_source": {
+            "enum": [
+              "ai",
+              "deterministic_fallback"
+            ],
+            "title": "Answer Source",
+            "type": "string"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/RagCandidateRead"
+            },
+            "maxItems": 8,
+            "title": "Candidates",
+            "type": "array"
+          },
+          "retrieval_mode": {
+            "const": "STRUCTURED_PROFILE_RAG",
+            "default": "STRUCTURED_PROFILE_RAG",
+            "title": "Retrieval Mode",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "empty"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "status",
+          "answer",
+          "answer_source"
+        ],
+        "title": "RagSearchResponse",
+        "type": "object"
+      },
       "RefineRequest": {
         "additionalProperties": false,
         "properties": {
@@ -14605,6 +14771,71 @@
         "summary": "List People",
         "tags": [
           "people"
+        ]
+      }
+    },
+    "/api/v2/people-search/ask": {
+      "post": {
+        "operationId": "ask_people_api_v2_people_search_ask_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "companyId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Companyid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PeopleSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RagSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ask People",
+        "tags": [
+          "people-search"
         ]
       }
     },

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { compileQuery, PeopleSearchApiError, searchPeople } from "@/features/people-search/people-search-api";
+import { askPeople, compileQuery, PeopleSearchApiError, searchPeople } from "@/features/people-search/people-search-api";
 import { canonicalSearchResponse } from "./__fixtures__/canonical-search";
 import { searchInterpretation } from "./__fixtures__/search-interpretation";
 
@@ -36,6 +36,33 @@ const contractResponse = {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("people search API contract", () => {
+  it("calls the grounded RAG endpoint and validates cited profile evidence", async () => {
+    const payload = {
+      status: "ok",
+      answer: "Tìm thấy một hồ sơ có bằng chứng React.",
+      candidates: [{
+        user_id: "3a65de39-49f1-40c7-8f1d-df80a565d46e",
+        name: "Nguyễn An",
+        title: "Frontend Engineer",
+        company_id: "11395991-a669-475f-9af5-912afbbe554b",
+        matched_terms: ["react"],
+        reason: "Có kỹ năng React trong hồ sơ.",
+        evidence: [{ source_type: "skill", source_id: "3a65de39-49f1-40c7-8f1d-df80a565d47e", label: "Kỹ năng: React", excerpt: "React, mức độ 4/5", verified: false }],
+      }],
+      retrieval_mode: "STRUCTURED_PROFILE_RAG",
+      answer_source: "ai",
+      warnings: [],
+    } as const;
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(payload), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    expect(await askPeople({ query: "Ai biết React?", accessToken: "session-token" })).toEqual(payload);
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/people-search/ask"), expect.objectContaining({
+      headers: expect.objectContaining({ Authorization: "Bearer session-token" }),
+      body: JSON.stringify({ query: "Ai biết React?" }),
+    }));
+  });
+
   it("accepts a detailed interpretation and preserves strict skill duration", async () => {
     const payload = { ...canonicalSearchResponse, plan: { ...canonicalSearchResponse.plan, interpretation: searchInterpretation } };
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(payload))));

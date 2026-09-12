@@ -61,6 +61,36 @@ export type PeopleSearchResponse = z.infer<typeof peopleSearchResponseSchema>;
 export type PeopleSearchCandidate = PeopleSearchResponse["candidates"][number];
 export type LegacyPeopleSearchCandidate = Extract<PeopleSearchCandidate, { score_version: "people-search-v1" }>;
 
+const ragEvidenceSchema = z.object({
+  source_type: z.enum(["profile", "skill", "experience", "project"]),
+  source_id: z.string().uuid(),
+  label: z.string().min(1),
+  excerpt: z.string().min(1),
+  verified: z.boolean(),
+}).strict();
+
+const ragCandidateSchema = z.object({
+  user_id: z.string().uuid(),
+  name: z.string().min(1),
+  title: z.string().nullable(),
+  company_id: z.string().uuid(),
+  matched_terms: z.array(z.string()),
+  reason: z.string().min(1),
+  evidence: z.array(ragEvidenceSchema).min(1),
+}).strict();
+
+export const ragSearchResponseSchema = z.object({
+  status: z.enum(["ok", "empty"]),
+  answer: z.string().min(1),
+  candidates: z.array(ragCandidateSchema),
+  retrieval_mode: z.literal("STRUCTURED_PROFILE_RAG"),
+  answer_source: z.enum(["ai", "deterministic_fallback"]),
+  warnings: z.array(z.string()),
+}).strict();
+
+export type RagSearchResponse = z.infer<typeof ragSearchResponseSchema>;
+export type RagSearchCandidate = RagSearchResponse["candidates"][number];
+
 export interface PeopleSearchFilters {
   query: string;
   requiredSkills: string;
@@ -131,5 +161,44 @@ export async function searchPeople({ query, accessToken, signal, companyId }: Pe
   }
   const parsed = peopleSearchResponseSchema.safeParse(payload);
   if (!parsed.success) throw new PeopleSearchApiError("Dịch vụ tìm kiếm trả về dữ liệu không đúng hợp đồng.", response.status);
+  return parsed.data;
+}
+
+export async function askPeople({ query, accessToken, signal, companyId }: PeopleSearchRequest & { companyId?: string }): Promise<RagSearchResponse> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}/people-search/ask${companyId ? `?companyId=${encodeURIComponent(companyId)}` : ""}`, {
+      method: "POST",
+      credentials: "include",
+      signal,
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ query }),
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") throw error;
+    throw new PeopleSearchApiError("Không thể kết nối dịch vụ hỏi đáp nhân sự.");
+  }
+
+  if (!response.ok) {
+    throw new PeopleSearchApiError(
+      response.status === 401 || response.status === 403
+        ? "Phiên đăng nhập không có quyền hỏi đáp nhân sự."
+        : "Dịch vụ hỏi đáp không thể xử lý yêu cầu.",
+      response.status,
+    );
+  }
+
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    throw new PeopleSearchApiError("Dịch vụ hỏi đáp trả về dữ liệu không hợp lệ.", response.status);
+  }
+  const parsed = ragSearchResponseSchema.safeParse(payload);
+  if (!parsed.success) throw new PeopleSearchApiError("Dịch vụ hỏi đáp trả về dữ liệu không đúng hợp đồng.", response.status);
   return parsed.data;
 }

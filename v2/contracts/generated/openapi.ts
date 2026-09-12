@@ -1346,6 +1346,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/people-search/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask People */
+        post: operations["ask_people_api_v2_people_search_ask_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/people-search/query": {
         parameters: {
             query?: never;
@@ -3704,6 +3721,73 @@ export interface components {
              * @default 1
              */
             weight: number;
+        };
+        /** RagCandidateRead */
+        RagCandidateRead: {
+            /**
+             * Company Id
+             * Format: uuid
+             */
+            company_id: string;
+            /** Evidence */
+            evidence: components["schemas"]["RagEvidenceRead"][];
+            /** Matched Terms */
+            matched_terms?: string[];
+            /** Name */
+            name: string;
+            /** Reason */
+            reason: string;
+            /** Title */
+            title?: string | null;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /** RagEvidenceRead */
+        RagEvidenceRead: {
+            /** Excerpt */
+            excerpt: string;
+            /** Label */
+            label: string;
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+            /**
+             * Source Type
+             * @enum {string}
+             */
+            source_type: "profile" | "skill" | "experience" | "project";
+            /** Verified */
+            verified: boolean;
+        };
+        /** RagSearchResponse */
+        RagSearchResponse: {
+            /** Answer */
+            answer: string;
+            /**
+             * Answer Source
+             * @enum {string}
+             */
+            answer_source: "ai" | "deterministic_fallback";
+            /** Candidates */
+            candidates?: components["schemas"]["RagCandidateRead"][];
+            /**
+             * Retrieval Mode
+             * @default STRUCTURED_PROFILE_RAG
+             * @constant
+             */
+            retrieval_mode: "STRUCTURED_PROFILE_RAG";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "empty";
+            /** Warnings */
+            warnings?: string[];
         };
         /** RefineRequest */
         RefineRequest: {
@@ -8318,6 +8402,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorDetailRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ask_people_api_v2_people_search_ask_post: {
+        parameters: {
+            query?: {
+                companyId?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PeopleSearchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RagSearchResponse"];
                 };
             };
             /** @description Validation Error */

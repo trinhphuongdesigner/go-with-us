@@ -21,11 +21,13 @@ from app.people_search.canonical_response import canonical_response
 from app.people_search.canonical_service import CanonicalSearchService, get_canonical_search_service
 from app.people_search.evidence import build_evidence
 from app.people_search.intent import IntentCompiler, get_intent_compiler
+from app.people_search.rag import grounded_rag_search
 from app.people_search.repository import search_candidates
 from app.people_search.schemas import (
     CandidateMatch,
     EmployeeSearchPlan,
     SearchResponse,
+    RagSearchResponse,
     SkillConstraint,
     StrictModel,
 )
@@ -206,3 +208,21 @@ async def query_people(
         explanation=None,
         explanation_source="deterministic_fallback",
     )
+
+
+@router.post("/ask", response_model=RagSearchResponse)
+async def ask_people(
+    payload: PeopleSearchRequest,
+    current_user: CurrentUser,
+    db: DbSession,
+    company_id: Annotated[uuid.UUID | None, Depends(selected_search_company)],
+    _permission_check: RequirePeopleRead,
+) -> RagSearchResponse:
+    if company_id is None:
+        return RagSearchResponse(
+            status="empty",
+            answer="Vui lòng chọn công ty trước khi hỏi AI tìm nhân sự.",
+            answer_source="deterministic_fallback",
+            warnings=["company_required"],
+        )
+    return await grounded_rag_search(db, payload.query, company_id=company_id)

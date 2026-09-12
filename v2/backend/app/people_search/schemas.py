@@ -77,3 +77,30 @@ class SearchResponse(StrictModel):
     unsupported_reasons: list[str] = Field(default_factory=list)
     explanation: str | None = None
     explanation_source: Literal["ai", "deterministic_fallback"] | None = None
+
+
+class RagEvidenceRead(StrictModel):
+    source_type: Literal["profile", "skill", "experience", "project"]
+    source_id: uuid.UUID
+    label: str = Field(min_length=1, max_length=200)
+    excerpt: str = Field(min_length=1, max_length=1200)
+    verified: bool
+
+
+class RagCandidateRead(StrictModel):
+    user_id: uuid.UUID
+    name: str = Field(min_length=1, max_length=200)
+    title: str | None = Field(default=None, max_length=200)
+    company_id: uuid.UUID
+    matched_terms: list[str] = Field(default_factory=list, max_length=30)
+    reason: str = Field(min_length=1, max_length=1200)
+    evidence: list[RagEvidenceRead] = Field(min_length=1, max_length=5)
+
+
+class RagSearchResponse(StrictModel):
+    status: Literal["ok", "empty"]
+    answer: str = Field(min_length=1, max_length=4000)
+    candidates: list[RagCandidateRead] = Field(default_factory=list, max_length=8)
+    retrieval_mode: Literal["STRUCTURED_PROFILE_RAG"] = "STRUCTURED_PROFILE_RAG"
+    answer_source: Literal["ai", "deterministic_fallback"]
+    warnings: list[str] = Field(default_factory=list, max_length=10)

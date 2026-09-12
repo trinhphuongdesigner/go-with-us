@@ -13,11 +13,14 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/features/auth/auth-provider";
 import {
+  askPeople,
   compileQuery,
   searchPeople,
   type LegacyPeopleSearchCandidate,
   type PeopleSearchFilters,
   type PeopleSearchResponse,
+  type RagSearchCandidate,
+  type RagSearchResponse,
 } from "@/features/people-search/people-search-api";
 import type { CanonicalSearchCandidate } from "./canonical-search-schema";
 import { SearchInterpretationPanel } from "./search-interpretation-panel";
@@ -28,7 +31,7 @@ type SearchState = {
   status: "idle" | "loading" | "success" | "error";
   mode?: SearchMode;
   query?: string;
-  data?: PeopleSearchResponse;
+  data?: PeopleSearchResponse | RagSearchResponse;
   error?: string;
 };
 
@@ -175,6 +178,73 @@ function CanonicalCandidateCard({ candidate, layout }: { candidate: CanonicalSea
   );
 }
 
+const ragSourceLabels: Record<RagSearchCandidate["evidence"][number]["source_type"], string> = {
+  profile: "Hồ sơ",
+  skill: "Kỹ năng",
+  experience: "Kinh nghiệm",
+  project: "Dự án",
+};
+
+function RagCandidateCard({ candidate }: { candidate: RagSearchCandidate }) {
+  return (
+    <Card className="min-w-0 p-4 sm:p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="wrap-anywhere text-base font-bold text-ink">{candidate.name}</h3>
+          <p className="mt-0.5 wrap-anywhere text-sm text-muted">{candidate.title ?? "Chưa có chức danh"}</p>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {candidate.matched_terms.map((term) => <Badge key={term} tone="ai">{term}</Badge>)}
+        </div>
+      </div>
+      <p className="mt-3 text-sm leading-6 text-ink">{candidate.reason}</p>
+      <div className="mt-4 border-t border-border pt-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted">Bằng chứng đã truy xuất</p>
+        <ul className="mt-3 space-y-2">
+          {candidate.evidence.map((evidence) => (
+            <li key={evidence.source_id} className="rounded-xl border border-border bg-background p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-ink">{evidence.label}</p>
+                <div className="flex items-center gap-1.5">
+                  <Badge tone="neutral">{ragSourceLabels[evidence.source_type]}</Badge>
+                  <Badge tone={evidence.verified ? "success" : "warning"}>{evidence.verified ? "Đã xác minh" : "Tự khai báo"}</Badge>
+                </div>
+              </div>
+              <p className="mt-2 whitespace-pre-wrap wrap-anywhere text-sm leading-6 text-muted">{evidence.excerpt}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </Card>
+  );
+}
+
+function RagResultsBody({ data }: { data: RagSearchResponse }) {
+  if (data.status === "empty") {
+    return <div className="mt-4"><EmptyState title="Chưa tìm thấy hồ sơ phù hợp" description="Hãy thử nêu rõ kỹ năng, vai trò, dự án hoặc lĩnh vực cần tìm." /></div>;
+  }
+  return (
+    <div className="mt-4 space-y-4">
+      <Card className="border-[#E5DFFF] bg-white p-4 sm:p-5">
+        <div className="flex items-center gap-2"><Sparkles size={16} className="text-violet-strong" aria-hidden="true" /><h2 className="text-sm font-semibold text-ink">Câu trả lời dựa trên hồ sơ</h2></div>
+        <p className="mt-2 text-sm leading-6 text-ink">{data.answer}</p>
+        <p className="mt-2 text-xs text-muted">
+          {data.answer_source === "ai"
+            ? "AI chỉ tổng hợp từ các bằng chứng bên dưới; thứ tự ứng viên do bước truy xuất xác định."
+            : "AI phản hồi chậm hoặc chưa khả dụng; hệ thống vẫn trả kết quả truy xuất từ hồ sơ, không tự thêm ứng viên."}
+        </p>
+      </Card>
+      <div>
+        <h2 className="text-sm font-semibold text-ink">{data.candidates.length} nhân sự có bằng chứng phù hợp</h2>
+        <p className="mt-1 text-xs text-muted">Truy xuất trong công ty hiện tại · chỉ dùng dữ liệu bạn được phép xem</p>
+      </div>
+      <ul aria-label="Kết quả RAG" className="grid items-start gap-3 xl:grid-cols-2">
+        {data.candidates.map((candidate) => <li key={candidate.user_id} className="min-w-0"><RagCandidateCard candidate={candidate} /></li>)}
+      </ul>
+    </div>
+  );
+}
+
 function ResultsBody({ data, onRetry, layout, onLayoutChange }: { data: PeopleSearchResponse; onRetry: () => void; layout: ResultLayout; onLayoutChange: (layout: ResultLayout) => void }) {
   if (data.status === "insufficient_evidence") {
     return <Card className="mt-4 border-border bg-background p-5" role="status"><h2 className="text-sm font-semibold text-ink">Chưa đủ bằng chứng để tìm kiếm</h2><p className="mt-2 text-sm leading-6 text-muted">Dữ liệu chuẩn hóa hoặc nguồn xác minh chưa sẵn sàng. Chưa thể kết luận có nhân sự phù hợp hay không; hãy bổ sung, xác minh hồ sơ rồi tìm lại.</p></Card>;
@@ -238,11 +308,14 @@ function ResultsBody({ data, onRetry, layout, onLayoutChange }: { data: PeopleSe
 
 function SearchFeedback({ state, mode, layout, onLayoutChange, onRetry }: { state: SearchState; mode: SearchMode; layout: ResultLayout; onLayoutChange: (layout: ResultLayout) => void; onRetry: () => void }) {
   if (state.mode !== mode || state.status === "idle") return null;
+  const criteriaData = state.data && "plan" in state.data ? state.data : undefined;
+  const ragData = state.data && "retrieval_mode" in state.data ? state.data : undefined;
   const content = (
     <>
       {state.status === "loading" ? <LoadingState label={mode === "assistant" ? "Milo đang phân tích nhu cầu và đối chiếu nhân sự" : "Đang tìm kiếm nhân sự"} /> : null}
       {state.status === "error" ? <ErrorState title="Không thể thực hiện tìm kiếm" description={state.error ?? "Kết nối dịch vụ tìm kiếm đang gián đoạn."} onRetry={onRetry} /> : null}
-      {state.status === "success" && state.data ? <><SearchInterpretationPanel interpretation={state.data.plan.interpretation} needsClarification={state.data.plan.needs_clarification} /><UnsupportedBanner reasons={state.data.unsupported_reasons} /><ResultsBody data={state.data} layout={layout} onLayoutChange={onLayoutChange} onRetry={onRetry} /></> : null}
+      {state.status === "success" && criteriaData ? <><SearchInterpretationPanel interpretation={criteriaData.plan.interpretation} needsClarification={criteriaData.plan.needs_clarification} /><UnsupportedBanner reasons={criteriaData.unsupported_reasons} /><ResultsBody data={criteriaData} layout={layout} onLayoutChange={onLayoutChange} onRetry={onRetry} /></> : null}
+      {state.status === "success" && ragData ? <RagResultsBody data={ragData} /> : null}
     </>
   );
 
@@ -252,7 +325,7 @@ function SearchFeedback({ state, mode, layout, onLayoutChange, onRetry }: { stat
       {state.query ? <div className="ml-auto max-w-2xl rounded-2xl rounded-br-md bg-primary px-4 py-3 text-sm leading-6 text-white"><p className="sr-only">Câu hỏi của bạn:</p>{state.query}</div> : null}
       <div className="max-w-4xl rounded-2xl rounded-tl-md border border-[#E5DFFF] bg-[#F8F6FF] p-4 sm:p-5">
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-violet-strong"><span className="grid size-8 place-items-center rounded-xl bg-white shadow-sm"><Sparkles size={16} aria-hidden="true" /></span>Milo People Intelligence</div>
-        {state.status === "success" ? <p className="text-sm leading-6 text-ink">Mình đã chuyển câu hỏi thành tiêu chí có cấu trúc và đối chiếu với dữ liệu nhân sự mà bạn được phép xem.</p> : null}
+        {state.status === "success" ? <p className="text-sm leading-6 text-ink">Mình đã truy xuất dữ liệu hồ sơ trong phạm vi bạn được phép xem và tổng hợp câu trả lời từ các bằng chứng đó.</p> : null}
         {content}
       </div>
     </div>
@@ -285,7 +358,8 @@ export function PeopleSearchView() {
     lastRequest.current = { query, mode: requestMode };
     setState({ status: "loading", mode: requestMode, query });
     try {
-      const data = await searchPeople({ query, accessToken: session.accessToken, signal: nextController.signal, companyId: session.user.role === "SUPER_ADMIN" ? companyId : undefined });
+      const request = { query, accessToken: session.accessToken, signal: nextController.signal, companyId: session.user.role === "SUPER_ADMIN" ? companyId : undefined };
+      const data = requestMode === "assistant" ? await askPeople(request) : await searchPeople(request);
       if (currentId === requestId.current) setState({ status: "success", mode: requestMode, query, data });
     } catch (error) {
       if (nextController.signal.aborted || currentId !== requestId.current) return;
@@ -332,7 +406,7 @@ export function PeopleSearchView() {
         <h1 className="mt-3 text-balance text-2xl font-bold tracking-[-0.03em] text-ink sm:text-3xl">Tìm kiếm nhân sự</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">Tìm theo tiêu chí cụ thể hoặc hỏi AI bằng ngôn ngữ tự nhiên. Hệ thống chỉ xếp hạng theo dữ liệu có bằng chứng.</p>
         <p className="mt-3 max-w-2xl rounded-xl border border-border bg-background p-3 text-sm leading-6 text-muted">
-          Bản tích hợp thử nghiệm: dữ liệu kỹ năng, lĩnh vực và mức độ sẵn sàng đã xác minh chưa được nối đầy đủ. Hệ thống sẽ báo thiếu dữ liệu thay vì tự suy đoán kết quả. Tìm kiếm AI cần cấu hình dịch vụ phía máy chủ.
+          RAG hồ sơ có cấu trúc đang bật: Milo truy xuất kỹ năng, kinh nghiệm và dự án trong phạm vi công ty. Dữ liệu tự khai báo luôn được gắn nhãn; nếu AI phản hồi chậm, hệ thống vẫn trả kết quả truy xuất mà không tự thêm ứng viên.
         </p>
       </header>
 
