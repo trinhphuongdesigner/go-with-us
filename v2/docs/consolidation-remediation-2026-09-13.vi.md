@@ -5,7 +5,7 @@
 - Branch: `codex/v2-qa-consolidation`
 - Implementation SHA: `f5d7fb093f0cd7f577131111222bcd2d8a43459c`
 - Trạng thái: **READY_FOR_MANUAL_TEST_WITH_LIMITATIONS**
-- Lưu ý: source/backend/frontend/contracts đã sạch và gắn với SHA trên. Playwright chưa chạy theo yêu cầu tạm dừng; report/orchestration được commit riêng sau implementation.
+- Lưu ý: source/backend/frontend/contracts đã sạch và gắn với SHA trên. Report/handoff đã push tại `0ef9f94575592b37d20d8226c3a46dfbb22938bf`. Playwright chưa chạy theo yêu cầu tạm dừng.
 
 ## Phần đã khép trong lượt remediation
 
@@ -96,12 +96,12 @@ Do hard condition đã đạt 100%, 70 điểm biểu diễn coverage bắt bu�
 - `git diff --check`: **PASS**.
 - Independent read-only review của toàn bộ P0/P1 remediation: **APPROVE**, không còn P0/P1 có thể hành động; source được commit nguyên trạng tại implementation SHA ở trên.
 - Playwright/browser/persona: **NOT_RUN** theo yêu cầu hiện tại.
-- Gitleaks exact-SHA: **NOT_RUN** vì candidate chưa có clean SHA và binary không có trong checkout.
+- Gitleaks exact-SHA: **NOT_RUN** vì binary không có trong checkout; implementation SHA đã được khóa.
 
 Database PostgreSQL cũ ở cổng 55432 có Alembic version `0004` nhưng từng được `metadata.create_all` bổ sung bảng mới, nên không còn là nguồn kiểm chứng hợp lệ. Không xóa hoặc truncate database này. Gate ở trên dùng PostgreSQL 17 cô lập tại cổng 55441, schema được tạo hoàn toàn bằng Alembic.
 
-## Việc còn chặn bàn giao tester
+## Trạng thái bàn giao tester
 
-1. Push branch tích hợp cùng implementation/report commit để tester lấy đúng candidate.
-2. Tester chạy manual browser flow; Playwright chỉ chạy khi user mở lại gate này.
-3. Gitleaks exact-SHA cần chạy ở môi trường có binary trước khi merge/cutover.
+- Branch `origin/codex/v2-qa-consolidation` đã chứa implementation `f5d7fb093f0cd7f577131111222bcd2d8a43459c` và report/handoff tại `0ef9f94575592b37d20d8226c3a46dfbb22938bf`.
+- Tester có thể bắt đầu manual browser flow; Playwright chỉ chạy khi user mở lại gate này.
+- Gitleaks exact-SHA vẫn cần chạy ở môi trường có binary trước khi merge/cutover.

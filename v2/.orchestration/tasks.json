@@ -90,13 +90,13 @@
     }
   ],
   "coordination_state": {
-    "updated_at": "2026-09-13T10:28:00+07:00",
-    "mode": "MANUAL_QA_PENDING",
+    "updated_at": "2026-09-13T10:36:00+07:00",
+    "mode": "MANUAL_QA_READY",
     "writer": null,
     "canonical_worktree": ".claude/worktrees/v2-qa",
     "candidate_head": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
     "implementation_source_clean": true,
-    "documentation_commit_pending": true,
+    "documentation_commit_pending": false,
     "remediation_review": {
       "status": "PASS",
       "p0": 0,
@@ -110,6 +110,7 @@
       "frontend_vitest": "148 passed",
       "playwright": "NOT_RUN"
     },
-    "resume_rule": "Commit/push report and handoff; manual tester validates. Run Playwright only after explicit user re-enable."
+    "resume_rule": "Manual tester validates the pushed candidate. Run Playwright only after explicit user re-enable.",
+    "published_head": "0ef9f94575592b37d20d8226c3a46dfbb22938bf"
   }
 }

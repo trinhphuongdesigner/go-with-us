@@ -57,7 +57,7 @@
     "implementation_sha": "de246d8c74ec8425cec0172613012fc600811719",
     "evidence": "205 PostgreSQL, 196 SQLite, 21 Vitest, 36 Playwright; Antigravity P0/P1/P2=0; report 01-employee-360-import"
   },
-  "next_gate": "Commit and push the report/handoff, then perform manual tester validation. Playwright remains paused until the user re-enables it.",
+  "next_gate": "Manual tester validation on origin/codex/v2-qa-consolidation. Playwright remains paused until the user re-enables it.",
   "verified_tree_sha": "052b9d39877cfe584033bf2c574594495df79497",
   "wave1_core": {
     "status": "PASS",
@@ -77,7 +77,7 @@
     "tracked_diff_insertions": 4184,
     "tracked_diff_deletions": 1102,
     "snapshot_at": "2026-09-13T10:23:00+07:00",
-    "note": "Implementation source is clean at this SHA; only report/orchestration and other documentation remain uncommitted."
+    "note": "Implementation and report/handoff are committed and pushed. Only unrelated v1 changes remain dirty and were preserved outside the v2 commit scope."
   },
   "current_candidate_checks": [
     {
@@ -107,8 +107,8 @@
     },
     {
       "id": "tester-handoff",
-      "status": "BLOCKED",
-      "evidence": "Requires report commit/push and manual browser validation; automated Playwright is still paused by the user."
+      "status": "PASS",
+      "evidence": "Remote branch contains implementation f5d7fb093f0cd7f577131111222bcd2d8a43459c and report/handoff at 0ef9f94575592b37d20d8226c3a46dfbb22938bf; manual tester validation may begin while automated Playwright remains paused."
     }
   ]
 }

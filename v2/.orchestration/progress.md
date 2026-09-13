@@ -83,3 +83,10 @@ Tại checkpoint 01:00 ICT chưa có feature nào PASS; trạng thái mới hơn
 - Đã commit riêng source/backend/frontend/contracts/test v2 tại SHA `f5d7fb093f0cd7f577131111222bcd2d8a43459c`; không stage bất kỳ thay đổi v1 nào ở root.
 - `contracts:check` sau commit xác nhận generated TypeScript contract current; source tree của implementation sạch và byte-identical với snapshot đã chạy test/review.
 - Report, handoff và orchestration được chuẩn bị cho commit tài liệu riêng. Tester handoff vẫn ghi rõ Playwright NOT_RUN và Gitleaks exact-SHA chưa có binary.
+
+## 2026-09-13 10:36 ICT — push candidate và mở manual QA
+
+- Đã push `codex/v2-qa-consolidation`; remote head sau commit report/handoff là `0ef9f94575592b37d20d8226c3a46dfbb22938bf`.
+- Implementation cần kiểm tra vẫn là `f5d7fb093f0cd7f577131111222bcd2d8a43459c`; report và toàn bộ check runtime trỏ về SHA này.
+- Manual tester có thể bắt đầu trên branch đã push. Overall report vẫn `BLOCKED` vì Playwright/accessibility/performance/persona NOT_RUN theo yêu cầu và Gitleaks chưa có binary.
+- Các thay đổi v1 ngoài phạm vi vẫn được giữ nguyên, không stage hoặc đưa vào commit v2.
