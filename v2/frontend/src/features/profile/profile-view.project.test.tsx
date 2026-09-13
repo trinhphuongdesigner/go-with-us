@@ -205,4 +205,54 @@ describe("ProfileView – Project CRUD", () => {
     const editButton = screen.getByRole("button", { name: "Chỉnh sửa CareerMate" });
     expect(editButton).toBeDisabled();
   });
+
+  it("discards a stale draft after a 409 conflict is resolved by reloading, so retry uses the server's current fields", async () => {
+    const profile = baseProfile();
+    vi.mocked(getOwnProfile).mockResolvedValueOnce(profile);
+    vi.mocked(updateProfileResource).mockRejectedValueOnce(
+      new ApiError("Phiên bản hồ sơ không khớp", 409, { detail: "stale", currentProfileVersion: 4 }),
+    );
+
+    render(<ProfileView />);
+    await screen.findByText("CareerMate");
+    await openProjectsTab();
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Chỉnh sửa CareerMate" }));
+    const nameInput = screen.getByDisplayValue("CareerMate");
+    await user.clear(nameInput);
+    await user.type(nameInput, "My Stale Draft");
+    await user.click(screen.getByRole("button", { name: "Lưu dự án" }));
+
+    await waitFor(() => expect(updateProfileResource).toHaveBeenCalledTimes(1));
+    const [, , , stalePayload] = vi.mocked(updateProfileResource).mock.calls[0];
+    expect(stalePayload).toMatchObject({ name: "My Stale Draft", profileVersion: 3 });
+    await screen.findByRole("alert");
+
+    // Server moved on concurrently: role changed by someone else, version bumped to 4.
+    const reloadedProfile: CoreProfile = {
+      ...profile,
+      profileVersion: 4,
+      projects: [{ ...profile.projects[0], role: "Staff Engineer" }],
+    };
+    vi.mocked(getOwnProfile).mockResolvedValueOnce(reloadedProfile);
+    await user.click(screen.getByRole("button", { name: "Tải lại hồ sơ" }));
+
+    // The stale draft editor must not still be open/submittable against v4.
+    await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+    expect(screen.queryByDisplayValue("My Stale Draft")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Lưu dự án" })).not.toBeInTheDocument();
+
+    // Reopening the editor must show the fresh server value, not the discarded draft.
+    vi.mocked(updateProfileResource).mockResolvedValueOnce({ ...reloadedProfile.projects[0] } as never);
+    await user.click(screen.getByRole("button", { name: "Chỉnh sửa CareerMate" }));
+    expect(screen.getByDisplayValue("CareerMate")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Staff Engineer")).toBeInTheDocument();
+    expect(screen.queryByDisplayValue("My Stale Draft")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Lưu dự án" }));
+    await waitFor(() => expect(updateProfileResource).toHaveBeenCalledTimes(2));
+    const [, , , freshPayload] = vi.mocked(updateProfileResource).mock.calls[1];
+    expect(freshPayload).toMatchObject({ profileVersion: 4 });
+  });
 });

@@ -1447,11 +1447,17 @@ async def test_project_timeline_orders_same_day_entries_deterministically_by_id(
     assert ids_first == expected_order
 
 
+@pytest.mark.parametrize("operation", ["update", "delete"])
 @pytest.mark.asyncio
 async def test_project_update_and_delete_roll_back_when_audit_fails(
-    client: AsyncClient, db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+    operation: str,
+    client: AsyncClient,
+    db_session: AsyncSession,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    employee = await create_user(db_session, email="project-rollback@acme.dev", name="Owner")
+    employee = await create_user(
+        db_session, email=f"project-{operation}-rollback@acme.dev", name="Owner"
+    )
     assert employee.company_id is not None
     resource = Project(
         user_id=employee.id,
@@ -1470,15 +1476,23 @@ async def test_project_update_and_delete_roll_back_when_audit_fails(
     headers = await login(client, employee.email)
 
     async def fail_audit(*args: object, **kwargs: object) -> ActivityLog:
-        raise RuntimeError("synthetic project audit failure")
+        raise RuntimeError(f"synthetic project {operation} audit failure")
 
     monkeypatch.setattr(ActivityLogRepository, "log", fail_audit)
-    with pytest.raises(RuntimeError, match="synthetic project audit failure"):
-        await client.patch(
-            f"/api/v2/competency-profile/projects/{resource_id}",
-            headers=headers,
-            json={"profileVersion": 1, "name": "Changed"},
-        )
+    with pytest.raises(RuntimeError, match=f"synthetic project {operation} audit failure"):
+        if operation == "update":
+            await client.patch(
+                f"/api/v2/competency-profile/projects/{resource_id}",
+                headers=headers,
+                json={"profileVersion": 1, "name": "Changed"},
+            )
+        else:
+            await client.request(
+                "DELETE",
+                f"/api/v2/competency-profile/projects/{resource_id}",
+                headers=headers,
+                json={"profileVersion": 1},
+            )
 
     db_session.expire_all()
     persisted_user = await db_session.get(User, employee_id)

@@ -426,6 +426,7 @@ function ProfileResourcesPanel({
                   </div>
                   {editingId === resource.id ? (
                     <ProfileResourceEditForm
+                      key={`${resource.id}:${profile.profileVersion}`}
                       kind={active}
                       resource={resource}
                       employments={profile.employments}
@@ -560,6 +561,9 @@ export function ProfileView({ forceState }: { forceState?: CoreUiForcedState }) 
       setName(result.data.name);
       setJobTitle(result.data.jobTitle);
       setStale(false);
+      // Close any open resource editor so it remounts against the freshly
+      // reloaded resource/profileVersion instead of resubmitting a stale draft.
+      setEditingResourceId(null);
       return;
     }
     setRefreshError(true);
