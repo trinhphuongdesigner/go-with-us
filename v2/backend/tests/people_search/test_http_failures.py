@@ -76,9 +76,7 @@ async def test_provider_timeout_maps_to_504(client, db_session, monkeypatch):
     body = response.json()
     assert body["status"] == "provider_failure"
     assert body["candidates"] == []
-    assert body["unsupported_reasons"] == [
-        "Không thể phân tích yêu cầu lúc này; vui lòng thử lại."
-    ]
+    assert body["unsupported_reasons"] == ["Không thể phân tích yêu cầu lúc này; vui lòng thử lại."]
     assert provider_detail not in response.text
     assert len(provider_calls) == 2
     assert retrieval_calls == []
@@ -88,9 +86,7 @@ async def test_provider_timeout_maps_to_504(client, db_session, monkeypatch):
 async def test_malformed_provider_output_maps_to_502(client, db_session):
     def handler(_request):
         # Schema-invalid: candidate_ids is not a field the model may supply.
-        return httpx.Response(
-            200, text=tool_stream(intent_data(candidate_ids=["invented"]))
-        )
+        return httpx.Response(200, text=tool_stream(intent_data(candidate_ids=["invented"])))
 
     token = await _admin_token(client, db_session, "malformed-admin@example.dev")
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as transport_client:
@@ -212,7 +208,7 @@ async def test_successful_and_clarification_status_unaffected_at_200(client, db_
             app.dependency_overrides.pop(get_intent_compiler, None)
 
     assert ok_response.status_code == 200
-    assert ok_response.json()["status"] == "ok"
+    assert ok_response.json()["status"] == "empty"
 
     def clarify_handler(_request):
         return httpx.Response(

@@ -295,6 +295,10 @@ class CompetencyProfileService:
                 else:
                     current.rating = item.rating
                     current.note = item.note
+                    current.self_assessed = actor.id == target.id
+                    current.source_type = source
+                    current.source_import_id = None
+                    current.proposal_item_id = None
                     current.updated_by = actor.id
                     current.version += 1
             await self.session.flush()
@@ -501,10 +505,16 @@ class CompetencyProfileService:
         self._validate_combined_dates(kind, resource, values)
         if kind in {"experience", "project"} and "employment_id" in values:
             await self._validate_employment(values["employment_id"], target)
+        source = ProfileSourceType.SELF if actor.id == target.id else ProfileSourceType.ADMIN
         try:
             new_version = await self._profile_cas(target, payload.profile_version)
             for field, value in values.items():
                 setattr(resource, field, value)
+            resource.source_type = source
+            resource.source_import_id = None
+            resource.proposal_item_id = None
+            if kind == "award":
+                cast(Award, resource).self_reported = actor.id == target.id
             resource.updated_by = actor.id
             resource.version += 1
             await self.session.flush()

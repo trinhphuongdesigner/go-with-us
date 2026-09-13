@@ -29,7 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.pool import StaticPool
 
 from app.api.v2.auth import get_login_rate_limiter
-from app.core.database import Base, get_db
+from app.core.database import Base, get_db, register_sqlite_compat_functions
 from app.domain.enums import EmploymentStatus, Role
 from app.domain.models import Company, Employment, User
 from app.people_search.app import app
@@ -42,6 +42,7 @@ engine = create_async_engine(
     connect_args={"check_same_thread": False},
     poolclass=StaticPool,
 )
+register_sqlite_compat_functions(engine)
 session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
 
@@ -131,9 +132,7 @@ async def create_employment(
 
 
 async def login_token(client: AsyncClient, email: str, password: str) -> str:
-    response = await client.post(
-        "/api/v2/auth/login", json={"email": email, "password": password}
-    )
+    response = await client.post("/api/v2/auth/login", json={"email": email, "password": password})
     assert response.status_code == 200, response.text
     token: str = response.json()["accessToken"]
     return token

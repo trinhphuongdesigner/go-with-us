@@ -3691,6 +3691,147 @@
         "title": "GeneratePlan",
         "type": "object"
       },
+      "GoalPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "aiSuggested": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aisuggested"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "enum": [
+                  "WORK",
+                  "PERSONAL"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "currentValue": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currentvalue"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "dueDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duedate"
+          },
+          "expectedVersion": {
+            "minimum": 1.0,
+            "title": "Expectedversion",
+            "type": "integer"
+          },
+          "metric": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metric"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "NOT_STARTED",
+                  "IN_PROGRESS",
+                  "ACHIEVED"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "targetValue": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Targetvalue"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 180,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "required": [
+          "expectedVersion"
+        ],
+        "title": "GoalPatch",
+        "type": "object"
+      },
       "GoalRead": {
         "additionalProperties": false,
         "properties": {
@@ -3815,12 +3956,17 @@
             "format": "date-time",
             "title": "Updatedat",
             "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
           }
         },
         "required": [
           "title",
           "id",
           "roadmapId",
+          "version",
           "createdAt",
           "updatedAt"
         ],
@@ -3952,6 +4098,24 @@
             "minLength": 1,
             "title": "Name",
             "type": "string"
+          },
+          "passportDimension": {
+            "anyOf": [
+              {
+                "enum": [
+                  "ATTENDANCE",
+                  "PROACTIVENESS",
+                  "KNOWLEDGE",
+                  "SKILL",
+                  "ACTIVITY_PARTICIPATION"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passportdimension"
           },
           "questions": {
             "items": {
@@ -4157,6 +4321,178 @@
           "user"
         ],
         "title": "LoginResponse",
+        "type": "object"
+      },
+      "ManagedInsightProfile": {
+        "additionalProperties": false,
+        "properties": {
+          "assessmentAttitudeScore": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessmentattitudescore"
+          },
+          "assessmentContributionScore": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessmentcontributionscore"
+          },
+          "attitudeScore": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attitudescore"
+          },
+          "contributionScore": {
+            "title": "Contributionscore",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "jobTitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Jobtitle"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "jobTitle",
+          "contributionScore",
+          "attitudeScore",
+          "assessmentContributionScore",
+          "assessmentAttitudeScore"
+        ],
+        "title": "ManagedInsightProfile",
+        "type": "object"
+      },
+      "ManagedSkillInsightRead": {
+        "additionalProperties": false,
+        "properties": {
+          "activityCount": {
+            "title": "Activitycount",
+            "type": "integer"
+          },
+          "assessmentsReceivedCount": {
+            "title": "Assessmentsreceivedcount",
+            "type": "integer"
+          },
+          "goalStatusCounts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Goalstatuscounts",
+            "type": "object"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/ManagedInsightProfile"
+          },
+          "skills": {
+            "items": {
+              "$ref": "#/components/schemas/ManagedSkillRead"
+            },
+            "title": "Skills",
+            "type": "array"
+          }
+        },
+        "required": [
+          "profile",
+          "skills",
+          "goalStatusCounts",
+          "activityCount",
+          "assessmentsReceivedCount"
+        ],
+        "title": "ManagedSkillInsightRead",
+        "type": "object"
+      },
+      "ManagedSkillRead": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "level": {
+            "title": "Level",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "skillId": {
+            "format": "uuid",
+            "title": "Skillid",
+            "type": "string"
+          },
+          "sourceType": {
+            "title": "Sourcetype",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "skillId",
+          "name",
+          "category",
+          "level",
+          "note",
+          "sourceType"
+        ],
+        "title": "ManagedSkillRead",
         "type": "object"
       },
       "MeResponse": {
@@ -4414,6 +4750,140 @@
         ],
         "title": "Permission",
         "type": "string"
+      },
+      "PersonalDetailsRead": {
+        "additionalProperties": false,
+        "properties": {
+          "attitudeScore": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attitudescore"
+          },
+          "avatarAssetId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatarassetid"
+          },
+          "contributionAdjustment": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contributionadjustment"
+          },
+          "contributionScore": {
+            "minimum": 0.0,
+            "title": "Contributionscore",
+            "type": "integer"
+          },
+          "dateOfBirth": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dateofbirth"
+          },
+          "emergencyContactName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergencycontactname"
+          },
+          "emergencyContactPhone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergencycontactphone"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender"
+          },
+          "idNumber": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idnumber"
+          },
+          "onboardDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Onboarddate"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "version": {
+            "minimum": 0.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "contributionScore"
+        ],
+        "title": "PersonalDetailsRead",
+        "type": "object"
       },
       "PlanProposal": {
         "additionalProperties": false,
@@ -6778,7 +7248,47 @@
         "additionalProperties": false,
         "properties": {
           "level": {
-            "default": 3,
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "RichSkill",
+        "type": "object"
+      },
+      "RichSkillApply": {
+        "additionalProperties": false,
+        "properties": {
+          "level": {
             "maximum": 5.0,
             "minimum": 1.0,
             "title": "Level",
@@ -6804,9 +7314,10 @@
           }
         },
         "required": [
-          "name"
+          "name",
+          "level"
         ],
-        "title": "RichSkill",
+        "title": "RichSkillApply",
         "type": "object"
       },
       "RoadmapMilestoneDraft": {
@@ -8007,7 +8518,7 @@
           },
           "skills": {
             "items": {
-              "$ref": "#/components/schemas/RichSkill"
+              "$ref": "#/components/schemas/RichSkillApply"
             },
             "maxItems": 100,
             "title": "Skills",
@@ -8233,6 +8744,23 @@
             "minLength": 1,
             "title": "Content",
             "type": "string"
+          },
+          "evidenceRefs": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 100,
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidencerefs"
           },
           "expectedVersion": {
             "minimum": 1.0,
@@ -13273,6 +13801,16 @@
               "title": "Goal Id",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "expected_version",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "Expected Version",
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -13318,7 +13856,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GoalWrite"
+                "$ref": "#/components/schemas/GoalPatch"
               }
             }
           },
@@ -15188,7 +15726,9 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/PersonalDetailsRead"
+                }
               }
             },
             "description": "Successful Response"
@@ -15488,7 +16028,9 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/PersonalDetailsRead"
+                }
               }
             },
             "description": "Successful Response"
@@ -16229,7 +16771,9 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedSkillInsightRead"
+                }
               }
             },
             "description": "Successful Response"

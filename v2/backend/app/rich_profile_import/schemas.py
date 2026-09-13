@@ -1,11 +1,13 @@
-import uuid
 import re
+import uuid
 from datetime import date, datetime
 from typing import Literal
+
 from pydantic import Field, model_validator
-from app.domain.schemas import ApiModel
-from app.domain.roadmap_schemas import Title, RoadmapCategory
+
 from app.career_ai.schemas import RoadmapProposal
+from app.domain.roadmap_schemas import RoadmapCategory, Title
+from app.domain.schemas import ApiModel
 
 DATE_KEYS = {
     "startDate",
@@ -49,9 +51,7 @@ def normalize_source_dates(value, notices=None):
                     )
             elif re.match(r"^\d{4}-\d{2}-\d{2}T", stripped):
                 try:
-                    result = (
-                        datetime.fromisoformat(stripped.replace("Z", "+00:00")).date().isoformat()
-                    )
+                    result = datetime.fromisoformat(stripped).date().isoformat()
                 except ValueError:
                     result = stripped
         output[key] = result
@@ -67,8 +67,12 @@ class BasicInfo(ApiModel):
 
 class RichSkill(ApiModel):
     name: str = Field(min_length=1, max_length=120)
-    level: int = Field(default=3, ge=1, le=5)
+    level: int | None = Field(default=None, ge=1, le=5, strict=True)
     note: str | None = Field(default=None, max_length=1000)
+
+
+class RichSkillApply(RichSkill):
+    level: int = Field(ge=1, le=5, strict=True)
 
 
 class RichProject(ApiModel):
@@ -139,7 +143,7 @@ class RichProposal(ApiModel):
     @model_validator(mode="before")
     @classmethod
     def dates_from_sources(cls, value):
-        notices = set()
+        notices: set[str] = set()
         result = normalize_source_dates(value, notices)
         if notices and isinstance(result, dict):
             note_key = "dedup_notes" if "dedup_notes" in result else "dedupNotes"
@@ -157,7 +161,7 @@ class RefineRequest(ApiModel):
 
 class SelectedUpdates(ApiModel):
     basic_info: BasicInfo | None = None
-    skills: list[RichSkill] = Field(default_factory=list, max_length=100)
+    skills: list[RichSkillApply] = Field(default_factory=list, max_length=100)
     projects: list[RichProject] = Field(default_factory=list, max_length=50)
     certifications: list[RichCertification] = Field(default_factory=list, max_length=50)
     awards: list[RichAward] = Field(default_factory=list, max_length=50)

@@ -8,8 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql import Select
 
-from app.domain.models import User, utc_now
 from app.career_ai.models import CareerGoal
+from app.domain.models import User, utc_now
 from app.domain.roadmap_models import (
     DevelopmentMilestone,
     DevelopmentPlanSettings,

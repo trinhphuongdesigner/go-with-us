@@ -131,12 +131,16 @@ async def demo_login(payload: DemoLoginRequest, request: Request, db: DbSession)
     _require_demo_login()
     normalized_email = str(payload.email).strip().casefold()
     if normalized_email not in _DEMO_EMAILS:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tài khoản demo không tồn tại")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Tài khoản demo không tồn tại"
+        )
     result = await AuthService(db).demo_login(
         normalized_email, getattr(request.state, "request_id", None)
     )
     if result is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tài khoản demo không tồn tại")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Tài khoản demo không tồn tại"
+        )
     return LoginResponse(access_token=result.access_token, user=session_user(result.user))
 
 

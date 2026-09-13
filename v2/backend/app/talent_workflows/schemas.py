@@ -27,6 +27,16 @@ class Group(ApiModel):
     description: str = Field(default="", max_length=2000)
     weight: float = Field(default=1, ge=0, le=10000, allow_inf_nan=False)
     score_dimension: Literal["CONTRIBUTION", "ATTITUDE"] = "CONTRIBUTION"
+    passport_dimension: (
+        Literal[
+            "ATTENDANCE",
+            "PROACTIVENESS",
+            "KNOWLEDGE",
+            "SKILL",
+            "ACTIVITY_PARTICIPATION",
+        ]
+        | None
+    ) = None
     questions: list[Question] = Field(min_length=1, max_length=100)
 
 
@@ -141,12 +151,25 @@ class SummaryGenerate(ApiModel):
     user_id: uuid.UUID | None = None
 
 
+class SupportedClaim(ApiModel):
+    text: str = Field(min_length=1, max_length=20000)
+    evidence_refs: list[uuid.UUID] = Field(min_length=1, max_length=100)
+
+
+class OffboardingProposal(ApiModel):
+    narrative: SupportedClaim
+    evaluation: SupportedClaim
+    strengths: list[SupportedClaim] = Field(default_factory=list, max_length=30)
+    growth_areas: list[SupportedClaim] = Field(default_factory=list, max_length=30)
+
+
 class SummaryRequest(ApiModel):
     employment_id: uuid.UUID
 
 
 class SummaryEdit(VersionInput):
     content: str = Field(min_length=1, max_length=20000)
+    evidence_refs: list[uuid.UUID] | None = Field(default=None, min_length=1, max_length=100)
 
 
 class SummaryRead(ApiModel):
@@ -190,6 +213,16 @@ class RequirementRead(RequirementInput):
     status: str
     version: int
     created_at: datetime
+
+
+class MatchExplanation(ApiModel):
+    user_id: uuid.UUID
+    rationale: str = Field(min_length=1, max_length=4000)
+    evidence_skill_ids: list[uuid.UUID] = Field(min_length=1, max_length=60)
+
+
+class MatchExplanationResponse(ApiModel):
+    matches: list[MatchExplanation] = Field(default_factory=list, max_length=200)
 
 
 class EmploymentInput(ApiModel):

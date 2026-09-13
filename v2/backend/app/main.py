@@ -19,16 +19,16 @@ from app.api.v2 import (
     profile_router,
     skills_competency_router,
 )
-from app.core.config import Settings, get_settings
 from app.api.v2.development_plans import router as development_plans_router
-from app.people_search.router import router as people_search_router
-from app.organization import router as organization_router
-from app.dashboard import router as dashboard_router
-from app.profile_extensions.router import router as profile_extensions_router
 from app.career_ai.routes import router as career_ai_router
-from app.talent_workflows.router import router as talent_router
-from app.rich_profile_import.routes import router as rich_profile_import_router
 from app.company_memberships import router as company_memberships_router
+from app.core.config import Settings, get_settings
+from app.dashboard import router as dashboard_router
+from app.organization import router as organization_router
+from app.people_search.router import router as people_search_router
+from app.profile_extensions.router import router as profile_extensions_router
+from app.rich_profile_import.routes import router as rich_profile_import_router
+from app.talent_workflows.router import router as talent_router
 
 
 def configure_profile_import_ai_runtime(

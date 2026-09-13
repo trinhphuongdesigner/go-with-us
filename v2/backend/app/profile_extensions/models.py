@@ -1,6 +1,7 @@
 import uuid
 from datetime import date, datetime
 from typing import Any
+
 from sqlalchemy import (
     JSON,
     Boolean,
@@ -8,6 +9,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
+    Index,
     Integer,
     String,
     Text,
@@ -15,6 +17,7 @@ from sqlalchemy import (
     Uuid,
 )
 from sqlalchemy.orm import Mapped, mapped_column
+
 from app.core.database import Base
 from app.domain.models import TimestampMixin
 
@@ -59,6 +62,7 @@ class ProfileActivityLog(TimestampMixin, Base):
     evidence_asset_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("stored_assets.id"))
     version: Mapped[int] = mapped_column(Integer, default=1)
     __table_args__ = (
+        Index("ix_activities_owner_date", "owner_user_id", "date"),
         ForeignKeyConstraint(
             ["owner_user_id", "company_id"],
             ["users.id", "users.company_id"],
@@ -85,6 +89,7 @@ class CompetencyRequest(TimestampMixin, Base):
     review_note: Mapped[str | None] = mapped_column(Text)
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     __table_args__ = (
+        Index("ix_requests_recipient_status", "recipient_id", "status", "created_at"),
         ForeignKeyConstraint(
             ["sender_id", "company_id"],
             ["users.id", "users.company_id"],

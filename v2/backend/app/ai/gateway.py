@@ -38,9 +38,7 @@ class AiTask(StrEnum):
 
 # Intent describes requested filters, not claims about people. Keep evidence
 # mandatory for every other task (including future tasks) by default.
-EVIDENCE_REQUIRED_TASKS = frozenset(
-    task for task in AiTask if task != AiTask.PEOPLE_SEARCH_INTENT
-)
+EVIDENCE_REQUIRED_TASKS = frozenset(task for task in AiTask if task != AiTask.PEOPLE_SEARCH_INTENT)
 
 
 class AiStatus(StrEnum):

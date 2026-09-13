@@ -39,6 +39,7 @@ def test_typed_admin_permission_mapping_ignores_unknown_database_values() -> Non
     assert effective_permissions(user) == {
         Permission.DASHBOARD_READ,
         Permission.PEOPLE_READ,
+        Permission.ROLES_MANAGE,
     }
 
 
@@ -61,6 +62,7 @@ def test_session_schema_keeps_permissions_typed() -> None:
     assert projected.permissions == [
         Permission.DASHBOARD_READ,
         Permission.PEOPLE_READ,
+        Permission.ROLES_MANAGE,
     ]
 
 

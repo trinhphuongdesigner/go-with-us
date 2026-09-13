@@ -17,6 +17,7 @@ exact_sha="$(git -C "$workspace_root" rev-parse HEAD)"
 # The backend test fixture recreates its schema. Pin every local/CI gate to the
 # dedicated v2 test database and fail before pytest if a caller points elsewhere.
 export CAREERMATE_ENVIRONMENT="test"
+export CAREERMATE_DEMO_LOGIN_ENABLED="false"
 export CAREERMATE_TEST_DATABASE_URL="${CAREERMATE_TEST_DATABASE_URL:-postgresql+asyncpg://careermate:careermate@127.0.0.1:55432/careermate_v2_test}"
 if [[ "$CAREERMATE_TEST_DATABASE_URL" != postgresql+asyncpg://*/careermate_v2_test ]]; then
   echo "FAIL: CAREERMATE_TEST_DATABASE_URL phải trỏ chính xác tới PostgreSQL careermate_v2_test." >&2

@@ -14,7 +14,7 @@ from sqlalchemy.pool import NullPool, StaticPool
 
 from app.api.v2.auth import get_login_rate_limiter
 from app.core.config import get_settings
-from app.core.database import get_db
+from app.core.database import get_db, register_sqlite_compat_functions
 from app.domain.models import Base
 from app.main import app
 from app.security.rate_limit import (
@@ -60,6 +60,7 @@ if test_database_url.startswith("sqlite"):
 else:
     engine_options = {"poolclass": NullPool}
 engine = create_async_engine(test_database_url, **engine_options)
+register_sqlite_compat_functions(engine)
 testing_session = async_sessionmaker(engine, expire_on_commit=False)
 
 

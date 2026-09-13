@@ -20,7 +20,7 @@ function TalentTemplatesContent({scopeState}: {scopeState: ReturnType<typeof use
   const canManage=(session?.user.role==="SUPER_ADMIN"||session?.user.companyId===companyId)&&!!session?.user.permissions.includes("assessment:review")&&["HR","COMPANY_ADMIN","SUPER_ADMIN"].includes(session.user.role);
   const action=useTalentAction(async()=>{await rows.refetch();await cycles.refetch();});
   async function saveTemplate(value:AssessmentTemplate,publish:boolean) {
-    const payload={companyId,name:value.name,description:value.description,groups:value.groups.map(g=>({id:g.id,name:g.name,description:g.description,weight:g.weight,scoreDimension:g.scoreDimension??"CONTRIBUTION",questions:g.questions.map(q=>({id:q.id,text:q.title,guidance:q.helpText,weight:q.weight,maxScore:q.maxScore??10}))}))};
+    const payload={companyId,name:value.name,description:value.description,groups:value.groups.map(g=>({id:g.id,name:g.name,description:g.description,weight:g.weight,scoreDimension:g.scoreDimension??"CONTRIBUTION",passportDimension:g.passportDimension??null,questions:g.questions.map(q=>({id:q.id,text:q.title,guidance:q.helpText,weight:q.weight,maxScore:q.maxScore??10}))}))};
     const existing=editing&&editing!=="new"?editing:null;
     const result=await apiRequest<Template>(existing?`/assessments/templates/${existing.id}`:"/assessments/templates",{method:existing?"PUT":"POST",body:JSON.stringify({...payload,...(existing?{expectedVersion:existing.version}:{})})},session?.accessToken);
     setEditing(result);

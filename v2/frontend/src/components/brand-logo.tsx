@@ -26,6 +26,7 @@ export function BrandLogo({ compact = false, className }: { compact?: boolean; c
         width={150}
         height={28}
         className="h-7 w-auto object-contain"
+        style={{ width: "auto", height: "auto" }}
         priority
       />
     </div>

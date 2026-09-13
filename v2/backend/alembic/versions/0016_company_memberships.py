@@ -1,6 +1,7 @@
 """Backfill explicit company access without changing ownership or employment."""
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision = "0016_company_memberships"

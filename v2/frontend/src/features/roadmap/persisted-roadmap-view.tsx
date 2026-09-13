@@ -37,6 +37,9 @@ function errorMessage(error: unknown) {
 }
 
 type DraftMilestone = { id: string; title: string; tasks: string; dueDate: string };
+type StructureDraft = Parameters<Parameters<typeof RoadmapTreeEditor>[0]["onSave"]>[0];
+type StructureVariables = { roadmap: Roadmap; draft: StructureDraft };
+type DeleteTarget = Pick<Roadmap, "id" | "version" | "title">;
 const newMilestone = (): DraftMilestone => ({ id: crypto.randomUUID(), title: "", tasks: "", dueDate: "" });
 
 function RoadmapEditor({ category, pending, onSave, onCancel }: {
@@ -139,8 +142,8 @@ function RoadmapContent({ identity, session, category, editing, onCloseEditor }:
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [saveIntent, setSaveIntent] = useState(createSaveIntent);
   const [announcement, setAnnouncement] = useState("");
-  const [editStructure, setEditStructure] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [structureTarget, setStructureTarget] = useState<Roadmap | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const listKey = ["roadmaps", identity, category];
   const query = useQuery({ queryKey: listKey, queryFn: () => listRoadmaps(session.accessToken, category) });
   const settingsQuery = useQuery({ queryKey: ["roadmap-settings", identity], queryFn: () => getRoadmapSettings(session.accessToken) });
@@ -156,19 +159,24 @@ function RoadmapContent({ identity, session, category, editing, onCloseEditor }:
     } });
   const selected = query.data?.find((roadmap) => roadmap.id === selectedId) ?? query.data?.[0];
   const settings = settingsQuery.data?.settings;
-  const structure = useMutation({ mutationFn: (draft: Parameters<Parameters<typeof RoadmapTreeEditor>[0]["onSave"]>[0]) => careerRequest<Roadmap>(session.accessToken, `/development-plans/me/roadmaps/${selected!.id}`, "PUT", { expectedVersion: selected!.version, title: draft.title, durationWeeks: draft.durationWeeks, hoursPerWeek: draft.hoursPerWeek, milestones: draft.milestones.map((step) => ({ title: step.title, description: step.description, dueDate: step.dueDate, tasks: step.tasks.map((item) => ({ title: item.title, metric: item.metric, done: item.done ?? false })) })) }), onSuccess: () => { setEditStructure(false); void query.refetch(); } });
-  const remove = useMutation({ mutationFn: () => careerRequest(session.accessToken, `/development-plans/me/roadmaps/${selected!.id}?expected_version=${selected!.version}`, "DELETE"), onSuccess: () => { setConfirmDelete(false); setSelectedId(null); void query.refetch(); } });
+  const structure = useMutation({ mutationFn: ({ roadmap, draft }: StructureVariables) => careerRequest<Roadmap>(session.accessToken, `/development-plans/me/roadmaps/${encodeURIComponent(roadmap.id)}`, "PUT", { expectedVersion: roadmap.version, title: draft.title, durationWeeks: draft.durationWeeks, hoursPerWeek: draft.hoursPerWeek, milestones: draft.milestones.map((step) => ({ title: step.title, description: step.description, dueDate: step.dueDate, tasks: step.tasks.map((item) => ({ title: item.title, metric: item.metric, done: item.done ?? false })) })) }), onSuccess: () => { setStructureTarget(null); void query.refetch(); } });
+  const remove = useMutation({ mutationFn: (target: DeleteTarget) => careerRequest(session.accessToken, `/development-plans/me/roadmaps/${encodeURIComponent(target.id)}?expected_version=${target.version}`, "DELETE"), onSuccess: (_result, target) => {
+    client.setQueryData<Roadmap[]>(listKey, (current) => (current ?? []).filter((item) => item.id !== target.id));
+    setDeleteTarget(null);
+    setSelectedId((current) => current === target.id ? null : current);
+    void query.refetch();
+  } });
   const characterAsset = settings?.character === "an" ? "/brand/an/an-welcome.png" : settings?.character === "milo-guide" ? "/brand/milo/milo-guide.png" : settings?.character === "milo-standing" ? "/brand/milo/milo-standing.png" : "/brand/milo/milo-purple-tablet.webp";
   return <>
     {structure.error || remove.error ? <p role="alert" className="text-danger">{errorMessage(structure.error ?? remove.error)}</p> : null}
-    {selected && <div className="flex flex-wrap gap-2"><Button variant="secondary" disabled={editing || editStructure || task.isPending} onClick={() => setEditStructure(true)}>Chỉnh sửa chặng & công việc</Button><Button variant="ghost" disabled={editing || editStructure || task.isPending} onClick={() => setConfirmDelete(true)}>Xóa lộ trình</Button></div>}
-    {confirmDelete && <div role="alert" className="rounded-xl border border-border p-4"><p className="mb-3">Xóa lộ trình và toàn bộ chặng/công việc? Mục tiêu liên kết được giữ.</p><Button variant="danger" disabled={remove.isPending} onClick={() => remove.mutate()}>Xác nhận xóa</Button> <Button variant="secondary" onClick={() => setConfirmDelete(false)}>Hủy</Button></div>}
-    {editStructure && selected && <RoadmapTreeEditor key={selected.id} initial={{ title: selected.title, category: selected.category, durationWeeks: selected.durationWeeks, hoursPerWeek: selected.hoursPerWeek, milestones: selected.milestones }} pending={structure.isPending} onSave={(draft) => structure.mutate(draft)} onCancel={() => setEditStructure(false)} />}
+    {selected && <div className="flex flex-wrap gap-2"><Button variant="secondary" disabled={editing || Boolean(structureTarget) || task.isPending || remove.isPending} onClick={() => { structure.reset(); setStructureTarget(selected); }}>Chỉnh sửa chặng & công việc</Button><Button variant="ghost" disabled={editing || Boolean(structureTarget) || task.isPending || remove.isPending} onClick={() => { remove.reset(); setDeleteTarget({ id: selected.id, version: selected.version, title: selected.title }); }}>Xóa lộ trình</Button></div>}
+    {deleteTarget && <div role="alert" className="rounded-xl border border-border p-4"><p className="mb-3">Xóa lộ trình “{deleteTarget.title}” và toàn bộ chặng/công việc? Mục tiêu liên kết được giữ.</p><Button variant="danger" disabled={remove.isPending} onClick={() => remove.mutate(deleteTarget)}>Xác nhận xóa</Button> <Button variant="secondary" disabled={remove.isPending} onClick={() => { remove.reset(); setDeleteTarget(null); }}>Hủy</Button></div>}
+    {structureTarget && <RoadmapTreeEditor key={`${structureTarget.id}:${structureTarget.version}`} initial={{ title: structureTarget.title, category: structureTarget.category, durationWeeks: structureTarget.durationWeeks, hoursPerWeek: structureTarget.hoursPerWeek, milestones: structureTarget.milestones }} pending={structure.isPending} onSave={(draft) => structure.mutate({ roadmap: structureTarget, draft })} onCancel={() => { structure.reset(); setStructureTarget(null); }} />}
     {announcement ? <p role="status" className="rounded-xl border border-border bg-surface p-4 text-sm text-sage-strong">{announcement}</p> : null}
     {editing ? <RoadmapEditor category={category} pending={save.isPending} onSave={(draft) => save.mutate(draft)} onCancel={() => { onCloseEditor(); save.reset(); setSaveIntent(() => createSaveIntent()); }} /> : null}
     {save.error || task.error ? <div role="alert" className="space-y-3 rounded-xl border border-border bg-surface p-4 text-danger"><p>{errorMessage(save.error ?? task.error)}</p><Button variant="secondary" onClick={async () => { const result = await query.refetch(); if (!result.isError) { task.reset(); save.reset(); } }}>Tải lộ trình mới nhất</Button></div> : null}
     {query.isPending ? <p role="status">Đang tải lộ trình…</p> : query.isError ? <div role="alert" className="space-y-3 rounded-xl border border-border p-5"><p>Chưa tải được lộ trình. Không thay đổi dữ liệu đã lưu.</p><Button onClick={() => void query.refetch()}>Thử lại</Button></div> : !selected ? <section className="flex flex-col items-center rounded-2xl border border-border bg-surface p-8 text-center"><Image src="/brand/milo/milo-purple-tablet.webp" alt="Milo sẵn sàng đồng hành" width={144} height={144} /><h2 className="mt-4 text-xl font-bold">Bắt đầu lộ trình {categoryLabels[category].toLowerCase()}</h2><p className="mt-2 max-w-md text-sm leading-6 text-muted">Chưa có lộ trình trong nhóm này. Tạo mục tiêu, chia thành các chặng và thêm việc cần làm.</p></section> : <>
-      <label className="block max-w-xl text-sm font-semibold">Lộ trình đã lưu · {categoryLabels[category]}<select disabled={editStructure} className={inputClass} value={selected.id} onChange={(event) => { setSelectedId(event.target.value); task.reset(); }}>
+      <label className="block max-w-xl text-sm font-semibold">Lộ trình đã lưu · {categoryLabels[category]}<select disabled={Boolean(structureTarget) || remove.isPending} className={inputClass} value={selected.id} onChange={(event) => { setSelectedId(event.target.value); task.reset(); }}>
         {query.data?.map((roadmap) => <option key={roadmap.id} value={roadmap.id}>{roadmap.title} · {roadmap.completedTasks}/{roadmap.totalTasks} việc</option>)}
       </select></label>
       <section aria-label={selected.title} className={cn("overflow-hidden rounded-2xl border border-border bg-surface p-5 sm:p-7", settings?.fontSize === "lg" ? "text-lg" : settings?.fontSize === "sm" ? "text-sm" : "text-base")}>
@@ -179,7 +187,7 @@ function RoadmapContent({ identity, session, category, editing, onCloseEditor }:
           {selected.milestones.map((milestone, index) => <li key={milestone.id} className="min-w-0 rounded-2xl border border-border border-l-4 bg-background p-4 sm:p-5" style={{ borderLeftColor: settings?.costumeColor }}>
             <div className="flex items-start gap-3"><span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-surface font-bold text-primary">{milestone.status === "DONE" ? <Check size={18} aria-label="Hoàn thành" /> : index + 1}</span><div className="min-w-0"><h3 className="break-words font-bold">{milestone.title}</h3><p className="mt-1 text-xs text-muted">{milestone.completedTasks}/{milestone.totalTasks} việc{milestone.dueDate ? ` · Dự kiến ${new Date(`${milestone.dueDate}T00:00:00`).toLocaleDateString("vi-VN")}` : ""}</p></div></div>
             {milestone.description ? <p className="mt-3 whitespace-pre-wrap break-words text-muted">{milestone.description}</p> : null}
-            <ul className="mt-4 space-y-2">{milestone.tasks.map((item) => <li key={item.id}><label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl bg-surface p-3"><input className="mt-1 size-4 shrink-0 accent-primary" type="checkbox" checked={item.done} disabled={task.isPending || query.isFetching || Boolean(task.error)} onChange={(event) => task.mutate({ roadmap: selected, taskId: item.id, done: event.target.checked })} /><span className="min-w-0 break-words"><span className={item.done ? "text-muted line-through" : ""}>{item.title}</span>{item.metric ? <span className="mt-1 block text-xs text-muted">Tiêu chí: {item.metric}</span> : null}</span></label></li>)}</ul>
+            <ul className="mt-4 space-y-2">{milestone.tasks.map((item) => <li key={item.id}><label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl bg-surface p-3"><input className="mt-1 size-4 shrink-0 accent-primary" type="checkbox" checked={item.done} disabled={task.isPending || query.isFetching || Boolean(task.error) || Boolean(structureTarget)} onChange={(event) => task.mutate({ roadmap: selected, taskId: item.id, done: event.target.checked })} /><span className="min-w-0 break-words"><span className={item.done ? "text-muted line-through" : ""}>{item.title}</span>{item.metric ? <span className="mt-1 block text-xs text-muted">Tiêu chí: {item.metric}</span> : null}</span></label></li>)}</ul>
           </li>)}
         </ol>
       </section>

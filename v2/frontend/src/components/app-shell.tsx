@@ -278,37 +278,23 @@ function AppShellContent({ children }: { children: ReactNode }) {
         <div
           className={cn(
             "flex h-16 shrink-0 items-center border-b border-border transition-colors lg:h-18",
-            collapsed ? "justify-center px-3" : "justify-between px-4 lg:px-5"
+            collapsed ? "justify-center px-3" : "px-4 lg:px-5"
           )}
         >
-          {collapsed ? (
-            <button
-              type="button"
-              onClick={toggleCollapsed}
-              title="Mở rộng thanh bên"
-              aria-label="Mở rộng thanh bên"
-              className="group flex size-10 items-center justify-center rounded-xl hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
-            >
+          <Link
+            href="/dashboard"
+            aria-label="Về trang tổng quan CareerMate"
+            className="flex items-center gap-2 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          >
+            {collapsed ? (
               <BrandLogo compact />
-            </button>
-          ) : (
-            <>
-              <div className="flex items-center gap-2">
+            ) : (
+              <>
                 <BrandLogo compact className="lg:hidden" />
                 <BrandLogo className="hidden lg:inline-flex" />
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleCollapsed}
-                aria-label="Thu gọn thanh bên"
-                title="Thu gọn thanh bên"
-                className="hidden size-9 text-muted hover:text-ink lg:flex"
-              >
-                <PanelLeftClose size={18} aria-hidden="true" />
-              </Button>
-            </>
-          )}
+              </>
+            )}
+          </Link>
         </div>
 
         <nav aria-label="Điều hướng chính" className="min-h-0 flex-1 space-y-1.5 overflow-y-auto px-3 py-3 lg:px-4">
@@ -337,7 +323,14 @@ function AppShellContent({ children }: { children: ReactNode }) {
         </nav>
 
         <div className={cn("shrink-0 border-t border-border p-3", !collapsed && "lg:p-4")}>
-          <UserCard compact={collapsed} />
+          {collapsed ? (
+            <UserCard compact />
+          ) : (
+            <>
+              <div className="lg:hidden"><UserCard compact /></div>
+              <div className="hidden lg:block"><UserCard /></div>
+            </>
+          )}
           {collapsed ? (
             <Button
               variant="ghost"
@@ -380,7 +373,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
             <Button
               variant="ghost"
               size="icon"
-              className="hidden text-muted hover:text-ink md:flex"
+              className="hidden text-muted hover:text-ink lg:flex"
               onClick={toggleCollapsed}
               aria-label={collapsed ? "Mở rộng thanh bên" : "Thu gọn thanh bên"}
               title={collapsed ? "Mở rộng thanh bên" : "Thu gọn thanh bên"}

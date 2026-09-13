@@ -33,11 +33,7 @@ def _title_signal_contribution(candidate: CandidateRow, plan: EmployeeSearchPlan
     haystacks = [(candidate.user.job_title or "").casefold()] + [
         employment.title.casefold() for employment in candidate.employments
     ]
-    hits = sum(
-        1
-        for term in terms
-        if any(term.casefold() in haystack for haystack in haystacks)
-    )
+    hits = sum(1 for term in terms if any(term.casefold() in haystack for haystack in haystacks))
     ratio = min(hits / len(terms), 1.0)
     return round(ratio * _TITLE_SIGNAL_WEIGHT, 4)
 

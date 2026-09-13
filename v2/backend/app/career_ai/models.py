@@ -1,9 +1,11 @@
 import uuid
 from datetime import date
 from typing import Any
+
 from sqlalchemy import (
     JSON,
     Boolean,
+    CheckConstraint,
     Date,
     Float,
     ForeignKey,
@@ -14,6 +16,7 @@ from sqlalchemy import (
     Uuid,
 )
 from sqlalchemy.orm import Mapped, mapped_column
+
 from app.core.database import Base
 from app.domain.models import TimestampMixin
 
@@ -28,6 +31,7 @@ class AiConnection(TimestampMixin, Base):
 
 class CareerGoal(TimestampMixin, Base):
     __tablename__ = "career_goals"
+    __table_args__ = (CheckConstraint("version >= 1", name="ck_career_goal_version_positive"),)
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     owner_user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True)
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), index=True)
@@ -44,6 +48,7 @@ class CareerGoal(TimestampMixin, Base):
     due_date: Mapped[date | None] = mapped_column(Date)
     status: Mapped[str] = mapped_column(String(20), default="NOT_STARTED")
     ai_suggested: Mapped[bool] = mapped_column(Boolean, default=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
 
 class CareerPlanRevision(TimestampMixin, Base):

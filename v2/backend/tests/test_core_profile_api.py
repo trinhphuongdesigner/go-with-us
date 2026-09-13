@@ -292,7 +292,7 @@ async def test_roster_permissions_and_super_admin_explicit_tenant_scope(
         f"/api/v2/people?companyId={active_company.id}&page=10001", headers=super_headers
     )
     assert missing_scope.status_code == 400
-    assert missing_scope.json() == {"detail": "companyId là bắt buộc với quản trị viên nền tảng"}
+    assert missing_scope.json() == {"detail": "Hãy chọn công ty"}
     assert invalid_page.status_code == 422
     assert isinstance(invalid_page.json()["detail"], list)
     assert excessive_page.status_code == 422
@@ -339,13 +339,15 @@ async def test_super_admin_can_list_active_company_options_without_employee_coun
     company_headers = await login(client, company_admin.email)
 
     response = await client.get("/api/v2/companies/options", headers=super_headers)
-    denied = await client.get("/api/v2/companies/options", headers=company_headers)
+    company_response = await client.get("/api/v2/companies/options", headers=company_headers)
 
     assert response.status_code == 200
     assert response.json() == {"items": [{"id": str(active.id), "name": "Zeta Active"}]}
     assert str(archived.id) not in response.text
     assert "count" not in response.text.casefold()
-    assert denied.status_code == 403
+    assert company_response.status_code == 200
+    assert "count" not in company_response.text.casefold()
+    assert str(archived.id) not in company_response.text
 
 
 def test_user_profile_version_and_roster_index_are_in_model_metadata() -> None:

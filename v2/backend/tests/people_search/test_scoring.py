@@ -65,6 +65,7 @@ def test_title_match_scores_higher_than_no_match() -> None:
     non_matching_score, _ = score_candidate(non_matching, plan)
     assert matching_score > non_matching_score
 
+
 def test_experience_merges_overlaps_and_rejects_future() -> None:
     now = datetime(2026, 1, 1, tzinfo=UTC)
     candidate = _make_candidate()
@@ -90,4 +91,6 @@ def test_scoring_now_is_injectable() -> None:
     candidate = _make_candidate()
     plan = EmployeeSearchPlan(raw_query="anything")
     frozen = datetime(2026, 1, 1, tzinfo=UTC)
-    assert score_candidate(candidate, plan, now=frozen) == score_candidate(candidate, plan, now=frozen)
+    assert score_candidate(candidate, plan, now=frozen) == score_candidate(
+        candidate, plan, now=frozen
+    )

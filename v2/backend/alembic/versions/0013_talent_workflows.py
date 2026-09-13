@@ -1,6 +1,7 @@
 """Add scoped assessment history, passport snapshots and job requirements."""
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision = "0013_talent_workflows"

@@ -6,7 +6,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Response, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import Field
 
 from app.api.v2.dependencies import (
@@ -15,7 +15,7 @@ from app.api.v2.dependencies import (
     get_tenant_company_id,
     require_permission,
 )
-from app.domain.enums import Permission, Role, CompanyStatus
+from app.domain.enums import CompanyStatus, Permission, Role
 from app.domain.models import Company
 from app.people_search.canonical_response import canonical_response
 from app.people_search.canonical_service import CanonicalSearchService, get_canonical_search_service
@@ -26,16 +26,18 @@ from app.people_search.repository import search_candidates
 from app.people_search.schemas import (
     CandidateMatch,
     EmployeeSearchPlan,
-    SearchResponse,
     RagSearchResponse,
+    SearchResponse,
     SkillConstraint,
     StrictModel,
 )
 from app.people_search.scoring import score_candidate
+from app.security.roles import EMPLOYEE_ROLES, get_manageable_roles
 
 router = APIRouter(prefix="/people-search", tags=["people-search"])
 TenantCompanyId = Annotated[uuid.UUID | None, Depends(get_tenant_company_id)]
 RequirePeopleRead = Annotated[None, Depends(require_permission(Permission.PEOPLE_READ))]
+CompanyIdQuery = Annotated[uuid.UUID | None, Query(alias="companyId")]
 
 
 class PeopleSearchRequest(StrictModel):
@@ -45,8 +47,11 @@ class PeopleSearchRequest(StrictModel):
 _TIMEOUT_FAILURE_CODE = "provider_timeout"
 
 
-async def selected_search_company(current_user: CurrentUser, db: DbSession,
-                                  company_id: uuid.UUID | None = Query(default=None, alias="companyId")):
+async def selected_search_company(
+    current_user: CurrentUser,
+    db: DbSession,
+    company_id: CompanyIdQuery = None,
+):
     if current_user.role != Role.SUPER_ADMIN:
         if company_id not in {None, current_user.company_id}:
             raise HTTPException(403, "Không thể tìm ngoài công ty của bạn")
@@ -56,12 +61,6 @@ async def selected_search_company(current_user: CurrentUser, db: DbSession,
         if company is None or company.status != CompanyStatus.ACTIVE:
             raise HTTPException(404, "Công ty không tồn tại hoặc đã khóa")
     return company_id
-
-
-def live_intent_compiler(db: DbSession):
-    from app.ai.shared_provider import SharedIntentProvider
-    from app.people_search.settings import get_people_search_settings
-    return IntentCompiler(get_people_search_settings(), provider_factory=lambda query: SharedIntentProvider(db, query))
 
 
 def _provider_failure_status_code(failure_codes: tuple[str, ...]) -> int:
@@ -85,7 +84,7 @@ async def query_people(
     company_id: Annotated[uuid.UUID | None, Depends(selected_search_company)],
     _permission_check: RequirePeopleRead,
     response: Response,
-    compiler: Annotated[IntentCompiler, Depends(live_intent_compiler)],
+    compiler: Annotated[IntentCompiler, Depends(get_intent_compiler)],
     canonical_service: Annotated[CanonicalSearchService, Depends(get_canonical_search_service)],
 ) -> SearchResponse:
     # Identity and permission dependencies complete before calling the provider.
@@ -225,4 +224,12 @@ async def ask_people(
             answer_source="deterministic_fallback",
             warnings=["company_required"],
         )
-    return await grounded_rag_search(db, payload.query, company_id=company_id)
+    allowed_roles = tuple(
+        role for role in get_manageable_roles(current_user.role) if role in EMPLOYEE_ROLES
+    )
+    return await grounded_rag_search(
+        db,
+        payload.query,
+        company_id=company_id,
+        allowed_roles=allowed_roles,
+    )

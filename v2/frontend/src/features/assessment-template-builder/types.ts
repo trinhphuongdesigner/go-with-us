@@ -12,6 +12,13 @@ export interface AssessmentGroup {
   description: string;
   weight: number;
   scoreDimension?: "CONTRIBUTION" | "ATTITUDE";
+  passportDimension?:
+    | "ATTENDANCE"
+    | "PROACTIVENESS"
+    | "KNOWLEDGE"
+    | "SKILL"
+    | "ACTIVITY_PARTICIPATION"
+    | null;
   questions: AssessmentQuestion[];
 }
 

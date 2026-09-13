@@ -109,7 +109,9 @@ def main() -> None:
         headers = {"Authorization": f"Bearer {token}"}
 
         for query in SAMPLE_QUERIES:
-            response = client.post("/api/v2/people-search/query", json={"query": query}, headers=headers)
+            response = client.post(
+                "/api/v2/people-search/query", json={"query": query}, headers=headers
+            )
             body = response.json()
             print(
                 f"query={query!r} http={response.status_code} "

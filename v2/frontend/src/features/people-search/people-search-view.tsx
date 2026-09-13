@@ -45,9 +45,9 @@ const initialFilters: PeopleSearchFilters = {
 };
 
 const assistantPrompts = [
-  "Ai phù hợp để dẫn dắt dự án React trong 3 tháng tới?",
-  "Tìm nhân sự backend có kinh nghiệm Python và làm việc với dữ liệu.",
-  "Ai có thể tham gia dự án mới và đang sẵn sàng?",
+  "Ai phù hợp dẫn dắt dự án React trong quý tới?",
+  "Tìm người có FastAPI và PostgreSQL cho dự án AI nội bộ.",
+  "Ai có kinh nghiệm Figma và accessibility để cải thiện hành trình nhân viên?",
 ];
 
 function UnsupportedBanner({ reasons }: { reasons: string[] }) {

@@ -5,17 +5,19 @@ import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Literal
+
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
+
 from app.api.v2.dependencies import CurrentUser, DbSession, require_permission
 from app.domain.enums import EmploymentStatus, Permission, Role
 from app.domain.models import Award, Certification, Company, EmployeeSkill, Employment, Skill, User
 from app.profile_extensions.models import (
-    ProfileActivityLog,
     CompetencyRequest,
     PersonalDetails,
+    ProfileActivityLog,
     StoredAsset,
 )
 from app.profile_extensions.schemas import (
@@ -25,17 +27,20 @@ from app.profile_extensions.schemas import (
     DetailsPatch,
     EmploymentEnd,
     EmploymentWrite,
+    ManagedSkillInsightRead,
+    PersonalDetailsRead,
     RequestCreate,
     RequestReview,
 )
 from app.security.permissions import effective_permissions
 from app.security.roles import can_manage_role
+from app.talent_workflows.service import approved_assessment_averages
 
 router = APIRouter(tags=["profile-extensions"])
 SelfActor = Annotated[User, Depends(require_permission(Permission.PROFILE_SELF))]
 
 
-@router.get("/skills-competency/insight/{user_id}")
+@router.get("/skills-competency/insight/{user_id}", response_model=ManagedSkillInsightRead)
 async def managed_skill_insight(user_id: uuid.UUID, db: DbSession, actor: CurrentUser):
     from app.career_ai.models import CareerGoal
     from app.talent_workflows.models import Assessment
@@ -78,6 +83,7 @@ async def managed_skill_insight(user_id: uuid.UUID, db: DbSession, actor: Curren
         .select_from(Assessment)
         .where(Assessment.reviewee_id == target.id, Assessment.company_id == target.company_id)
     )
+    assessment_scores = await approved_assessment_averages(db, target.id, target.company_id)
     return {
         "profile": {
             "id": str(target.id),
@@ -85,6 +91,7 @@ async def managed_skill_insight(user_id: uuid.UUID, db: DbSession, actor: Curren
             "jobTitle": target.job_title,
             "contributionScore": details["contributionScore"],
             "attitudeScore": details.get("attitudeScore"),
+            **assessment_scores,
         },
         "skills": [
             {
@@ -98,7 +105,7 @@ async def managed_skill_insight(user_id: uuid.UUID, db: DbSession, actor: Curren
             }
             for item, skill in skills
         ],
-        "goalStatusCounts": dict(goals),
+        "goalStatusCounts": {status: count for status, count in goals},
         "activityCount": activities,
         "assessmentsReceivedCount": assessments,
     }
@@ -175,12 +182,12 @@ async def details_read(db, user_id):
     }
 
 
-@router.get("/profile-extensions/me")
+@router.get("/profile-extensions/me", response_model=PersonalDetailsRead)
 async def personal_details(db: DbSession, actor: SelfActor):
     return await details_read(db, actor.id)
 
 
-@router.get("/profile-extensions/users/{user_id}")
+@router.get("/profile-extensions/users/{user_id}", response_model=PersonalDetailsRead)
 async def view_personal_details(user_id: uuid.UUID, db: DbSession, actor: CurrentUser):
     await target_user(db, actor, user_id)
     return await details_read(db, user_id)
@@ -520,31 +527,41 @@ async def create_request(payload: RequestCreate, db: DbSession, actor: SelfActor
         or recipient.company_id != employment.company_id
     ):
         raise HTTPException(422, "Chọn HR đang hoạt động cùng công ty")
-    source = await db.get(
-        Certification if payload.sourceType == "CERTIFICATION" else Award, payload.sourceId
-    )
-    if not source or source.user_id != actor.id or source.company_id != actor.company_id:
-        raise missing()
-    snapshot = {"name": source.name, "issuer": source.issuer}
     if payload.sourceType == "CERTIFICATION":
-        snapshot.update(
-            score=source.score,
-            issuedAt=source.issued_at.isoformat() if source.issued_at else None,
-            credentialUrl=source.credential_url,
-        )
+        certification = await db.get(Certification, payload.sourceId)
+        if (
+            certification is None
+            or certification.user_id != actor.id
+            or certification.company_id != actor.company_id
+        ):
+            raise missing()
+        source_id = certification.id
+        snapshot = {
+            "name": certification.name,
+            "issuer": certification.issuer,
+            "score": certification.score,
+            "issuedAt": certification.issued_at.isoformat() if certification.issued_at else None,
+            "credentialUrl": certification.credential_url,
+        }
     else:
-        snapshot.update(
-            description=source.description,
-            awardedAt=source.awarded_at.isoformat() if source.awarded_at else None,
-            evidenceUrl=source.evidence_url,
-        )
+        award = await db.get(Award, payload.sourceId)
+        if award is None or award.user_id != actor.id or award.company_id != actor.company_id:
+            raise missing()
+        source_id = award.id
+        snapshot = {
+            "name": award.name,
+            "issuer": award.issuer,
+            "description": award.description,
+            "awardedAt": award.awarded_at.isoformat() if award.awarded_at else None,
+            "evidenceUrl": award.evidence_url,
+        }
     row = CompetencyRequest(
         sender_id=actor.id,
         recipient_id=recipient.id,
         company_id=actor.company_id,
         employment_id=employment.id,
         source_type=payload.sourceType,
-        source_id=source.id,
+        source_id=source_id,
         source_snapshot=snapshot,
         client_request_id=payload.clientRequestId,
         request_hash=request_hash,

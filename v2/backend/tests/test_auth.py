@@ -249,9 +249,7 @@ async def test_login_audit_keeps_sanitized_request_id(
 @pytest.mark.asyncio
 async def test_qc_demo_login_is_hidden_unless_explicitly_enabled(client: AsyncClient) -> None:
     accounts = await client.get("/api/v2/auth/demo-accounts")
-    login = await client.post(
-        "/api/v2/auth/demo-login", json={"email": "alice@acme.dev"}
-    )
+    login = await client.post("/api/v2/auth/demo-login", json={"email": "alice@acme.dev"})
 
     assert accounts.status_code == login.status_code == 404
 
@@ -279,14 +277,10 @@ async def test_qc_demo_picker_lists_only_seed_allowlist_and_issues_session(
     assert accounts.status_code == 200
     assert [item["email"] for item in accounts.json()["items"]] == ["alice@acme.dev"]
 
-    rejected = await client.post(
-        "/api/v2/auth/demo-login", json={"email": "not-a-demo@acme.dev"}
-    )
+    rejected = await client.post("/api/v2/auth/demo-login", json={"email": "not-a-demo@acme.dev"})
     assert rejected.status_code == 404
 
-    login = await client.post(
-        "/api/v2/auth/demo-login", json={"email": "alice@acme.dev"}
-    )
+    login = await client.post("/api/v2/auth/demo-login", json={"email": "alice@acme.dev"})
     assert login.status_code == 200
     assert login.json()["user"]["id"] == str(alice.id)
     assert login.json()["accessToken"]

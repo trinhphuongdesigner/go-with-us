@@ -84,7 +84,12 @@ async def search_candidates(
             selectinload(User.employments),
             with_loader_criteria(Employment, Employment.company_id == company_id),
         )
-        .where(User.company_id == company_id, User.role.in_(EMPLOYEE_ROLES), User.is_active.is_(True), active_employment)
+        .where(
+            User.company_id == company_id,
+            User.role.in_(EMPLOYEE_ROLES),
+            User.is_active.is_(True),
+            active_employment,
+        )
     )
     for term in required:
         pattern = f"%{term.casefold()}%"
@@ -93,7 +98,9 @@ async def search_candidates(
             Employment.company_id == company_id,
             func.lower(Employment.title).like(pattern),
         )
-        stmt = stmt.where(or_(func.lower(func.coalesce(User.job_title, "")).like(pattern), employment_title_match))
+        stmt = stmt.where(
+            or_(func.lower(func.coalesce(User.job_title, "")).like(pattern), employment_title_match)
+        )
 
     users = (await session.execute(stmt.order_by(func.lower(User.name), User.id))).scalars().all()
     instant = now()
@@ -107,6 +114,8 @@ async def search_candidates(
             continue
         if min_total_experience_years is not None and years < min_total_experience_years:
             continue
-        latest_update = max(_aware(v) for v in [user.updated_at, *(e.updated_at for e in employments)])
+        latest_update = max(
+            _aware(v) for v in [user.updated_at, *(e.updated_at for e in employments)]
+        )
         rows.append(CandidateProjection(user, employments, years, latest_update))
     return rows if limit is None else rows[:limit]

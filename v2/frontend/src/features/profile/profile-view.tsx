@@ -584,7 +584,7 @@ export function ProfileView({ forceState }: { forceState?: CoreUiForcedState }) 
   return (
     <div className="space-y-6">
       <ProfileHeader profile={profile} editing={editing} stale={stale} onEdit={startEdit} />
-      <div className="flex flex-wrap gap-3"><Button asChild><Link href="/ho-so/nhap-da-nguon">Nhập hồ sơ đa nguồn</Link></Button><Button asChild variant="secondary"><Link href="/yeu-cau-nang-luc">Gửi minh chứng cho HR</Link></Button><Button asChild variant="secondary"><Link href="/ho-chieu">Hộ chiếu nghề nghiệp</Link></Button></div>
+      <div className="flex flex-wrap gap-3"><Button asChild variant="secondary"><Link href="/yeu-cau-nang-luc">Gửi minh chứng cho HR</Link></Button><Button asChild variant="secondary"><Link href="/ho-chieu">Hộ chiếu nghề nghiệp</Link></Button></div>
       <ProfileExtensionsPanel />
       {session ? <EmploymentsPanel userId={session.user.id} canManage={false} /> : null}
 

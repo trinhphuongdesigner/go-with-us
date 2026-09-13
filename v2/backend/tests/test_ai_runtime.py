@@ -8,11 +8,12 @@ from collections.abc import AsyncIterator
 
 import httpx
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import SecretStr, ValidationError
 from starlette.requests import Request
 
 from app.ai.gateway import (
+    AiGateway,
     AiStatus,
     AiTask,
     EvidenceBlock,
@@ -23,10 +24,12 @@ from app.ai.provider_runtime import (
     OpenAICompatibleProvider,
     build_profile_import_ai_gateway,
 )
+from app.ai.shared_provider import SharedIntentProvider, SharedProfileProvider
 from app.api.v2.profile_imports import get_profile_import_ai_gateway
 from app.core.config import Settings
 from app.domain.profile_import_schemas import JobTitleAiProposal
 from app.main import configure_profile_import_ai_runtime
+from app.people_search.intent_models import CompiledIntent
 
 
 class AsyncChunks(httpx.AsyncByteStream):
@@ -67,6 +70,95 @@ def _context() -> EvidenceContext:
             }
         ),
     )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("provider", "task", "schema"),
+    [
+        (SharedProfileProvider(None), AiTask.PROFILE_IMPORT, JobTitleAiProposal),
+        (SharedIntentProvider(None, "React"), AiTask.PEOPLE_SEARCH_INTENT, CompiledIntent),
+    ],
+)
+async def test_shared_providers_normalize_http_failures_for_gateway(
+    monkeypatch, provider, task, schema
+) -> None:
+    async def unavailable(*_args, **_kwargs):
+        raise HTTPException(502, "synthetic provider failure")
+
+    monkeypatch.setattr("app.ai.shared_provider.send_chat", unavailable)
+    gateway = AiGateway(
+        {"v2": provider},
+        default_provider="v2",
+        prompt_version="test-profile-import",
+        schema_version="test-profile-import",
+    )
+
+    result = await gateway.generate(task, schema, _context())
+
+    assert result.status == AiStatus.FAILED
+    assert result.warnings == ("provider_or_schema_failure",)
+
+
+@pytest.mark.asyncio
+async def test_shared_profile_provider_supplies_trusted_contract_metadata(monkeypatch) -> None:
+    context = _context()
+    import_id = uuid.UUID("60000000-0000-0000-0000-000000000006")
+    proposal_item_id = uuid.uuid5(import_id, "jobTitle:v1")
+    context = context.model_copy(
+        update={"allowed_entity_ids": frozenset({context.actor_id, import_id, proposal_item_id})}
+    )
+    block = context.evidence_blocks[0]
+    quote = "Product Analyst"
+    char_start = block.text.index(quote)
+    captured: dict[str, object] = {}
+
+    async def model_response(_db, system, messages):
+        captured["system"] = system
+        captured["payload"] = json.loads(messages[0]["content"])
+        return {
+            "content": json.dumps(
+                {
+                    "proposal_item_id": None,
+                    "import_id": None,
+                    "subject_id": str(context.actor_id),
+                    "job_title": {
+                        "value": quote,
+                        "support_status": "supported",
+                        "evidence_refs": [
+                            {
+                                "subject_id": str(block.subject_id),
+                                "source_id": str(block.source_id),
+                                "source_version_id": str(block.source_version_id),
+                                "block_id": str(block.block_id),
+                                "tenant_id": str(block.tenant_id),
+                                "char_start": 0,
+                                "char_end": 1,
+                                "quote": quote,
+                                "quote_sha256": None,
+                            }
+                        ],
+                    },
+                }
+            )
+        }
+
+    monkeypatch.setattr("app.ai.shared_provider.send_chat", model_response)
+
+    response = await SharedProfileProvider(None).generate(AiTask.PROFILE_IMPORT, context)
+
+    payload = captured["payload"]
+    assert isinstance(payload, dict)
+    assert payload["import_id"] == str(import_id)
+    assert payload["proposal_item_id"] == str(proposal_item_id)
+    assert '"proposal_item_id"' in str(captured["system"])
+    assert response.data["import_id"] == import_id
+    assert response.data["proposal_item_id"] == proposal_item_id
+    assert response.data["job_title"]["support_status"] == "SUPPORTED"
+    evidence_ref = response.data["job_title"]["evidence_refs"][0]
+    assert evidence_ref["char_start"] == char_start
+    assert evidence_ref["char_end"] == char_start + len(quote)
+    assert evidence_ref["quote_sha256"] == hashlib.sha256(quote.encode()).hexdigest()
 
 
 @pytest.mark.parametrize("environment", ["staging", "production"])
@@ -425,7 +517,7 @@ async def test_app_state_runtime_wiring_uses_injected_http_client_without_depend
                 "app": application,
             }
         )
-        gateway = get_profile_import_ai_gateway(request)
+        gateway = await get_profile_import_ai_gateway(request, None)  # type: ignore[arg-type]
         result = await gateway.generate(AiTask.PROFILE_IMPORT, JobTitleAiProposal, _context())
 
     assert len(requests) == 1

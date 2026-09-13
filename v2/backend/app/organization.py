@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import UTC, datetime
+from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import EmailStr, Field, SecretStr
@@ -10,14 +11,16 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.api.v2.dependencies import CurrentUser, DbSession
-from app.core.database import Base
 from app.company_memberships import CompanyMembership, resolve_company_scope
+from app.core.database import Base
 from app.domain.enums import AdminPermission, CompanyStatus, EmploymentStatus, Permission, Role
 from app.domain.models import AuthSession, Company, Employment, TimestampMixin, User
 from app.domain.schemas import ApiModel
 from app.security.jwt import hash_password, verify_and_upgrade_password
 from app.security.permissions import can_delegate_admin_grants, effective_permissions
 from app.security.roles import can_manage_role, get_manageable_roles, is_employee_role
+
+CompanyIdQuery = Annotated[uuid.UUID | None, Query(alias="companyId")]
 
 
 class CompanyDetails(Base):
@@ -40,6 +43,7 @@ DEFAULT_GRANTS = {
     Role.BOD: [
         AdminPermission.COMPANY_READ,
         AdminPermission.EMPLOYEE_READ,
+        AdminPermission.ASSESSMENT_REVIEW,
         AdminPermission.PASSPORT_APPROVE,
     ],
     Role.HR: [
@@ -47,6 +51,7 @@ DEFAULT_GRANTS = {
         AdminPermission.EMPLOYEE_READ,
         AdminPermission.EMPLOYEE_WRITE,
         AdminPermission.ASSESSMENT_REVIEW,
+        AdminPermission.PASSPORT_APPROVE,
     ],
 }
 router = APIRouter(prefix="/organization", tags=["organization"])
@@ -156,7 +161,12 @@ async def patch_company(
     scope = company_scope(actor, company_id)
     if actor.role not in {Role.SUPER_ADMIN, Role.COMPANY_ADMIN}:
         raise HTTPException(403, "Chỉ quản trị viên được chỉnh sửa công ty")
-    row = await db.scalar(select(Company).where(Company.id == scope).with_for_update())
+    row = await db.scalar(
+        select(Company)
+        .where(Company.id == scope)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
     if row is None:
         raise HTTPException(404, "Không tìm thấy công ty")
     if row.version != payload.expected_version:
@@ -221,9 +231,7 @@ async def role_grants(db, company_id, role: Role) -> list[str]:
 
 
 @router.get("/users", response_model=list[AccountRead])
-async def accounts(
-    db: DbSession, actor: CurrentUser, company_id: uuid.UUID | None = Query(None, alias="companyId")
-):
+async def accounts(db: DbSession, actor: CurrentUser, company_id: CompanyIdQuery = None):
     require(actor, Permission.PEOPLE_READ)
     query = select(User).order_by(User.created_at.desc())
     if actor.role == Role.SUPER_ADMIN:
@@ -245,19 +253,27 @@ async def create_account(payload: AccountCreate, db: DbSession, actor: CurrentUs
     company_id = (
         None if payload.role == Role.SUPER_ADMIN else company_scope(actor, payload.company_id)
     )
-    if company_id:
-        company = await db.get(Company, company_id)
-        if company is None or company.status != CompanyStatus.ACTIVE:
-            raise HTTPException(404, "Công ty không hoạt động")
     if not payload.name.strip():
         raise HTTPException(422, "Tên không được trống")
+    password_hash = hash_password(payload.password.get_secret_value())
+    if company_id:
+        # This is the same tenant mutex used by patch_role(). It ensures the
+        # grant snapshot copied below cannot race a role-definition update.
+        company = await db.scalar(
+            select(Company)
+            .where(Company.id == company_id)
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+        if company is None or company.status != CompanyStatus.ACTIVE:
+            raise HTTPException(404, "Công ty không hoạt động")
     row = User(
         email=str(payload.email).casefold(),
         name=payload.name.strip(),
         job_title=payload.job_title,
         role=payload.role,
         company_id=company_id,
-        hashed_password=hash_password(payload.password.get_secret_value()),
+        hashed_password=password_hash,
         admin_permissions=await role_grants(db, company_id, payload.role),
     )
     try:
@@ -330,9 +346,7 @@ class RoleGrantsPatch(ApiModel):
 
 
 @router.get("/roles", response_model=list[RoleGrantsRead])
-async def list_roles(
-    db: DbSession, actor: CurrentUser, company_id: uuid.UUID | None = Query(None, alias="companyId")
-):
+async def list_roles(db: DbSession, actor: CurrentUser, company_id: CompanyIdQuery = None):
     require(actor, Permission.ROLES_MANAGE)
     scope = await resolve_company_scope(db, actor, company_id)
     rows = {
@@ -346,7 +360,11 @@ async def list_roles(
     return [
         RoleGrantsRead(
             role=role,
-            permissions=rows[role].permissions if role in rows else DEFAULT_GRANTS[role],
+            permissions=(
+                [AdminPermission(item) for item in rows[role].permissions]
+                if role in rows
+                else DEFAULT_GRANTS[role]
+            ),
             version=rows[role].version if role in rows else 0,
         )
         for role in DEFAULT_GRANTS
@@ -359,7 +377,7 @@ async def patch_role(
     payload: RoleGrantsPatch,
     db: DbSession,
     actor: CurrentUser,
-    company_id: uuid.UUID | None = Query(None, alias="companyId"),
+    company_id: CompanyIdQuery = None,
 ):
     require(actor, Permission.ROLES_MANAGE)
     if role not in DEFAULT_GRANTS:
@@ -394,7 +412,11 @@ async def patch_role(
         .values(admin_permissions=grants, version=User.version + 1)
     )
     await db.commit()
-    return RoleGrantsRead(role=role, permissions=grants, version=row.version)
+    return RoleGrantsRead(
+        role=role,
+        permissions=[AdminPermission(item) for item in grants],
+        version=row.version,
+    )
 
 
 class PasswordReset(ApiModel):

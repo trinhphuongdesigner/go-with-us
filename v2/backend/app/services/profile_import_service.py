@@ -58,7 +58,10 @@ from app.services.malware_scanner import (
 )
 
 MAX_IMPORT_BYTES = 10 * 1024 * 1024
-MAX_AI_OPERATION_SECONDS = 30.0
+# The shared company provider has a 60-second transport deadline. Keep the
+# service boundary slightly wider so a valid slow response is not cancelled
+# before the adapter can normalize it or report its own timeout.
+MAX_AI_OPERATION_SECONDS = 65.0
 
 
 class ProfileImportError(RuntimeError):

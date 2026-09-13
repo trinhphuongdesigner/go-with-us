@@ -1,6 +1,7 @@
 import uuid
 from datetime import date
 from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 
@@ -23,6 +24,49 @@ class AdminDetailsPatch(DetailsPatch):
     onboardDate: date | None = None
     attitudeScore: float | None = Field(default=None, ge=0, le=100)
     contributionAdjustment: int | None = Field(default=None, ge=0, le=1000000)
+
+
+class PersonalDetailsRead(StrictPayload):
+    version: int = Field(ge=0)
+    avatarAssetId: uuid.UUID | None = None
+    contributionScore: int = Field(ge=0)
+    phone: str | None = None
+    dateOfBirth: date | None = None
+    idNumber: str | None = None
+    gender: str | None = None
+    emergencyContactName: str | None = None
+    emergencyContactPhone: str | None = None
+    onboardDate: date | None = None
+    attitudeScore: float | None = None
+    contributionAdjustment: int | None = None
+
+
+class ManagedInsightProfile(StrictPayload):
+    id: uuid.UUID
+    name: str
+    jobTitle: str | None
+    contributionScore: int
+    attitudeScore: float | None
+    assessmentContributionScore: float | None
+    assessmentAttitudeScore: float | None
+
+
+class ManagedSkillRead(StrictPayload):
+    id: uuid.UUID
+    skillId: uuid.UUID
+    name: str
+    category: str | None
+    level: int
+    note: str | None
+    sourceType: str
+
+
+class ManagedSkillInsightRead(StrictPayload):
+    profile: ManagedInsightProfile
+    skills: list[ManagedSkillRead]
+    goalStatusCounts: dict[str, int]
+    activityCount: int
+    assessmentsReceivedCount: int
 
 
 class EmploymentWrite(StrictPayload):

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import uuid
 from typing import Annotated, cast
 
@@ -16,10 +17,12 @@ from fastapi import (
     status,
 )
 from fastapi.responses import JSONResponse
+from sqlalchemy import select
 
 from app.ai.gateway import AiGateway, AiStatus, SupportStatus
 from app.ai.provider_runtime import unavailable_profile_import_ai_gateway
 from app.api.v2.dependencies import CurrentUser, DbSession
+from app.career_ai.models import AiConnection
 from app.core.config import get_settings
 from app.domain.profile_import_schemas import (
     ProfileApplyRead,
@@ -83,13 +86,21 @@ def get_document_extractor(request: Request) -> DocumentExtractor:
 Extractor = Annotated[DocumentExtractor, Depends(get_document_extractor)]
 
 
-def get_profile_import_ai_gateway(request: Request, db: DbSession) -> AiGateway:
+async def get_profile_import_ai_gateway(request: Request, db: DbSession) -> AiGateway:
     configured = getattr(request.app.state, "profile_import_ai_gateway", None)
     if configured is not None:
         return cast(AiGateway, configured)
+    database_provider = await db.scalar(select(AiConnection.provider).limit(1))
+    if database_provider is None and not os.getenv("CAREERMATE_AI_API_KEY"):
+        return unavailable_profile_import_ai_gateway()
     from app.ai.shared_provider import SharedProfileProvider
-    return AiGateway({"v2": SharedProfileProvider(db)}, default_provider="v2",
-                     prompt_version="profile-import-v2-shared", schema_version="profile-import-v1")
+
+    return AiGateway(
+        {"v2": SharedProfileProvider(db)},
+        default_provider="v2",
+        prompt_version="profile-import-v2-shared",
+        schema_version="profile-import-v1",
+    )
 
 
 ProfileImportAi = Annotated[AiGateway, Depends(get_profile_import_ai_gateway)]

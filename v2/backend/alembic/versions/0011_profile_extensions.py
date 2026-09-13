@@ -1,6 +1,7 @@
 """Private evidence, personal details, activity and exact-recipient HR requests."""
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision = "0011_profile_extensions"

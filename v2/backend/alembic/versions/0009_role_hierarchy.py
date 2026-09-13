@@ -29,6 +29,5 @@ def downgrade() -> None:
     )
     op.drop_constraint("ck_users_role_company", "users", type_="check")
     op.execute(
-        "ALTER TABLE users RENAME CONSTRAINT ck_users_role_company_legacy "
-        "TO ck_users_role_company"
+        "ALTER TABLE users RENAME CONSTRAINT ck_users_role_company_legacy TO ck_users_role_company"
     )

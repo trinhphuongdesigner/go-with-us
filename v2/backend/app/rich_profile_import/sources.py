@@ -1,29 +1,32 @@
 """Bounded source ingestion; fetch only explicit user URLs, pinned to public IPs."""
 
-import asyncio
 import hashlib
 import http.client
 import ipaddress
 import socket
 import ssl
+import time
 from html.parser import HTMLParser
 from pathlib import PurePath
 from urllib.parse import urljoin, urlsplit
+
 from fastapi import HTTPException, UploadFile
+
 from app.core.config import get_settings
 from app.services.document_extractor import (
-    DocumentExtractor,
     DocumentExtractionError,
+    DocumentExtractor,
     TesseractOcrExtractor,
 )
 from app.services.malware_scanner import (
     ClamAvTcpScanner,
-    MalwareScanStatus,
     MalwareScannerUnavailable,
+    MalwareScanStatus,
 )
 
 MAX_FILE = 10 * 1024 * 1024
 MAX_URL = 2 * 1024 * 1024
+URL_TOTAL_TIMEOUT_SECONDS = 15.0
 
 
 class ReadableHtml(HTMLParser):
@@ -46,16 +49,38 @@ class ReadableHtml(HTMLParser):
 
 
 class PinnedHttps(http.client.HTTPSConnection):
-    def __init__(self, hostname, address):
-        super().__init__(hostname, 443, timeout=8, context=ssl.create_default_context())
+    def __init__(self, hostname, address, timeout):
+        self.ssl_context = ssl.create_default_context()
+        super().__init__(hostname, 443, timeout=timeout, context=self.ssl_context)
         self.address = address
 
     def connect(self):
         sock = socket.create_connection((self.address, 443), timeout=self.timeout)
-        self.sock = self._context.wrap_socket(sock, server_hostname=self.host)
+        self.sock = self.ssl_context.wrap_socket(sock, server_hostname=self.host)
 
 
-def fetch_public_text(url: str) -> str:
+def _resolve_with_deadline(hostname: str, timeout: float):
+    # The entire blocking fetch runs inside a bounded executor and is guarded by
+    # an asyncio wall-clock deadline at the request boundary.
+    return socket.getaddrinfo(hostname, 443, type=socket.SOCK_STREAM)
+
+
+def fetch_public_text(
+    url: str,
+    *,
+    total_timeout_seconds: float = URL_TOTAL_TIMEOUT_SECONDS,
+    clock=time.monotonic,
+    resolver=_resolve_with_deadline,
+    connection_factory=PinnedHttps,
+) -> str:
+    deadline = float(clock()) + total_timeout_seconds
+
+    def remaining() -> float:
+        value = deadline - float(clock())
+        if value <= 0:
+            raise HTTPException(422, "URL phản hồi quá chậm; hãy tải file hoặc dán nội dung")
+        return value
+
     for redirect in range(4):
         try:
             parsed = urlsplit(url)
@@ -69,7 +94,7 @@ def fetch_public_text(url: str) -> str:
                 raise HTTPException(
                     422, "Chỉ hỗ trợ URL HTTPS công khai, không có thông tin đăng nhập"
                 )
-            resolved = socket.getaddrinfo(parsed.hostname, 443, type=socket.SOCK_STREAM)
+            resolved = resolver(parsed.hostname, remaining())
             addresses = list(dict.fromkeys(item[4][0] for item in resolved))
             if not addresses or any(
                 not ipaddress.ip_address(address).is_global for address in addresses
@@ -77,7 +102,7 @@ def fetch_public_text(url: str) -> str:
                 raise HTTPException(
                     422, "Không cho phép URL nội bộ, localhost hoặc địa chỉ dành riêng"
                 )
-            connection = PinnedHttps(parsed.hostname, addresses[0])
+            connection = connection_factory(parsed.hostname, addresses[0], min(8.0, remaining()))
             try:
                 path = parsed.path or "/"
                 if parsed.query:
@@ -112,7 +137,18 @@ def fetch_public_text(url: str) -> str:
                         422,
                         "URL phải trả về HTML/văn bản công khai; hãy tải file trực tiếp để nhập tài liệu",
                     )
-                data = response.read(MAX_URL + 1)
+                chunks = []
+                size = 0
+                while size <= MAX_URL:
+                    timeout = min(2.0, remaining())
+                    if connection.sock is not None:
+                        connection.sock.settimeout(timeout)
+                    chunk = response.read(min(64 * 1024, MAX_URL + 1 - size))
+                    if not chunk:
+                        break
+                    chunks.append(chunk)
+                    size += len(chunk)
+                data = b"".join(chunks)
                 if len(data) > MAX_URL:
                     raise HTTPException(413, "Trang vượt giới hạn 2 MB")
                 text = data.decode("utf-8", errors="replace")
@@ -123,7 +159,7 @@ def fetch_public_text(url: str) -> str:
                 return text[:30000]
             finally:
                 connection.close()
-        except (OSError, ValueError, http.client.HTTPException):
+        except (OSError, TimeoutError, ValueError, http.client.HTTPException):
             raise HTTPException(
                 422, "Không đọc được URL an toàn. Hãy dán nội dung hoặc tải tài liệu thay thế."
             ) from None

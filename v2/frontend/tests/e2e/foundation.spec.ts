@@ -27,6 +27,31 @@ async function gotoVerified(page: Page, path: string) {
   await expect(page.locator('meta[name="careermate-build-sha"]')).toHaveAttribute("content", expectedSha!);
 }
 
+test("root layout không thay đổi API chuẩn của trình duyệt", async ({ page }) => {
+  await page.addInitScript(() => {
+    const runtime = window as typeof window & {
+      __nativeSetAttribute?: typeof Element.prototype.setAttribute;
+    };
+    runtime.__nativeSetAttribute = Element.prototype.setAttribute;
+  });
+
+  await gotoVerified(page, "/login");
+
+  expect(
+    await page.evaluate(() => {
+      const runtime = window as typeof window & {
+        __nativeSetAttribute?: typeof Element.prototype.setAttribute;
+      };
+      return {
+        setAttribute: runtime.__nativeSetAttribute === Element.prototype.setAttribute,
+        extensionGuardScripts: Array.from(document.scripts).filter((script) =>
+          script.textContent?.includes("bis_skin_checked"),
+        ).length,
+      };
+    }),
+  ).toEqual({ setAttribute: true, extensionGuardScripts: 0 });
+});
+
 test("đăng nhập bằng tài khoản mẫu và lọc navigation theo quyền", async ({ page }) => {
   const assertHealthy = monitorPageHealth(page);
   await gotoVerified(page, "/login");

@@ -2977,6 +2977,31 @@ export interface components {
              */
             instruction: string;
         };
+        /** GoalPatch */
+        GoalPatch: {
+            /** Aisuggested */
+            aiSuggested?: boolean | null;
+            /** Category */
+            category?: ("WORK" | "PERSONAL") | null;
+            /** Currentvalue */
+            currentValue?: number | null;
+            /** Description */
+            description?: string | null;
+            /** Duedate */
+            dueDate?: string | null;
+            /** Expectedversion */
+            expectedVersion: number;
+            /** Metric */
+            metric?: string | null;
+            /** Progress */
+            progress?: number | null;
+            /** Status */
+            status?: ("NOT_STARTED" | "IN_PROGRESS" | "ACHIEVED") | null;
+            /** Targetvalue */
+            targetValue?: number | null;
+            /** Title */
+            title?: string | null;
+        };
         /** GoalRead */
         GoalRead: {
             /**
@@ -3030,6 +3055,8 @@ export interface components {
              * Format: date-time
              */
             updatedAt: string;
+            /** Version */
+            version: number;
         };
         /** GoalWrite */
         GoalWrite: {
@@ -3079,6 +3106,8 @@ export interface components {
             id?: string;
             /** Name */
             name: string;
+            /** Passportdimension */
+            passportDimension?: ("ATTENDANCE" | "PROACTIVENESS" | "KNOWLEDGE" | "SKILL" | "ACTIVITY_PARTICIPATION") | null;
             /** Questions */
             questions: components["schemas"]["Question"][];
             /**
@@ -3153,6 +3182,63 @@ export interface components {
              */
             tokenType: string;
             user: components["schemas"]["SessionUserRead"];
+        };
+        /** ManagedInsightProfile */
+        ManagedInsightProfile: {
+            /** Assessmentattitudescore */
+            assessmentAttitudeScore: number | null;
+            /** Assessmentcontributionscore */
+            assessmentContributionScore: number | null;
+            /** Attitudescore */
+            attitudeScore: number | null;
+            /** Contributionscore */
+            contributionScore: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Jobtitle */
+            jobTitle: string | null;
+            /** Name */
+            name: string;
+        };
+        /** ManagedSkillInsightRead */
+        ManagedSkillInsightRead: {
+            /** Activitycount */
+            activityCount: number;
+            /** Assessmentsreceivedcount */
+            assessmentsReceivedCount: number;
+            /** Goalstatuscounts */
+            goalStatusCounts: {
+                [key: string]: number;
+            };
+            profile: components["schemas"]["ManagedInsightProfile"];
+            /** Skills */
+            skills: components["schemas"]["ManagedSkillRead"][];
+        };
+        /** ManagedSkillRead */
+        ManagedSkillRead: {
+            /** Category */
+            category: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Level */
+            level: number;
+            /** Name */
+            name: string;
+            /** Note */
+            note: string | null;
+            /**
+             * Skillid
+             * Format: uuid
+             */
+            skillId: string;
+            /** Sourcetype */
+            sourceType: string;
         };
         /** MeResponse */
         MeResponse: {
@@ -3256,6 +3342,33 @@ export interface components {
          * @enum {string}
          */
         Permission: "dashboard:read" | "profile:self" | "roadmap:self" | "assessment:self" | "company:read" | "company:manage" | "people:read" | "people:write" | "assessment:review" | "passport:approve" | "platform:manage" | "roles:manage";
+        /** PersonalDetailsRead */
+        PersonalDetailsRead: {
+            /** Attitudescore */
+            attitudeScore?: number | null;
+            /** Avatarassetid */
+            avatarAssetId?: string | null;
+            /** Contributionadjustment */
+            contributionAdjustment?: number | null;
+            /** Contributionscore */
+            contributionScore: number;
+            /** Dateofbirth */
+            dateOfBirth?: string | null;
+            /** Emergencycontactname */
+            emergencyContactName?: string | null;
+            /** Emergencycontactphone */
+            emergencyContactPhone?: string | null;
+            /** Gender */
+            gender?: string | null;
+            /** Idnumber */
+            idNumber?: string | null;
+            /** Onboarddate */
+            onboardDate?: string | null;
+            /** Phone */
+            phone?: string | null;
+            /** Version */
+            version: number;
+        };
         /** PlanProposal */
         PlanProposal: {
             /** Planmd */
@@ -4058,10 +4171,16 @@ export interface components {
         };
         /** RichSkill */
         RichSkill: {
-            /**
-             * Level
-             * @default 3
-             */
+            /** Level */
+            level?: number | null;
+            /** Name */
+            name: string;
+            /** Note */
+            note?: string | null;
+        };
+        /** RichSkillApply */
+        RichSkillApply: {
+            /** Level */
             level: number;
             /** Name */
             name: string;
@@ -4453,7 +4572,7 @@ export interface components {
             projects?: components["schemas"]["RichProject"][];
             roadmap?: components["schemas"]["RoadmapProposal"] | null;
             /** Skills */
-            skills?: components["schemas"]["RichSkill"][];
+            skills?: components["schemas"]["RichSkillApply"][];
         };
         /** SessionUserRead */
         SessionUserRead: {
@@ -4540,6 +4659,8 @@ export interface components {
         SummaryEdit: {
             /** Content */
             content: string;
+            /** Evidencerefs */
+            evidenceRefs?: string[] | null;
             /** Expectedversion */
             expectedVersion: number;
         };
@@ -7493,7 +7614,9 @@ export interface operations {
     };
     delete_goal_api_v2_development_plans_goals__goal_id__delete: {
         parameters: {
-            query?: never;
+            query: {
+                expected_version: number;
+            };
             header?: never;
             path: {
                 goal_id: string;
@@ -7531,7 +7654,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GoalWrite"];
+                "application/json": components["schemas"]["GoalPatch"];
             };
         };
         responses: {
@@ -8686,7 +8809,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["PersonalDetailsRead"];
                 };
             };
         };
@@ -8878,7 +9001,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["PersonalDetailsRead"];
                 };
             };
             /** @description Validation Error */
@@ -9374,7 +9497,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ManagedSkillInsightRead"];
                 };
             };
             /** @description Validation Error */

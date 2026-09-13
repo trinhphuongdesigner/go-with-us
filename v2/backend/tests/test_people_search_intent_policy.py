@@ -72,8 +72,11 @@ def test_only_intent_is_exempt_from_person_evidence_requirement() -> None:
     intent = intent_task()
     assert EVIDENCE_REQUIRED_TASKS == frozenset(task for task in AiTask if task != intent)
     assert {task.value for task in EVIDENCE_REQUIRED_TASKS} == {
-        "profile_import", "roadmap_proposal", "assessment_summary",
-        "offboarding_narrative", "people_search_explanation",
+        "profile_import",
+        "roadmap_proposal",
+        "assessment_summary",
+        "offboarding_narrative",
+        "people_search_explanation",
     }
 
 

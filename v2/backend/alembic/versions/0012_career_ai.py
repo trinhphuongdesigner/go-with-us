@@ -1,7 +1,8 @@
 """Career goals, immutable plan history and encrypted provider/conversation storage."""
 
-from alembic import op
 import sqlalchemy as sa
+
+from alembic import op
 
 revision = "0012_career_ai"
 down_revision = "0011_profile_extensions"

@@ -38,7 +38,10 @@ class RoadmapStructureTask(RoadmapTaskDraft):
     done: StrictBool = False
 
 
-class RoadmapStructureMilestone(RoadmapMilestoneDraft):
+class RoadmapStructureMilestone(ApiModel):
+    title: Title
+    description: str | None = Field(default=None, max_length=2000)
+    due_date: date | None = None
     tasks: list[RoadmapStructureTask] = Field(min_length=1, max_length=50)
 
 

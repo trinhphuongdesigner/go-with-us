@@ -110,6 +110,23 @@ export function GroupEditor({
             <option value="CONTRIBUTION">Đóng góp</option><option value="ATTITUDE">Thái độ</option>
           </select>
         </label>
+        <label className="grid gap-2 text-xs font-bold text-ink">Chiều năng lực trên Hộ chiếu
+          <select
+            className="min-h-11 rounded-xl border border-border bg-white px-3"
+            value={group.passportDimension ?? ""}
+            onChange={(event) => onUpdateGroup({
+              passportDimension: (event.target.value || null) as AssessmentGroup["passportDimension"],
+            })}
+          >
+            <option value="">Không đưa vào điểm Hộ chiếu</option>
+            <option value="ATTENDANCE">Chuyên cần & đúng hạn</option>
+            <option value="PROACTIVENESS">Chủ động & tiên phong</option>
+            <option value="KNOWLEDGE">Kiến thức chuyên môn</option>
+            <option value="SKILL">Kỹ năng & thực thi</option>
+            <option value="ACTIVITY_PARTICIPATION">Đóng góp & hoạt động</option>
+          </select>
+          <span className="font-normal leading-5 text-muted">Chỉ nhóm được gắn rõ mới tạo điểm xác thực; AI không tự suy ra trường này.</span>
+        </label>
         <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-12">
           <div className="min-w-0 sm:col-span-9">
             <label htmlFor={`group-${group.id}-name`} className="block text-xs font-bold text-ink">

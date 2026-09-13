@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.enums import AdminPermission, Permission, Role
 from app.domain.models import Company, validate_user_tenant_invariant
+from app.organization import DEFAULT_GRANTS
 from app.repositories.user_repo import CompanyRepository
 from app.security.permissions import effective_permissions
 from app.security.roles import can_manage_role, get_manageable_roles, is_employee_role
@@ -41,10 +42,24 @@ def test_management_hierarchy_is_strict(caller: Role, target: Role) -> None:
     assert (target in get_manageable_roles(caller)) == expected
 
 
+def test_default_bod_and_hr_grants_cover_their_talent_workflow_contract() -> None:
+    assert set(DEFAULT_GRANTS[Role.BOD]) == {
+        AdminPermission.COMPANY_READ,
+        AdminPermission.EMPLOYEE_READ,
+        AdminPermission.ASSESSMENT_REVIEW,
+        AdminPermission.PASSPORT_APPROVE,
+    }
+    assert set(DEFAULT_GRANTS[Role.HR]) == {
+        AdminPermission.COMPANY_READ,
+        AdminPermission.EMPLOYEE_READ,
+        AdminPermission.EMPLOYEE_WRITE,
+        AdminPermission.ASSESSMENT_REVIEW,
+        AdminPermission.PASSPORT_APPROVE,
+    }
+
+
 @pytest.mark.parametrize("role", [Role.COMPANY_ADMIN, Role.BOD, Role.HR])
-async def test_management_roster_and_profile_scope(
-    db_session: AsyncSession, role: Role
-) -> None:
+async def test_management_roster_and_profile_scope(db_session: AsyncSession, role: Role) -> None:
     own = await CompanyRepository(db_session).add(Company(name="Own"))
     other = await CompanyRepository(db_session).add(Company(name="Other"))
     await db_session.flush()
@@ -72,7 +87,9 @@ async def test_management_roster_and_profile_scope(
         await CompetencyProfileService(db_session).resolve_target(actor, foreign.id, write=True)
 
 
-@pytest.mark.parametrize("role,target", [(Role.COMPANY_ADMIN, Role.BOD), (Role.BOD, Role.HR), (Role.HR, Role.EMPLOYEE)])
+@pytest.mark.parametrize(
+    "role,target", [(Role.COMPANY_ADMIN, Role.BOD), (Role.BOD, Role.HR), (Role.HR, Role.EMPLOYEE)]
+)
 async def test_employee_creation_honors_role_and_tenant_hierarchy(
     db_session: AsyncSession, role: Role, target: Role
 ) -> None:
@@ -84,17 +101,29 @@ async def test_employee_creation_honors_role_and_tenant_hierarchy(
     )
     service = UserService(db_session)
     created = await service.create_employee(
-        initiator=actor, request_id=None, company_id=own.id,
-        email="created@example.dev", password="DemoPass123!", role=target,
+        initiator=actor,
+        request_id=None,
+        company_id=own.id,
+        email="created@example.dev",
+        password="DemoPass123!",
+        role=target,
     )
     assert created.role == target
     with pytest.raises(AuthorizationDenied):
         await service.create_employee(
-            initiator=actor, request_id=None, company_id=own.id,
-            email="peer@example.dev", password="DemoPass123!", role=role,
+            initiator=actor,
+            request_id=None,
+            company_id=own.id,
+            email="peer@example.dev",
+            password="DemoPass123!",
+            role=role,
         )
     with pytest.raises(TenantMismatch):
         await service.create_employee(
-            initiator=actor, request_id=None, company_id=other.id,
-            email="other@example.dev", password="DemoPass123!", role=target,
+            initiator=actor,
+            request_id=None,
+            company_id=other.id,
+            email="other@example.dev",
+            password="DemoPass123!",
+            role=target,
         )

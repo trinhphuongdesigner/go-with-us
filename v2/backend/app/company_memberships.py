@@ -3,7 +3,7 @@
 import uuid
 
 from fastapi import APIRouter, HTTPException
-from sqlalchemy import ForeignKey, Uuid, select
+from sqlalchemy import ForeignKey, Index, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -16,6 +16,7 @@ from app.domain.schemas import ApiModel
 
 class CompanyMembership(TimestampMixin, Base):
     __tablename__ = "company_memberships"
+    __table_args__ = (Index("ix_company_memberships_company", "company_id"),)
     user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
@@ -33,12 +34,12 @@ async def resolve_company_scope(
     """Recheck membership on every explicit selection; never rewrite actor.company_id."""
     if not actor.is_active:
         raise HTTPException(403, "Tài khoản không hoạt động")
+    scope = explicit_company_id
     if actor.role == Role.SUPER_ADMIN:
         if explicit_company_id is None:
             if require_explicit_super:
                 raise HTTPException(400, "Hãy chọn công ty")
             return None
-        scope = explicit_company_id
     elif explicit_company_id is None:
         scope = actor.company_id
         if scope is None:
@@ -52,6 +53,8 @@ async def resolve_company_scope(
         )
         if membership is None:
             raise HTTPException(403, "Bạn không còn là thành viên của công ty đã chọn")
+    if scope is None:
+        raise HTTPException(403, "Tài khoản chưa có công ty hiện tại")
     company = await db.get(Company, scope)
     if company is None or company.status != CompanyStatus.ACTIVE:
         raise HTTPException(404, "Công ty không tồn tại hoặc đã ngừng hoạt động")
@@ -116,7 +119,10 @@ async def mine(db: DbSession, actor: CurrentUser):
 @router.get("/{company_id}", response_model=MembershipCompanyRead)
 async def company_for_member(company_id: uuid.UUID, db: DbSession, actor: CurrentUser):
     await resolve_company_scope(db, actor, company_id)
-    return await company_brief(db, await db.get(Company, company_id))
+    company = await db.get(Company, company_id)
+    if company is None:
+        raise HTTPException(404, "Không tìm thấy công ty")
+    return await company_brief(db, company)
 
 
 @router.get("/{company_id}/members", response_model=list[MemberRead])

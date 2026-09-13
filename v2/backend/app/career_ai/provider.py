@@ -1,5 +1,6 @@
 """Shared AI gateway. Never expose provider keys or upstream bodies in errors."""
 
+import asyncio
 import base64
 import hashlib
 import ipaddress
@@ -8,6 +9,7 @@ import logging
 import os
 import re
 import socket
+from typing import Any
 from urllib.parse import quote, urlsplit
 
 import httpx
@@ -16,8 +18,8 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
 from app.career_ai.models import AiConnection
+from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +42,7 @@ def cipher() -> Fernet:
     )
 
 
-def validate_endpoint(url: str) -> str:
+async def validate_endpoint(url: str, *, dns_timeout_seconds: float = 3.0) -> str:
     parsed = urlsplit(url)
     if (
         parsed.scheme != "https"
@@ -52,12 +54,18 @@ def validate_endpoint(url: str) -> str:
     ):
         raise HTTPException(422, "AI base URL must be HTTPS without credentials, query or fragment")
     try:
-        addresses = socket.getaddrinfo(parsed.hostname, parsed.port or 443, type=socket.SOCK_STREAM)
+        async with asyncio.timeout(dns_timeout_seconds):
+            addresses = await asyncio.to_thread(
+                socket.getaddrinfo,
+                parsed.hostname,
+                parsed.port or 443,
+                type=socket.SOCK_STREAM,
+            )
         if not addresses or any(
             not ipaddress.ip_address(item[4][0]).is_global for item in addresses
         ):
             raise HTTPException(422, "AI endpoint must resolve to a public address")
-    except (socket.gaierror, ValueError):
+    except (TimeoutError, socket.gaierror, ValueError):
         raise HTTPException(422, "AI endpoint cannot be resolved") from None
     return url.rstrip("/")
 
@@ -96,7 +104,10 @@ async def send_chat(
         )
     else:
         raise HTTPException(503, "Nhà cung cấp AI chưa được kết nối")
-    base, model = validate_endpoint(base or DEFAULTS[provider][0]), model or DEFAULTS[provider][1]
+    base, model = (
+        await validate_endpoint(base or DEFAULTS[provider][0]),
+        model or DEFAULTS[provider][1],
+    )
     headers = {"Content-Type": "application/json"}
     if provider == "ANTHROPIC":
         url = base + ("/messages" if base.endswith("/v1") else "/v1/messages")
@@ -162,7 +173,7 @@ async def send_chat(
         ) from None
 
 
-def json_reply(content: str) -> dict:
+def json_reply(content: str) -> dict[str, Any]:
     clean = content.strip()
     fence = re.search(r"```(?:json)?\s*([\s\S]*?)```", clean, re.IGNORECASE)
     if fence:
@@ -170,7 +181,7 @@ def json_reply(content: str) -> dict:
     try:
         data = json.loads(clean)
         if not isinstance(data, dict):
-            raise ValueError()
+            raise TypeError()
         return data
     except (ValueError, TypeError):
         raise HTTPException(502, "AI trả về định dạng không hợp lệ; chưa lưu đề xuất.") from None

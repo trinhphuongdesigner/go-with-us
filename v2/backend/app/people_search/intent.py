@@ -7,13 +7,15 @@ import unicodedata
 import uuid
 from collections.abc import Iterable
 from dataclasses import dataclass
-from functools import lru_cache
 from typing import Protocol
 
 import httpx
+from sqlalchemy import select
 
 from app.ai.gateway import AiGateway, AiStatus, AiTask, EvidenceContext
 from app.ai.resilience import CircuitBreaker, CircuitState, RetryPolicy, Sleep, async_sleep
+from app.api.v2.dependencies import DbSession
+from app.domain.models import Skill
 from app.people_search.intent_models import CompiledIntent, ResolvedSearchIntent, ResolvedSkill
 from app.people_search.providers.madison import MadisonIntentProvider
 from app.people_search.schemas import EmployeeSearchPlan, SkillConstraint
@@ -156,7 +158,11 @@ class IntentCompiler:
         if _has_protected_constraints(query):
             return self._protected_result()
         gateway = AiGateway(
-            {"madison": self._provider_factory(query) if self._provider_factory else MadisonIntentProvider(self._settings, query=query, client=self._client)},
+            {
+                "madison": self._provider_factory(query)
+                if self._provider_factory
+                else MadisonIntentProvider(self._settings, query=query, client=self._client)
+            },
             default_provider="madison",
             prompt_version="people-search-intent-v1",
             schema_version="people-search-intent-v1",
@@ -367,6 +373,16 @@ class IntentCompiler:
         )
 
 
-@lru_cache
-def get_intent_compiler() -> IntentCompiler:
-    return IntentCompiler(get_people_search_settings())
+async def get_intent_compiler(db: DbSession) -> IntentCompiler:
+    """Build the request compiler from the application-owned skill catalog and AI connection."""
+    from app.ai.shared_provider import SharedIntentProvider
+
+    skills = (await db.scalars(select(Skill).order_by(Skill.normalized_key, Skill.id))).all()
+    catalog = StaticSkillCatalog(
+        CatalogSkill(skill.id, skill.name, (skill.normalized_key,)) for skill in skills
+    )
+    return IntentCompiler(
+        get_people_search_settings(),
+        catalog=catalog,
+        provider_factory=lambda query: SharedIntentProvider(db, query),
+    )

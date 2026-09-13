@@ -704,11 +704,62 @@ async def test_resource_crud_preserves_origin_and_uses_profile_version(
     actions = list(
         (
             await db_session.scalars(
-                select(ActivityLog.action).where(ActivityLog.entity_type == "award")
+                select(ActivityLog.action)
+                .where(ActivityLog.entity_type == "award")
+                .order_by(ActivityLog.created_at, ActivityLog.id)
             )
         ).all()
     )
     assert actions == ["profile.award.created", "profile.award.updated", "profile.award.deleted"]
+
+
+@pytest.mark.asyncio
+async def test_owner_edit_reclassifies_admin_resource_as_self_reported(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    company = await CompanyRepository(db_session).add(Company(name="Provenance Company"))
+    await db_session.flush()
+    employee = await create_user(
+        db_session, email="provenance-owner@acme.dev", name="Resource Owner", company=company
+    )
+    admin = await create_user(
+        db_session,
+        email="provenance-admin@acme.dev",
+        name="Resource Admin",
+        role=Role.COMPANY_ADMIN,
+        company=company,
+        admin_permissions=[
+            AdminPermission.EMPLOYEE_READ.value,
+            AdminPermission.EMPLOYEE_WRITE.value,
+        ],
+    )
+    admin_headers = await login(client, admin.email)
+    employee_headers = await login(client, employee.email)
+    created = await client.post(
+        f"/api/v2/competency-profile/awards?userId={employee.id}",
+        headers=admin_headers,
+        json={
+            "profileVersion": 1,
+            "name": "Admin-entered award",
+            "type": "WORK",
+            "issuer": "Provenance Company",
+        },
+    )
+    assert created.status_code == 201
+    assert created.json()["sourceType"] == "ADMIN"
+
+    edited = await client.patch(
+        f"/api/v2/competency-profile/awards/{created.json()['id']}",
+        headers=employee_headers,
+        json={"profileVersion": 2, "name": "Owner-confirmed award"},
+    )
+
+    assert edited.status_code == 200, edited.text
+    assert edited.json()["sourceType"] == "SELF"
+    assert edited.json()["sourceImportId"] is None
+    assert edited.json()["proposalItemId"] is None
+    assert edited.json()["createdBy"] == str(admin.id)
+    assert edited.json()["updatedBy"] == str(employee.id)
 
 
 @pytest.mark.asyncio

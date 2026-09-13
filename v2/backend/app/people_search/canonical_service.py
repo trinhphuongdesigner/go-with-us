@@ -98,9 +98,7 @@ def _evidence_issue(
             for required in required_skills
         ):
             return "CANONICAL_EVIDENCE_UNAVAILABLE"
-        domains = {
-            fact.domain.strip().casefold() for fact in facts if isinstance(fact, DomainFact)
-        }
+        domains = {fact.domain.strip().casefold() for fact in facts if isinstance(fact, DomainFact)}
         if not required_domains.issubset(domains):
             return "CANONICAL_EVIDENCE_UNAVAILABLE"
         if intent.minimum_total_years is not None and not any(

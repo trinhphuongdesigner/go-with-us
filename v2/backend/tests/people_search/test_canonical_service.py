@@ -194,9 +194,7 @@ async def test_unusable_required_skill_fact_is_unknown(batch_factory, plan, fact
     else:
         facts = (skill, skill.model_copy(update={"years": 4.0}), domain)
 
-    result, _ = await search(
-        replace(batch, candidates=(replace(candidate, facts=facts),)), plan
-    )
+    result, _ = await search(replace(batch, candidates=(replace(candidate, facts=facts),)), plan)
 
     assert result.status == "insufficient_evidence"
     assert result.reason_code == "CANONICAL_EVIDENCE_UNAVAILABLE"
@@ -207,9 +205,7 @@ async def test_one_incomplete_eligible_candidate_fails_closed(batch_factory, pla
     second = batch.candidates[1]
     incomplete = replace(second, facts=(second.facts[1],))
 
-    result, _ = await search(
-        replace(batch, candidates=(batch.candidates[0], incomplete)), plan
-    )
+    result, _ = await search(replace(batch, candidates=(batch.candidates[0], incomplete)), plan)
 
     assert result.status == "insufficient_evidence"
     assert result.matches == result.profiles == ()
@@ -224,28 +220,20 @@ async def test_missing_required_fact_is_unknown(batch_factory, plan, required_fa
         intent = plan
         facts = (skill,)
     elif required_fact == "availability":
-        intent = plan.model_copy(
-            update={"required_domains": [], "availability": "AVAILABLE"}
-        )
+        intent = plan.model_copy(update={"required_domains": [], "availability": "AVAILABLE"})
         facts = (skill,)
     else:
-        intent = plan.model_copy(
-            update={"required_domains": [], "minimum_total_years": 2.0}
-        )
+        intent = plan.model_copy(update={"required_domains": [], "minimum_total_years": 2.0})
         facts = (skill,)
 
-    result, _ = await search(
-        replace(batch, candidates=(replace(candidate, facts=facts),)), intent
-    )
+    result, _ = await search(replace(batch, candidates=(replace(candidate, facts=facts),)), intent)
 
     assert result.status == "insufficient_evidence"
     assert result.reason_code == "CANONICAL_EVIDENCE_UNAVAILABLE"
 
 
 @pytest.mark.parametrize("required_fact", ["domain", "availability", "experience"])
-async def test_future_or_conflicting_required_fact_is_unknown(
-    batch_factory, plan, required_fact
-):
+async def test_future_or_conflicting_required_fact_is_unknown(batch_factory, plan, required_fact):
     batch = batch_factory()
     candidate = batch.candidates[0]
     skill, domain = candidate.facts
@@ -261,27 +249,21 @@ async def test_future_or_conflicting_required_fact_is_unknown(
             domain.model_copy(update={"observed_at": NOW + timedelta(seconds=1)}),
         )
     elif required_fact == "availability":
-        intent = plan.model_copy(
-            update={"required_domains": [], "availability": "AVAILABLE"}
-        )
+        intent = plan.model_copy(update={"required_domains": [], "availability": "AVAILABLE"})
         facts = (
             skill,
             AvailabilityFact(availability="AVAILABLE", **shared),
             AvailabilityFact(availability="UNAVAILABLE", **shared),
         )
     else:
-        intent = plan.model_copy(
-            update={"required_domains": [], "minimum_total_years": 2.0}
-        )
+        intent = plan.model_copy(update={"required_domains": [], "minimum_total_years": 2.0})
         facts = (
             skill,
             ExperienceFact(years=3.0, **shared),
             ExperienceFact(years=4.0, **shared),
         )
 
-    result, _ = await search(
-        replace(batch, candidates=(replace(candidate, facts=facts),)), intent
-    )
+    result, _ = await search(replace(batch, candidates=(replace(candidate, facts=facts),)), intent)
 
     assert result.status == "insufficient_evidence"
     assert result.reason_code == "CANONICAL_EVIDENCE_UNAVAILABLE"
@@ -300,14 +282,10 @@ async def test_known_below_threshold_other_required_fact_is_empty(
         "evidence_refs": skill.evidence_refs,
     }
     if required_fact == "availability":
-        intent = plan.model_copy(
-            update={"required_domains": [], "availability": "AVAILABLE"}
-        )
+        intent = plan.model_copy(update={"required_domains": [], "availability": "AVAILABLE"})
         fact = AvailabilityFact(availability="UNAVAILABLE", **shared)
     else:
-        intent = plan.model_copy(
-            update={"required_domains": [], "minimum_total_years": 2.0}
-        )
+        intent = plan.model_copy(update={"required_domains": [], "minimum_total_years": 2.0})
         fact = ExperienceFact(years=1.9, **shared)
 
     result, _ = await search(
@@ -321,11 +299,7 @@ async def test_missing_only_optional_facts_does_not_taint_empty_batch(batch_fact
     batch = batch_factory()
     candidate = replace(batch.candidates[0], facts=())
     optional_only = ResolvedSearchIntent(
-        skills=[
-            ResolvedSkill(
-                canonical_skill_id=UUID(int=999), name="Python", required=False
-            )
-        ]
+        skills=[ResolvedSkill(canonical_skill_id=UUID(int=999), name="Python", required=False)]
     )
 
     result, _ = await search(replace(batch, candidates=(candidate,)), optional_only)

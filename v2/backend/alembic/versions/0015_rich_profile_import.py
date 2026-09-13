@@ -1,7 +1,8 @@
 """Persist owner-scoped rich import proposals and exactly-once apply receipts."""
 
-from alembic import op
 import sqlalchemy as sa
+
+from alembic import op
 
 revision = "0015_rich_profile_import"
 down_revision = "0014_organization"

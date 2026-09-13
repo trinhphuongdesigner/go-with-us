@@ -83,6 +83,8 @@ async def list_people(
     query = normalize("NFC", q).strip() if q is not None else None
     query = query or None
     scope = await resolve_company_scope(db, actor, company_id)
+    if scope is None:
+        raise HTTPException(400, "companyId là bắt buộc với quản trị viên nền tảng")
     roles = get_manageable_roles(actor.role)
     repository = UserRepository(db)
     total = await repository.count_roster(scope, query=query, active=active, roles=roles)

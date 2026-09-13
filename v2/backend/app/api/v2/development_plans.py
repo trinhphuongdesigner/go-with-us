@@ -2,12 +2,11 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Response
-from app.domain.roadmap_models import DevelopmentRoadmap, DevelopmentMilestone, DevelopmentTask
-from app.services.development_plan_service import roadmap_read
 
 from app.api.v2.dependencies import DbSession, require_permission
 from app.domain.enums import Permission
 from app.domain.models import User
+from app.domain.roadmap_models import DevelopmentMilestone, DevelopmentRoadmap, DevelopmentTask
 from app.domain.roadmap_schemas import (
     DevelopmentPlanRead,
     RoadmapCategory,
@@ -15,10 +14,10 @@ from app.domain.roadmap_schemas import (
     RoadmapSave,
     RoadmapSettingsPatch,
     RoadmapSettingsRead,
-    RoadmapTaskPatch,
     RoadmapStructurePatch,
+    RoadmapTaskPatch,
 )
-from app.services.development_plan_service import DevelopmentPlanService
+from app.services.development_plan_service import DevelopmentPlanService, roadmap_read
 
 router = APIRouter(prefix="/development-plans", tags=["development-plans"])
 RoadmapActor = Annotated[User, Depends(require_permission(Permission.ROADMAP_SELF))]
