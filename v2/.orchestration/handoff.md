@@ -55,7 +55,7 @@
 ## Cập nhật 2026-09-13 16:20 ICT
 
 - Task riêng lẻ `W1-PROJECT-TIMELINE` PASS tại SHA `f845494ef9939a6bf574fc74fb379003b3d68abf`: rà soát Project CRUD + mốc Project trong career timeline hợp nhất (authz, optimistic CAS 409, validate, provenance, activity-log rollback, deterministic tie-break ordering). Reviewer độc lập review base `65507c6`, ra REQUEST_CHANGES với 2 finding thực: P1 stale draft có thể ghi đè thay đổi mới trên server sau reload (ProfileResourceEditForm không đóng/không remount sau reloadProfile()), P2 test rollback chỉ phủ update thiếu delete. Cả 2 đã sửa (remount key theo profileVersion + đóng editor khi reload; parametrize test rollback [update, delete]) và reviewer re-review xác nhận CLOSED. Backend 661 passed/18 skipped, frontend 157 passed/22 file. Report chuẩn ở `../reports/05-w1-project-timeline/qa-report.json`.
-- Bằng chứng mới: backend 660 passed/18 skipped (tăng 4 so với 656 baseline); frontend 156 passed/22 file (tăng từ 152/21 baseline); lint/typecheck/build sạch.
-- **Giới hạn cần lưu ý**: Task tool (subagent delegation) không khả dụng trong phiên này — bước review độc lập bị hạ cấp thành self-review, không phải review bởi bên thứ hai thật sự. Khuyến nghị chạy lại Task-based code-reviewer khi công cụ khả dụng.
+- Bằng chứng mới: backend 661 passed/18 skipped (tăng 5 so với 656 baseline); frontend 157 passed/22 file (tăng từ 152/21 baseline); ruff/mypy/eslint/tsc/next-build sạch.
+- Review độc lập: reviewer bên ngoài phiên này review base `65507c6`, ra REQUEST_CHANGES với 2 finding (P1, P2 — xem bullet trên); sau khi sửa tại `f845494ef9939a6bf574fc74fb379003b3d68abf`, reviewer re-review đúng nội dung fix và xác nhận CLOSED, không còn P0/P1/P2, `git diff --check` sạch — verdict PASS.
 - Phạm vi task này KHÔNG đụng experience/certification/award/goal/assessment/passport/staffing — các khu vực đó vẫn giữ nguyên trạng thái như report 03/04.
 - Playwright/browser/persona vẫn NOT_RUN theo chỉ dẫn tạm dừng của user.
