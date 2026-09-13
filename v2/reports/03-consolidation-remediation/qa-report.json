@@ -1,0 +1,437 @@
+{
+  "schema_version": "1.0",
+  "report_language": "vi",
+  "feature_id": "03-consolidation-remediation",
+  "feature_name": "Hợp nhất v2 — remediation bảo mật, dữ liệu, AI và concurrency",
+  "branch": "codex/v2-qa-consolidation",
+  "implementation_sha": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
+  "verified_tree_sha": "98053b6dc85007b7a8a3560da506153a69a765a4",
+  "generated_at": "2026-09-13T03:28:00Z",
+  "environment": {
+    "os": "macOS Darwin arm64",
+    "python": "3.12.8",
+    "node": "v26.7.0",
+    "browser": "NOT_RUN theo yêu cầu user",
+    "database": "PostgreSQL 17 cô lập careermate_v2_test và SQLite in-memory",
+    "ai_provider": null
+  },
+  "scope": [
+    "Hợp nhất các thay đổi v2 sau khi đồng bộ feature từ main/worktree mà không stage thay đổi v1.",
+    "Khép P0/P1 về tenant/RBAC, optimistic locking, scoring, AI evidence, import và hiệu năng truy vấn.",
+    "Khóa contract OpenAPI, migration 0001 đến 0018 và bằng chứng test trên PostgreSQL sạch.",
+    "Chuẩn bị branch và báo cáo tiếng Việt cho tester, ghi rõ browser gate chưa chạy."
+  ],
+  "user_value": "Team có một candidate v2 duy nhất, giữ UI CareerMate hiện tại và logic mới, với backend deterministic/evidence-first và trạng thái kiểm thử minh bạch để bắt đầu manual QA.",
+  "functional_breakdown": [
+    {
+      "step": 1,
+      "actor": "Employee/HR",
+      "behavior": "Cập nhật mục tiêu, hồ sơ và roadmap bằng version; stale write/delete nhận 409."
+    },
+    {
+      "step": 2,
+      "actor": "HR/BOD",
+      "behavior": "Cross Assessment và Passport dùng snapshot bất biến, weighted score do backend tính và narrative có evidence."
+    },
+    {
+      "step": 3,
+      "actor": "HR/Staffing",
+      "behavior": "People Search áp hard filter, deterministic rank, tenant scope và canonical AI citations."
+    },
+    {
+      "step": 4,
+      "actor": "AI gateway",
+      "behavior": "Chỉ nhận provider output đúng schema/allowlist; thiếu evidence fail-closed và không tự persist."
+    },
+    {
+      "step": 5,
+      "actor": "Tester",
+      "behavior": "Lấy đúng branch/SHA, chạy manual flows; không diễn giải Playwright NOT_RUN thành PASS."
+    }
+  ],
+  "interfaces": [
+    {
+      "kind": "API",
+      "name": "Career goals, assistant, profile import, assessment, passport và staffing",
+      "change": "Tăng validation, tenant scope, optimistic locking và evidence contract."
+    },
+    {
+      "kind": "DATABASE",
+      "name": "Alembic 0017-0018 và các migration đã hòa giải",
+      "change": "Khóa default role grants và version CareerGoal; clean upgrade không drift."
+    },
+    {
+      "kind": "AI_SCHEMA",
+      "name": "Roster claims, offboarding claims và matching explanations",
+      "change": "Provider chỉ chọn opaque refs; backend xác minh và dựng dữ kiện canonical."
+    },
+    {
+      "kind": "UI_ROUTE",
+      "name": "Roadmap, Passport, People Search và profile",
+      "change": "Giữ design hiện tại, thêm stale/error/approval states và contract mới."
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "Không còn P0/P1 có thể hành động trong review độc lập của remediation.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-REVIEW"
+      ]
+    },
+    {
+      "id": "AC-02",
+      "description": "Backend, migration và database thật đạt trên PostgreSQL test sạch.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-INTEGRATION",
+        "CHK-MIGRATION"
+      ]
+    },
+    {
+      "id": "AC-03",
+      "description": "Frontend contract, unit, lint, typecheck và production build đạt.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-CONTRACT",
+        "CHK-UNIT",
+        "CHK-LINT",
+        "CHK-TYPE",
+        "CHK-BUILD"
+      ]
+    },
+    {
+      "id": "AC-04",
+      "description": "Static security và dependency audit không có medium/high hoặc vulnerability đã biết.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-SECURITY"
+      ]
+    },
+    {
+      "id": "AC-05",
+      "description": "Browser, accessibility, visual regression và persona review đạt trên implementation SHA.",
+      "status": "NOT_RUN",
+      "evidence_check_ids": [
+        "CHK-E2E",
+        "CHK-ACCESSIBILITY",
+        "CHK-PERFORMANCE",
+        "CHK-MANUAL-UI"
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "id": "CHK-FORMAT",
+      "category": "FORMAT",
+      "required": true,
+      "status": "PASS",
+      "command": ".venv/bin/ruff format --check app tests",
+      "cwd": "v2/backend",
+      "exact_sha": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
+      "summary": "144 file Python đã format.",
+      "artifact_paths": [],
+      "metrics": {
+        "files": 144
+      },
+      "started_at": "2026-09-13T03:02:00Z",
+      "finished_at": "2026-09-13T03:03:00Z",
+      "exit_code": 0
+    },
+    {
+      "id": "CHK-LINT",
+      "category": "LINT",
+      "required": true,
+      "status": "PASS",
+      "command": ".venv/bin/ruff check app tests và npm run lint",
+      "cwd": "v2",
+      "exact_sha": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
+      "summary": "Backend/frontend không có lint error.",
+      "artifact_paths": [],
+      "metrics": {
+        "errors": 0
+      },
+      "started_at": "2026-09-13T03:02:00Z",
+      "finished_at": "2026-09-13T03:03:00Z",
+      "exit_code": 0
+    },
+    {
+      "id": "CHK-TYPE",
+      "category": "TYPECHECK",
+      "required": true,
+      "status": "PASS",
+      "command": ".venv/bin/mypy app và npm run typecheck",
+      "cwd": "v2",
+      "exact_sha": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
+      "summary": "Mypy 90 source file và TypeScript đạt.",
+      "artifact_paths": [],
+      "metrics": {
+        "python_source_files": 90,
+        "typescript_errors": 0
+      },
+      "started_at": "2026-09-13T03:02:00Z",
+      "finished_at": "2026-09-13T03:03:00Z",
+      "exit_code": 0
+    },
+    {
+      "id": "CHK-UNIT",
+      "category": "UNIT",
+      "required": true,
+      "status": "PASS",
+      "command": "npm test -- --run",
+      "cwd": "v2/frontend",
+      "exact_sha": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
+      "summary": "148 Vitest trong 20 file đạt.",
+      "artifact_paths": [],
+      "metrics": {
+        "tests": 148,
+        "files": 20
+      },
+      "started_at": "2026-09-13T02:52:56Z",
+      "finished_at": "2026-09-13T02:53:06Z",
+      "exit_code": 0
+    },
+    {
+      "id": "CHK-INTEGRATION",
+      "category": "INTEGRATION",
+      "required": true,
+      "status": "PASS",
+      "command": "pytest trên SQLite và PostgreSQL 17 careermate_v2_test",
+      "cwd": "v2/backend",
+      "exact_sha": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
+      "summary": "SQLite 655 passed/18 skipped; PostgreSQL sạch 673 passed.",
+      "artifact_paths": [],
+      "metrics": {
+        "sqlite_passed": 655,
+        "sqlite_skipped": 18,
+        "postgresql_passed": 673
+      },
+      "started_at": "2026-09-13T03:08:00Z",
+      "finished_at": "2026-09-13T03:21:00Z",
+      "exit_code": 0
+    },
+    {
+      "id": "CHK-CONTRACT",
+      "category": "CONTRACT",
+      "required": true,
+      "status": "PASS",
+      "command": "export_openapi; npm run contracts:generate; npm run contracts:check",
+      "cwd": "v2",
+      "exact_sha": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
+      "summary": "OpenAPI và generated TypeScript client current sau commit.",
+      "artifact_paths": [],
+      "metrics": {
+        "drift": false
+      },
+      "started_at": "2026-09-13T02:51:00Z",
+      "finished_at": "2026-09-13T03:27:00Z",
+      "exit_code": 0
+    },
+    {
+      "id": "CHK-MIGRATION",
+      "category": "MIGRATION",
+      "required": true,
+      "status": "PASS",
+      "command": "alembic upgrade head; alembic check trên PostgreSQL sạch",
+      "cwd": "v2/backend",
+      "exact_sha": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
+      "summary": "Nâng 0001 đến 0018 thành công; không drift.",
+      "artifact_paths": [],
+      "metrics": {
+        "head": "0018_career_goal_version",
+        "drift": false
+      },
+      "started_at": "2026-09-13T03:08:00Z",
+      "finished_at": "2026-09-13T03:09:00Z",
+      "exit_code": 0
+    },
+    {
+      "id": "CHK-BUILD",
+      "category": "BUILD",
+      "required": true,
+      "status": "PASS",
+      "command": "npm run build",
+      "cwd": "v2/frontend",
+      "exact_sha": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
+      "summary": "Next.js 16 production build đạt, 17 routes.",
+      "artifact_paths": [],
+      "metrics": {
+        "routes": 17
+      },
+      "started_at": "2026-09-13T02:53:10Z",
+      "finished_at": "2026-09-13T02:53:21Z",
+      "exit_code": 0
+    },
+    {
+      "id": "CHK-SECURITY",
+      "category": "SECURITY",
+      "required": true,
+      "status": "PASS",
+      "command": "bandit -ll; pip-audit --strict; npm audit --omit=dev --audit-level=high",
+      "cwd": "v2",
+      "exact_sha": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
+      "summary": "Bandit 0 medium/high; Python/npm 0 vulnerability đã biết. Gitleaks được ghi riêng trong known gaps.",
+      "artifact_paths": [],
+      "metrics": {
+        "bandit_medium": 0,
+        "bandit_high": 0,
+        "known_vulnerabilities": 0
+      },
+      "started_at": "2026-09-13T03:23:00Z",
+      "finished_at": "2026-09-13T03:24:00Z",
+      "exit_code": 0
+    },
+    {
+      "id": "CHK-AI-GROUNDING",
+      "category": "AI_GROUNDING",
+      "required": true,
+      "status": "PASS",
+      "command": "pytest AI/RAG/offboarding/job-matching regression trong full backend suite",
+      "cwd": "v2/backend",
+      "exact_sha": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
+      "summary": "Schema, allowlist, evidence, prompt injection và deterministic scoring regressions đạt.",
+      "artifact_paths": [],
+      "metrics": {
+        "invented_ids_accepted": 0
+      },
+      "started_at": "2026-09-13T03:08:00Z",
+      "finished_at": "2026-09-13T03:21:00Z",
+      "exit_code": 0
+    },
+    {
+      "id": "CHK-REVIEW",
+      "category": "SECURITY",
+      "required": true,
+      "status": "PASS",
+      "command": "Independent read-only review of original P0/P1 remediation",
+      "cwd": "v2",
+      "exact_sha": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
+      "summary": "APPROVE; không còn P0/P1 có thể hành động.",
+      "artifact_paths": [],
+      "metrics": {
+        "open_p0": 0,
+        "open_p1": 0
+      },
+      "started_at": "2026-09-13T02:45:00Z",
+      "finished_at": "2026-09-13T03:02:00Z",
+      "exit_code": 0
+    },
+    {
+      "id": "CHK-E2E",
+      "category": "E2E",
+      "required": true,
+      "status": "NOT_RUN",
+      "command": "npm run test:e2e",
+      "cwd": "v2/frontend",
+      "exact_sha": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
+      "summary": "Playwright tạm dừng theo yêu cầu user.",
+      "artifact_paths": [],
+      "metrics": {}
+    },
+    {
+      "id": "CHK-ACCESSIBILITY",
+      "category": "ACCESSIBILITY",
+      "required": true,
+      "status": "NOT_RUN",
+      "command": "npm run test:e2e (axe/keyboard/reduced motion)",
+      "cwd": "v2/frontend",
+      "exact_sha": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
+      "summary": "Chưa có browser evidence mới cho candidate hợp nhất.",
+      "artifact_paths": [],
+      "metrics": {}
+    },
+    {
+      "id": "CHK-PERFORMANCE",
+      "category": "PERFORMANCE",
+      "required": true,
+      "status": "NOT_RUN",
+      "command": "npm run test:e2e (LCP budget)",
+      "cwd": "v2/frontend",
+      "exact_sha": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
+      "summary": "Chưa đo LCP trên candidate hợp nhất.",
+      "artifact_paths": [],
+      "metrics": {}
+    },
+    {
+      "id": "CHK-MANUAL-UI",
+      "category": "MANUAL_UI",
+      "required": true,
+      "status": "NOT_RUN",
+      "command": "Manual persona/browser review",
+      "cwd": "v2/frontend",
+      "exact_sha": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
+      "summary": "Chờ tester và browser gate.",
+      "artifact_paths": [],
+      "metrics": {}
+    },
+    {
+      "id": "CHK-PUSH",
+      "category": "PUSH",
+      "required": false,
+      "status": "NOT_RUN",
+      "command": "git push origin codex/v2-qa-consolidation",
+      "cwd": ".",
+      "exact_sha": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
+      "summary": "Chờ commit report/handoff.",
+      "artifact_paths": [],
+      "metrics": {}
+    }
+  ],
+  "persona_reviews": [
+    {
+      "persona": "EMPLOYEE_22_30",
+      "viewport": "390x844",
+      "status": "NOT_RUN",
+      "findings": []
+    },
+    {
+      "persona": "HR_35_45",
+      "viewport": "1440x900",
+      "status": "NOT_RUN",
+      "findings": []
+    },
+    {
+      "persona": "MANAGER_45_55",
+      "viewport": "1440x900",
+      "status": "NOT_RUN",
+      "findings": []
+    },
+    {
+      "persona": "LOW_TECH_USER",
+      "viewport": "768x1024",
+      "status": "NOT_RUN",
+      "findings": []
+    }
+  ],
+  "security_privacy_notes": [
+    "Không stage thay đổi v1 ở root; commit implementation chỉ chứa v2.",
+    "Không đọc, in hoặc commit credential; provider live không được gọi.",
+    "Tenant/RBAC, stale write, AI invented ref và PII log có regression tests.",
+    "PostgreSQL test cũ bị schema/version drift được giữ nguyên, không xóa hoặc truncate."
+  ],
+  "ai_grounding_notes": [
+    "AI không tính assessment/passport/staffing score và không ghi database trực tiếp.",
+    "Roster/offboarding/matching chỉ chấp nhận opaque candidate/evidence refs thuộc allowlist.",
+    "Thiếu evidence, provider timeout hoặc invalid schema trả lỗi/fallback có nhãn; không tạo dữ liệu giả âm thầm."
+  ],
+  "screenshots": [],
+  "known_gaps": [
+    {
+      "description": "Playwright, axe, visual regression và persona review chưa chạy theo yêu cầu tạm dừng.",
+      "impact": "HIGH",
+      "next_action": "Tester chạy manual flow; chỉ mở automated browser gate khi user cho phép."
+    },
+    {
+      "description": "Gitleaks exact-SHA chưa chạy vì binary không có trong checkout.",
+      "impact": "MEDIUM",
+      "next_action": "Chạy secret scan trên committed range trước merge/cutover."
+    },
+    {
+      "description": "PostgreSQL test cũ ở cổng 55432 có Alembic stamp 0004 nhưng schema từng được metadata bổ sung.",
+      "impact": "LOW",
+      "next_action": "Không dùng làm evidence; giữ nguyên cho đến khi có kế hoạch reset test environment riêng."
+    }
+  ],
+  "overall_status": "BLOCKED"
+}

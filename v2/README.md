@@ -114,7 +114,9 @@ demo thông thường có thể chọn người trực tiếp trên trang login.
 Công ty thứ hai có `admin@northstar.dev`, `bod@northstar.dev`, `hr@northstar.dev`,
 `alex@northstar.dev`, dùng key mật khẩu theo role như trên.
 
-Database mới có 2 công ty, 9 tài khoản, hồ sơ, mẫu/chu kỳ/phiếu đánh giá, yêu cầu
+Database mới có 2 công ty và 9 persona đăng nhập. Sáu persona BOD, HR và EMPLOYEE hiện có
+được bổ sung hồ sơ evidence để dùng cho Smart People Search,
+mẫu/chu kỳ/phiếu đánh giá, yêu cầu
 công nhận, lộ trình Công việc/Cá nhân, tổng kết hộ chiếu và nhu cầu nhân sự.
 Seed không tạo link chia sẻ công khai hay membership chéo công ty tự động.
 

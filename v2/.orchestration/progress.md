@@ -45,3 +45,41 @@ Tại checkpoint 01:00 ICT chưa có feature nào PASS; trạng thái mới hơn
 - 8 screenshot production mới có checksum, tree, account và rendered size trong manifest; ảnh super-admin đầy đủ shell/selector/content.
 - Report chuẩn ở `v2/reports/02-core-profile-roster/qa-report.json`.
 - Wave 1 vẫn IN_PROGRESS; bước tiếp theo là CRUD skill, experience, project, certification, award, provenance và unified timeline.
+
+## 2026-09-12 23:28 ICT — hợp nhất và tạm dừng
+
+- Worktree chuẩn để hợp nhất là `.claude/worktrees/v2-qa`, branch `codex/v2-qa-consolidation`.
+- Đã merge checkpoint mới nhất của `origin/master` vào candidate và gom các commit/worktree feature có nguồn gốc xác định. Checkout `master` bẩn vẫn được giữ nguyên; recovery snapshot nằm dưới `/private/tmp/careermate-consolidation-20260912-132308`.
+- Candidate hiện ở HEAD `c1148d6cda34981c7ae59dce5521e06363e744b6` và còn nhiều thay đổi runtime chưa commit. Vì vậy không có SHA duy nhất chứng minh toàn bộ trạng thái hiện tại.
+- Review tĩnh đã khóa một snapshot gồm 255 file, 54.525 dòng diff, SHA-256 `8c1bd02ca635f5b77b2764cdf76cc990b804cc6705391bf276a52d0dc47bb462`.
+- Review xác nhận 1 P0, 31 P1 và 5 P2. P0 là delegated role editor có thể cấp quyền `FULL`; P1 tập trung vào RBAC/tenant, optimistic locking, AI evidence/scoring, migration parity và performance.
+- Báo cáo chuẩn: `../docs/consolidation-static-review-2026-09-12.vi.md`.
+- Theo yêu cầu của user, toàn bộ coding, test runtime và Playwright đang dừng. Task runtime liên quan đã nhận handoff và kết thúc ở trạng thái idle.
+- Candidate chưa được phép bàn giao tester chức năng. Khi được cho phép tiếp tục, xử lý P0/P1 trước, tạo clean commit SHA, rồi chạy lại quality gates trên đúng SHA đó.
+
+## 2026-09-13 02:07 ICT — remediation tiếp tục
+
+- Đã khép optimistic locking cho CareerGoal PATCH/DELETE, giữ partial PATCH và version snapshot từ frontend.
+- Offboarding không còn nhận dimension score do AI sinh; điểm lấy từ immutable assessment snapshot có `passportDimension` rõ ràng. Citation thiếu/lạ fail-closed trước persistence.
+- Job matching đã chuyển hard filter, scoring và sorting về backend; skill query được batch, AI chỉ giải thích bằng skill ID allowlist.
+- Profile HR tách assessment averages đã duyệt khỏi điểm ghi nhận thủ công; màn duyệt Passport hiển thị đủ dữ liệu sắp đóng băng.
+- Working-tree gate: backend 642 passed/18 skipped trên SQLite; frontend Vitest, ESLint, TypeScript và Next production build PASS; OpenAPI client current; diff check PASS.
+- Playwright vẫn NOT_RUN theo yêu cầu. PostgreSQL/migration và exact-SHA gate chờ candidate được commit sạch.
+- Chi tiết: `../docs/consolidation-remediation-2026-09-13.vi.md`.
+
+## 2026-09-13 10:23 ICT — khép P0/P1 và kiểm tra PostgreSQL sạch
+
+- Independent read-only review đã APPROVE remediation hiện tại, không còn P0/P1 có thể hành động trong phạm vi 1 P0 và 31 P1 ban đầu.
+- Đã khép contract/concurrency của CareerGoal, deterministic assessment/passport scoring, offboarding evidence/pseudonymization, backend-owned staffing score, canonical AI roster answer, RAG cap/rank và URL import deadline.
+- RAG dùng exact token thống nhất giữa PostgreSQL/SQLite/Python, xử lý dấu tiếng Việt, `Đ/đ`, Unicode decomposed, Unicode delimiter và raw offset cho evidence dài. Regression bao phủ substring/evidence crowding trên hơn 200 hồ sơ.
+- Backend trên SQLite: 655 passed, 18 skipped. Backend trên PostgreSQL 17 sạch sau Alembic `0001` → `0018`: 673 passed; `alembic check` không drift.
+- Ruff/lint/format, mypy toàn app, OpenAPI/client generation, TypeScript, ESLint, 148 Vitest, Next.js production build, Bandit, pip-audit và npm production audit đều PASS.
+- PostgreSQL cũ ở cổng 55432 có migration stamp `0004` nhưng schema từng bị metadata tạo thêm bảng; không dùng làm evidence và không xóa/truncate. Verification dùng database cô lập ở cổng 55441.
+- Candidate vẫn dirty tại base HEAD `c1148d6cda34981c7ae59dce5521e06363e744b6`; chưa có exact implementation SHA. Playwright vẫn NOT_RUN theo yêu cầu user, nên chưa bàn giao tester chức năng.
+- Chi tiết: `../docs/consolidation-remediation-2026-09-13.vi.md`.
+
+## 2026-09-13 10:28 ICT — khóa implementation SHA
+
+- Đã commit riêng source/backend/frontend/contracts/test v2 tại SHA `f5d7fb093f0cd7f577131111222bcd2d8a43459c`; không stage bất kỳ thay đổi v1 nào ở root.
+- `contracts:check` sau commit xác nhận generated TypeScript contract current; source tree của implementation sạch và byte-identical với snapshot đã chạy test/review.
+- Report, handoff và orchestration được chuẩn bị cho commit tài liệu riêng. Tester handoff vẫn ghi rõ Playwright NOT_RUN và Gitleaks exact-SHA chưa có binary.

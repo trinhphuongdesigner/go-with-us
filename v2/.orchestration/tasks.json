@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "branch": "feat/v2-rebuild",
-  "status": "IN_PROGRESS",
+  "branch": "codex/v2-qa-consolidation",
+  "status": "MANUAL_QA_PENDING",
   "waves": [
     {
       "id": "W0",
@@ -64,20 +64,7 @@
       ]
     }
   ],
-  "active_assignments": [
-    {
-      "owner": "codex",
-      "worktree": "v2-integration",
-      "scope": "Wave 1 resource aggregate: skill, experience, project, certification, award, provenance và timeline",
-      "mode": "manager-writer"
-    },
-    {
-      "owner": "antigravity",
-      "worktree": "v2-integration",
-      "scope": "UI/UX persona review theo từng slice, chỉ đọc",
-      "mode": "read-only-on-demand"
-    }
-  ],
+  "active_assignments": [],
   "completed_slices": [
     {
       "id": "W1-IMPORT",
@@ -92,6 +79,37 @@
       "status": "PASS",
       "implementation_sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
       "report": "../reports/02-core-profile-roster/qa-report.json"
+    },
+    {
+      "id": "CONSOLIDATION-REMEDIATION",
+      "name": "Merged v2 security, AI grounding, concurrency and performance remediation",
+      "status": "BLOCKED",
+      "implementation_sha": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
+      "report": "../reports/03-consolidation-remediation/qa-report.json",
+      "blocker": "Playwright/persona review paused by user; Gitleaks exact-SHA binary unavailable."
     }
-  ]
+  ],
+  "coordination_state": {
+    "updated_at": "2026-09-13T10:28:00+07:00",
+    "mode": "MANUAL_QA_PENDING",
+    "writer": null,
+    "canonical_worktree": ".claude/worktrees/v2-qa",
+    "candidate_head": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
+    "implementation_source_clean": true,
+    "documentation_commit_pending": true,
+    "remediation_review": {
+      "status": "PASS",
+      "p0": 0,
+      "p1": 0,
+      "p2_backlog": 5,
+      "report": "../docs/consolidation-remediation-2026-09-13.vi.md"
+    },
+    "runtime": {
+      "sqlite": "655 passed, 18 skipped",
+      "postgresql_17": "673 passed",
+      "frontend_vitest": "148 passed",
+      "playwright": "NOT_RUN"
+    },
+    "resume_rule": "Commit/push report and handoff; manual tester validates. Run Playwright only after explicit user re-enable."
+  }
 }

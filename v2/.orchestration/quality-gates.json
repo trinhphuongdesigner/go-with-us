@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
-  "overall_status": "IN_PROGRESS",
+  "overall_status": "BLOCKED",
   "latest_completed_wave": "W0",
-  "implementation_sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
+  "implementation_sha": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
   "wave0_status": "PASS",
   "checks": [
     {
@@ -57,12 +57,58 @@
     "implementation_sha": "de246d8c74ec8425cec0172613012fc600811719",
     "evidence": "205 PostgreSQL, 196 SQLite, 21 Vitest, 36 Playwright; Antigravity P0/P1/P2=0; report 01-employee-360-import"
   },
-  "next_gate": "Wave 1 profile resource aggregate and unified timeline",
+  "next_gate": "Commit and push the report/handoff, then perform manual tester validation. Playwright remains paused until the user re-enables it.",
   "verified_tree_sha": "052b9d39877cfe584033bf2c574594495df79497",
   "wave1_core": {
     "status": "PASS",
     "implementation_sha": "ca230bceb3b2d9be473fa8f842b23ecd51379115",
     "verified_tree_sha": "052b9d39877cfe584033bf2c574594495df79497",
     "evidence": "212 PostgreSQL, 40 Vitest, 60 Playwright; migration/contract/security PASS; independent backend, concurrency và UI review exact SHA; report 02-core-profile-roster"
-  }
+  },
+  "candidate_snapshot": {
+    "base_sha": "190d7f73abf25e5ab59e5820fc8aa6bcb2b39be5",
+    "head_sha": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
+    "includes_uncommitted_changes": true,
+    "diff_files": 255,
+    "diff_lines": 54525,
+    "diff_sha256": "8c1bd02ca635f5b77b2764cdf76cc990b804cc6705391bf276a52d0dc47bb462",
+    "status_entries_under_v2": 114,
+    "tracked_diff_files": 92,
+    "tracked_diff_insertions": 4184,
+    "tracked_diff_deletions": 1102,
+    "snapshot_at": "2026-09-13T10:23:00+07:00",
+    "note": "Implementation source is clean at this SHA; only report/orchestration and other documentation remain uncommitted."
+  },
+  "current_candidate_checks": [
+    {
+      "id": "independent-remediation-review",
+      "status": "PASS",
+      "evidence": "Read-only re-audit of the original 1 P0/31 P1 found no remaining actionable P0/P1 on the current dirty snapshot."
+    },
+    {
+      "id": "working-tree-runtime-suite",
+      "status": "PASS",
+      "evidence": "SQLite 655 passed/18 skipped; PostgreSQL 17 clean migration 0001..0018 and 673 passed; Ruff/format/mypy, OpenAPI/client, ESLint/TypeScript, 148 Vitest, Next build and dependency/static audits passed."
+    },
+    {
+      "id": "exact-sha-runtime-suite",
+      "status": "PASS",
+      "evidence": "Source/backend/frontend/contracts are clean at f5d7fb093f0cd7f577131111222bcd2d8a43459c; tests and build ran on byte-identical content immediately before commit, and contracts:check passed after commit."
+    },
+    {
+      "id": "functional-browser-test",
+      "status": "NOT_RUN",
+      "evidence": "Playwright remains explicitly paused by the user."
+    },
+    {
+      "id": "consolidation-report",
+      "status": "PASS",
+      "evidence": "qa-report.json validated and README/report.html rendered for implementation SHA f5d7fb093f0cd7f577131111222bcd2d8a43459c."
+    },
+    {
+      "id": "tester-handoff",
+      "status": "BLOCKED",
+      "evidence": "Requires report commit/push and manual browser validation; automated Playwright is still paused by the user."
+    }
+  ]
 }

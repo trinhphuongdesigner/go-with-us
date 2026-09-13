@@ -18,3 +18,10 @@ AI proposal-before-persist, provenance, design Milo và bằng chứng kiểm th
 Một feature chỉ hoàn thành khi contract, implementation, tests, code review,
 UI/UX persona review, báo cáo tiếng Việt và push verification đều cùng trỏ tới
 implementation SHA đã xác minh.
+
+## Trạng thái điều phối hiện tại
+
+- User đã cho phép tiếp tục remediation; Playwright/browser automation vẫn tạm dừng.
+- Worktree chuẩn hiện là `.claude/worktrees/v2-qa`, branch `codex/v2-qa-consolidation`.
+- Source hợp nhất đã khóa tại implementation SHA `f5d7fb093f0cd7f577131111222bcd2d8a43459c`; independent remediation review không còn P0/P1.
+- Candidate chưa đạt Definition of done vì browser/persona gate và Gitleaks exact-SHA chưa chạy. Xem `consolidation-remediation-2026-09-13.vi.md`, report `03-consolidation-remediation` và `quality-gates.json`.

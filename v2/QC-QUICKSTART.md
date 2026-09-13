@@ -6,8 +6,9 @@ worktree `.claude/worktrees/v2-qa`, không dùng root checkout v1 cũ. Tính nă
 chi tiết: [RUNTIME-MIGRATION.md](./RUNTIME-MIGRATION.md). Nguồn/provenance và các lát
 cắt trước đó: [CONSOLIDATION.md](./CONSOLIDATION.md).
 
-Đợt này triển khai theo yêu cầu **build-only**: không thêm/chạy test suite mới, không
-thực hiện live AI calls, và chưa kết luận PASS QC cho các luồng được chuyển mới.
+Checkpoint Smart People Search **2026-09-12** đã chạy kiểm tra tập trung và gọi Madison
+thật; không chạy lại full build. Các luồng khác vẫn cần QC thủ công trước khi kết luận
+PASS toàn hệ thống.
 
 Checkpoint **2026-09-12**: đã build và chạy Docker thành công, migration
 `0016_company_memberships`, seed thành công; web/API/PostgreSQL/ClamAV healthy.
@@ -32,8 +33,10 @@ chưa sẵn sàng. OCR dùng Tesseract trong image backend.
 Mở [CareerMate QC](http://localhost:3140/login).
 API docs: [localhost:8140/api/v2/docs](http://localhost:8140/api/v2/docs).
 Demo mode frontend **tắt**; dữ liệu lấy từ FastAPI local.
-Menu **Tài khoản demo** trên trang login tạo phiên backend thật cho đúng 9 persona seed,
+Menu **Tài khoản demo** trên trang login tạo phiên backend thật cho đúng 9 persona đăng nhập,
 không dùng mock frontend và không lộ mật khẩu. Chọn người để vào thẳng dashboard.
+Smart People Search dùng trực tiếp hồ sơ của các persona BOD, HR và EMPLOYEE hiện có;
+seed chỉ bổ sung kỹ năng, kinh nghiệm và dự án, không tạo thêm tài khoản tìm kiếm.
 
 ## Tài khoản
 
@@ -51,7 +54,8 @@ password; không dán nội dung vào chat, ảnh chụp hoặc báo cáo.
 
 Công ty thứ hai có `admin@northstar.dev`, `bod@northstar.dev`, `hr@northstar.dev`,
 `alex@northstar.dev`, dùng cùng password key theo role. Trên database mới, tổng cộng
-2 công ty/9 tài khoản. BOD, HR và EMPLOYEE có profile/roadmap cá nhân; admin thuần túy
+2 công ty, 9 persona đăng nhập; 6 persona BOD, HR và EMPLOYEE có hồ sơ tìm kiếm được
+bổ sung evidence. BOD, HR và EMPLOYEE có profile/roadmap cá nhân; admin thuần túy
 quản trị theo scope. Không sửa role/password đã tồn tại khi seed lại.
 
 ## Các đường đi để kiểm tra thủ công
@@ -85,8 +89,10 @@ AI mới trả đề xuất; lỗi provider hiện rõ và không tạo kết qu
 
 Có thể thêm các biến `CAREERMATE_AI_PROVIDER`, `CAREERMATE_AI_BASE_URL`,
 `CAREERMATE_AI_MODEL`, `CAREERMATE_AI_API_KEY` vào `.qc.env` thay cho cấu hình qua UI,
-rồi chạy `up` lại. Không đưa key vào lệnh dùng chung hoặc commit. Đợt triển khai này
-chưa kiểm chứng live AI; người QC ghi kết quả provider thành một bước riêng.
+rồi chạy `up` lại. Không đưa key vào lệnh dùng chung hoặc commit. Smart People Search
+đã được kiểm chứng live với ba tình huống React leadership, FastAPI/PostgreSQL và
+Figma/accessibility; xem [kịch bản demo AI](./docs/smart-people-search-demo.vi.md).
+Các luồng AI khác vẫn cần được QC riêng theo đúng role và dữ liệu được phép xem.
 
 Nếu đã có cấu hình Claude/Madison cục bộ, có thể chỉ định file tường minh:
 
