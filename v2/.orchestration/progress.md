@@ -116,3 +116,24 @@ Tại checkpoint 01:00 ICT chưa có feature nào PASS; trạng thái mới hơn
 - **Giới hạn**: Task tool (subagent delegation) không khả dụng trong phiên này ("currently unavailable") — không delegate được review độc lập thật sự. Thay bằng self-review nghiêm ngặt đối chiếu từng tiêu chí với code thực tế + chạy lại toàn bộ quality gate làm bằng chứng khách quan. Đã ghi rõ giới hạn này trong report, không che giấu.
 - Viết báo cáo `../reports/05-w1-project-timeline/qa-report.json` + `README.md` (verdict PASS kèm giới hạn, AC-01..AC-05), cập nhật `tasks.json` (thêm slice `W1-PROJECT-TIMELINE`).
 - Không chạy Playwright/browser/persona test. Không đụng tới các file v1 đang dirty ở root (xác nhận `git status --short` giống hệt trước/sau task, chỉ thêm 2 file trong `v2/`).
+
+## 2026-09-13 09:30 ICT — W1-PROJECT-TIMELINE: sửa 2 finding từ review độc lập
+
+- Reviewer độc lập (bên ngoài phiên Pi) review base `65507c6`, verdict **REQUEST_CHANGES**
+  với 2 finding: P1 — `ProfileResourceEditForm` không đóng/không remount sau
+  `reloadProfile()`, cho phép resubmit draft cũ kèm `profileVersion` mới, âm thầm ghi đè
+  thay đổi đồng thời trên server thay vì báo xung đột; P2 — test
+  `test_project_update_and_delete_roll_back_when_audit_fails` chỉ phủ nhánh update, thiếu
+  delete dù tên ngụ ý cả hai.
+- Đã sửa cả 2: `reloadProfile()` gọi thêm `setEditingResourceId(null)`; `ProfileResourceEditForm`
+  gắn `key={`${resource.id}:${profile.profileVersion}`}` để remount với dữ liệu server mới
+  nhất; test rollback được parametrize `["update", "delete"]`. Thêm 1 test hồi quy frontend
+  xác minh fail-without-fix/pass-with-fix cho P1.
+- Commit code+test: `f845494ef9939a6bf574fc74fb379003b3d68abf` — "fix(v2): prevent stale
+  project overwrite after reload".
+- Chạy lại toàn bộ gate: backend 661 passed/18 skipped (baseline 656), frontend 157
+  passed/22 file (baseline 152/21), ruff/mypy/eslint/tsc/next-build đều sạch.
+- Reviewer độc lập re-review đúng nội dung fix, xác nhận CLOSED, không còn P0/P1/P2,
+  `git diff --check` sạch, verdict **PASS**.
+- Cập nhật `qa-report.json`/`README.md` (verdict PASS, SHA mới, số liệu test mới) và
+  `tasks.json`/`handoff.md` để tham chiếu SHA `f845494ef9939a6bf574fc74fb379003b3d68abf`.

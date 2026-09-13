@@ -99,9 +99,9 @@
       "id": "W1-PROJECT-TIMELINE",
       "name": "Project CRUD authz/CAS/validation, provenance và deterministic ordering trên career timeline hợp nhất",
       "status": "PASS",
-      "implementation_sha": "107c2ae956e9e333a918fa59fea7979e609e0bc8",
+      "implementation_sha": "f845494ef9939a6bf574fc74fb379003b3d68abf",
       "report": "../reports/05-w1-project-timeline/qa-report.json",
-      "note": "Independent review degraded to self-review: Task subagent tool unavailable this session."
+      "note": "Independent reviewer found 2 issues on base 65507c6 (P1 stale draft overwrite after reload, P2 rollback test missed delete branch); both fixed and re-review confirmed CLOSED, verdict PASS."
     }
   ],
   "coordination_state": {

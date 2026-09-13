@@ -11,7 +11,7 @@ nguyên trạng thái đã xác minh ở các report trước.
 
 ## Kết luận
 
-**PASS** (kèm 1 giới hạn đã ghi nhận minh bạch — xem "Giới hạn" bên dưới).
+**PASS.** Review độc lập lần đầu (base `65507c6`) ra REQUEST_CHANGES với 2 finding thực sự; cả 2 đã được sửa tại `f845494ef9939a6bf574fc74fb379003b3d68abf` và reviewer độc lập re-review xác nhận CLOSED — xem "Finding từ review độc lập" bên dưới.
 
 Logic sản phẩm cho Project (backend: `competency_profile_service.py`,
 `competency_profile.py`, `competency_schemas.py`; frontend: `profile-view.tsx`) đã đúng
@@ -39,28 +39,47 @@ Khoảng trống duy nhất là **evidence test** — trước task này, Projec
   tạo mới (kèm `techStack` tách theo dấu phẩy), sửa, xóa yêu cầu xác nhận 2 bước, khóa
   form khi 409 version conflict.
 
-## Bằng chứng chạy lại (exact SHA `107c2ae956e9e333a918fa59fea7979e609e0bc8`)
+## Bằng chứng chạy lại (exact SHA `f845494ef9939a6bf574fc74fb379003b3d68abf`)
 
 | Gate | Lệnh | Kết quả |
 |---|---|---|
 | Backend lint | `ruff check tests/test_competency_profile_api.py` | All checks passed |
-| Backend test toàn bộ | `pytest -q` | 660 passed, 18 skipped (baseline 656 passed) |
+| Backend test toàn bộ | `pytest -q` | 661 passed, 18 skipped (baseline 656 passed) |
 | Backend test scoped | `pytest tests/test_competency_profile_api.py -q` | 22 passed, 9 skipped |
-| Frontend test scoped | `vitest run .../profile-view.project.test.tsx` | 4 passed |
-| Frontend test toàn bộ | `vitest run` | 156 passed / 22 file (baseline 152/21) |
+| Frontend test scoped | `vitest run .../profile-view.project.test.tsx` | 5 passed |
+| Frontend test toàn bộ | `vitest run` | 157 passed / 22 file (baseline 152/21) |
 | Frontend lint | `npm run lint` | sạch |
 | Frontend typecheck | `npm run typecheck` | sạch |
 | Frontend build | `npm run build` | thành công, 20 route |
 
-## Giới hạn
+## Finding từ review độc lập (đã sửa)
 
-Công cụ delegate subagent (Task) **không khả dụng** trong phiên làm việc này (trả về
-"currently unavailable"). Vì vậy bước "review độc lập" theo yêu cầu task được thay bằng
-self-review nghiêm ngặt: đối chiếu từng acceptance criterion với code thực tế theo dòng,
-cộng bằng chứng khách quan là kết quả chạy lại toàn bộ test/lint/typecheck/build. Đây
-**không phải** một review độc lập thật sự bởi bên thứ hai — khuyến nghị chạy lại một lượt
-review bằng Task/code-reviewer khi công cụ khả dụng trở lại, trước khi coi slice này là
-đã qua đầy đủ quy trình QA hai lớp như report 04.
+Reviewer độc lập (bên ngoài phiên làm việc này) review base `65507c6` và ra verdict
+**REQUEST_CHANGES** với đúng 2 finding:
+
+- **P1 — stale draft có thể ghi đè thay đổi mới trên server.** `ProfileResourceEditForm`
+  seed draft từ `resource`/`profileVersion` qua `useState` một lần khi mount, không bị
+  remount/rekey khi profile được reload. Sau một xung đột 409, `reloadProfile()` cập nhật
+  lại `profile` nhưng không đóng editor đang mở và không remount form — người dùng có thể
+  bấm lưu lại với draft cũ, gửi kèm `profileVersion` mới, âm thầm ghi đè các trường đã bị
+  người khác thay đổi trên server thay vì được cảnh báo xung đột.
+  **Sửa:** `reloadProfile()` gọi thêm `setEditingResourceId(null)` để đóng mọi editor đang
+  mở khi reload; `ProfileResourceEditForm` được gắn
+  ``key={`${resource.id}:${profile.profileVersion}`}`` để remount với dữ liệu server mới
+  nhất mỗi khi `profileVersion` đổi. Đã thêm test hồi quy trong
+  `profile-view.project.test.tsx`, xác minh test **fail khi chưa sửa** (draft cũ vẫn được
+  gửi lại) và **pass khi đã sửa**.
+- **P2 — test rollback chỉ phủ nhánh update, thiếu delete.**
+  `test_project_update_and_delete_roll_back_when_audit_fails` trước đó chỉ gọi PATCH, chưa
+  thực sự kiểm tra rollback khi audit-log ghi thất bại trong nhánh DELETE, dù tên test ngụ ý
+  phủ cả hai. **Sửa:** parametrize test theo `["update", "delete"]`, giống pattern của test
+  rollback generic cho resource khác trong cùng file — cả hai case đều pass.
+
+Cả hai finding đã được sửa tại commit
+`f845494ef9939a6bf574fc74fb379003b3d68abf`. Reviewer độc lập re-review đúng nội dung fix,
+xác nhận **CLOSED**, không còn P0/P1/P2, `git diff --check` sạch.
+
+## Giới hạn
 
 Playwright/browser/persona test **không chạy**, theo đúng yêu cầu của task này và chỉ đạo
 tạm dừng hiện hành của người dùng.
