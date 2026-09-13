@@ -137,3 +137,30 @@ Tại checkpoint 01:00 ICT chưa có feature nào PASS; trạng thái mới hơn
   `git diff --check` sạch, verdict **PASS**.
 - Cập nhật `qa-report.json`/`README.md` (verdict PASS, SHA mới, số liệu test mới) và
   `tasks.json`/`handoff.md` để tham chiếu SHA `f845494ef9939a6bf574fc74fb379003b3d68abf`.
+
+## 2026-09-14 00:00 ICT — W1-CERTIFICATION-TIMELINE: sửa 2 finding P2, chờ re-review
+
+- Task duy nhất được giao: review/cải thiện Certification CRUD + mốc Certification trong career timeline hợp nhất (không chạm experience/project/award/goal/assessment/passport/staffing).
+- Logic sản phẩm đã đúng từ trước (dùng chung pipeline generic đã xác minh ở report 04/05) — không sửa code sản phẩm, chỉ bổ sung 4 test backend và 1 file test frontend còn thiếu (test_competency_profile_api.py +328 dòng net, profile-view.certification.test.tsx mới 295 dòng, 5 test).
+- Reviewer độc lập (bên ngoài phiên Pi) review candidate ban đầu, verdict **REQUEST_CHANGES** với đúng 2 finding, cả hai P2 (không P0/P1): P2-1 — test frontend create/edit chỉ phủ giá trị mặc định (type=PROFESSIONAL), không chứng minh field Certification-specific khác được map đúng; P2-2 — test timeline chỉ assert thứ tự/loại trừ, thiếu assert field mapping đầy đủ (kind/title/subtitle/startDate/endDate/sourceType) cho từng item.
+- Đã sửa cả 2: test create nay chọn type=LANGUAGE và assert payload; test edit nay đổi đồng thời type/score/expiresAt/credentialUrl ngoài name; test timeline nay assert đầy đủ field chiếu cho cả 2 item còn lại (bao gồm endDate khớp expiresAt); đồng thời sửa fixture frontend baseProfile().timeline[0].endDate từ null thành "2028-01-01" để khớp expiresAt thật của certification (bug fixture nội bộ, reviewer chỉ ra kèm P2-2).
+- Chạy lại toàn bộ gate không-browser sau khi sửa: backend 666 passed/18 skipped (không mất/trùng test), ruff/mypy sạch, frontend 162 passed/23 file, lint/typecheck/build sạch, `git diff --check` sạch.
+- Viết báo cáo `../reports/06-w1-certification-timeline/qa-report.json` + `README.md` với `overall_status: "P2_FIXED_PENDING_REREVIEW"` (KHÔNG PASS vì chưa có re-review độc lập xác nhận CLOSED), cập nhật `tasks.json` (thêm slice `W1-CERTIFICATION-TIMELINE` cùng trạng thái).
+- Không chạy Playwright/browser/persona test. Không đụng tới các file v1 đang dirty ở root. Chưa `git add`/commit/push — dừng ở working tree theo đúng chỉ đạo, chờ reviewer độc lập re-review.
+
+
+## 2026-09-14 01:00 ICT — W1-CERTIFICATION-TIMELINE: FINAL APPROVE, commit test-only, cập nhật docs
+
+- Sau 2 vòng re-review docs-only (chỉ để khớp evidence chính xác với hành vi test thật, không
+  có finding về code/test), reviewer độc lập ra verdict cuối cùng: **FINAL APPROVE, 0 P0/P1/P2**.
+- Commit test-only tại `d258d8759678b0eaaa0b5f4be437989040bdf306` (`test(v2/profile): cover certification CRUD and timeline`), gồm
+  đúng 2 file: `v2/backend/tests/test_competency_profile_api.py` và
+  `v2/frontend/src/features/profile/profile-view.certification.test.tsx`. Không đụng file v1.
+- Cập nhật `qa-report.json`/`README.md` (`overall_status`/trạng thái báo cáo → `PASS`,
+  `implementation_sha`/`verified_tree_sha` → `d258d8759678b0eaaa0b5f4be437989040bdf306`, AC-05/CHK-10 → PASS/CLOSED, known_gaps chỉ
+  còn Playwright NOT_RUN), `tasks.json` (slice `W1-CERTIFICATION-TIMELINE` → `PASS`,
+  `implementation_sha`, `current_task_runtime`), `handoff.md` (thêm mục cập nhật FINAL APPROVE).
+- Test counts không đổi so với lần chạy trước khi commit: backend 666 passed/18 skipped, frontend
+  162 passed/23 file. Playwright/browser/persona vẫn NOT_RUN — không claim đã chạy.
+- Docs (qa-report.json/README.md/tasks.json/progress.md/handoff.md) được `git add`/commit riêng
+  khỏi commit test, theo đúng yêu cầu tách commit.

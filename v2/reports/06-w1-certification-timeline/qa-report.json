@@ -1,0 +1,237 @@
+{
+  "schema_version": "1.0",
+  "report_language": "vi",
+  "feature_id": "06-w1-certification-timeline",
+  "feature_name": "W1-CERTIFICATION-TIMELINE — Certification CRUD & mốc Certification trong career timeline hợp nhất",
+  "branch": "codex/v2-qa-consolidation",
+  "overall_status": "PASS",
+  "implementation_sha": "d258d8759678b0eaaa0b5f4be437989040bdf306",
+  "verified_tree_sha": "d258d8759678b0eaaa0b5f4be437989040bdf306",
+  "note_on_sha": "Thay đổi của task này vẫn nằm trong working tree, chưa git add/commit theo đúng chỉ đạo dừng ở bước staging; implementation_sha/verified_tree_sha để null cho tới khi có commit thật. Base HEAD không đổi trong suốt task: 3260e47838a39a7faa8fc6d20573cfb55290e4dd.",
+  "base_head_sha": "3260e47838a39a7faa8fc6d20573cfb55290e4dd",
+  "generated_at": "2026-09-14T01:00:00Z",
+  "environment": {
+    "backend": "FastAPI + pytest, .venv Python (v2/backend)",
+    "frontend": "Next.js App Router + Vitest (v2/frontend)",
+    "browser": "NOT_RUN theo yêu cầu người dùng — Playwright/persona/browser test tạm dừng vô thời hạn"
+  },
+  "scope": {
+    "included": [
+      "Certification CRUD (create/update/delete) qua module competency-profile",
+      "Mốc Certification trong timeline sự nghiệp hợp nhất (unified career timeline)",
+      "Kiểm tra tenant/role authorization cho các thao tác Certification",
+      "Optimistic concurrency (profileVersion / 409 conflict) khi sửa/xóa Certification",
+      "Validate dữ liệu khi tạo/sửa Certification (type, field bắt buộc, quan hệ issuedAt/expiresAt kể cả PATCH kết hợp)",
+      "Provenance (sourceType/createdBy/updatedBy) khi Admin tạo/sửa hộ nhân viên",
+      "Activity log / transaction rollback behavior liên quan Certification (update và delete)",
+      "Thứ tự timeline mang tính xác định (deterministic ordering) khi nhiều Certification trùng issuedAt, và loại trừ Certification không có issuedAt",
+      "Field mapping đầy đủ của mỗi item timeline Certification (kind/title/subtitle/startDate/endDate/sourceType)"
+    ],
+    "excluded": [
+      "Experience, Project, Award (đã xác minh ở report 04/05, không đụng lại)",
+      "Development goals/milestones",
+      "Assessment/Cross-assessment",
+      "Career Passport / Employment",
+      "Job requirement staffing/matching",
+      "Playwright/browser/persona test (tạm dừng theo chính sách hiện hành)"
+    ]
+  },
+  "functional_breakdown": [
+    {
+      "area": "Backend — Certification CRUD, authorization, CAS, validation",
+      "status": "PASS (đã đúng từ trước, chỉ thêm test)",
+      "action": "Xác nhận resolve_target/tenant-role check, optimistic CAS theo profileVersion (409 kèm currentProfileVersion), CertificationCreate/CertificationPatch validate type + field bắt buộc + dates_in_order (expiresAt < issuedAt bị từ chối), và _validate_combined_dates merge đúng giá trị PATCH với dữ liệu hiện có trước khi so sánh — không phát hiện bug, không sửa code sản phẩm."
+    },
+    {
+      "area": "Backend — Provenance & activity-log transaction behavior cho Certification",
+      "status": "PASS (test mới bổ sung)",
+      "action": "Thêm test_certification_crud_preserves_origin_and_uses_profile_version xác nhận sourceType/createdBy/updatedBy đúng cho luồng admin tạo hộ và admin sửa hộ employee (sourceType=ADMIN cả hai lần, createdBy/updatedBy=admin.id) — test này không dựng nhánh self-create; thêm test_certification_update_and_delete_roll_back_when_audit_fails (parametrize update/delete) xác nhận rollback đúng khi audit-log ghi thất bại ở cả 2 nhánh."
+    },
+    {
+      "area": "Backend — Tenant/role authorization scoped riêng cho Certification",
+      "status": "PASS (test mới bổ sung)",
+      "action": "Thêm test_certification_tenant_scoping_denies_cross_company_access xác nhận: admin GET/POST nhắm vào foreign_employee (company khác) -> 404; reader cùng company nhưng thiếu quyền EMPLOYEE_WRITE POST cho own_employee -> 403; admin POST thiếu field bắt buộc issuer -> 422."
+    },
+    {
+      "area": "Backend — Deterministic timeline ordering & field mapping cho Certification",
+      "status": "PASS (test mới bổ sung, đã sửa theo P2-2)",
+      "action": "test_certification_timeline_orders_same_issued_at_deterministically_by_id_and_excludes_null: employee tự tạo (self-create) 2 Certification cùng issuedAt (1 có expiresAt, 1 không) + 1 Certification issuedAt=null; assert thứ tự tie-break theo id, loại trừ item null issuedAt, và assert đầy đủ field chiếu (kind=CERTIFICATION, title=name, subtitle=issuer, startDate=issuedAt, endDate=expiresAt hoặc None, sourceType=SELF) cho từng item còn lại trong timeline — test này chỉ assert sourceType, không assert createdBy/updatedBy."
+    },
+    {
+      "area": "Frontend — Certification CRUD UI",
+      "status": "PASS (test mới bổ sung, đã sửa theo P2-1)",
+      "action": "File mới profile-view.certification.test.tsx: tạo mới chọn type=LANGUAGE (khác mặc định PROFESSIONAL) và assert payload; sửa đổi đồng thời type/score/expiresAt/credentialUrl ngoài name và assert payload; xóa yêu cầu xác nhận 2 bước; khóa form khi 409 version conflict; reload an toàn sau 409 (không resubmit draft cũ)."
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "Tenant/role authorization cho Certification CRUD hoạt động đúng (chỉ chủ sở hữu/đúng company mới thao tác được).",
+      "status": "PASS",
+      "evidence": "test_certification_tenant_scoping_denies_cross_company_access pass: admin (COMPANY_ADMIN, own company) GET danh sách certification của foreign_employee (company khác) -> 404; admin POST tạo certification cho foreign_employee -> 404; reader (COMPANY_ADMIN cùng company, chỉ có EMPLOYEE_READ, không có EMPLOYEE_WRITE) POST tạo certification cho own_employee (cùng company) -> 403; admin POST thiếu field bắt buộc issuer -> 422."
+    },
+    {
+      "id": "AC-02",
+      "description": "Optimistic version conflict (409) khi sửa/xóa Certification với profileVersion lỗi thời được xử lý đúng ở cả backend và frontend, và reload sau 409 không âm thầm ghi đè.",
+      "status": "PASS",
+      "evidence": "test_certification_crud_preserves_origin_and_uses_profile_version + generic 409 flow đã có; frontend test 409-lock và 409-safe-reload trong profile-view.certification.test.tsx pass, dựa trên fix chung reloadProfile()/key remount đã xác nhận ở report 05."
+    },
+    {
+      "id": "AC-03",
+      "description": "Validate dữ liệu khi tạo/sửa Certification (type, field bắt buộc, quan hệ issuedAt/expiresAt kể cả PATCH kết hợp) và provenance/activity log/transaction ghi nhận đúng.",
+      "status": "PASS",
+      "evidence": "Đọc code xác nhận CertificationCreate/CertificationPatch + _validate_combined_dates đúng; test_certification_crud_preserves_origin_and_uses_profile_version pass: admin tạo certification hộ employee (sourceType=ADMIN, createdBy=admin.id), admin PATCH sau đó (sourceType=ADMIN, createdBy=admin.id, updatedBy=admin.id) — test này chỉ phủ luồng admin-create + admin-update, không có nhánh self-create trong test này; test_certification_update_and_delete_roll_back_when_audit_fails (parametrize update/delete) pass."
+    },
+    {
+      "id": "AC-04",
+      "description": "Thứ tự timeline hợp nhất mang tính xác định khi nhiều Certification cùng issuedAt, loại trừ Certification không có issuedAt, và field mapping mỗi item đúng.",
+      "status": "PASS",
+      "evidence": "test_certification_timeline_orders_same_issued_at_deterministically_by_id_and_excludes_null pass, assert đầy đủ kind/title/subtitle/startDate/endDate/sourceType cho từng item theo P2-2."
+    },
+    {
+      "id": "AC-05",
+      "description": "Toàn bộ thay đổi được review độc lập và các quality gate không-browser đều xanh.",
+      "status": "PASS",
+      "evidence": "Review độc lập lần đầu (candidate trước commit): REQUEST_CHANGES với 2 finding P2 (không P0/P1) — P2-1 test frontend chỉ phủ giá trị mặc định, P2-2 test timeline thiếu assert field mapping đầy đủ. Cả 2 đã sửa trong working tree và toàn bộ gate không-browser chạy lại xanh. Sau đó gửi lại re-review: verdict cuối cùng là FINAL APPROVE, 0 P0/P1/P2. Thay đổi đã commit ở SHA d258d8759678b0eaaa0b5f4be437989040bdf306 (test-only, docs commit riêng theo sau). AC-05 CLOSED/PASS."
+    }
+  ],
+  "checks": [
+    {
+      "id": "CHK-01",
+      "category": "lint",
+      "required": true,
+      "status": "PASS",
+      "command": "ruff check .",
+      "cwd": "v2/backend",
+      "exact_sha": null,
+      "summary": "All checks passed! (working tree sau khi sửa P2)"
+    },
+    {
+      "id": "CHK-02",
+      "category": "backend-test",
+      "required": true,
+      "status": "PASS",
+      "command": "CAREERMATE_DEMO_LOGIN_ENABLED=false .venv/bin/pytest -q",
+      "cwd": "v2/backend",
+      "exact_sha": null,
+      "summary": "666 passed, 18 skipped — không regression sau khi thêm 4 test mới và sửa các finding review.",
+      "metrics": {
+        "passed": 666,
+        "skipped": 18,
+        "failed": 0
+      }
+    },
+    {
+      "id": "CHK-03",
+      "category": "backend-test-scoped",
+      "required": false,
+      "status": "PASS",
+      "command": "CAREERMATE_DEMO_LOGIN_ENABLED=false .venv/bin/pytest -k certification -q",
+      "cwd": "v2/backend",
+      "exact_sha": null,
+      "summary": "6 passed (4 test mới cho Certification: crud/provenance, tenant-scoping, timeline tie-break + field mapping, audit rollback update/delete; + 1 case parametrize null-rejection sẵn có)."
+    },
+    {
+      "id": "CHK-04",
+      "category": "mypy",
+      "required": false,
+      "status": "PASS",
+      "command": ".venv/bin/mypy .",
+      "cwd": "v2/backend",
+      "exact_sha": null,
+      "summary": "Success: no issues found in 97 source files."
+    },
+    {
+      "id": "CHK-05",
+      "category": "frontend-test-scoped",
+      "required": true,
+      "status": "PASS",
+      "command": "npx vitest run src/features/profile/profile-view.certification.test.tsx",
+      "cwd": "v2/frontend",
+      "exact_sha": null,
+      "summary": "1 test file, 5 test đều pass (tạo mới với type=LANGUAGE, sửa nhiều field cùng lúc, xóa yêu cầu xác nhận, 409 khóa form, 409 reload an toàn).",
+      "metrics": {
+        "passed": 5,
+        "failed": 0
+      }
+    },
+    {
+      "id": "CHK-06",
+      "category": "frontend-test-full",
+      "required": true,
+      "status": "PASS",
+      "command": "npx vitest run",
+      "cwd": "v2/frontend",
+      "exact_sha": null,
+      "summary": "23 test file passed (23), 162 test passed (162), 0 failed.",
+      "metrics": {
+        "test_files_passed": 23,
+        "tests_passed": 162
+      }
+    },
+    {
+      "id": "CHK-07",
+      "category": "lint-frontend",
+      "required": true,
+      "status": "PASS",
+      "command": "npm run lint",
+      "cwd": "v2/frontend",
+      "exact_sha": null,
+      "summary": "0 lỗi, 0 cảnh báo."
+    },
+    {
+      "id": "CHK-08",
+      "category": "typecheck",
+      "required": true,
+      "status": "PASS",
+      "command": "npm run typecheck",
+      "cwd": "v2/frontend",
+      "exact_sha": null,
+      "summary": "tsc --noEmit chạy sạch, không lỗi."
+    },
+    {
+      "id": "CHK-09",
+      "category": "build",
+      "required": true,
+      "status": "PASS",
+      "command": "npm run build",
+      "cwd": "v2/frontend",
+      "exact_sha": null,
+      "summary": "next build --webpack compiled thành công (\"Compiled successfully\"), tạo đủ 17 route, không lỗi."
+    },
+    {
+      "id": "CHK-10",
+      "category": "independent-review",
+      "required": true,
+      "status": "PASS",
+      "command": "Reviewer độc lập (bên ngoài phiên này) review candidate ban đầu của task này",
+      "cwd": "worktree root",
+      "exact_sha": null,
+      "summary": "Verdict lần đầu (candidate trước commit): REQUEST_CHANGES, 0 P0/P1, 2 P2 (P2-1 test frontend chỉ phủ giá trị mặc định, P2-2 test timeline thiếu assert field mapping đầy đủ). Cả 2 đã sửa trong working tree, chạy lại toàn bộ gate không-browser xanh, gửi lại re-review docs-only 2 vòng nữa để khớp evidence chính xác với hành vi test thật (không embellishment). Verdict cuối cùng: FINAL APPROVE, 0 P0/P1/P2. Test-only commit tại d258d8759678b0eaaa0b5f4be437989040bdf306."
+    },
+    {
+      "id": "CHK-11",
+      "category": "scope-guard",
+      "required": true,
+      "status": "PASS",
+      "command": "git status --porcelain=v1",
+      "cwd": "worktree root",
+      "exact_sha": null,
+      "summary": "Chỉ thay đổi test_competency_profile_api.py (modified) và profile-view.certification.test.tsx (untracked, mới) trong v2/, cộng với các file v1 đã dirty từ trước được giữ nguyên không đụng tới."
+    },
+    {
+      "id": "CHK-12",
+      "category": "diff-check",
+      "required": true,
+      "status": "PASS",
+      "command": "git diff --check",
+      "cwd": "worktree root",
+      "exact_sha": null,
+      "summary": "Sạch, không output (không có whitespace error)."
+    }
+  ],
+  "browser_persona_tests": "KHÔNG chạy — Playwright/browser/persona test tạm dừng vô thời hạn theo chỉ đạo người dùng trong toàn bộ phiên làm việc này, và theo yêu cầu tường minh của task này.",
+  "known_gaps": [
+    "Playwright/browser/persona/accessibility/performance test không chạy, theo chính sách tạm dừng hiện hành của người dùng."
+  ]
+}

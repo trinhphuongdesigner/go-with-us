@@ -27,7 +27,7 @@
 - Backend/frontend/contracts sạch tại implementation SHA trên; các PASS lịch sử phía dưới vẫn chỉ chứng minh từng slice cũ.
 - Tester có thể kiểm tra thủ công trên branch đã push. Không chạy Playwright cho tới khi user mở lại browser gate.
 
-- Gate working tree hiện tại: SQLite 655 passed/18 skipped; PostgreSQL 17 sạch 673 passed; Alembic `0001` → `0018` và drift PASS; frontend 148 Vitest, ESLint, TypeScript và production build PASS; Ruff/mypy/audit PASS.
+- Baseline consolidation đã khóa tại `f5d7fb0` (f5d7fb093f0cd7f577131111222bcd2d8a43459c): SQLite 655 passed/18 skipped; PostgreSQL 17 sạch 673 passed; Alembic `0001` → `0018` và drift PASS; frontend 148 Vitest, ESLint, TypeScript và production build PASS; Ruff/mypy/audit PASS.
 - Consolidation report chuẩn: `../reports/03-consolidation-remediation/qa-report.json` (overall `BLOCKED` vì browser/persona NOT_RUN, không phải vì lỗi P0/P1).
 - Database test cũ ở cổng 55432 có Alembic stamp `0004` nhưng schema từng được metadata bổ sung, nên không dùng làm evidence. Không xóa/truncate; verification sạch dùng PostgreSQL cô lập ở cổng 55441.
 
@@ -59,3 +59,30 @@
 - Review độc lập: reviewer bên ngoài phiên này review base `65507c6`, ra REQUEST_CHANGES với 2 finding (P1, P2 — xem bullet trên); sau khi sửa tại `f845494ef9939a6bf574fc74fb379003b3d68abf`, reviewer re-review đúng nội dung fix và xác nhận CLOSED, không còn P0/P1/P2, `git diff --check` sạch — verdict PASS.
 - Phạm vi task này KHÔNG đụng experience/certification/award/goal/assessment/passport/staffing — các khu vực đó vẫn giữ nguyên trạng thái như report 03/04.
 - Playwright/browser/persona vẫn NOT_RUN theo chỉ dẫn tạm dừng của user.
+
+## Cập nhật 2026-09-14 00:00 ICT
+
+- Task riêng lẻ `W1-CERTIFICATION-TIMELINE` ở trạng thái **`P2_FIXED_PENDING_REREVIEW`** (CHƯA PASS): rà soát Certification CRUD + mốc Certification trong career timeline hợp nhất (authz, optimistic CAS 409, validate type/field bắt buộc/quan hệ ngày, provenance, activity-log rollback update+delete, deterministic tie-break ordering + field mapping đầy đủ). Logic sản phẩm đã đúng, chỉ bổ sung test còn thiếu — không sửa code sản phẩm.
+- Reviewer độc lập review candidate ban đầu, ra **REQUEST_CHANGES** với đúng 2 finding, cả hai P2 (không P0/P1): P2-1 test frontend create/edit chỉ phủ giá trị mặc định, không đổi field Certification-specific khác; P2-2 test timeline thiếu assert field mapping đầy đủ mỗi item (kind/title/subtitle/startDate/endDate/sourceType). Cả 2 đã sửa trong working tree của phiên này.
+- Bằng chứng sau khi sửa: backend 666 passed/18 skipped (không regression); frontend 162 passed/23 file; ruff/mypy/lint/typecheck/next-build đều sạch; `git diff --check` sạch. Report chuẩn ở `../reports/06-w1-certification-timeline/qa-report.json`.
+- Lưu ý: các con số 655/148, 656/152, 661/157 xuất hiện ở các mục cập nhật phía trên là baseline lịch sử của consolidation/W1-EXPERIENCE-TIMELINE/W1-PROJECT-TIMELINE (task khác, SHA khác), không phải số của W1-CERTIFICATION-TIMELINE. Số hiện tại (working tree, chưa commit) của task này là backend 666 passed/18 skipped, frontend 162 passed/23 file.
+- **Task này CHƯA gửi lại reviewer độc lập re-review** — vì vậy KHÔNG được diễn giải thành PASS. Bước tiếp theo bắt buộc: gửi lại cho reviewer độc lập xác nhận CLOSED trước khi `git add`/commit/push bất kỳ thay đổi nào của task này.
+- Thay đổi vẫn nằm trong working tree, chưa staged/committed/pushed. Phạm vi task này KHÔNG đụng experience/project/award/goal/assessment/passport/staffing — các khu vực đó vẫn giữ nguyên trạng thái như report 03/04/05.
+- Playwright/browser/persona vẫn NOT_RUN theo chỉ dẫn tạm dừng của user.
+
+## Cập nhật 2026-09-14 01:00 ICT — W1-CERTIFICATION-TIMELINE: FINAL APPROVE, PASS
+
+- Task `W1-CERTIFICATION-TIMELINE` chuyển từ `P2_FIXED_PENDING_REREVIEW` sang **`PASS`**. Sau khi
+  2 finding P2 được sửa (xem mục 2026-09-14 00:00 ICT phía trên), docs (evidence trong
+  `qa-report.json`/`README.md`) trải qua thêm 2 vòng re-review độc lập chỉ để khớp evidence chính
+  xác với hành vi test thật (không có finding mới về code/test trong 2 vòng này). Verdict cuối
+  cùng của reviewer độc lập: **FINAL APPROVE, 0 P0/P1/P2**.
+- Test code đã commit tại `d258d8759678b0eaaa0b5f4be437989040bdf306` (`test(v2/profile): cover certification CRUD and timeline`),
+  đúng 2 file: `test_competency_profile_api.py` và `profile-view.certification.test.tsx`. Đây là
+  commit test-only, tách riêng khỏi commit docs theo yêu cầu.
+- Test counts không đổi so với lúc chưa commit: backend 666 passed/18 skipped, frontend 162
+  passed/23 file. Playwright/browser/persona vẫn **NOT_RUN** — không claim đã chạy browser.
+- Report chuẩn cập nhật ở `../reports/06-w1-certification-timeline/qa-report.json` (README.md
+  đồng bộ): `overall_status: "PASS"`, `implementation_sha`/`verified_tree_sha` = `d258d8759678b0eaaa0b5f4be437989040bdf306`.
+- Phạm vi vẫn KHÔNG đụng experience/project/award/goal/assessment/passport/staffing — các khu vực
+  đó giữ nguyên trạng thái như report 03/04/05.
