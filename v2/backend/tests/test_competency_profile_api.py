@@ -1163,3 +1163,49 @@ async def test_concurrent_skill_catalog_creation_is_unicode_normalized_on_postgr
     assert [response.status_code for response in responses] == [200, 200]
     assert len({response.json()["id"] for response in responses}) == 1
     assert await db_session.scalar(select(func.count()).select_from(Skill)) == 1
+
+
+@pytest.mark.asyncio
+async def test_timeline_orders_same_day_experiences_deterministically_by_id(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    company = await CompanyRepository(db_session).add(Company(name="Tie Break Company"))
+    await db_session.flush()
+    employee = await create_user(
+        db_session, email="tiebreak@acme.dev", name="Tie Break Owner", company=company
+    )
+    await db_session.commit()
+    headers = await login(client, employee.email)
+
+    first = await client.post(
+        "/api/v2/competency-profile/experiences",
+        headers=headers,
+        json={
+            "profileVersion": 1,
+            "title": "Alpha Mentor",
+            "organization": "Org A",
+            "startDate": "2025-06-01",
+        },
+    )
+    assert first.status_code == 201, first.text
+    second = await client.post(
+        "/api/v2/competency-profile/experiences",
+        headers=headers,
+        json={
+            "profileVersion": 2,
+            "title": "Beta Mentor",
+            "organization": "Org B",
+            "startDate": "2025-06-01",
+        },
+    )
+    assert second.status_code == 201, second.text
+
+    aggregate_first = await client.get("/api/v2/competency-profile", headers=headers)
+    aggregate_second = await client.get("/api/v2/competency-profile", headers=headers)
+    assert aggregate_first.status_code == 200
+    assert aggregate_second.status_code == 200
+    ids_first = [item["id"] for item in aggregate_first.json()["timeline"]]
+    ids_second = [item["id"] for item in aggregate_second.json()["timeline"]]
+    assert ids_first == ids_second
+    expected_order = sorted([first.json()["id"], second.json()["id"]])
+    assert ids_first == expected_order

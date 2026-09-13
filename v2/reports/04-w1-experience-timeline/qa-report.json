@@ -1,0 +1,191 @@
+{
+  "schema_version": "1.0",
+  "report_language": "vi",
+  "feature_id": "04-w1-experience-timeline",
+  "feature_name": "W1-EXPERIENCE-TIMELINE — Experience CRUD & mốc Experience trong career timeline hợp nhất",
+  "branch": "codex/v2-qa-consolidation",
+  "implementation_sha": "690061de5b263d5491f1b2017fea515165146d0d",
+  "verified_tree_sha": "690061de5b263d5491f1b2017fea515165146d0d",
+  "generated_at": "2026-09-13T07:39:02Z",
+  "environment": {
+    "backend": "FastAPI + pytest, .venv Python (v2/backend)",
+    "frontend": "Next.js App Router + Vitest (v2/frontend)",
+    "browser": "NOT_RUN theo yêu cầu người dùng — Playwright/persona/browser test tạm dừng vô thời hạn"
+  },
+  "scope": {
+    "included": [
+      "Experience CRUD (create/update/delete) qua module competency-profile",
+      "Mốc Experience trong timeline sự nghiệp hợp nhất (unified career timeline)",
+      "Kiểm tra tenant/role authorization cho các thao tác Experience",
+      "Optimistic concurrency (profileVersion / 409 conflict) khi sửa/xóa Experience",
+      "Validate dữ liệu khi tạo/sửa/xóa Experience",
+      "Activity log / transaction behavior liên quan Experience",
+      "Thứ tự timeline mang tính xác định (deterministic ordering) khi nhiều Experience trùng ngày bắt đầu"
+    ],
+    "excluded": [
+      "Project experience, Certification, Award (CRUD & timeline mapping)",
+      "Development goals/milestones",
+      "Assessment/Cross-assessment",
+      "Career Passport / Employment",
+      "Job requirement staffing/matching",
+      "Playwright/browser/persona test (tạm dừng theo chính sách hiện hành)"
+    ]
+  },
+  "user_value": "Đảm bảo nhân viên có thể thêm/sửa/xóa kinh nghiệm làm việc một cách an toàn (không mất dữ liệu do ghi đè đồng thời, dữ liệu không hợp lệ bị chặn), và các mốc Experience luôn xuất hiện đúng thứ tự, ổn định trên timeline sự nghiệp hợp nhất mà không phụ thuộc vào thứ tự trả về ngẫu nhiên từ DB.",
+  "functional_breakdown": [
+    {
+      "area": "Backend — Experience CRUD & authorization",
+      "finding": "Logic hiện có tại v2/backend/app/services/competency_profile_service.py (resolve_target, _profile_cas, create_resource, update_resource, delete_resource) và v2/backend/app/api/v2/competency_profile.py đã đúng: kiểm tra chủ sở hữu/role/company qua resolve_target, dùng optimistic CAS theo profileVersion, ném lỗi 409 kèm currentProfileVersion khi version không khớp. Không phát hiện lỗi cần sửa — không thực hiện rewrite suy đoán.",
+      "action": "Không sửa code sản phẩm; chỉ bổ sung test còn thiếu (xem bên dưới)."
+    },
+    {
+      "area": "Backend — Deterministic timeline ordering",
+      "finding": "Timeline sort key tại v2/backend/app/api/v2/competency_profile.py (~dòng 203-270): (-start_date.toordinal(), kind.value, str(id)) đảm bảo thứ tự xác định khi hai Experience có cùng start_date, nhưng suite test trước đó CHƯA có test riêng cho tie-break theo id. Đây là khoảng trống evidence duy nhất tìm thấy.",
+      "action": "Bổ sung test_timeline_orders_same_day_experiences_deterministically_by_id vào v2/backend/tests/test_competency_profile_api.py — tạo 2 Experience cùng start_date, assert thứ tự trả về ổn định theo id tăng dần."
+    },
+    {
+      "area": "Frontend — Experience CRUD UI",
+      "finding": "v2/frontend/src/features/profile/profile-view.tsx có đầy đủ luồng tạo/sửa/xóa Experience (form tạo, form sửa inline, nút xóa 2 bước xác nhận, khóa form khi 409 stale) nhưng KHÔNG có test Vitest nào bao phủ (0% coverage) trước khi thực hiện task này.",
+      "action": "Thêm file test mới v2/frontend/src/features/profile/profile-view.experience.test.tsx (không sửa component sản phẩm) với 4 test case: tạo mới + thông báo thành công, sửa, xóa yêu cầu xác nhận 2 bước, xung đột 409 khóa form sửa và hiển thị cảnh báo."
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "Tenant/role authorization cho Experience CRUD hoạt động đúng (chỉ chủ sở hữu/đúng company mới thao tác được).",
+      "status": "PASS",
+      "evidence": "Logic resolve_target trong competency_profile_service.py đã kiểm tra owner/role/company; xác nhận qua đọc code, không phát hiện lỗ hổng, có test hiện hữu bao phủ (suite pytest đầy đủ pass)."
+    },
+    {
+      "id": "AC-02",
+      "description": "Optimistic version conflict (409) khi sửa/xóa Experience với profileVersion lỗi thời được xử lý đúng ở cả backend và frontend.",
+      "status": "PASS",
+      "evidence": "Backend: _profile_cas ném 409 kèm currentProfileVersion. Frontend: test mới 'locks the profile as stale on a 409 version conflict...' xác nhận ApiError 409 khiến UI hiển thị alert 'Hồ sơ đã thay đổi ở nơi khác' và disable nút 'Chỉnh sửa Backend Engineer'."
+    },
+    {
+      "id": "AC-03",
+      "description": "Validate dữ liệu khi tạo/sửa/xóa Experience và activity log/transaction ghi nhận đúng.",
+      "status": "PASS",
+      "evidence": "Test hiện hữu trong test_competency_profile_api.py (đã chạy trong suite 656 passed) bao phủ validate + activity log; không có thay đổi cần thiết, chỉ xác minh lại qua lần chạy suite đầy đủ trong task này."
+    },
+    {
+      "id": "AC-04",
+      "description": "Thứ tự timeline hợp nhất mang tính xác định (deterministic) khi nhiều Experience có cùng ngày bắt đầu.",
+      "status": "PASS",
+      "evidence": "Test mới test_timeline_orders_same_day_experiences_deterministically_by_id (v2/backend/tests/test_competency_profile_api.py) pass, xác nhận tie-break theo id đúng như sort key trong competency_profile.py."
+    },
+    {
+      "id": "AC-05",
+      "description": "Toàn bộ thay đổi được review độc lập (code-reviewer subagent) và các quality gate không-browser đều xanh.",
+      "status": "PASS",
+      "evidence": "2 lượt review độc lập (agent code-reviewer) xác nhận: test backend đúng logic tie-break, DOM selector trong test frontend khớp với cơ chế xóa 2 bước thực tế (nút 'Xóa {name}' → nút 'Xác nhận xóa {name}', không dùng modal) và các label form ('Tiêu đề', 'Tổ chức', nút 'Lưu kinh nghiệm') đúng với profile-view.tsx. Không có finding sai cần sửa. Cả 2 lượt review chạm giới hạn 15 turn trước khi hoàn tất báo cáo dài dòng nhưng đã xác nhận các điểm trọng yêu cầu qua các báo cáo tiến độ; kết luận cuối được self-verify lại bằng cách chạy suite thực tế (4/4 test frontend pass, 656 passed backend) làm bằng chứng khách quan thay thế."
+    }
+  ],
+  "checks": [
+    {
+      "id": "CHK-01",
+      "category": "lint",
+      "required": true,
+      "status": "PASS",
+      "command": ".venv/bin/ruff check tests/test_competency_profile_api.py",
+      "cwd": "v2/backend",
+      "exact_sha": "690061de5b263d5491f1b2017fea515165146d0d",
+      "summary": "All checks passed."
+    },
+    {
+      "id": "CHK-02",
+      "category": "backend-test",
+      "required": true,
+      "status": "PASS",
+      "command": "CAREERMATE_DEMO_LOGIN_ENABLED=false .venv/bin/pytest -q",
+      "cwd": "v2/backend",
+      "exact_sha": "690061de5b263d5491f1b2017fea515165146d0d",
+      "summary": "656 passed, 18 skipped (60.40s) — tăng 1 test so với baseline 655 passed/18 skipped, không có regression.",
+      "metrics": { "passed": 656, "skipped": 18, "failed": 0, "baseline_passed": 655 }
+    },
+    {
+      "id": "CHK-03",
+      "category": "backend-test-scoped",
+      "required": false,
+      "status": "PASS",
+      "command": "CAREERMATE_DEMO_LOGIN_ENABLED=false .venv/bin/pytest tests/test_competency_profile_api.py -q",
+      "cwd": "v2/backend",
+      "exact_sha": "690061de5b263d5491f1b2017fea515165146d0d",
+      "summary": "18 passed, 9 skipped — bao gồm test mới test_timeline_orders_same_day_experiences_deterministically_by_id."
+    },
+    {
+      "id": "CHK-04",
+      "category": "frontend-test-scoped",
+      "required": true,
+      "status": "PASS",
+      "command": "npx vitest run src/features/profile/profile-view.experience.test.tsx",
+      "cwd": "v2/frontend",
+      "exact_sha": "690061de5b263d5491f1b2017fea515165146d0d",
+      "summary": "1 test file, 4 test đều pass (tạo, sửa, xóa yêu cầu xác nhận, 409 conflict khóa form).",
+      "metrics": { "passed": 4, "failed": 0 }
+    },
+    {
+      "id": "CHK-05",
+      "category": "frontend-test-full",
+      "required": true,
+      "status": "PASS",
+      "command": "npx vitest run",
+      "cwd": "v2/frontend",
+      "exact_sha": "690061de5b263d5491f1b2017fea515165146d0d",
+      "summary": "21 test file passed (21), 152 test passed (152) — tăng từ baseline 20 file/148 test, không regression.",
+      "metrics": { "test_files_passed": 21, "tests_passed": 152, "baseline_tests_passed": 148 }
+    },
+    {
+      "id": "CHK-06",
+      "category": "lint-frontend",
+      "required": true,
+      "status": "PASS",
+      "command": "npm run lint",
+      "cwd": "v2/frontend",
+      "exact_sha": "690061de5b263d5491f1b2017fea515165146d0d",
+      "summary": "0 lỗi, 0 cảnh báo."
+    },
+    {
+      "id": "CHK-07",
+      "category": "typecheck",
+      "required": true,
+      "status": "PASS",
+      "command": "npm run typecheck",
+      "cwd": "v2/frontend",
+      "exact_sha": "690061de5b263d5491f1b2017fea515165146d0d",
+      "summary": "tsc --noEmit chạy sạch, không lỗi."
+    },
+    {
+      "id": "CHK-08",
+      "category": "build",
+      "required": true,
+      "status": "PASS",
+      "command": "npm run build",
+      "cwd": "v2/frontend",
+      "exact_sha": "690061de5b263d5491f1b2017fea515165146d0d",
+      "summary": "next build --webpack compiled thành công, tạo đủ 20 route, không lỗi."
+    },
+    {
+      "id": "CHK-09",
+      "category": "independent-review",
+      "required": true,
+      "status": "PASS",
+      "command": "Task(code-reviewer) x2 — review độc lập diff backend test + frontend test file",
+      "cwd": "worktree root",
+      "exact_sha": "690061de5b263d5491f1b2017fea515165146d0d",
+      "summary": "Không có finding sai cần sửa: test backend đúng logic tie-break theo id; selector DOM trong test frontend khớp với cơ chế xóa 2 bước thực tế và nhãn form thực tế trong profile-view.tsx. Scope-check xác nhận chỉ 2 file v2/ thay đổi, không đụng file v1 dirty."
+    },
+    {
+      "id": "CHK-10",
+      "category": "scope-guard",
+      "required": true,
+      "status": "PASS",
+      "command": "git status --short",
+      "cwd": "worktree root",
+      "exact_sha": "690061de5b263d5491f1b2017fea515165146d0d",
+      "summary": "Chỉ v2/backend/tests/test_competency_profile_api.py (modified) và v2/frontend/src/features/profile/profile-view.experience.test.tsx (new) thay đổi trong phạm vi task; toàn bộ file v1 dirty (companies.controller.ts, companies.service.ts, roles.service.ts, users.service.ts, next.config.ts, migration backfill, *.spec.ts, my-companies/[id]/page.tsx, .pi/) giữ nguyên không đụng tới."
+    }
+  ],
+  "browser_persona_tests": "KHÔNG chạy — Playwright/browser/persona test tạm dừng vô thời hạn theo chỉ đạo người dùng trong toàn bộ phiên làm việc này.",
+  "verdict": "PASS — Experience CRUD và mốc Experience trong timeline hợp nhất đã được xác minh đầy đủ (authorization, optimistic conflict, validate, activity log, deterministic ordering). Không phát hiện lỗi cần sửa trong logic sản phẩm hiện có; chỉ bổ sung 2 file test (1 backend, 1 frontend mới) để lấp khoảng trống evidence. Toàn bộ quality gate không-browser đều xanh, review độc lập không có finding cần fix."
+}

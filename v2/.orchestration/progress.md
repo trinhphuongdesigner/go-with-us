@@ -98,3 +98,12 @@ Tại checkpoint 01:00 ICT chưa có feature nào PASS; trạng thái mới hơn
 - Cập nhật `../reports/03-consolidation-remediation/qa-report.json` (CHK-SECURITY bổ sung bằng chứng Gitleaks, xoá known_gap tương ứng) và `tasks.json` (bỏ phần Gitleaks khỏi blocker của `CONSOLIDATION-REMEDIATION`).
 - `overall_status` của report vẫn `BLOCKED` vì Playwright/accessibility/performance/persona vẫn NOT_RUN theo chỉ dẫn tạm dừng của user — không tự đổi.
 - Không chạy Playwright/browser/persona test. Không đụng tới thay đổi v1 đang dirty ở root.
+
+## 2026-09-13 14:39 ICT — W1-EXPERIENCE-TIMELINE hoàn tất
+
+- Task duy nhất được giao: review/cải thiện Experience CRUD + mốc Experience trong career timeline hợp nhất (không chạm project/cert/award/goal/assessment/passport/staffing).
+- Backend: logic CRUD/authz/CAS/validate/activity-log trong `competency_profile_service.py` và `competency_profile.py` đã đúng, không cần rewrite. Bổ sung `test_timeline_orders_same_day_experiences_deterministically_by_id` vào `v2/backend/tests/test_competency_profile_api.py` để lấp khoảng trống evidence cho tie-break ordering. Suite đầy đủ: 656 passed, 18 skipped.
+- Frontend: `profile-view.tsx` chưa có test Vitest nào cho Experience CRUD. Thêm file mới `v2/frontend/src/features/profile/profile-view.experience.test.tsx` (4 test: tạo, sửa, xóa 2-bước xác nhận, 409 conflict khóa form) — không sửa component sản phẩm. Suite đầy đủ: 21 file/152 test passed. Lint/typecheck/build đều sạch.
+- 2 lượt review độc lập (code-reviewer subagent) xác nhận test đúng logic và DOM selector khớp thực tế, không có finding cần sửa; tự chạy lại suite làm bằng chứng khách quan bổ sung do cả 2 lượt review chạm giới hạn turn trước khi xuất báo cáo dài.
+- Viết báo cáo `../reports/04-w1-experience-timeline/qa-report.json` (verdict PASS, AC-01..AC-05), cập nhật `tasks.json` (thêm slice `W1-EXPERIENCE-TIMELINE`, cập nhật runtime sqlite/frontend_vitest).
+- Không chạy Playwright/browser/persona test. Không đụng tới các file v1 đang dirty ở root.

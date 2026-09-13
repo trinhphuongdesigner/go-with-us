@@ -87,6 +87,13 @@
       "implementation_sha": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
       "report": "../reports/03-consolidation-remediation/qa-report.json",
       "blocker": "Playwright/persona review paused by user."
+    },
+    {
+      "id": "W1-EXPERIENCE-TIMELINE",
+      "name": "Experience CRUD authz/CAS/validation và deterministic ordering trên career timeline hợp nhất",
+      "status": "PASS",
+      "implementation_sha": "690061de5b263d5491f1b2017fea515165146d0d",
+      "report": "../reports/04-w1-experience-timeline/qa-report.json"
     }
   ],
   "coordination_state": {
@@ -105,9 +112,9 @@
       "report": "../docs/consolidation-remediation-2026-09-13.vi.md"
     },
     "runtime": {
-      "sqlite": "655 passed, 18 skipped",
+      "sqlite": "656 passed, 18 skipped",
       "postgresql_17": "673 passed",
-      "frontend_vitest": "148 passed",
+      "frontend_vitest": "152 passed",
       "playwright": "NOT_RUN"
     },
     "resume_rule": "Manual tester validates the pushed candidate. Run Playwright only after explicit user re-enable.",
