@@ -268,15 +268,19 @@
       "category": "SECURITY",
       "required": true,
       "status": "PASS",
-      "command": "bandit -ll; pip-audit --strict; npm audit --omit=dev --audit-level=high",
+      "command": "bandit -ll; pip-audit --strict; npm audit --omit=dev --audit-level=high; gitleaks git --log-opts=\"f5d7fb093f0cd7f577131111222bcd2d8a43459c\"",
       "cwd": "v2",
       "exact_sha": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
-      "summary": "Bandit 0 medium/high; Python/npm 0 vulnerability đã biết. Gitleaks được ghi riêng trong known gaps.",
+      "summary": "Bandit 0 medium/high; Python/npm 0 vulnerability đã biết. Gitleaks (v8.30.1) quét 56 commit tới exact SHA: 5 finding, toàn bộ đối chiếu thủ công là false positive (Figma file key công khai, placeholder token demo trong careermate-preview.html, badge URL mẫu chuẩn NestJS trong backend/README.md, hằng số test trong v2/backend/app/people_search/smoke.py). Không có secret thật.",
       "artifact_paths": [],
       "metrics": {
         "bandit_medium": 0,
         "bandit_high": 0,
-        "known_vulnerabilities": 0
+        "known_vulnerabilities": 0,
+        "gitleaks_commits_scanned": 56,
+        "gitleaks_findings": 5,
+        "gitleaks_true_positives": 0,
+        "gitleaks_false_positives": 5
       },
       "started_at": "2026-09-13T03:23:00Z",
       "finished_at": "2026-09-13T03:24:00Z",
@@ -426,11 +430,6 @@
       "description": "Playwright, axe, visual regression và persona review chưa chạy theo yêu cầu tạm dừng.",
       "impact": "HIGH",
       "next_action": "Tester chạy manual flow; chỉ mở automated browser gate khi user cho phép."
-    },
-    {
-      "description": "Gitleaks exact-SHA chưa chạy vì binary không có trong checkout.",
-      "impact": "MEDIUM",
-      "next_action": "Chạy secret scan trên committed range trước merge/cutover."
     },
     {
       "description": "PostgreSQL test cũ ở cổng 55432 có Alembic stamp 0004 nhưng schema từng được metadata bổ sung.",

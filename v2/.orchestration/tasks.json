@@ -86,7 +86,7 @@
       "status": "BLOCKED",
       "implementation_sha": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
       "report": "../reports/03-consolidation-remediation/qa-report.json",
-      "blocker": "Playwright/persona review paused by user; Gitleaks exact-SHA binary unavailable."
+      "blocker": "Playwright/persona review paused by user."
     }
   ],
   "coordination_state": {

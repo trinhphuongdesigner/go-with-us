@@ -90,3 +90,11 @@ Tại checkpoint 01:00 ICT chưa có feature nào PASS; trạng thái mới hơn
 - Implementation cần kiểm tra vẫn là `f5d7fb093f0cd7f577131111222bcd2d8a43459c`; report và toàn bộ check runtime trỏ về SHA này.
 - Manual tester có thể bắt đầu trên branch đã push. Overall report vẫn `BLOCKED` vì Playwright/accessibility/performance/persona NOT_RUN theo yêu cầu và Gitleaks chưa có binary.
 - Các thay đổi v1 ngoài phạm vi vẫn được giữ nguyên, không stage hoặc đưa vào commit v2.
+
+## 2026-09-13 14:00 ICT — đóng gap Gitleaks exact-SHA
+
+- Đã cài `gitleaks v8.30.1` (brew) và chạy `gitleaks git --log-opts="f5d7fb093f0cd7f577131111222bcd2d8a43459c"` trên implementation SHA đã khóa: 56 commit, 5 finding.
+- Đối chiếu thủ công từng finding (không in giá trị secret thô): Figma file key công khai trong `docs/careermate-milo-sage/figma-audit.json`, placeholder token demo trong `careermate-preview.html`, badge URL mẫu chuẩn NestJS trong `backend/README.md`, hằng số test trong `v2/backend/app/people_search/smoke.py`. Cả 5 đều false positive, không có secret thật.
+- Cập nhật `../reports/03-consolidation-remediation/qa-report.json` (CHK-SECURITY bổ sung bằng chứng Gitleaks, xoá known_gap tương ứng) và `tasks.json` (bỏ phần Gitleaks khỏi blocker của `CONSOLIDATION-REMEDIATION`).
+- `overall_status` của report vẫn `BLOCKED` vì Playwright/accessibility/performance/persona vẫn NOT_RUN theo chỉ dẫn tạm dừng của user — không tự đổi.
+- Không chạy Playwright/browser/persona test. Không đụng tới thay đổi v1 đang dirty ở root.
