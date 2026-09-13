@@ -94,10 +94,18 @@
       "status": "PASS",
       "implementation_sha": "690061de5b263d5491f1b2017fea515165146d0d",
       "report": "../reports/04-w1-experience-timeline/qa-report.json"
+    },
+    {
+      "id": "W1-PROJECT-TIMELINE",
+      "name": "Project CRUD authz/CAS/validation, provenance và deterministic ordering trên career timeline hợp nhất",
+      "status": "PASS",
+      "implementation_sha": "107c2ae956e9e333a918fa59fea7979e609e0bc8",
+      "report": "../reports/05-w1-project-timeline/qa-report.json",
+      "note": "Independent review degraded to self-review: Task subagent tool unavailable this session."
     }
   ],
   "coordination_state": {
-    "updated_at": "2026-09-13T10:36:00+07:00",
+    "updated_at": "2026-09-13T16:20:00+07:00",
     "mode": "MANUAL_QA_READY",
     "writer": null,
     "canonical_worktree": ".claude/worktrees/v2-qa",

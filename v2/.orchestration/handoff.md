@@ -51,3 +51,11 @@
 - Bằng chứng mới: backend 656 passed/18 skipped (tăng 1 so với 655 baseline); frontend 152 passed/21 file (tăng từ 148/20 baseline); lint/typecheck/build sạch; 2 lượt review độc lập không có finding cần sửa.
 - Phạm vi task này KHÔNG đụng project/certification/award/goal/assessment/passport/staffing — các khu vực đó vẫn giữ nguyên trạng thái như report 03.
 - Playwright/browser/persona vẫn NOT_RUN theo chỉ dẫn tạm dừng của user.
+
+## Cập nhật 2026-09-13 16:20 ICT
+
+- Task riêng lẻ `W1-PROJECT-TIMELINE` PASS (kèm giới hạn) tại SHA `107c2ae956e9e333a918fa59fea7979e609e0bc8`: rà soát Project CRUD + mốc Project trong career timeline hợp nhất (authz, optimistic CAS 409, validate, provenance, activity-log rollback, deterministic tie-break ordering). Logic sản phẩm đã đúng (Project dùng chung generic resource pipeline với Experience), chỉ bổ sung 4 test backend + 4 test frontend còn thiếu — không rewrite. Report chuẩn ở `../reports/05-w1-project-timeline/qa-report.json`.
+- Bằng chứng mới: backend 660 passed/18 skipped (tăng 4 so với 656 baseline); frontend 156 passed/22 file (tăng từ 152/21 baseline); lint/typecheck/build sạch.
+- **Giới hạn cần lưu ý**: Task tool (subagent delegation) không khả dụng trong phiên này — bước review độc lập bị hạ cấp thành self-review, không phải review bởi bên thứ hai thật sự. Khuyến nghị chạy lại Task-based code-reviewer khi công cụ khả dụng.
+- Phạm vi task này KHÔNG đụng experience/certification/award/goal/assessment/passport/staffing — các khu vực đó vẫn giữ nguyên trạng thái như report 03/04.
+- Playwright/browser/persona vẫn NOT_RUN theo chỉ dẫn tạm dừng của user.

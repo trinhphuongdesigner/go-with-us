@@ -1209,3 +1209,279 @@ async def test_timeline_orders_same_day_experiences_deterministically_by_id(
     assert ids_first == ids_second
     expected_order = sorted([first.json()["id"], second.json()["id"]])
     assert ids_first == expected_order
+
+
+@pytest.mark.asyncio
+async def test_project_crud_preserves_origin_and_uses_profile_version(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    company = await CompanyRepository(db_session).add(Company(name="Project Company"))
+    await db_session.flush()
+    employee = await create_user(
+        db_session, email="project-owner@acme.dev", name="Project Owner", company=company
+    )
+    admin = await create_user(
+        db_session,
+        email="project-admin@acme.dev",
+        name="Project Admin",
+        role=Role.COMPANY_ADMIN,
+        company=company,
+        admin_permissions=[
+            AdminPermission.EMPLOYEE_READ.value,
+            AdminPermission.EMPLOYEE_WRITE.value,
+        ],
+    )
+    admin_headers = await login(client, admin.email)
+    employment = await EmploymentRepository(db_session).add(
+        Employment(
+            user_id=employee.id,
+            company_id=company.id,
+            title="Engineer",
+            start_date=datetime(2024, 1, 1, tzinfo=UTC),
+        )
+    )
+    await db_session.commit()
+
+    created = await client.post(
+        f"/api/v2/competency-profile/projects?userId={employee.id}",
+        headers=admin_headers,
+        json={
+            "profileVersion": 1,
+            "name": "Career Timeline",
+            "role": "Backend Engineer",
+            "employmentId": str(employment.id),
+            "domain": "HR Tech",
+            "techStack": ["FastAPI", "PostgreSQL"],
+            "contribution": "Built the unified timeline aggregate",
+            "startDate": "2025-01-01",
+            "url": "https://example.invalid/project",
+        },
+    )
+    assert created.status_code == 201, created.text
+    assert created.json()["sourceType"] == "ADMIN"
+    assert created.json()["createdBy"] == str(admin.id)
+    assert created.json()["techStack"] == ["FastAPI", "PostgreSQL"]
+
+    read = await client.get(
+        f"/api/v2/competency-profile/projects/{created.json()['id']}?userId={employee.id}",
+        headers=admin_headers,
+    )
+    assert read.status_code == 200
+    assert read.json() == created.json()
+
+    stale = await client.patch(
+        f"/api/v2/competency-profile/projects/{created.json()['id']}?userId={employee.id}",
+        headers=admin_headers,
+        json={"profileVersion": 1, "name": "Stale overwrite"},
+    )
+    assert stale.status_code == 409
+    assert stale.json()["currentProfileVersion"] == 2
+
+    invalid_dates = await client.patch(
+        f"/api/v2/competency-profile/projects/{created.json()['id']}?userId={employee.id}",
+        headers=admin_headers,
+        json={"profileVersion": 2, "endDate": "2024-01-01"},
+    )
+    assert invalid_dates.status_code == 422
+
+    updated = await client.patch(
+        f"/api/v2/competency-profile/projects/{created.json()['id']}?userId={employee.id}",
+        headers=admin_headers,
+        json={"profileVersion": 2, "name": "Career Timeline v2"},
+    )
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["sourceType"] == "ADMIN"
+    assert updated.json()["createdBy"] == str(admin.id)
+    assert updated.json()["updatedBy"] == str(admin.id)
+
+    removed = await client.request(
+        "DELETE",
+        f"/api/v2/competency-profile/projects/{created.json()['id']}?userId={employee.id}",
+        headers=admin_headers,
+        json={"profileVersion": 3},
+    )
+    assert removed.status_code == 204
+    assert (
+        await client.get(
+            f"/api/v2/competency-profile/projects?userId={employee.id}", headers=admin_headers
+        )
+    ).json() == {"items": [], "profileVersion": 4}
+
+    actions = list(
+        (
+            await db_session.scalars(
+                select(ActivityLog.action)
+                .where(ActivityLog.entity_type == "project")
+                .order_by(ActivityLog.created_at, ActivityLog.id)
+            )
+        ).all()
+    )
+    assert actions == ["profile.project.created", "profile.project.updated", "profile.project.deleted"]
+
+
+@pytest.mark.asyncio
+async def test_project_tenant_scoping_denies_cross_company_access(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    own_company = await CompanyRepository(db_session).add(Company(name="Own Project Co"))
+    foreign_company = await CompanyRepository(db_session).add(Company(name="Foreign Project Co"))
+    await db_session.flush()
+    own_employee = await create_user(
+        db_session, email="own-project@acme.dev", name="Own Employee", company=own_company
+    )
+    foreign_employee = await create_user(
+        db_session,
+        email="foreign-project@other.dev",
+        name="Foreign Employee",
+        company=foreign_company,
+    )
+    admin = await create_user(
+        db_session,
+        email="tenant-project-admin@acme.dev",
+        name="Admin",
+        role=Role.COMPANY_ADMIN,
+        company=own_company,
+        admin_permissions=[
+            AdminPermission.EMPLOYEE_READ.value,
+            AdminPermission.EMPLOYEE_WRITE.value,
+        ],
+    )
+    reader = await create_user(
+        db_session,
+        email="tenant-project-reader@acme.dev",
+        name="Reader",
+        role=Role.COMPANY_ADMIN,
+        company=own_company,
+        admin_permissions=[AdminPermission.EMPLOYEE_READ.value],
+    )
+    admin_headers = await login(client, admin.email)
+    reader_headers = await login(client, reader.email)
+    own_headers = await login(client, own_employee.email)
+    foreign_employment = await EmploymentRepository(db_session).add(
+        Employment(
+            user_id=foreign_employee.id,
+            company_id=foreign_company.id,
+            title="Foreign role",
+            start_date=datetime(2025, 1, 1, tzinfo=UTC),
+        )
+    )
+    await db_session.commit()
+
+    assert (
+        await client.get(
+            f"/api/v2/competency-profile/projects?userId={foreign_employee.id}",
+            headers=admin_headers,
+        )
+    ).status_code == 404
+    assert (
+        await client.post(
+            f"/api/v2/competency-profile/projects?userId={foreign_employee.id}",
+            headers=admin_headers,
+            json={"profileVersion": 1, "name": "Hidden", "role": "Ghost"},
+        )
+    ).status_code == 404
+    assert (
+        await client.post(
+            f"/api/v2/competency-profile/projects?userId={own_employee.id}",
+            headers=reader_headers,
+            json={"profileVersion": 1, "name": "Denied", "role": "Own"},
+        )
+    ).status_code == 403
+    scoped_employment = await client.post(
+        "/api/v2/competency-profile/projects",
+        headers=own_headers,
+        json={
+            "profileVersion": 1,
+            "name": "Cross-tenant employment",
+            "role": "Own",
+            "employmentId": str(foreign_employment.id),
+        },
+    )
+    assert scoped_employment.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_project_timeline_orders_same_day_entries_deterministically_by_id(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    company = await CompanyRepository(db_session).add(Company(name="Project Tie Break Company"))
+    await db_session.flush()
+    employee = await create_user(
+        db_session, email="project-tiebreak@acme.dev", name="Project Tie Break Owner", company=company
+    )
+    await db_session.commit()
+    headers = await login(client, employee.email)
+
+    first = await client.post(
+        "/api/v2/competency-profile/projects",
+        headers=headers,
+        json={
+            "profileVersion": 1,
+            "name": "Alpha Project",
+            "role": "Contributor",
+            "startDate": "2025-06-01",
+        },
+    )
+    assert first.status_code == 201, first.text
+
+    second = await client.post(
+        "/api/v2/competency-profile/projects",
+        headers=headers,
+        json={
+            "profileVersion": 2,
+            "name": "Beta Project",
+            "role": "Contributor",
+            "startDate": "2025-06-01",
+        },
+    )
+    assert second.status_code == 201, second.text
+
+    aggregate_first = await client.get("/api/v2/competency-profile", headers=headers)
+    aggregate_second = await client.get("/api/v2/competency-profile", headers=headers)
+    assert aggregate_first.status_code == 200
+    assert aggregate_second.status_code == 200
+    ids_first = [item["id"] for item in aggregate_first.json()["timeline"]]
+    ids_second = [item["id"] for item in aggregate_second.json()["timeline"]]
+    assert ids_first == ids_second
+    expected_order = sorted([first.json()["id"], second.json()["id"]])
+    assert ids_first == expected_order
+
+
+@pytest.mark.asyncio
+async def test_project_update_and_delete_roll_back_when_audit_fails(
+    client: AsyncClient, db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    employee = await create_user(db_session, email="project-rollback@acme.dev", name="Owner")
+    assert employee.company_id is not None
+    resource = Project(
+        user_id=employee.id,
+        company_id=employee.company_id,
+        name="Original Project",
+        role="Original Role",
+        tech_stack=[],
+        source_type=ProfileSourceType.SELF,
+        created_by=employee.id,
+        updated_by=employee.id,
+    )
+    db_session.add(resource)
+    await db_session.commit()
+    employee_id = employee.id
+    resource_id = resource.id
+    headers = await login(client, employee.email)
+
+    async def fail_audit(*args: object, **kwargs: object) -> ActivityLog:
+        raise RuntimeError("synthetic project audit failure")
+
+    monkeypatch.setattr(ActivityLogRepository, "log", fail_audit)
+    with pytest.raises(RuntimeError, match="synthetic project audit failure"):
+        await client.patch(
+            f"/api/v2/competency-profile/projects/{resource_id}",
+            headers=headers,
+            json={"profileVersion": 1, "name": "Changed"},
+        )
+
+    db_session.expire_all()
+    persisted_user = await db_session.get(User, employee_id)
+    persisted_resource = await db_session.get(Project, resource_id)
+    assert persisted_user is not None and persisted_user.version == 1
+    assert persisted_resource is not None and persisted_resource.name == "Original Project"
