@@ -1499,3 +1499,331 @@ async def test_project_update_and_delete_roll_back_when_audit_fails(
     persisted_resource = await db_session.get(Project, resource_id)
     assert persisted_user is not None and persisted_user.version == 1
     assert persisted_resource is not None and persisted_resource.name == "Original Project"
+
+
+@pytest.mark.asyncio
+async def test_certification_crud_preserves_origin_and_uses_profile_version(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    company = await CompanyRepository(db_session).add(Company(name="Certification Company"))
+    await db_session.flush()
+    employee = await create_user(
+        db_session, email="certification-owner@acme.dev", name="Certification Owner", company=company
+    )
+    admin = await create_user(
+        db_session,
+        email="certification-admin@acme.dev",
+        name="Certification Admin",
+        role=Role.COMPANY_ADMIN,
+        company=company,
+        admin_permissions=[
+            AdminPermission.EMPLOYEE_READ.value,
+            AdminPermission.EMPLOYEE_WRITE.value,
+        ],
+    )
+    admin_headers = await login(client, admin.email)
+
+    created = await client.post(
+        f"/api/v2/competency-profile/certifications?userId={employee.id}",
+        headers=admin_headers,
+        json={
+            "profileVersion": 1,
+            "name": "AWS Solutions Architect",
+            "type": "PROFESSIONAL",
+            "issuer": "Amazon",
+            "score": "890/1000",
+            "credentialUrl": "https://example.invalid/credential",
+            "issuedAt": "2025-01-01",
+            "expiresAt": "2028-01-01",
+        },
+    )
+    assert created.status_code == 201, created.text
+    assert created.json()["sourceType"] == "ADMIN"
+    assert created.json()["createdBy"] == str(admin.id)
+    assert created.json()["type"] == "PROFESSIONAL"
+    assert created.json()["score"] == "890/1000"
+    assert created.json()["issuedAt"] == "2025-01-01"
+    assert created.json()["expiresAt"] == "2028-01-01"
+
+    read = await client.get(
+        f"/api/v2/competency-profile/certifications/{created.json()['id']}?userId={employee.id}",
+        headers=admin_headers,
+    )
+    assert read.status_code == 200
+    assert read.json() == created.json()
+
+    stale = await client.patch(
+        f"/api/v2/competency-profile/certifications/{created.json()['id']}?userId={employee.id}",
+        headers=admin_headers,
+        json={"profileVersion": 1, "name": "Stale overwrite"},
+    )
+    assert stale.status_code == 409
+    assert stale.json()["currentProfileVersion"] == 2
+
+    invalid_dates = await client.patch(
+        f"/api/v2/competency-profile/certifications/{created.json()['id']}?userId={employee.id}",
+        headers=admin_headers,
+        json={"profileVersion": 2, "expiresAt": "2024-01-01"},
+    )
+    assert invalid_dates.status_code == 422
+
+    updated = await client.patch(
+        f"/api/v2/competency-profile/certifications/{created.json()['id']}?userId={employee.id}",
+        headers=admin_headers,
+        json={"profileVersion": 2, "name": "AWS Solutions Architect Professional"},
+    )
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["sourceType"] == "ADMIN"
+    assert updated.json()["createdBy"] == str(admin.id)
+    assert updated.json()["updatedBy"] == str(admin.id)
+    assert updated.json()["issuedAt"] == "2025-01-01"
+    assert updated.json()["expiresAt"] == "2028-01-01"
+
+    removed = await client.request(
+        "DELETE",
+        f"/api/v2/competency-profile/certifications/{created.json()['id']}?userId={employee.id}",
+        headers=admin_headers,
+        json={"profileVersion": 3},
+    )
+    assert removed.status_code == 204
+    assert (
+        await client.get(
+            f"/api/v2/competency-profile/certifications?userId={employee.id}", headers=admin_headers
+        )
+    ).json() == {"items": [], "profileVersion": 4}
+
+    actions = list(
+        (
+            await db_session.scalars(
+                select(ActivityLog.action)
+                .where(ActivityLog.entity_type == "certification")
+                .order_by(ActivityLog.created_at, ActivityLog.id)
+            )
+        ).all()
+    )
+    assert actions == [
+        "profile.certification.created",
+        "profile.certification.updated",
+        "profile.certification.deleted",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_certification_tenant_scoping_denies_cross_company_access(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    own_company = await CompanyRepository(db_session).add(Company(name="Own Certification Co"))
+    foreign_company = await CompanyRepository(db_session).add(Company(name="Foreign Certification Co"))
+    await db_session.flush()
+    own_employee = await create_user(
+        db_session, email="own-certification@acme.dev", name="Own Employee", company=own_company
+    )
+    foreign_employee = await create_user(
+        db_session,
+        email="foreign-certification@other.dev",
+        name="Foreign Employee",
+        company=foreign_company,
+    )
+    admin = await create_user(
+        db_session,
+        email="tenant-certification-admin@acme.dev",
+        name="Admin",
+        role=Role.COMPANY_ADMIN,
+        company=own_company,
+        admin_permissions=[
+            AdminPermission.EMPLOYEE_READ.value,
+            AdminPermission.EMPLOYEE_WRITE.value,
+        ],
+    )
+    reader = await create_user(
+        db_session,
+        email="tenant-certification-reader@acme.dev",
+        name="Reader",
+        role=Role.COMPANY_ADMIN,
+        company=own_company,
+        admin_permissions=[AdminPermission.EMPLOYEE_READ.value],
+    )
+    admin_headers = await login(client, admin.email)
+    reader_headers = await login(client, reader.email)
+    await db_session.commit()
+
+    assert (
+        await client.get(
+            f"/api/v2/competency-profile/certifications?userId={foreign_employee.id}",
+            headers=admin_headers,
+        )
+    ).status_code == 404
+    assert (
+        await client.post(
+            f"/api/v2/competency-profile/certifications?userId={foreign_employee.id}",
+            headers=admin_headers,
+            json={
+                "profileVersion": 1,
+                "name": "Hidden",
+                "type": "OTHER",
+                "issuer": "Ghost",
+            },
+        )
+    ).status_code == 404
+    assert (
+        await client.post(
+            f"/api/v2/competency-profile/certifications?userId={own_employee.id}",
+            headers=reader_headers,
+            json={
+                "profileVersion": 1,
+                "name": "Denied",
+                "type": "OTHER",
+                "issuer": "Own",
+            },
+        )
+    ).status_code == 403
+
+    missing_required_field = await client.post(
+        f"/api/v2/competency-profile/certifications?userId={own_employee.id}",
+        headers=admin_headers,
+        json={"profileVersion": 1, "name": "No issuer", "type": "OTHER"},
+    )
+    assert missing_required_field.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_certification_timeline_orders_same_issued_at_deterministically_by_id_and_excludes_null(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    company = await CompanyRepository(db_session).add(Company(name="Certification Tie Break Company"))
+    await db_session.flush()
+    employee = await create_user(
+        db_session,
+        email="certification-tiebreak@acme.dev",
+        name="Certification Tie Break Owner",
+        company=company,
+    )
+    await db_session.commit()
+    headers = await login(client, employee.email)
+
+    first = await client.post(
+        "/api/v2/competency-profile/certifications",
+        headers=headers,
+        json={
+            "profileVersion": 1,
+            "name": "Alpha Certification",
+            "type": "OTHER",
+            "issuer": "Org A",
+            "issuedAt": "2025-06-01",
+            "expiresAt": "2027-06-01",
+        },
+    )
+    assert first.status_code == 201, first.text
+
+    second = await client.post(
+        "/api/v2/competency-profile/certifications",
+        headers=headers,
+        json={
+            "profileVersion": 2,
+            "name": "Beta Certification",
+            "type": "OTHER",
+            "issuer": "Org B",
+            "issuedAt": "2025-06-01",
+        },
+    )
+    assert second.status_code == 201, second.text
+
+    undated = await client.post(
+        "/api/v2/competency-profile/certifications",
+        headers=headers,
+        json={
+            "profileVersion": 3,
+            "name": "Undated Certification",
+            "type": "OTHER",
+            "issuer": "Org C",
+        },
+    )
+    assert undated.status_code == 201, undated.text
+
+    aggregate_first = await client.get("/api/v2/competency-profile", headers=headers)
+    aggregate_second = await client.get("/api/v2/competency-profile", headers=headers)
+    assert aggregate_first.status_code == 200
+    assert aggregate_second.status_code == 200
+    ids_first = [item["id"] for item in aggregate_first.json()["timeline"]]
+    ids_second = [item["id"] for item in aggregate_second.json()["timeline"]]
+    assert ids_first == ids_second
+    expected_order = sorted([first.json()["id"], second.json()["id"]])
+    assert ids_first == expected_order
+    assert undated.json()["id"] not in ids_first
+    assert len(aggregate_first.json()["certifications"]) == 3
+
+    # Full projection: each dated certification's timeline entry must map
+    # kind/title/subtitle/startDate/endDate/sourceType from the certification
+    # resource fields, not just be present in the right order.
+    timeline_by_id = {item["id"]: item for item in aggregate_first.json()["timeline"]}
+    alpha_entry = timeline_by_id[first.json()["id"]]
+    assert alpha_entry["kind"] == "CERTIFICATION"
+    assert alpha_entry["title"] == "Alpha Certification"
+    assert alpha_entry["subtitle"] == "Org A"
+    assert alpha_entry["startDate"] == "2025-06-01"
+    assert alpha_entry["endDate"] == "2027-06-01"
+    assert alpha_entry["sourceType"] == "SELF"
+
+    beta_entry = timeline_by_id[second.json()["id"]]
+    assert beta_entry["kind"] == "CERTIFICATION"
+    assert beta_entry["title"] == "Beta Certification"
+    assert beta_entry["subtitle"] == "Org B"
+    assert beta_entry["startDate"] == "2025-06-01"
+    assert beta_entry["endDate"] is None
+    assert beta_entry["sourceType"] == "SELF"
+
+
+
+
+@pytest.mark.parametrize("operation", ["update", "delete"])
+@pytest.mark.asyncio
+async def test_certification_update_and_delete_roll_back_when_audit_fails(
+    operation: str,
+    client: AsyncClient,
+    db_session: AsyncSession,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    employee = await create_user(
+        db_session, email=f"certification-{operation}-rollback@acme.dev", name="Owner"
+    )
+    assert employee.company_id is not None
+    resource = Certification(
+        user_id=employee.id,
+        company_id=employee.company_id,
+        name="Original Certification",
+        type="OTHER",
+        issuer="Original Issuer",
+        source_type=ProfileSourceType.SELF,
+        created_by=employee.id,
+        updated_by=employee.id,
+    )
+    db_session.add(resource)
+    await db_session.commit()
+    employee_id = employee.id
+    resource_id = resource.id
+    headers = await login(client, employee.email)
+
+    async def fail_audit(*args: object, **kwargs: object) -> ActivityLog:
+        raise RuntimeError(f"synthetic certification {operation} audit failure")
+
+    monkeypatch.setattr(ActivityLogRepository, "log", fail_audit)
+    with pytest.raises(RuntimeError, match=f"synthetic certification {operation} audit failure"):
+        if operation == "update":
+            await client.patch(
+                f"/api/v2/competency-profile/certifications/{resource_id}",
+                headers=headers,
+                json={"profileVersion": 1, "name": "Changed"},
+            )
+        else:
+            await client.request(
+                "DELETE",
+                f"/api/v2/competency-profile/certifications/{resource_id}",
+                headers=headers,
+                json={"profileVersion": 1},
+            )
+
+    db_session.expire_all()
+    persisted_user = await db_session.get(User, employee_id)
+    persisted_resource = await db_session.get(Certification, resource_id)
+    assert persisted_user is not None and persisted_user.version == 1
+    assert persisted_resource is not None and persisted_resource.name == "Original Certification"
