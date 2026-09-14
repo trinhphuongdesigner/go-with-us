@@ -313,3 +313,27 @@
 - Exact gates: PG focused 11; backend 729 passed/21 skipped; Ruff/mypy PASS; frontend 28 files/
   191 tests, lint/typecheck/build 17/17 PASS. Browser/Playwright/persona/provider NOT_RUN.
 - Slice đã ở completed PASS; W3 tiếp tục IN_PROGRESS. Docs/ledger chưa stage/commit/push.
+
+## Cập nhật 2026-09-14 21:41 ICT — W3-ASSESSMENT-TEMPLATE-CYCLE-LIFECYCLE: IMPLEMENTATION PASS, REPORT BLOCKED
+
+- Implementation/verification SHA `c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f`; independent final review
+  **APPROVE, 0 P0/P1/P2**.
+- Template lifecycle: create DRAFT; publish ACTIVE; archive DRAFT/ACTIVE; edit archive revision cũ
+  rồi tạo DRAFT revision mới cùng family. Cycle cũ tiếp tục giữ đúng template revision ban đầu;
+  delete template đã dùng chuyển thành soft-archive.
+- Content `version` và row-lock `rowVersion` là hai contract riêng. Template mutation dùng
+  `expectedRowVersion`; cycle close/reopen dùng `expectedVersion`. Typed 409 trả current version/state;
+  PostgreSQL concurrent template edit và cycle close đều xác minh một winner.
+- Cycle chỉ tạo từ template ACTIVE cùng tenant. Template/cycle mutation và metadata-only audit
+  atomic; audit exception rollback toàn bộ thay đổi nghiệp vụ.
+- Fresh gates: SQLite focused 15 PASS/2 skipped; PostgreSQL lifecycle 16 PASS; backend full 743
+  passed/23 skipped; targeted Ruff format, Ruff lint, mypy 97 files PASS; Alembic `0019` head và
+  no drift. Frontend focused 2 files/4 tests, full 29 files/194 tests, ESLint/typecheck/contracts
+  và Next build 17/17 PASS.
+- Whole-backend `ruff format --check .` còn 8 file pre-existing/out-of-scope; owned files đã qua
+  targeted format và Ruff lint toàn backend PASS. Browser/Playwright/persona/provider NOT_RUN.
+- Report `../reports/16-w3-assessment-template-cycle-lifecycle/qa-report.json` đã qua validator
+  chính thức. Ledger giữ implementation slice PASS, còn full feature report **BLOCKED** vì browser
+  E2E, accessibility, manual persona UI, performance, security và whole-backend format chưa đủ
+  evidence bắt buộc. W3 vẫn IN_PROGRESS vì assignment lifecycle còn mở. Lượt docs-only này không
+  sửa code/test, không stage/commit/push.

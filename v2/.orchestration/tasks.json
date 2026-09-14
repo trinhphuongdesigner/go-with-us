@@ -30,7 +30,7 @@
       "id": "W3",
       "name": "Cross Assessment",
       "status": "IN_PROGRESS",
-      "completion_evidence": "W3-ASSESSMENT-SCORING-INVARIANTS và W3-ASSESSMENT-APPROVAL-TRANSACTION đều PASS; template/cycle/assignment và các assessment task còn lại vẫn cần slice riêng.",
+      "completion_evidence": "W3-ASSESSMENT-SCORING-INVARIANTS và W3-ASSESSMENT-APPROVAL-TRANSACTION PASS đầy đủ; implementation của W3-ASSESSMENT-TEMPLATE-CYCLE-LIFECYCLE PASS nhưng full feature report BLOCKED vì browser/accessibility/manual UI/performance/security và whole-backend format còn deferred. Assignment lifecycle vẫn cần slice riêng.",
       "depends_on": [
         "W0",
         "W1"
@@ -190,15 +190,25 @@
       "supporting_sha": "067eab324ad0672f4e45d3e34e51155f8c0525cc",
       "report": "../reports/15-w3-assessment-approval-transaction/qa-report.json",
       "note": "Independent final review APPROVE 0 P0/P1/P2. PostgreSQL focused 11 passed; backend full 729 passed/21 skipped; Ruff/mypy PASS; frontend 28 files/191 tests, lint/typecheck/build 17/17 PASS. Browser/Playwright/persona/provider NOT_RUN. W3 vẫn IN_PROGRESS."
+    },
+    {
+      "id": "W3-ASSESSMENT-TEMPLATE-CYCLE-LIFECYCLE",
+      "name": "Template/cycle state machine, content-vs-row version, typed conflicts và atomic audit",
+      "status": "PASS",
+      "implementation_sha": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f",
+      "verified_tree_sha": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f",
+      "report": "../reports/16-w3-assessment-template-cycle-lifecycle/qa-report.json",
+      "report_status": "BLOCKED",
+      "note": "Implementation slice PASS và independent final review APPROVE 0 P0/P1/P2. SQLite focused 15 passed/2 skipped; PostgreSQL lifecycle 16 passed; backend full 743 passed/23 skipped; targeted Ruff format, Ruff lint và mypy app 97 files PASS; frontend 29 files/194 tests, lint/typecheck/contracts/build 17/17 PASS. Full report BLOCKED: whole-backend format còn 8 file pre-existing/out-of-scope và browser/accessibility/manual UI/performance/security chưa chạy. W3 vẫn IN_PROGRESS vì assignment lifecycle còn lại."
     }
   ],
   "coordination_state": {
-    "updated_at": "2026-09-14T17:33:48+07:00",
+    "updated_at": "2026-09-14T21:41:19+07:00",
     "mode": "MANUAL_QA_READY",
     "writer": null,
     "canonical_worktree": ".claude/worktrees/v2-qa",
-    "candidate_head": "565ba21060a8bf317ae4298dcf31fddd974134d7",
-    "candidate_base_head": "067eab324ad0672f4e45d3e34e51155f8c0525cc",
+    "candidate_head": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f",
+    "candidate_base_head": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f",
     "candidate_tree": "IMPLEMENTATION_COMMITTED_DOCS_PENDING",
     "implementation_source_clean": true,
     "documentation_commit_pending": true,
@@ -219,22 +229,32 @@
     "resume_rule": "Manual tester validates the pushed candidate. Run Playwright only after explicit user re-enable.",
     "published_head": "0ef9f94575592b37d20d8226c3a46dfbb22938bf",
     "current_task_runtime": {
-      "task": "W3-ASSESSMENT-APPROVAL-TRANSACTION",
-      "state": "Implementation/review/full non-browser gates PASS tại exact SHA; docs/ledger chờ commit riêng.",
-      "status": "PASS",
-      "backend_postgresql_focused": "11 passed",
-      "backend_full": "729 passed, 21 skipped",
+      "task": "W3-ASSESSMENT-TEMPLATE-CYCLE-LIFECYCLE",
+      "state": "Implementation/review/non-browser functional gates PASS tại exact SHA; full feature report BLOCKED vì deferred gates.",
+      "status": "BLOCKED",
+      "implementation_status": "PASS",
+      "backend_sqlite_focused": "15 passed, 2 skipped",
+      "backend_postgresql_focused": "16 passed",
+      "backend_full": "743 passed, 23 skipped",
+      "backend_targeted_ruff_format": "PASS",
+      "backend_whole_ruff_format": "BLOCKED: 8 pre-existing/out-of-scope files chưa format",
       "backend_ruff": "PASS",
-      "backend_mypy": "PASS, 90 source files",
-      "frontend_vitest": "28 files, 191 tests passed",
+      "backend_mypy": "PASS, 97 source files",
+      "alembic": "0019 head, no drift",
+      "frontend_focused": "2 files, 4 tests passed",
+      "frontend_vitest": "29 files, 194 tests passed",
       "frontend_eslint": "PASS",
       "frontend_typecheck": "PASS",
+      "frontend_contracts": "PASS",
       "frontend_build": "PASS, 17/17 routes",
       "independent_review": "FINAL APPROVE, 0 P0/P1/P2",
       "playwright_browser_persona": "NOT_RUN",
       "provider_live": "NOT_RUN",
-      "wave3": "IN_PROGRESS; scoring invariants và approval transaction slices PASS, task khác còn mở"
+      "report_validator": "PASS: report invariants satisfied",
+      "report_status": "BLOCKED",
+      "deferred_gates": "browser E2E, accessibility, manual UI/persona, performance, security và whole-backend format",
+      "wave3": "IN_PROGRESS; template/cycle implementation PASS nhưng full report BLOCKED; assignment lifecycle còn mở"
     },
-    "documentation_base_head": "565ba21060a8bf317ae4298dcf31fddd974134d7"
+    "documentation_base_head": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f"
   }
 }

@@ -1,0 +1,522 @@
+{
+  "schema_version": "1.0",
+  "report_language": "vi",
+  "feature_id": "16-w3-assessment-template-cycle-lifecycle",
+  "feature_name": "W3 — Vòng đời mẫu và chu kỳ đánh giá có phiên bản",
+  "branch": "codex/v2-qa-consolidation",
+  "implementation_sha": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f",
+  "verified_tree_sha": "7efa6a770d0d773e0ea72cae9439ae63872457da",
+  "generated_at": "2026-09-14T21:41:19+07:00",
+  "environment": {
+    "os": "macOS Darwin arm64",
+    "python": "Python 3.12",
+    "node": "Node.js, phiên bản không được ghi trong evidence slice",
+    "browser": "NOT_RUN theo yêu cầu user",
+    "database": "SQLite in-memory và PostgreSQL test đã che connection string",
+    "ai_provider": null
+  },
+  "scope": [
+    "Template create, publish, archive, revise và delete theo state machine có tenant/permission guard.",
+    "Tách content version khỏi optimistic rowVersion bằng migration Alembic 0019.",
+    "Giữ revision template cũ bất biến khi đã được cycle tham chiếu; delete chuyển soft-archive khi cần.",
+    "Cycle chỉ tạo từ template ACTIVE cùng tenant; close/reopen dùng expectedVersion và typed 409.",
+    "Ghi metadata-only activity log cùng transaction và rollback khi audit lỗi.",
+    "Đồng bộ frontend, OpenAPI và generated TypeScript contract cho expectedRowVersion."
+  ],
+  "user_value": "HR có thể quản lý mẫu và chu kỳ đánh giá theo trạng thái rõ ràng, giữ lịch sử đúng revision và nhận conflict có cấu trúc khi hai người cập nhật đồng thời, tránh ghi đè âm thầm hoặc tạo audit lệch dữ liệu.",
+  "functional_breakdown": [
+    {
+      "step": 1,
+      "actor": "HR hoặc Company Admin",
+      "behavior": "Tạo template ở trạng thái DRAFT với content version 1 và rowVersion 1 trong đúng tenant."
+    },
+    {
+      "step": 2,
+      "actor": "HR hoặc Company Admin",
+      "behavior": "Publish hoặc archive template bằng expectedRowVersion; stale row và state không hợp lệ trả typed 409."
+    },
+    {
+      "step": 3,
+      "actor": "Assessment service",
+      "behavior": "Khi sửa nội dung, archive revision cũ và tạo DRAFT revision mới cùng family, giữ cycle cũ trỏ đúng revision ban đầu."
+    },
+    {
+      "step": 4,
+      "actor": "HR hoặc Company Admin",
+      "behavior": "Tạo cycle chỉ từ template ACTIVE cùng tenant; close/reopen bằng expectedVersion."
+    },
+    {
+      "step": 5,
+      "actor": "Transaction boundary",
+      "behavior": "Ghi mutation và metadata-only activity log nguyên tử; audit exception rollback toàn bộ thay đổi."
+    },
+    {
+      "step": 6,
+      "actor": "Frontend",
+      "behavior": "Hiển thị content revision nhưng gửi rowVersion cho template mutation và hiển thị conflict từ backend."
+    }
+  ],
+  "interfaces": [
+    {
+      "kind": "API",
+      "name": "Assessment template lifecycle endpoints",
+      "change": "Publish/archive/edit/delete nhận expectedRowVersion và trả typed version_conflict hoặc invalid_state."
+    },
+    {
+      "kind": "API",
+      "name": "Assessment cycle lifecycle endpoints",
+      "change": "Create yêu cầu ACTIVE same-tenant template; close/reopen nhận expectedVersion."
+    },
+    {
+      "kind": "DATABASE",
+      "name": "assessment_templates.row_version",
+      "change": "Migration 0019 thêm row_version NOT NULL mặc định 1 và check row_version >= 1."
+    },
+    {
+      "kind": "UI_ROUTE",
+      "name": "Assessment template management",
+      "change": "UI hiển thị content revision và gửi đúng optimistic rowVersion cho lifecycle action."
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "Template publish/archive/revise/delete tuân thủ state machine và typed conflict.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-INTEGRATION-SQLITE",
+        "CHK-INTEGRATION-POSTGRESQL"
+      ]
+    },
+    {
+      "id": "AC-02",
+      "description": "Content version tách khỏi rowVersion; revise giữ cycle identity theo revision cũ.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-INTEGRATION-SQLITE",
+        "CHK-MIGRATION"
+      ]
+    },
+    {
+      "id": "AC-03",
+      "description": "Cycle chỉ dùng template ACTIVE cùng tenant và close/reopen có optimistic locking.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-INTEGRATION-POSTGRESQL"
+      ]
+    },
+    {
+      "id": "AC-04",
+      "description": "Mutation và metadata-only audit nguyên tử; audit lỗi rollback.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-INTEGRATION-SQLITE",
+        "CHK-INTEGRATION-POSTGRESQL"
+      ]
+    },
+    {
+      "id": "AC-05",
+      "description": "Frontend, OpenAPI và generated client dùng expectedRowVersion đúng nghĩa.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-UNIT",
+        "CHK-CONTRACT",
+        "CHK-TYPECHECK",
+        "CHK-BUILD"
+      ]
+    },
+    {
+      "id": "AC-06",
+      "description": "Code slice đạt independent review với 0 P0/P1/P2 và static gates thuộc phạm vi.",
+      "status": "PASS",
+      "evidence_check_ids": [
+        "CHK-REVIEW",
+        "CHK-FORMAT-OWNED",
+        "CHK-LINT",
+        "CHK-TYPECHECK"
+      ]
+    },
+    {
+      "id": "AC-07",
+      "description": "Browser E2E, accessibility, performance và manual persona review có evidence trên exact SHA.",
+      "status": "NOT_RUN",
+      "evidence_check_ids": [
+        "CHK-E2E",
+        "CHK-ACCESSIBILITY",
+        "CHK-PERFORMANCE",
+        "CHK-MANUAL-UI"
+      ]
+    },
+    {
+      "id": "AC-08",
+      "description": "Whole-backend Ruff format gate đạt trên toàn bộ repository.",
+      "status": "BLOCKED",
+      "evidence_check_ids": [
+        "CHK-FORMAT-FULL"
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "id": "CHK-FORMAT-OWNED",
+      "category": "FORMAT",
+      "required": true,
+      "status": "PASS",
+      "command": ".venv/bin/ruff format --check <task-owned Python files>",
+      "cwd": "v2/backend",
+      "started_at": "2026-09-14T21:41:19+07:00",
+      "finished_at": "2026-09-14T21:41:19+07:00",
+      "exit_code": 0,
+      "exact_sha": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f",
+      "summary": "Các file Python thuộc slice đạt targeted Ruff format check.",
+      "artifact_paths": [
+        "v2/backend/alembic/versions/0019_template_row_version.py",
+        "v2/backend/app/assessments"
+      ],
+      "metrics": {
+        "owned_files_pass": true
+      }
+    },
+    {
+      "id": "CHK-FORMAT-FULL",
+      "category": "FORMAT",
+      "required": true,
+      "status": "BLOCKED",
+      "command": ".venv/bin/ruff format --check .",
+      "cwd": "v2/backend",
+      "exact_sha": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f",
+      "summary": "Whole-backend format gate phát hiện 8 file pre-existing/out-of-scope chưa format; file thuộc slice vẫn PASS.",
+      "artifact_paths": [],
+      "metrics": {
+        "out_of_scope_unformatted_files": 8
+      },
+      "blocker": "Tám file tồn tại từ trước nằm ngoài phạm vi slice và chưa được phép sửa rộng.",
+      "retry_instruction": "Tạo task hygiene riêng, format tám file ngoài phạm vi rồi chạy lại .venv/bin/ruff format --check ."
+    },
+    {
+      "id": "CHK-LINT",
+      "category": "LINT",
+      "required": true,
+      "status": "PASS",
+      "command": ".venv/bin/ruff check . && npm run lint",
+      "cwd": "v2",
+      "started_at": "2026-09-14T21:41:19+07:00",
+      "finished_at": "2026-09-14T21:41:19+07:00",
+      "exit_code": 0,
+      "exact_sha": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f",
+      "summary": "Ruff lint toàn backend và ESLint frontend đều PASS.",
+      "artifact_paths": [],
+      "metrics": {
+        "lint_errors": 0
+      }
+    },
+    {
+      "id": "CHK-TYPECHECK",
+      "category": "TYPECHECK",
+      "required": true,
+      "status": "PASS",
+      "command": ".venv/bin/mypy app && npm run typecheck",
+      "cwd": "v2",
+      "started_at": "2026-09-14T21:41:19+07:00",
+      "finished_at": "2026-09-14T21:41:19+07:00",
+      "exit_code": 0,
+      "exact_sha": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f",
+      "summary": "Mypy PASS trên 97 source files; TypeScript typecheck PASS.",
+      "artifact_paths": [],
+      "metrics": {
+        "python_source_files": 97,
+        "typescript_errors": 0
+      }
+    },
+    {
+      "id": "CHK-UNIT",
+      "category": "UNIT",
+      "required": true,
+      "status": "PASS",
+      "command": "npm test",
+      "cwd": "v2/frontend",
+      "started_at": "2026-09-14T21:41:19+07:00",
+      "finished_at": "2026-09-14T21:41:19+07:00",
+      "exit_code": 0,
+      "exact_sha": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f",
+      "summary": "Frontend full suite PASS: 29 files, 194 tests; focused lifecycle suite PASS: 2 files, 4 tests.",
+      "artifact_paths": [
+        "v2/frontend/tests/template-lifecycle-version.test.tsx",
+        "v2/frontend/tests/assessment-review.test.tsx"
+      ],
+      "metrics": {
+        "full_files": 29,
+        "full_passed": 194,
+        "focused_files": 2,
+        "focused_passed": 4
+      }
+    },
+    {
+      "id": "CHK-INTEGRATION-SQLITE",
+      "category": "INTEGRATION",
+      "required": true,
+      "status": "PASS",
+      "command": "CAREERMATE_DEMO_LOGIN_ENABLED=false .venv/bin/pytest -q",
+      "cwd": "v2/backend",
+      "started_at": "2026-09-14T21:41:19+07:00",
+      "finished_at": "2026-09-14T21:41:19+07:00",
+      "exit_code": 0,
+      "exact_sha": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f",
+      "summary": "Backend full suite PASS: 743 passed, 23 skipped; focused SQLite lifecycle: 15 passed, 2 skipped.",
+      "artifact_paths": [
+        "v2/backend/tests/test_assessment_template_cycle_lifecycle.py",
+        "v2/backend/tests/test_migration_contract.py"
+      ],
+      "metrics": {
+        "full_passed": 743,
+        "full_skipped": 23,
+        "focused_passed": 15,
+        "focused_skipped": 2
+      }
+    },
+    {
+      "id": "CHK-INTEGRATION-POSTGRESQL",
+      "category": "INTEGRATION",
+      "required": true,
+      "status": "PASS",
+      "command": "CAREERMATE_TEST_DATABASE_URL=<redacted PostgreSQL URL> .venv/bin/pytest -q tests/test_assessment_template_cycle_lifecycle.py",
+      "cwd": "v2/backend",
+      "started_at": "2026-09-14T21:41:19+07:00",
+      "finished_at": "2026-09-14T21:41:19+07:00",
+      "exit_code": 0,
+      "exact_sha": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f",
+      "summary": "PostgreSQL lifecycle suite PASS: 16 tests, gồm concurrent cycle close và template edit chỉ một winner.",
+      "artifact_paths": [
+        "v2/backend/tests/test_assessment_template_cycle_lifecycle.py"
+      ],
+      "metrics": {
+        "passed": 16,
+        "failed": 0,
+        "concurrency_one_winner": true
+      }
+    },
+    {
+      "id": "CHK-CONTRACT",
+      "category": "CONTRACT",
+      "required": true,
+      "status": "PASS",
+      "command": "npm run contracts:check",
+      "cwd": "v2/frontend",
+      "started_at": "2026-09-14T21:41:19+07:00",
+      "finished_at": "2026-09-14T21:41:19+07:00",
+      "exit_code": 0,
+      "exact_sha": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f",
+      "summary": "OpenAPI snapshot và generated TypeScript client đồng bộ rowVersion/expectedRowVersion; contract check PASS.",
+      "artifact_paths": [
+        "v2/contracts/openapi.json",
+        "v2/contracts/generated"
+      ],
+      "metrics": {
+        "drift": false
+      }
+    },
+    {
+      "id": "CHK-MIGRATION",
+      "category": "MIGRATION",
+      "required": true,
+      "status": "PASS",
+      "command": "alembic current && alembic check",
+      "cwd": "v2/backend",
+      "started_at": "2026-09-14T21:41:19+07:00",
+      "finished_at": "2026-09-14T21:41:19+07:00",
+      "exit_code": 0,
+      "exact_sha": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f",
+      "summary": "Alembic 0019_template_row_version là head và không có schema drift.",
+      "artifact_paths": [
+        "v2/backend/alembic/versions/0019_template_row_version.py"
+      ],
+      "metrics": {
+        "head": "0019_template_row_version",
+        "drift": false
+      }
+    },
+    {
+      "id": "CHK-BUILD",
+      "category": "BUILD",
+      "required": true,
+      "status": "PASS",
+      "command": "npm run build",
+      "cwd": "v2/frontend",
+      "started_at": "2026-09-14T21:41:19+07:00",
+      "finished_at": "2026-09-14T21:41:19+07:00",
+      "exit_code": 0,
+      "exact_sha": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f",
+      "summary": "Next.js production build PASS với 17/17 routes.",
+      "artifact_paths": [],
+      "metrics": {
+        "routes": 17
+      }
+    },
+    {
+      "id": "CHK-REVIEW",
+      "category": "SECURITY",
+      "required": false,
+      "status": "PASS",
+      "command": "Independent read-only review on exact implementation SHA",
+      "cwd": "v2",
+      "started_at": "2026-09-14T21:41:19+07:00",
+      "finished_at": "2026-09-14T21:41:19+07:00",
+      "exit_code": 0,
+      "exact_sha": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f",
+      "summary": "Independent final review APPROVE, 0 P0/P1/P2 cho diff của slice.",
+      "artifact_paths": [
+        "v2/reports/16-w3-assessment-template-cycle-lifecycle/qa-report.json"
+      ],
+      "metrics": {
+        "p0": 0,
+        "p1": 0,
+        "p2": 0
+      }
+    },
+    {
+      "id": "CHK-E2E",
+      "category": "E2E",
+      "required": true,
+      "status": "NOT_RUN",
+      "command": "npm run test:e2e -- assessment-template-cycle",
+      "cwd": "v2/frontend",
+      "exact_sha": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f",
+      "summary": "Playwright lifecycle flow chưa chạy theo yêu cầu hiện tại.",
+      "artifact_paths": [],
+      "metrics": {},
+      "blocker": "Browser automation đang được user tạm dừng.",
+      "retry_instruction": "Khi user bật lại browser gate, chạy lifecycle flow trên các viewport mục tiêu và lưu trace/screenshot."
+    },
+    {
+      "id": "CHK-ACCESSIBILITY",
+      "category": "ACCESSIBILITY",
+      "required": true,
+      "status": "NOT_RUN",
+      "command": "npm run test:e2e -- assessment-template-cycle (axe/keyboard/reduced-motion)",
+      "cwd": "v2/frontend",
+      "exact_sha": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f",
+      "summary": "Axe, keyboard-only, focus visibility và reduced motion chưa có evidence cho slice.",
+      "artifact_paths": [],
+      "metrics": {},
+      "blocker": "Browser accessibility review đang được user tạm dừng.",
+      "retry_instruction": "Chạy axe và keyboard/reduced-motion checks cùng Playwright khi browser gate được bật lại."
+    },
+    {
+      "id": "CHK-SECURITY",
+      "category": "SECURITY",
+      "required": true,
+      "status": "NOT_RUN",
+      "command": "bandit -ll; pip-audit; npm audit --omit=dev; gitleaks",
+      "cwd": "v2",
+      "exact_sha": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f",
+      "summary": "Security và dependency scan riêng cho exact SHA chưa chạy trong slice này.",
+      "artifact_paths": [],
+      "metrics": {},
+      "blocker": "Slice chỉ được yêu cầu chạy functional/static gates; security scan được deferred.",
+      "retry_instruction": "Chạy security/dependency/secret scan trên exact SHA trước release gate."
+    },
+    {
+      "id": "CHK-PERFORMANCE",
+      "category": "PERFORMANCE",
+      "required": true,
+      "status": "NOT_RUN",
+      "command": "npm run test:e2e -- assessment-template-cycle (performance budget)",
+      "cwd": "v2/frontend",
+      "exact_sha": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f",
+      "summary": "Chưa đo browser timing hoặc LCP cho màn hình assessment lifecycle.",
+      "artifact_paths": [],
+      "metrics": {},
+      "blocker": "Browser/performance gate đang được user tạm dừng.",
+      "retry_instruction": "Đo LCP và response timing trên production build khi browser gate được bật lại."
+    },
+    {
+      "id": "CHK-MANUAL-UI",
+      "category": "MANUAL_UI",
+      "required": true,
+      "status": "NOT_RUN",
+      "command": "Manual UI review với bốn persona bắt buộc",
+      "cwd": "v2/frontend",
+      "exact_sha": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f",
+      "summary": "Manual UI/persona review chưa chạy trong slice.",
+      "artifact_paths": [],
+      "metrics": {},
+      "blocker": "Manual/browser review đang được user tạm dừng.",
+      "retry_instruction": "Tester kiểm tra lifecycle actions, conflict copy và focus trên bốn persona/viewport."
+    },
+    {
+      "id": "CHK-PROVIDER",
+      "category": "AI_GROUNDING",
+      "required": false,
+      "status": "NOT_RUN",
+      "command": "Live AI provider smoke test",
+      "cwd": "v2/backend",
+      "exact_sha": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f",
+      "summary": "Provider live không được gọi; AI không tham gia state transition hay tính điểm trong slice.",
+      "artifact_paths": [],
+      "metrics": {},
+      "blocker": "Provider live nằm ngoài phạm vi deterministic template/cycle lifecycle.",
+      "retry_instruction": "Chỉ chạy provider smoke trong slice AI liên quan với dữ liệu giả lập và secret đã che."
+    }
+  ],
+  "persona_reviews": [
+    {
+      "persona": "EMPLOYEE_22_30",
+      "viewport": "390x844",
+      "status": "NOT_RUN",
+      "findings": []
+    },
+    {
+      "persona": "HR_35_45",
+      "viewport": "1440x900",
+      "status": "NOT_RUN",
+      "findings": []
+    },
+    {
+      "persona": "MANAGER_45_55",
+      "viewport": "1440x900",
+      "status": "NOT_RUN",
+      "findings": []
+    },
+    {
+      "persona": "LOW_TECH_USER",
+      "viewport": "768x1024",
+      "status": "NOT_RUN",
+      "findings": []
+    }
+  ],
+  "security_privacy_notes": [
+    "Tenant và permission guard được bao phủ trong lifecycle integration tests.",
+    "Activity log chỉ chứa status, version và ID liên quan; không ghi nội dung template riêng tư.",
+    "Security/dependency/secret scan riêng cho exact SHA chưa chạy nên report tổng thể giữ BLOCKED."
+  ],
+  "ai_grounding_notes": [],
+  "screenshots": [],
+  "known_gaps": [
+    {
+      "description": "Browser E2E, accessibility, performance và bốn persona review chưa chạy.",
+      "impact": "HIGH",
+      "next_action": "Chạy lại các gate browser trên exact implementation SHA khi user cho phép."
+    },
+    {
+      "description": "Security/dependency/secret scan riêng cho slice chưa chạy.",
+      "impact": "HIGH",
+      "next_action": "Chạy Bandit, dependency audit và secret scan trên exact SHA trước release gate."
+    },
+    {
+      "description": "Whole-backend Ruff format còn 8 file pre-existing/out-of-scope chưa format.",
+      "impact": "LOW",
+      "next_action": "Xử lý trong task hygiene riêng rồi chạy lại whole-backend format gate."
+    },
+    {
+      "description": "Assignment lifecycle và các assessment task khác chưa hoàn tất.",
+      "impact": "HIGH",
+      "next_action": "Giữ W3 ở IN_PROGRESS và triển khai assignment lifecycle trong slice riêng."
+    },
+    {
+      "description": "Provider live chưa chạy và không liên quan tới state machine deterministic của slice.",
+      "impact": "LOW",
+      "next_action": "Chỉ kiểm tra provider trong feature AI liên quan, không dùng AI cho transition hoặc scoring."
+    }
+  ],
+  "overall_status": "BLOCKED"
+}

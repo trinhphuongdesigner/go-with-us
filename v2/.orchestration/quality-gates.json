@@ -51,7 +51,7 @@
       "evidence": "qa-report.json bound to implementation SHA and tree"
     }
   ],
-  "latest_completed_slice": "W3-ASSESSMENT-APPROVAL-TRANSACTION",
+  "latest_completed_slice": "W3-ASSESSMENT-TEMPLATE-CYCLE-LIFECYCLE",
   "wave1_import": {
     "status": "PASS",
     "implementation_sha": "de246d8c74ec8425cec0172613012fc600811719",
@@ -153,5 +153,20 @@
     "browser_playwright_persona": "NOT_RUN",
     "provider_live": "NOT_RUN",
     "known_limitations": "Chưa có browser/axe/visual/persona evidence; W3 còn assessment task khác nên giữ IN_PROGRESS."
+  },
+  "wave3_assessment_template_cycle_lifecycle": {
+    "status": "BLOCKED",
+    "implementation_slice_status": "PASS",
+    "implementation_sha": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f",
+    "verified_tree_sha": "c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f",
+    "evidence": "Independent final review APPROVE 0 P0/P1/P2; SQLite focused 15 passed/2 skipped; PostgreSQL lifecycle 16 passed; backend full 743 passed/23 skipped; targeted Ruff format, Ruff lint và mypy app 97 files PASS; frontend focused 2 files/4 tests, full 29 files/194 tests, ESLint/typecheck/contracts/build 17/17 PASS; Alembic 0019 head và no drift.",
+    "template_contract": "DRAFT→ACTIVE; DRAFT|ACTIVE→ARCHIVED; edit archives old revision and creates next DRAFT content version in the same family; used delete soft-archives and preserves historical cycle identity.",
+    "cycle_contract": "Cycle creation requires same-tenant ACTIVE template; OPEN close/reopen transitions use expectedVersion with typed version_conflict/invalid_state 409.",
+    "version_contract": "Template content version is separate from rowVersion optimistic lock; legacy expectedVersion contract is rejected; PostgreSQL concurrent edit/close yields one winner.",
+    "audit_contract": "Template/cycle mutation and metadata-only activity log are atomic; audit failure rolls back insert, transition, delete or replacement revision.",
+    "browser_playwright_persona": "NOT_RUN",
+    "provider_live": "NOT_RUN",
+    "report_validator": "PASS: report invariants satisfied",
+    "known_limitations": "Full report BLOCKED vì whole-backend ruff format còn 8 file pre-existing/out-of-scope và browser E2E/accessibility/manual UI/performance/security chưa chạy. Task-owned format, Ruff lint và implementation checks PASS. W3 giữ IN_PROGRESS vì assignment lifecycle còn lại."
   }
 }

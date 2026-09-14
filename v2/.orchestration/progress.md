@@ -433,3 +433,27 @@ Tại checkpoint 01:00 ICT chưa có feature nào PASS; trạng thái mới hơn
   Ruff/mypy app 90 files PASS; frontend 28 files/191 tests, ESLint/typecheck/build 17/17 PASS.
 - Report chuẩn: `../reports/15-w3-assessment-approval-transaction/qa-report.json`. Slice PASS;
   W3 giữ IN_PROGRESS vì còn assessment task khác. Browser/Playwright/persona/provider NOT_RUN.
+
+## 2026-09-14 21:41 ICT — W3-ASSESSMENT-TEMPLATE-CYCLE-LIFECYCLE: IMPLEMENTATION PASS, REPORT BLOCKED
+
+- Implementation/verification SHA `c0592e8b0e17d9fb1ab21fb17c680a5f6f19b86f`; independent final review
+  **APPROVE, 0 P0/P1/P2**.
+- Template có state machine `DRAFT → ACTIVE`, `DRAFT|ACTIVE → ARCHIVED`; edit tạo revision DRAFT
+  tiếp theo trong cùng family và giữ identity của revision được cycle cũ tham chiếu. Delete vật lý
+  chỉ áp dụng cho template chưa dùng; template đã dùng được soft-archive.
+- Content `version` tách khỏi optimistic-lock `rowVersion`. Publish/archive/edit/delete dùng
+  `expectedRowVersion`; cycle close/reopen dùng `expectedVersion`. Typed 409 phân biệt
+  `version_conflict` và `invalid_state`; PostgreSQL concurrency xác minh đúng một winner.
+- Mutation template/cycle và metadata-only activity log cùng transaction; audit failure rollback
+  insert, transition, delete hoặc replacement revision. Cycle mới chỉ nhận template ACTIVE cùng tenant.
+- Fresh evidence: SQLite focused 15 passed/2 skipped; PostgreSQL lifecycle 16 passed; backend full
+  743 passed/23 skipped; targeted Ruff format, Ruff lint và mypy app 97 files PASS; Alembic `0019`
+  head/no drift. Frontend focused 2 files/4 tests và full 29 files/194 tests PASS; ESLint,
+  typecheck, contracts check và build 17/17 routes PASS.
+- Whole-backend format gate còn 8 file pre-existing/out-of-scope; task-owned format PASS và Ruff
+  lint toàn backend PASS. Browser/Playwright/persona/provider NOT_RUN theo chỉ đạo.
+- Report chuẩn đã qua validator chính thức tại
+  `../reports/16-w3-assessment-template-cycle-lifecycle/qa-report.json`. Implementation slice PASS,
+  nhưng full feature report **BLOCKED** vì browser E2E, accessibility, manual persona UI,
+  performance, security và whole-backend format chưa đạt đủ evidence bắt buộc. W3 giữ
+  **IN_PROGRESS** vì assignment lifecycle còn lại.
