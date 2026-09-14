@@ -73,6 +73,7 @@ async def test_skill_catalog_is_normalized_unique_and_employee_skills_are_full_r
     )
     assert replaced.status_code == 200, replaced.text
     assert replaced.json()["profileVersion"] == 2
+    assert replaced.json()["items"][0]["version"] == 1
     assert [(item["name"], item["rating"]) for item in replaced.json()["items"]] == [
         ("Python", 3),
         ("React Native", 5),
@@ -1050,6 +1051,11 @@ async def test_concurrent_skill_replacements_allow_one_profile_version_on_postgr
         ),
     )
     assert sorted(response.status_code for response in responses) == [200, 409]
+    conflict = next(response for response in responses if response.status_code == 409)
+    assert conflict.json() == {
+        "detail": "Phiên hồ sơ đã thay đổi",
+        "currentProfileVersion": 2,
+    }
     assert await db_session.scalar(select(func.count()).select_from(EmployeeSkill)) == 1
 
 
@@ -2109,3 +2115,419 @@ async def test_award_update_and_delete_roll_back_when_audit_fails(
     persisted_resource = await db_session.get(Award, resource_id)
     assert persisted_user is not None and persisted_user.version == 1
     assert persisted_resource is not None and persisted_resource.name == "Original Award"
+
+
+@pytest.mark.asyncio
+async def test_skill_profile_permissions_are_tenant_scoped_and_admin_provenance_is_explicit(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    own_company = await CompanyRepository(db_session).add(Company(name="Skill Own"))
+    foreign_company = await CompanyRepository(db_session).add(Company(name="Skill Foreign"))
+    await db_session.flush()
+    owner = await create_user(
+        db_session, email="skill-owner@own.dev", name="Owner", company=own_company
+    )
+    peer = await create_user(
+        db_session, email="skill-peer@own.dev", name="Peer", company=own_company
+    )
+    foreign_employee = await create_user(
+        db_session,
+        email="skill-owner@foreign.dev",
+        name="Foreign Owner",
+        company=foreign_company,
+    )
+    writer = await create_user(
+        db_session,
+        email="skill-writer@own.dev",
+        name="Writer",
+        role=Role.COMPANY_ADMIN,
+        company=own_company,
+        admin_permissions=[
+            AdminPermission.EMPLOYEE_READ.value,
+            AdminPermission.EMPLOYEE_WRITE.value,
+        ],
+    )
+    reader = await create_user(
+        db_session,
+        email="skill-reader@own.dev",
+        name="Reader",
+        role=Role.COMPANY_ADMIN,
+        company=own_company,
+        admin_permissions=[AdminPermission.EMPLOYEE_READ.value],
+    )
+    super_admin = await create_user(
+        db_session,
+        email="skill-super@careermate.dev",
+        name="Super",
+        role=Role.SUPER_ADMIN,
+    )
+    foreign_employee_id = foreign_employee.id
+    foreign_company_id = foreign_company.id
+    super_admin_id = super_admin.id
+    owner_headers = await login(client, owner.email)
+    peer_headers = await login(client, peer.email)
+    writer_headers = await login(client, writer.email)
+    reader_headers = await login(client, reader.email)
+    super_headers = await login(client, super_admin.email)
+
+    catalog_item = (
+        await client.post(
+            "/api/v2/skills-competency/skills",
+            headers=owner_headers,
+            json={"name": "Tenant Safe Skill", "category": "Security"},
+        )
+    ).json()
+    replaced = await client.put(
+        f"/api/v2/skills-competency/users/{owner.id}/skills",
+        headers=writer_headers,
+        json={
+            "profileVersion": 1,
+            "skills": [{"skillId": catalog_item["id"], "rating": 4, "note": "  HR   verified  "}],
+        },
+    )
+    assert replaced.status_code == 200, replaced.text
+    assert replaced.json()["profileVersion"] == 2
+    assert replaced.json()["items"][0]["sourceType"] == "ADMIN"
+    assert replaced.json()["items"][0]["selfAssessed"] is False
+    assert replaced.json()["items"][0]["note"] == "HR verified"
+    assert replaced.json()["items"][0]["createdBy"] == str(writer.id)
+    assert replaced.json()["items"][0]["updatedBy"] == str(writer.id)
+    assert replaced.json()["items"][0]["sourceImportId"] is None
+    assert replaced.json()["items"][0]["proposalItemId"] is None
+
+    reader_detail = await client.get(
+        f"/api/v2/skills-competency/users/{owner.id}", headers=reader_headers
+    )
+    reader_aggregate = await client.get(
+        f"/api/v2/competency-profile?userId={owner.id}", headers=reader_headers
+    )
+    assert reader_detail.status_code == reader_aggregate.status_code == 200
+    assert reader_detail.json()["items"][0]["name"] == "Tenant Safe Skill"
+    assert reader_aggregate.json()["skills"][0]["name"] == "Tenant Safe Skill"
+
+    owner_replaced = await client.put(
+        f"/api/v2/skills-competency/users/{owner.id}/skills",
+        headers=owner_headers,
+        json={
+            "profileVersion": 2,
+            "skills": [{"skillId": catalog_item["id"], "rating": 5, "note": " Owner   confirmed "}],
+        },
+    )
+    assert owner_replaced.status_code == 200, owner_replaced.text
+    assert owner_replaced.json()["profileVersion"] == 3
+    owner_item = owner_replaced.json()["items"][0]
+    assert owner_item["sourceType"] == "SELF"
+    assert owner_item["selfAssessed"] is True
+    assert owner_item["note"] == "Owner confirmed"
+    assert owner_item["createdBy"] == str(writer.id)
+    assert owner_item["updatedBy"] == str(owner.id)
+    assert owner_item["sourceImportId"] is None
+    assert owner_item["proposalItemId"] is None
+    assert owner_item["version"] == 2
+
+    denied_write = await client.put(
+        f"/api/v2/skills-competency/users/{owner.id}/skills",
+        headers=reader_headers,
+        json={"profileVersion": 3, "skills": []},
+    )
+    peer_read = await client.get(
+        f"/api/v2/skills-competency/users/{owner.id}", headers=peer_headers
+    )
+    foreign_read = await client.get(
+        f"/api/v2/skills-competency/users/{foreign_employee_id}", headers=writer_headers
+    )
+    foreign_aggregate = await client.get(
+        f"/api/v2/competency-profile?userId={foreign_employee_id}", headers=writer_headers
+    )
+    foreign_write = await client.put(
+        f"/api/v2/skills-competency/users/{foreign_employee_id}/skills",
+        headers=writer_headers,
+        json={"profileVersion": 1, "skills": []},
+    )
+    assert denied_write.status_code == 403
+    assert peer_read.status_code == 404
+    assert foreign_read.status_code == foreign_aggregate.status_code == 404
+    assert foreign_write.status_code == 404
+
+    super_replaced = await client.put(
+        f"/api/v2/skills-competency/users/{foreign_employee_id}/skills",
+        headers=super_headers,
+        json={
+            "profileVersion": 1,
+            "skills": [
+                {"skillId": catalog_item["id"], "rating": 3, "note": "Platform review"}
+            ],
+        },
+    )
+    assert super_replaced.status_code == 200, super_replaced.text
+    assert super_replaced.json()["profileVersion"] == 2
+    super_item = super_replaced.json()["items"][0]
+    assert super_item["name"] == "Tenant Safe Skill"
+    assert super_item["sourceType"] == "ADMIN"
+    assert super_item["selfAssessed"] is False
+    assert super_item["createdBy"] == str(super_admin_id)
+    assert super_item["updatedBy"] == str(super_admin_id)
+
+    db_session.expire_all()
+    foreign_row = await db_session.scalar(
+        select(EmployeeSkill).where(
+            EmployeeSkill.user_id == foreign_employee_id,
+            EmployeeSkill.company_id == foreign_company_id,
+            EmployeeSkill.skill_id == uuid.UUID(catalog_item["id"]),
+        )
+    )
+    assert foreign_row is not None
+    assert foreign_row.source_type == ProfileSourceType.ADMIN
+    assert foreign_row.self_assessed is False
+    assert foreign_row.created_by == super_admin_id
+    assert foreign_row.updated_by == super_admin_id
+
+    super_read = await client.get(
+        f"/api/v2/skills-competency/users/{foreign_employee_id}", headers=super_headers
+    )
+    assert super_read.status_code == 200
+    assert super_read.json()["profileVersion"] == 2
+    assert len(super_read.json()["items"]) == 1
+    assert super_read.json()["items"][0]["id"] == super_item["id"]
+
+
+@pytest.mark.asyncio
+async def test_sequential_stale_skill_replace_returns_current_profile_version_on_sqlite(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    owner = await create_user(db_session, email="skill-stale@acme.dev", name="Owner")
+    owner_id = owner.id
+    headers = await login(client, owner.email)
+    first = (
+        await client.post(
+            "/api/v2/skills-competency/skills", headers=headers, json={"name": "First stale"}
+        )
+    ).json()
+    second = (
+        await client.post(
+            "/api/v2/skills-competency/skills", headers=headers, json={"name": "Second stale"}
+        )
+    ).json()
+
+    accepted = await client.put(
+        f"/api/v2/skills-competency/users/{owner_id}/skills",
+        headers=headers,
+        json={
+            "profileVersion": 1,
+            "skills": [{"skillId": first["id"], "rating": 4}],
+        },
+    )
+    stale = await client.put(
+        f"/api/v2/skills-competency/users/{owner_id}/skills",
+        headers=headers,
+        json={
+            "profileVersion": 1,
+            "skills": [{"skillId": second["id"], "rating": 5}],
+        },
+    )
+
+    assert accepted.status_code == 200, accepted.text
+    assert accepted.json()["profileVersion"] == 2
+    assert stale.status_code == 409
+    assert stale.json() == {
+        "detail": "Phiên hồ sơ đã thay đổi",
+        "currentProfileVersion": 2,
+    }
+    db_session.expire_all()
+    persisted = await db_session.get(User, owner_id)
+    rows = list(
+        (
+            await db_session.scalars(select(EmployeeSkill).where(EmployeeSkill.user_id == owner_id))
+        ).all()
+    )
+    assert persisted is not None and persisted.version == 2
+    assert len(rows) == 1
+    assert rows[0].skill_id == uuid.UUID(first["id"])
+    assert rows[0].rating == 4
+
+
+@pytest.mark.asyncio
+async def test_skill_replace_validation_is_atomic_for_duplicate_unknown_rating_and_capacity(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    owner = await create_user(db_session, email="skill-validation@acme.dev", name="Owner")
+    owner_id = owner.id
+    headers = await login(client, owner.email)
+    known = (
+        await client.post(
+            "/api/v2/skills-competency/skills", headers=headers, json={"name": "Known"}
+        )
+    ).json()
+
+    invalid_payloads = [
+        {
+            "profileVersion": 1,
+            "skills": [
+                {"skillId": known["id"], "rating": 3},
+                {"skillId": known["id"], "rating": 4},
+            ],
+        },
+        {
+            "profileVersion": 1,
+            "skills": [{"skillId": str(uuid.uuid4()), "rating": 3}],
+        },
+        {
+            "profileVersion": 1,
+            "skills": [{"skillId": known["id"], "rating": 3.5}],
+        },
+        {
+            "profileVersion": 1,
+            "skills": [{"skillId": known["id"], "rating": 0}],
+        },
+        {
+            "profileVersion": 1,
+            "skills": [{"skillId": str(uuid.uuid4()), "rating": 3} for _ in range(201)],
+        },
+    ]
+    for payload in invalid_payloads:
+        response = await client.put(
+            f"/api/v2/skills-competency/users/{owner_id}/skills",
+            headers=headers,
+            json=payload,
+        )
+        assert response.status_code == 422, response.text
+
+    db_session.expire_all()
+    persisted = await db_session.get(User, owner_id)
+    assert persisted is not None and persisted.version == 1
+    assert await db_session.scalar(select(func.count()).select_from(EmployeeSkill)) == 0
+    assert (
+        await db_session.scalar(
+            select(func.count())
+            .select_from(ActivityLog)
+            .where(ActivityLog.action == "profile.skills.replaced")
+        )
+        == 0
+    )
+
+
+@pytest.mark.asyncio
+async def test_skill_full_replace_rolls_back_deletes_updates_and_profile_version_when_audit_fails(
+    client: AsyncClient, db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    owner = await create_user(db_session, email="skill-rollback@acme.dev", name="Owner")
+    owner_id = owner.id
+    headers = await login(client, owner.email)
+    first = (
+        await client.post(
+            "/api/v2/skills-competency/skills", headers=headers, json={"name": "First"}
+        )
+    ).json()
+    second = (
+        await client.post(
+            "/api/v2/skills-competency/skills", headers=headers, json={"name": "Second"}
+        )
+    ).json()
+    third = (
+        await client.post(
+            "/api/v2/skills-competency/skills", headers=headers, json={"name": "Third"}
+        )
+    ).json()
+    initial = await client.put(
+        f"/api/v2/skills-competency/users/{owner_id}/skills",
+        headers=headers,
+        json={
+            "profileVersion": 1,
+            "skills": [
+                {"skillId": first["id"], "rating": 2, "note": "Original first"},
+                {"skillId": second["id"], "rating": 3, "note": "Original second"},
+            ],
+        },
+    )
+    assert initial.status_code == 200, initial.text
+
+    async def fail_audit(*args: object, **kwargs: object) -> ActivityLog:
+        raise RuntimeError("synthetic skill audit failure")
+
+    monkeypatch.setattr(ActivityLogRepository, "log", fail_audit)
+    with pytest.raises(RuntimeError, match="synthetic skill audit failure"):
+        await client.put(
+            f"/api/v2/skills-competency/users/{owner_id}/skills",
+            headers=headers,
+            json={
+                "profileVersion": 2,
+                "skills": [
+                    {"skillId": first["id"], "rating": 5, "note": "Changed"},
+                    {"skillId": third["id"], "rating": 4, "note": "Inserted"},
+                ],
+            },
+        )
+
+    db_session.expire_all()
+    persisted = await db_session.get(User, owner_id)
+    rows = list(
+        (
+            await db_session.scalars(select(EmployeeSkill).where(EmployeeSkill.user_id == owner_id))
+        ).all()
+    )
+    assert persisted is not None and persisted.version == 2
+    by_skill_id = {row.skill_id: row for row in rows}
+    assert set(by_skill_id) == {uuid.UUID(first["id"]), uuid.UUID(second["id"])}
+    assert by_skill_id[uuid.UUID(first["id"])].rating == 2
+    assert by_skill_id[uuid.UUID(first["id"])].note == "Original first"
+    assert by_skill_id[uuid.UUID(second["id"])].rating == 3
+    assert by_skill_id[uuid.UUID(second["id"])].note == "Original second"
+    assert (
+        await db_session.scalar(
+            select(func.count())
+            .select_from(ActivityLog)
+            .where(ActivityLog.action == "profile.skills.replaced")
+        )
+        == 1
+    )
+
+
+@pytest.mark.asyncio
+async def test_skill_full_replace_accepts_200_items_and_atomically_rejects_item_201(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    owner = await create_user(db_session, email="skill-capacity@acme.dev", name="Owner")
+    owner_id = owner.id
+    skills = [
+        Skill(name=f"Boundary {index:03d}", normalized_key=f"boundary-{index:03d}")
+        for index in range(200)
+    ]
+    db_session.add_all(skills)
+    await db_session.commit()
+    headers = await login(client, owner.email)
+
+    accepted = await client.put(
+        f"/api/v2/skills-competency/users/{owner_id}/skills",
+        headers=headers,
+        json={
+            "profileVersion": 1,
+            "skills": [
+                {"skillId": str(skill.id), "rating": (index % 5) + 1}
+                for index, skill in enumerate(skills)
+            ],
+        },
+    )
+    assert accepted.status_code == 200, accepted.text
+    assert accepted.json()["profileVersion"] == 2
+    assert len(accepted.json()["items"]) == 200
+
+    rejected = await client.put(
+        f"/api/v2/skills-competency/users/{owner_id}/skills",
+        headers=headers,
+        json={
+            "profileVersion": 2,
+            "skills": [{"skillId": str(skill.id), "rating": 3} for skill in skills]
+            + [{"skillId": str(uuid.uuid4()), "rating": 3}],
+        },
+    )
+    assert rejected.status_code == 422
+
+    db_session.expire_all()
+    persisted = await db_session.get(User, owner_id)
+    assert persisted is not None and persisted.version == 2
+    assert (
+        await db_session.scalar(
+            select(func.count()).select_from(EmployeeSkill).where(EmployeeSkill.user_id == owner_id)
+        )
+        == 200
+    )

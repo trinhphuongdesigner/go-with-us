@@ -561,6 +561,7 @@ export function ProfileView({ forceState }: { forceState?: CoreUiForcedState }) 
       setName(result.data.name);
       setJobTitle(result.data.jobTitle);
       setStale(false);
+      replaceSkills.reset();
       // Close any open resource editor so it remounts against the freshly
       // reloaded resource/profileVersion instead of resubmitting a stale draft.
       setEditingResourceId(null);
