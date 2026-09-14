@@ -110,14 +110,22 @@
       "implementation_sha": "d258d8759678b0eaaa0b5f4be437989040bdf306",
       "report": "../reports/06-w1-certification-timeline/qa-report.json",
       "note": "Review độc lập lần đầu REQUEST_CHANGES với 2 P2 (không P0/P1): P2-1 test frontend chỉ phủ type mặc định, P2-2 test timeline thiếu assert field mapping đầy đủ. Cả 2 đã sửa; toàn bộ gate không-browser xanh (backend 666 passed/18 skipped, frontend 162 tests/23 file, build/lint/typecheck sạch); gửi lại re-review 2 vòng docs-only để khớp evidence chính xác với hành vi test thật. Verdict cuối cùng: FINAL APPROVE, 0 P0/P1/P2. Test commit tại d258d8759678b0eaaa0b5f4be437989040bdf306 (test-only, docs commit riêng)."
+    },
+    {
+      "id": "W1-AWARD-TIMELINE",
+      "name": "Award CRUD authz/CAS/validation, provenance và deterministic unified timeline",
+      "status": "PASS",
+      "implementation_sha": "4c994e02192e104ccf1aeffddb740237e81dfa39",
+      "report": "../reports/07-w1-award-timeline/qa-report.json",
+      "note": "Independent reviewer final APPROVE, 0 P0/P1/P2. Ba P2 đã CLOSED; exact implementation commit chạy backend 673 passed/18 skipped, Ruff/mypy sạch, frontend 167 tests/24 file, ESLint/tsc/Next build sạch. Browser/Playwright/persona NOT_RUN theo chỉ đạo."
     }
   ],
   "coordination_state": {
-    "updated_at": "2026-09-14T01:00:00+07:00",
+    "updated_at": "2026-09-14T10:00:00+07:00",
     "mode": "MANUAL_QA_READY",
     "writer": null,
     "canonical_worktree": ".claude/worktrees/v2-qa",
-    "candidate_head": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
+    "candidate_head": "4c994e02192e104ccf1aeffddb740237e81dfa39",
     "implementation_source_clean": true,
     "documentation_commit_pending": false,
     "remediation_review": {
@@ -137,11 +145,11 @@
     "resume_rule": "Manual tester validates the pushed candidate. Run Playwright only after explicit user re-enable.",
     "published_head": "0ef9f94575592b37d20d8226c3a46dfbb22938bf",
     "current_task_runtime": {
-      "task": "W1-CERTIFICATION-TIMELINE",
-      "state": "Test commit tại d258d8759678b0eaaa0b5f4be437989040bdf306 (test-only); docs commit riêng theo sau",
+      "task": "W1-AWARD-TIMELINE",
+      "state": "Implementation/test commit tại 4c994e02192e104ccf1aeffddb740237e81dfa39; report/ledger PASS được lưu trong commit tài liệu riêng theo sau.",
       "status": "PASS",
-      "backend_sqlite": "666 passed, 18 skipped",
-      "frontend_vitest": "162 passed, 23 files",
+      "backend_sqlite": "673 passed, 18 skipped in 89.29s",
+      "frontend_vitest": "167 passed, 24 files",
       "playwright": "NOT_RUN"
     }
   }

@@ -1,0 +1,201 @@
+{
+  "schema_version": "1.0",
+  "report_language": "vi",
+  "feature_id": "07-w1-award-timeline",
+  "feature_name": "W1-AWARD-TIMELINE — Award CRUD và mốc Award trong career timeline hợp nhất",
+  "branch": "codex/v2-qa-consolidation",
+  "overall_status": "PASS",
+  "implementation_sha": "4c994e02192e104ccf1aeffddb740237e81dfa39",
+  "verified_tree_sha": "4c994e02192e104ccf1aeffddb740237e81dfa39",
+  "base_head_sha": "2fc53c80156e7697d0de715a44d3fc7b40772ceb",
+  "generated_at": "2026-09-14T10:00:00+07:00",
+  "note_on_sha": "Implementation và test đã commit tại 4c994e02192e104ccf1aeffddb740237e81dfa39; review độc lập và toàn bộ non-browser gates được chạy trên đúng commit này. Năm file report/ledger được lưu bằng commit tài liệu riêng ngay sau implementation. Những file v1 ở root đã dirty từ trước vẫn ngoài phạm vi và không được stage.",
+  "environment": {
+    "backend": "FastAPI + pytest, .venv Python (v2/backend)",
+    "frontend": "Next.js App Router + Vitest (v2/frontend)",
+    "browser": "NOT_RUN theo chỉ đạo tạm dừng Playwright/browser/persona"
+  },
+  "scope": {
+    "included": [
+      "Award CRUD và mapping WORK/PERSONAL, description, evidenceUrl, awardedAt",
+      "Tenant/role authorization và optimistic CAS profileVersion cho create/update/delete",
+      "Required-field validation cho name/type/issuer trên Create và Patch",
+      "Provenance SELF/ADMIN, selfReported và activity log",
+      "Rollback nguyên tử khi audit log lỗi ở update/delete",
+      "Timeline loại Award không có awardedAt, tie-break theo id và field mapping đầy đủ",
+      "Frontend create/edit/delete/409/reload-safe behavior"
+    ],
+    "excluded": [
+      "Experience, Project, Certification và các module ngoài Award",
+      "Playwright/browser/accessibility/persona/performance theo chỉ đạo tạm dừng",
+      "Các file v1 dirty từ trước ở root vẫn ngoài phạm vi và không được stage"
+    ]
+  },
+  "functional_breakdown": [
+    {
+      "area": "Backend Award CRUD, authz và CAS",
+      "status": "PASS",
+      "action": "Bổ sung test Award riêng để chứng minh stale create/update/delete đều trả 409 kèm currentProfileVersion; create WORK và update PERSONAL giữ đúng toàn bộ field mapping."
+    },
+    {
+      "area": "Backend provenance, validation và rollback",
+      "status": "PASS",
+      "action": "Bổ sung evidence ADMIN/selfReported=false, owner edit thành SELF/selfReported=true, Patch không cho null name/type/issuer và rollback cả update/delete khi audit log lỗi."
+    },
+    {
+      "area": "Backend unified timeline",
+      "status": "PASS",
+      "action": "Bổ sung test hai Award cùng awardedAt sắp theo id ổn định, Award không ngày bị loại khỏi timeline, và assert đầy đủ kind/title/subtitle/startDate/endDate/sourceType."
+    },
+    {
+      "area": "Frontend Award CRUD UI",
+      "status": "PASS",
+      "action": "Test mới từ Pi có 5 case: create PERSONAL; edit đổi issuer/type/description/evidenceUrl/awardedAt; xác nhận xóa hai bước; khóa sau 409; reload loại draft cũ và giữ reloadedProfile qua invalidate/refetch cho tới khi hiện trạng thái lưu thành công."
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "Tenant/role authorization riêng cho Award.",
+      "status": "PASS",
+      "evidence": "test_award_tenant_scoping_denies_cross_company_access"
+    },
+    {
+      "id": "AC-02",
+      "description": "CAS 409/currentProfileVersion cho create/update/delete và frontend reload an toàn.",
+      "status": "PASS",
+      "evidence": "test_award_crud_preserves_origin_and_uses_profile_version; hai case 409 trong profile-view.award.test.tsx"
+    },
+    {
+      "id": "AC-03",
+      "description": "WORK/PERSONAL, field mapping, required fields, SELF/ADMIN provenance và rollback đúng.",
+      "status": "PASS",
+      "evidence": "Các test award CRUD, owner edit, null-required-field và rollback update/delete"
+    },
+    {
+      "id": "AC-04",
+      "description": "Timeline Award deterministic, loại item thiếu awardedAt và mapping đầy đủ.",
+      "status": "PASS",
+      "evidence": "test_award_timeline_orders_same_awarded_at_deterministically_by_id_and_excludes_null"
+    },
+    {
+      "id": "AC-05",
+      "description": "Review độc lập và full non-browser gates.",
+      "status": "PASS",
+      "evidence": "Reviewer độc lập final APPROVE, 0 P0/P1/P2. Trên exact implementation commit: backend 673 passed/18 skipped; Ruff và mypy sạch; frontend 24 file/167 test; ESLint, tsc và Next build 17 route đều pass."
+    }
+  ],
+  "checks": [
+    {
+      "id": "CHK-01",
+      "category": "backend-test-full",
+      "required": true,
+      "status": "PASS",
+      "command": "CAREERMATE_DEMO_LOGIN_ENABLED=false .venv/bin/pytest -q",
+      "cwd": "v2/backend",
+      "exact_sha": "4c994e02192e104ccf1aeffddb740237e81dfa39",
+      "summary": "673 passed, 18 skipped in 89.29s, 0 failed."
+    },
+    {
+      "id": "CHK-02",
+      "category": "backend-lint",
+      "required": true,
+      "status": "PASS",
+      "command": ".venv/bin/ruff check .",
+      "cwd": "v2/backend",
+      "exact_sha": "4c994e02192e104ccf1aeffddb740237e81dfa39",
+      "summary": "All checks passed."
+    },
+    {
+      "id": "CHK-03",
+      "category": "backend-typecheck",
+      "required": true,
+      "status": "PASS",
+      "command": ".venv/bin/mypy app",
+      "cwd": "v2/backend",
+      "exact_sha": "4c994e02192e104ccf1aeffddb740237e81dfa39",
+      "summary": "Success: no issues found in 90 source files."
+    },
+    {
+      "id": "CHK-04",
+      "category": "frontend-test-full",
+      "required": true,
+      "status": "PASS",
+      "command": "npx vitest run",
+      "cwd": "v2/frontend",
+      "exact_sha": "4c994e02192e104ccf1aeffddb740237e81dfa39",
+      "summary": "24 test files passed, 167 tests passed, 0 failed."
+    },
+    {
+      "id": "CHK-05",
+      "category": "frontend-lint",
+      "required": true,
+      "status": "PASS",
+      "command": "npm run lint",
+      "cwd": "v2/frontend",
+      "exact_sha": "4c994e02192e104ccf1aeffddb740237e81dfa39",
+      "summary": "ESLint pass."
+    },
+    {
+      "id": "CHK-06",
+      "category": "frontend-typecheck",
+      "required": true,
+      "status": "PASS",
+      "command": "npm run typecheck",
+      "cwd": "v2/frontend",
+      "exact_sha": "4c994e02192e104ccf1aeffddb740237e81dfa39",
+      "summary": "tsc --noEmit pass."
+    },
+    {
+      "id": "CHK-07",
+      "category": "frontend-build",
+      "required": true,
+      "status": "PASS",
+      "command": "npm run build",
+      "cwd": "v2/frontend",
+      "exact_sha": "4c994e02192e104ccf1aeffddb740237e81dfa39",
+      "summary": "Next production build pass, 17 pages/routes."
+    },
+    {
+      "id": "CHK-08",
+      "category": "independent-review",
+      "required": true,
+      "status": "PASS",
+      "command": "Independent diff review and final re-review",
+      "cwd": "worktree root",
+      "exact_sha": "4c994e02192e104ccf1aeffddb740237e81dfa39",
+      "summary": "Final APPROVE, 0 P0/P1/P2; P2-1, P2-2 và P2-3 đều CLOSED."
+    },
+    {
+      "id": "CHK-09",
+      "category": "diff-check-docs",
+      "required": true,
+      "status": "PASS",
+      "command": "git diff --check",
+      "cwd": "worktree root",
+      "exact_sha": null,
+      "summary": "Docs diff sạch whitespace trước commit tài liệu riêng."
+    }
+  ],
+  "browser_persona_tests": "NOT_RUN — Playwright/browser/persona vẫn tạm dừng theo chỉ đạo người dùng.",
+  "known_gaps": [
+    "Playwright/browser/persona/accessibility/performance NOT_RUN theo chỉ đạo."
+  ],
+  "review_findings": [
+    {
+      "id": "P2-1",
+      "status": "CLOSED",
+      "resolution": "Mock getOwnProfile giữ reloadedProfile qua retry invalidate/refetch và test chờ trạng thái Đã lưu nội dung hồ sơ."
+    },
+    {
+      "id": "P2-2",
+      "status": "CLOSED",
+      "resolution": "Frontend edit test thay đổi thật issuer và awardedAt, rồi assert giá trị mới trong PATCH payload."
+    },
+    {
+      "id": "P2-3",
+      "status": "CLOSED",
+      "resolution": "Report và ledger phân biệt thay đổi slice chỉ trong v2 với các file v1 dirty từ trước, ngoài phạm vi và chưa stage."
+    }
+  ]
+}

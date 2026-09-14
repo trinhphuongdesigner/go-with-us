@@ -164,3 +164,37 @@ Tại checkpoint 01:00 ICT chưa có feature nào PASS; trạng thái mới hơn
   162 passed/23 file. Playwright/browser/persona vẫn NOT_RUN — không claim đã chạy.
 - Docs (qa-report.json/README.md/tasks.json/progress.md/handoff.md) được `git add`/commit riêng
   khỏi commit test, theo đúng yêu cầu tách commit.
+
+## 2026-09-14 09:44 ICT — W1-AWARD-TIMELINE: focused gates, chờ review
+
+- Base HEAD `2fc53c80156e7697d0de715a44d3fc7b40772ceb`, branch
+  `codex/v2-qa-consolidation`; các thay đổi thuộc slice W1-AWARD chỉ nằm trong `v2/` và chưa
+  stage/commit/push. Những file v1 ở root đã dirty từ trước vẫn ngoài phạm vi và chưa stage.
+- Pi Desktop MCP tạo `profile-view.award.test.tsx`; focused Vitest chạy lại 5/5, gồm retry sau
+  409 giữ `reloadedProfile` qua invalidate/refetch và chờ trạng thái lưu thành công. Provider Pi sau đó trả 403 nên backend test
+  được hoàn thiện trong cùng worktree bởi agent điều phối, không đổi cấu hình hay credential.
+- Backend bổ sung evidence riêng cho Award: stale create/update/delete đều trả 409 cùng
+  `currentProfileVersion`; mapping `WORK` → `PERSONAL`; required Patch fields; tenant/permission;
+  `SELF`/`ADMIN`, `selfReported`; rollback audit update/delete; timeline tie-break theo id và loại
+  Award thiếu `awardedAt`.
+- Focused gate sau khi sửa P2 review: backend `10 passed, 681 deselected`; frontend `5 passed`; Ruff file test và
+  `git diff --check` sạch.
+- Trạng thái `PENDING_REVIEW`: chưa chạy review độc lập hoặc full non-browser suites. Playwright,
+  browser và persona tiếp tục `NOT_RUN` theo chỉ đạo.
+- Report nháp: `../reports/07-w1-award-timeline/qa-report.json`.
+
+## 2026-09-14 10:00 ICT — W1-AWARD-TIMELINE: FINAL APPROVE, PASS
+
+- Implementation/test đã commit tại `4c994e02192e104ccf1aeffddb740237e81dfa39`
+  (`test(v2/profile): verify award timeline workflow`), gồm đúng backend Award tests và frontend
+  `profile-view.award.test.tsx`.
+- Reviewer độc lập final **APPROVE**, 0 P0/P1/P2. Ba finding P2 đều CLOSED: mock reload giữ
+  `reloadedProfile` qua invalidate/refetch và chờ trạng thái lưu; test edit thay đổi thật
+  `issuer`/`awardedAt`; docs phân biệt rõ slice `v2/` với root v1 dirty từ trước.
+- Full non-browser gates trên exact implementation commit: backend 673 passed/18 skipped trong
+  89.29s; Ruff sạch; mypy sạch trên 90 source files; frontend 167 tests/24 files; ESLint, tsc và
+  Next production build 17 pages/routes đều PASS.
+- Playwright/browser/persona vẫn NOT_RUN theo chỉ đạo. Năm file report/ledger được lưu bằng commit
+  tài liệu riêng ngay sau implementation; report ghim SHA đã chạy test.
+- Các thay đổi thuộc slice W1-AWARD chỉ nằm trong `v2/`; file v1 ở root đã dirty từ trước vẫn
+  ngoài phạm vi và không được stage.

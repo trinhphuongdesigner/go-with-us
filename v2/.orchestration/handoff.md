@@ -86,3 +86,27 @@
   đồng bộ): `overall_status: "PASS"`, `implementation_sha`/`verified_tree_sha` = `d258d8759678b0eaaa0b5f4be437989040bdf306`.
 - Phạm vi vẫn KHÔNG đụng experience/project/award/goal/assessment/passport/staffing — các khu vực
   đó giữ nguyên trạng thái như report 03/04/05.
+
+## Cập nhật 2026-09-14 09:44 ICT — W1-AWARD-TIMELINE: PENDING_REVIEW
+
+- Candidate Award nằm trên base HEAD `2fc53c80156e7697d0de715a44d3fc7b40772ceb`. Các thay
+  đổi của slice W1-AWARD chỉ nằm trong `v2/` và chưa stage/commit/push; những file v1 ở root đã
+  dirty từ trước vẫn ngoài phạm vi và chưa stage. Các file liên quan: backend `test_competency_profile_api.py`, frontend
+  `profile-view.award.test.tsx`, report `../reports/07-w1-award-timeline/` và ledger.
+- Focused verification hiện tại: backend 10 Award tests PASS, frontend 5/5 PASS, Ruff và diff
+  check PASS. Không có code sản phẩm thay đổi vì focused tests chưa phát hiện regression.
+- Trước khi chuyển PASS: reviewer độc lập phải review toàn bộ diff, mọi finding phải được xử lý,
+  sau đó chạy full non-browser gates trên đúng candidate. Playwright/browser/persona vẫn NOT_RUN.
+- Pi Desktop MCP đã tạo frontend test nhưng provider trả 403 ở lượt tiếp theo; không thay provider,
+  không đọc hoặc đổi credential. Backend/test report được tiếp tục an toàn trong worktree hiện tại.
+
+## Cập nhật 2026-09-14 10:00 ICT — W1-AWARD-TIMELINE: FINAL APPROVE, PASS
+
+- Implementation/test commit: `4c994e02192e104ccf1aeffddb740237e81dfa39`. Reviewer độc lập
+  final APPROVE, 0 P0/P1/P2; cả P2-1, P2-2 và P2-3 đã CLOSED.
+- Exact-commit gates: backend 673 passed/18 skipped trong 89.29s; Ruff/mypy sạch; frontend 167
+  tests/24 files; ESLint/tsc/Next build 17 pages/routes đều PASS.
+- Report chuẩn: `../reports/07-w1-award-timeline/qa-report.json`; README đồng bộ. Năm file docs/
+  ledger được lưu bằng commit tài liệu riêng ngay sau implementation; report ghim SHA đã chạy test.
+- Playwright/browser/persona vẫn NOT_RUN. Chỉ thay đổi của slice nằm trong `v2/`; các file v1
+  dirty từ trước ở root vẫn ngoài phạm vi và không được stage.
