@@ -414,3 +414,22 @@ Tại checkpoint 01:00 ICT chưa có feature nào PASS; trạng thái mới hơn
   Playwright/persona/axe/visual regression **NOT_RUN**. Slice PASS; W3 giữ **IN_PROGRESS** vì
   template, cycle, assignment, submit/reject và audit trail còn mở. Snapshot legacy sai cần
   audit/repair trước migration nếu tồn tại.
+
+## 2026-09-14 17:33 ICT — W3-ASSESSMENT-APPROVAL-TRANSACTION: FINAL APPROVE, PASS
+
+- Implementation và exact verification SHA `565ba21060a8bf317ae4298dcf31fddd974134d7`;
+  supporting focus fix SHA `067eab324ad0672f4e45d3e34e51155f8c0525cc`. Independent final review
+  **APPROVE, 0 P0/P1/P2**.
+- Review transition contract: approve `SUBMITTED → APPROVED`; reject `SUBMITTED → REJECTED`
+  terminal; request-revision `SUBMITTED → DRAFT`, xóa cached scores/approval metadata và cho
+  reviewer sửa rồi submit lại. Frontend dùng đúng endpoint `/request-revision`.
+- Backend trả typed 409 cho version/state conflict, bắt tenant/permission/self-approval và
+  recompute điểm từ immutable `template_snapshot` + persisted answers. Assessment mutation,
+  approval metadata và activity log cùng transaction; audit exception rollback toàn bộ.
+- Audit chỉ ghi status/version, IDs, deterministic scores hoặc `reasonProvided`, không ghi answers,
+  assessment comment hoặc review reason. PostgreSQL double approve có một winner, một typed loser
+  và đúng một audit.
+- Fresh exact-SHA gates: PostgreSQL focused 11 PASS; backend full 729 passed/21 skipped;
+  Ruff/mypy app 90 files PASS; frontend 28 files/191 tests, ESLint/typecheck/build 17/17 PASS.
+- Report chuẩn: `../reports/15-w3-assessment-approval-transaction/qa-report.json`. Slice PASS;
+  W3 giữ IN_PROGRESS vì còn assessment task khác. Browser/Playwright/persona/provider NOT_RUN.

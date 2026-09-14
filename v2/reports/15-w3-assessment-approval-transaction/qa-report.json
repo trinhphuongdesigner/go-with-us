@@ -1,0 +1,149 @@
+{
+  "schema_version": "1.0",
+  "report_language": "vi",
+  "feature_id": "15-w3-assessment-approval-transaction",
+  "feature_name": "W3-ASSESSMENT-APPROVAL-TRANSACTION — xét duyệt đánh giá nguyên tử và có audit an toàn",
+  "branch": "codex/v2-qa-consolidation",
+  "overall_status": "PASS",
+  "implementation_sha": "565ba21060a8bf317ae4298dcf31fddd974134d7",
+  "verified_tree_sha": "565ba21060a8bf317ae4298dcf31fddd974134d7",
+  "supporting_shas": [
+    {
+      "sha": "067eab324ad0672f4e45d3e34e51155f8c0525cc",
+      "purpose": "Giữ focus do người dùng chọn sau khi reset Assessment Builder, tránh callback trễ giành lại focus."
+    }
+  ],
+  "generated_at": "2026-09-14T17:33:48+07:00",
+  "scope": {
+    "included": [
+      "Ba transition approve, reject và request-revision từ assessment SUBMITTED",
+      "Typed 409 version_conflict/currentVersion và invalid_state/currentStatus",
+      "Tenant isolation, quyền assessment:review và cấm tự phê duyệt",
+      "Approve tính lại điểm xác định từ immutable template_snapshot và answers đã lưu",
+      "Activity log metadata-only, không ghi answer, comment hoặc nội dung lý do riêng tư",
+      "Transaction rollback toàn bộ nếu audit thất bại",
+      "PostgreSQL row-lock concurrency bảo đảm double approve chỉ có một winner và một audit",
+      "Frontend Yêu cầu chỉnh sửa gọi request-revision thay vì terminal reject",
+      "Assessment Builder không giành lại focus của người dùng sau reset"
+    ],
+    "excluded": [
+      "Template/cycle/assignment completeness và các slice Wave 3 còn lại",
+      "AI tính điểm hoặc AI quyết định phê duyệt",
+      "Browser, Playwright, visual regression, axe và persona review",
+      "Live AI provider",
+      "Thay đổi v1"
+    ]
+  },
+  "workflow_contract": [
+    {
+      "action": "approve",
+      "source": "SUBMITTED",
+      "target": "APPROVED",
+      "requirements": "assessment:review, cùng tenant, actor khác reviewee, expectedVersion đúng",
+      "effects": "Tính lại score từ immutable snapshot; đặt approvedBy/approvedAt; tăng version; ghi assessment.approved."
+    },
+    {
+      "action": "reject",
+      "source": "SUBMITTED",
+      "target": "REJECTED",
+      "requirements": "Cùng boundary quyền/tenant/version và lý do không trống",
+      "effects": "Trạng thái terminal; không đặt approval metadata; tăng version; audit chỉ ghi reasonProvided=true."
+    },
+    {
+      "action": "request-revision",
+      "source": "SUBMITTED",
+      "target": "DRAFT",
+      "requirements": "Cùng boundary quyền/tenant/version và lý do không trống",
+      "effects": "Xóa cached scores và approval metadata; reviewer được sửa rồi submit lại; ghi assessment.revision_requested."
+    }
+  ],
+  "conflict_contract": [
+    "Version cũ trả HTTP 409 với detail {code: version_conflict, currentVersion}.",
+    "Source state khác SUBMITTED trả HTTP 409 với detail {code: invalid_state, currentStatus}.",
+    "REJECTED không thể sửa hoặc submit lại; request-revision là đường quay lại DRAFT.",
+    "Hai approve đồng thời trên PostgreSQL trả đúng một 200 và một typed 409; chỉ một audit row."
+  ],
+  "transaction_and_audit": {
+    "status": "PASS",
+    "atomicity": "Assessment transition, score/approval metadata và ActivityLog nằm trong cùng transaction; mọi exception rollback toàn bộ.",
+    "audit_payload": "Chỉ ghi status/version, cycle/reviewee/reviewer ID, scores đã xác định hoặc reasonProvided; không ghi answers, assessment comment hay review reason text.",
+    "scoring": "Approve gọi deterministic score() trên immutable template_snapshot và persisted answers; live template không tham gia."
+  },
+  "acceptance_criteria": [
+    {"id": "AC-01", "status": "PASS", "description": "Approve/reject/request-revision chỉ chạy từ SUBMITTED và tạo đúng target state/metadata."},
+    {"id": "AC-02", "status": "PASS", "description": "Version và state conflicts trả typed 409; terminal reject không thể sửa hoặc resubmit."},
+    {"id": "AC-03", "status": "PASS", "description": "Tenant, permission và self-approval boundaries được thực thi ở backend."},
+    {"id": "AC-04", "status": "PASS", "description": "Approve recompute bằng code từ immutable snapshot và answers đã persist; AI không tính điểm."},
+    {"id": "AC-05", "status": "PASS", "description": "Audit metadata-only, đúng một row; audit exception rollback cả assessment và log."},
+    {"id": "AC-06", "status": "PASS", "description": "PostgreSQL concurrent double approve có một winner, một typed loser và một audit."},
+    {"id": "AC-07", "status": "PASS", "description": "Frontend Yêu cầu chỉnh sửa dùng request-revision endpoint; focus sau reset không bị callback trễ chiếm lại."},
+    {"id": "AC-08", "status": "PASS", "description": "Independent final review APPROVE 0 P0/P1/P2; full non-browser gates đạt trên implementation SHA."}
+  ],
+  "checks": [
+    {
+      "id": "CHK-PG",
+      "category": "postgresql-focused",
+      "status": "PASS",
+      "verified_sha": "565ba21060a8bf317ae4298dcf31fddd974134d7",
+      "command": "CAREERMATE_TEST_DATABASE_URL=postgresql+asyncpg://[REDACTED]/careermate_v2_test .venv/bin/pytest -q tests/test_assessment_approval_transaction.py",
+      "summary": "11 passed; gồm concurrency double approve qua production row lock."
+    },
+    {
+      "id": "CHK-BACKEND",
+      "category": "backend-full",
+      "status": "PASS",
+      "verified_sha": "565ba21060a8bf317ae4298dcf31fddd974134d7",
+      "command": "CAREERMATE_DEMO_LOGIN_ENABLED=false .venv/bin/pytest -q",
+      "summary": "729 passed, 21 skipped."
+    },
+    {
+      "id": "CHK-STATIC",
+      "category": "backend-static",
+      "status": "PASS",
+      "verified_sha": "565ba21060a8bf317ae4298dcf31fddd974134d7",
+      "command": ".venv/bin/ruff check app tests && .venv/bin/mypy app",
+      "summary": "Ruff PASS; mypy app PASS trên 90 source files."
+    },
+    {
+      "id": "CHK-FRONTEND",
+      "category": "frontend-full",
+      "status": "PASS",
+      "verified_sha": "565ba21060a8bf317ae4298dcf31fddd974134d7",
+      "command": "npm test && npm run lint && npm run typecheck",
+      "summary": "Vitest 28 files/191 tests PASS; ESLint và TypeScript PASS."
+    },
+    {
+      "id": "CHK-BUILD",
+      "category": "frontend-build",
+      "status": "PASS",
+      "verified_sha": "565ba21060a8bf317ae4298dcf31fddd974134d7",
+      "command": "npm run build",
+      "summary": "Next.js production build PASS; 17/17 routes."
+    },
+    {
+      "id": "CHK-REVIEW",
+      "category": "independent-review",
+      "status": "PASS",
+      "verified_sha": "565ba21060a8bf317ae4298dcf31fddd974134d7",
+      "summary": "Independent final review APPROVE, 0 P0/P1/P2."
+    },
+    {
+      "id": "CHK-BROWSER",
+      "category": "browser-playwright-persona",
+      "status": "NOT_RUN",
+      "summary": "Browser, Playwright, visual regression, axe và persona review không chạy theo chỉ đạo."
+    },
+    {
+      "id": "CHK-PROVIDER",
+      "category": "provider-live",
+      "status": "NOT_RUN",
+      "summary": "Live AI provider không liên quan đến deterministic approval transaction và không được gọi."
+    }
+  ],
+  "review_findings": [],
+  "known_gaps": [
+    "Browser/Playwright/persona/axe/visual regression NOT_RUN theo chỉ đạo.",
+    "Provider live NOT_RUN; AI không nằm trong transaction hoặc scoring path.",
+    "W3 còn template/cycle/assignment và các flow khác cần slice riêng nên toàn Wave 3 vẫn IN_PROGRESS."
+  ]
+}

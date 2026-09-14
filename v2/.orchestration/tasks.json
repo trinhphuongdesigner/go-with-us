@@ -30,7 +30,7 @@
       "id": "W3",
       "name": "Cross Assessment",
       "status": "IN_PROGRESS",
-      "completion_evidence": "Slice W3-ASSESSMENT-SCORING-INVARIANTS PASS; template, cycle, assignment, submit/reject và audit trail còn phải được xác minh.",
+      "completion_evidence": "W3-ASSESSMENT-SCORING-INVARIANTS và W3-ASSESSMENT-APPROVAL-TRANSACTION đều PASS; template/cycle/assignment và các assessment task còn lại vẫn cần slice riêng.",
       "depends_on": [
         "W0",
         "W1"
@@ -180,15 +180,25 @@
       "verified_tree_sha": "f465af6bac2c6a30059fc791895db46a08d5952c",
       "report": "../reports/14-w3-assessment-scoring-invariants/qa-report.json",
       "note": "Independent final review APPROVE 0 P0/P1/P2 sau khi đóng P1 missing scoring fields và hai P2 numeric-string compatibility/duplicate group coverage. Exact SHA: backend 719 passed/20 skipped/68.48s, Ruff/mypy app 90 files PASS; frontend 27 files/190 tests/14.74s, ESLint/typecheck/build 17/17 PASS. Browser/Playwright/persona NOT_RUN. W3 vẫn IN_PROGRESS vì các assessment flows khác còn mở."
+    },
+    {
+      "id": "W3-ASSESSMENT-APPROVAL-TRANSACTION",
+      "name": "Approve/reject/request-revision nguyên tử, typed conflicts và metadata-only audit",
+      "status": "PASS",
+      "implementation_sha": "565ba21060a8bf317ae4298dcf31fddd974134d7",
+      "verified_tree_sha": "565ba21060a8bf317ae4298dcf31fddd974134d7",
+      "supporting_sha": "067eab324ad0672f4e45d3e34e51155f8c0525cc",
+      "report": "../reports/15-w3-assessment-approval-transaction/qa-report.json",
+      "note": "Independent final review APPROVE 0 P0/P1/P2. PostgreSQL focused 11 passed; backend full 729 passed/21 skipped; Ruff/mypy PASS; frontend 28 files/191 tests, lint/typecheck/build 17/17 PASS. Browser/Playwright/persona/provider NOT_RUN. W3 vẫn IN_PROGRESS."
     }
   ],
   "coordination_state": {
-    "updated_at": "2026-09-14T16:31:38+07:00",
+    "updated_at": "2026-09-14T17:33:48+07:00",
     "mode": "MANUAL_QA_READY",
     "writer": null,
     "canonical_worktree": ".claude/worktrees/v2-qa",
-    "candidate_head": "f465af6bac2c6a30059fc791895db46a08d5952c",
-    "candidate_base_head": "f465af6bac2c6a30059fc791895db46a08d5952c",
+    "candidate_head": "565ba21060a8bf317ae4298dcf31fddd974134d7",
+    "candidate_base_head": "067eab324ad0672f4e45d3e34e51155f8c0525cc",
     "candidate_tree": "IMPLEMENTATION_COMMITTED_DOCS_PENDING",
     "implementation_source_clean": true,
     "documentation_commit_pending": true,
@@ -209,20 +219,22 @@
     "resume_rule": "Manual tester validates the pushed candidate. Run Playwright only after explicit user re-enable.",
     "published_head": "0ef9f94575592b37d20d8226c3a46dfbb22938bf",
     "current_task_runtime": {
-      "task": "W3-ASSESSMENT-SCORING-INVARIANTS",
-      "state": "Implementation/review/gates PASS tại exact SHA; docs/ledger đang chờ commit riêng.",
+      "task": "W3-ASSESSMENT-APPROVAL-TRANSACTION",
+      "state": "Implementation/review/full non-browser gates PASS tại exact SHA; docs/ledger chờ commit riêng.",
       "status": "PASS",
-      "backend": "719 passed, 20 skipped in 68.48s",
+      "backend_postgresql_focused": "11 passed",
+      "backend_full": "729 passed, 21 skipped",
       "backend_ruff": "PASS",
       "backend_mypy": "PASS, 90 source files",
-      "frontend_vitest": "27 files, 190 tests passed in 14.74s",
+      "frontend_vitest": "28 files, 191 tests passed",
       "frontend_eslint": "PASS",
       "frontend_typecheck": "PASS",
-      "frontend_build": "PASS, 17/17 routes in 12.66s",
+      "frontend_build": "PASS, 17/17 routes",
       "independent_review": "FINAL APPROVE, 0 P0/P1/P2",
       "playwright_browser_persona": "NOT_RUN",
-      "wave3": "IN_PROGRESS; chỉ assessment scoring invariants slice đã PASS"
+      "provider_live": "NOT_RUN",
+      "wave3": "IN_PROGRESS; scoring invariants và approval transaction slices PASS, task khác còn mở"
     },
-    "documentation_base_head": "f465af6bac2c6a30059fc791895db46a08d5952c"
+    "documentation_base_head": "565ba21060a8bf317ae4298dcf31fddd974134d7"
   }
 }

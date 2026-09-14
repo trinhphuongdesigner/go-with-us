@@ -299,3 +299,17 @@
   mapping và không dùng AI scoring.
   W3 giữ IN_PROGRESS vì các assessment flows còn lại chưa hoàn tất. Legacy row sai cần audit/
   repair trước migration nếu tồn tại. Lượt này docs-only, không commit/push.
+
+## Cập nhật 2026-09-14 17:33 ICT — W3-ASSESSMENT-APPROVAL-TRANSACTION: FINAL APPROVE, PASS
+
+- Implementation/verification `565ba21060a8bf317ae4298dcf31fddd974134d7`; supporting focus fix
+  `067eab324ad0672f4e45d3e34e51155f8c0525cc`; independent review APPROVE 0 P0/P1/P2.
+- Approve/reject/request-revision dùng row lock, expectedVersion và typed 409. Tenant, permission
+  và self-approval fail closed. Approve recompute từ immutable snapshot; AI không tính điểm.
+- Transition + score/approval metadata + metadata-only audit nguyên tử; audit failure rollback.
+  PostgreSQL concurrent approve xác minh một 200, một 409 currentVersion và một audit row.
+- Frontend nút Yêu cầu chỉnh sửa gọi `/request-revision`, không gọi `/reject`; reset Assessment
+  Builder không giành lại focus do người dùng đã chuyển.
+- Exact gates: PG focused 11; backend 729 passed/21 skipped; Ruff/mypy PASS; frontend 28 files/
+  191 tests, lint/typecheck/build 17/17 PASS. Browser/Playwright/persona/provider NOT_RUN.
+- Slice đã ở completed PASS; W3 tiếp tục IN_PROGRESS. Docs/ledger chưa stage/commit/push.

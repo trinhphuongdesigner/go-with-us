@@ -51,7 +51,7 @@
       "evidence": "qa-report.json bound to implementation SHA and tree"
     }
   ],
-  "latest_completed_slice": "W3-ASSESSMENT-SCORING-INVARIANTS",
+  "latest_completed_slice": "W3-ASSESSMENT-APPROVAL-TRANSACTION",
   "wave1_import": {
     "status": "PASS",
     "implementation_sha": "de246d8c74ec8425cec0172613012fc600811719",
@@ -140,5 +140,18 @@
     "snapshot_contract": "Approve recomputes from immutable template_snapshot + persisted answers; missing scoring fields and malformed legacy values fail closed 422; valid numeric strings remain compatible.",
     "browser_playwright_persona": "NOT_RUN",
     "known_limitations": "Malformed legacy snapshot rows require audit/repair before migration if present; slice does not add or change passportDimension mapping and does not use AI scoring; W3 remains IN_PROGRESS."
+  },
+  "wave3_assessment_approval_transaction": {
+    "status": "PASS",
+    "implementation_sha": "565ba21060a8bf317ae4298dcf31fddd974134d7",
+    "verified_tree_sha": "565ba21060a8bf317ae4298dcf31fddd974134d7",
+    "supporting_sha": "067eab324ad0672f4e45d3e34e51155f8c0525cc",
+    "evidence": "Independent final APPROVE 0 P0/P1/P2; PostgreSQL focused 11 passed; backend 729 passed/21 skipped; Ruff/mypy app 90 files PASS; frontend 28 files/191 tests, ESLint/typecheck/build 17/17 PASS.",
+    "transition_contract": "approve SUBMITTED→APPROVED; reject SUBMITTED→REJECTED terminal; request-revision SUBMITTED→DRAFT và cho phép sửa/submit lại.",
+    "safety_contract": "Typed version/state 409; tenant/permission/self-approval checks; immutable-snapshot deterministic recompute; metadata-only audit; rollback nếu audit lỗi; PG double approve một winner/một audit.",
+    "frontend_contract": "Yêu cầu chỉnh sửa gọi /request-revision, không gọi terminal /reject; supporting reset focus fix không chiếm lại focus người dùng.",
+    "browser_playwright_persona": "NOT_RUN",
+    "provider_live": "NOT_RUN",
+    "known_limitations": "Chưa có browser/axe/visual/persona evidence; W3 còn assessment task khác nên giữ IN_PROGRESS."
   }
 }
