@@ -135,18 +135,26 @@
       "implementation_sha": "f9f3e405c469d201859c85d1647eb4d6aa73c0ce",
       "report": "../reports/09-w2-roadmap-editor-snapshot/qa-report.json",
       "note": "Product fix kế thừa từ consolidation f5d7fb0; implementation commit f9f3e40 là test-only. RED pre-fix c1148d6 fail đúng 2 race. Independent final APPROVE 0 P0/P1/P2, sole P2 CLOSED. Exact commit: backend 678 passed/18 skipped, Ruff/mypy sạch; frontend 25 files/174 tests, ESLint/tsc/build 17/17 sạch. Browser NOT_RUN."
+    },
+    {
+      "id": "W2-CAREER-GOAL-CAS",
+      "name": "Optimistic locking, validation và conflict recovery cho Career Goal",
+      "status": "PASS",
+      "implementation_sha": "08b0cd6c6cac1c91f2a9c284a4d00a1fdf8ae9ea",
+      "report": "../reports/10-w2-career-goal-cas/qa-report.json",
+      "note": "Independent FINAL APPROVE 0 P0/P1/P2; cả 3 findings CLOSED. PostgreSQL focused 4 passed in 3.64s; backend SQLite full 680 passed/19 skipped in 82.42s; Ruff/mypy sạch; frontend 25 files/177 tests, ESLint/tsc/build 17/17 sạch. Browser NOT_RUN."
     }
   ],
   "coordination_state": {
-    "updated_at": "2026-09-14T10:56:00+07:00",
+    "updated_at": "2026-09-14T12:09:08+07:00",
     "mode": "MANUAL_QA_READY",
     "writer": null,
     "canonical_worktree": ".claude/worktrees/v2-qa",
-    "candidate_head": "f9f3e405c469d201859c85d1647eb4d6aa73c0ce",
-    "candidate_base_head": "12866da103e570c79978dd2c69f6103a52069492",
-    "candidate_tree": "POST_DOCS_COMMIT_CLEAN",
+    "candidate_head": "08b0cd6c6cac1c91f2a9c284a4d00a1fdf8ae9ea",
+    "candidate_base_head": "458768fc4261303909d2dc2c90664cdd8d0f19ae",
+    "candidate_tree": "IMPLEMENTATION_COMMITTED_DOCS_PENDING",
     "implementation_source_clean": true,
-    "documentation_commit_pending": false,
+    "documentation_commit_pending": true,
     "remediation_review": {
       "status": "PASS",
       "p0": 0,
@@ -164,17 +172,18 @@
     "resume_rule": "Manual tester validates the pushed candidate. Run Playwright only after explicit user re-enable.",
     "published_head": "0ef9f94575592b37d20d8226c3a46dfbb22938bf",
     "current_task_runtime": {
-      "task": "W2-ROADMAP-EDITOR-SNAPSHOT",
-      "state": "Implementation/test commit test-only f9f3e40 final APPROVE; product fix kế thừa từ f5d7fb0. Report và ledger thuộc docs commit riêng ngay sau implementation; file v1 ngoài phạm vi và không được stage.",
+      "task": "W2-CAREER-GOAL-CAS",
+      "state": "Implementation commit 08b0cd6 final APPROVE; docs/ledger đang chờ docs commit riêng.",
       "status": "PASS",
-      "backend_sqlite": "678 passed, 18 skipped in 61.40s",
+      "backend_sqlite": "680 passed, 19 skipped in 82.42s",
+      "backend_postgresql_focused": "4 passed in 3.64s",
       "backend_ruff": "PASS",
       "backend_mypy": "PASS, 90 source files",
-      "frontend_vitest": "25 files, 174 tests passed",
+      "frontend_vitest": "25 files, 177 tests passed",
       "frontend_eslint": "PASS",
       "frontend_typecheck": "PASS",
       "frontend_build": "PASS, static generation 17/17",
-      "independent_review": "FINAL APPROVE, 0 P0/P1/P2; sole P2 CLOSED",
+      "independent_review": "FINAL APPROVE, 0 P0/P1/P2; all 3 findings CLOSED",
       "playwright": "NOT_RUN"
     }
   }

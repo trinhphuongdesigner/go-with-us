@@ -271,3 +271,38 @@ Tại checkpoint 01:00 ICT chưa có feature nào PASS; trạng thái mới hơn
   `../reports/09-w2-roadmap-editor-snapshot/qa-report.json`.
 - Browser/Playwright/persona vẫn `NOT_RUN`. Report/ledger thuộc docs commit riêng ngay sau test
   commit; file v1 dirty từ trước nằm ngoài phạm vi và không được stage.
+
+## 2026-09-14 11:25 ICT — W2-CAREER-GOAL-CAS: PENDING_REVIEW
+
+- Base/current HEAD `458768fc4261303909d2dc2c90664cdd8d0f19ae`; candidate chưa stage,
+  commit hoặc push. Mọi file thay đổi nằm trong `v2/`; file v1 dirty từ trước không bị đụng tới.
+- Frontend RED xác nhận 2 failure đúng nguyên nhân: 409 chỉ hiện thông báo chung, không refetch/
+  reset. Sau fix, 4/4 focused tests PASS: edit draft và delete confirmation được giữ, dữ liệu
+  server được refetch, cancel/reopen reset lỗi và dùng version mới.
+- Backend focused goal + migration contract: 4 passed, 1 PostgreSQL-only skipped. Bổ sung
+  validation category/status/dueDate/progress/PATCH rỗng, owner + tenant scope và test hai writer
+  nguyên tử dành cho PostgreSQL. Route/model/schema/migration product đã đúng từ `f5d7fb0`.
+- Ruff, focused ESLint, TypeScript và `git diff --check` PASS. Independent review, PostgreSQL
+  concurrent run và full non-browser gates chưa chạy; report ở
+  `../reports/10-w2-career-goal-cas/qa-report.json`.
+- Playwright/browser/persona vẫn NOT_RUN theo chỉ đạo.
+
+### Remediation review 11:34 ICT
+
+- Reviewer nêu 1 P1 và 2 P2; cả ba đã sửa và đang `FIXED_PENDING_REREVIEW`.
+- Recovery 409 nay await deferred refetch trước khi hiện “đã tải lại”; mọi nút có thể mở lại
+  snapshot bị khóa khi pending. Refetch failure có thông báo riêng và giữ draft.
+- Hai assertion reset dùng regex thật. Test PostgreSQL dùng hai HTTP client, hai DB session và
+  barrier ngay trước production UPDATE, kèm timeout; focused SQLite vẫn skip test này.
+- Focused sau sửa: frontend 5/5; backend 4 pass/1 skip; Ruff/ESLint/tsc PASS. Chưa commit/push.
+
+## 2026-09-14 12:09 ICT — W2-CAREER-GOAL-CAS: FINAL APPROVE, PASS
+
+- Implementation/test commit: `08b0cd6c6cac1c91f2a9c284a4d00a1fdf8ae9ea`.
+- Reviewer độc lập final **APPROVE, 0 P0/P1/P2**; `P1-1`, `P2-1`, `P2-2` đều CLOSED.
+- Exact implementation SHA: PostgreSQL focused 4 passed trong 3.64s; backend SQLite full 680
+  passed/19 skipped trong 82.42s; Ruff PASS; mypy app PASS trên 90 source files.
+- Frontend full: 25 file/177 test; ESLint, TypeScript và Next production build đều PASS; static
+  generation 17/17.
+- Slice chuyển từ active sang completed PASS; W2 tiếp tục IN_PROGRESS. Browser/Playwright/
+  persona/accessibility/performance vẫn NOT_RUN theo chỉ đạo. Docs/ledger chờ docs commit riêng.

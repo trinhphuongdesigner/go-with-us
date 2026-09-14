@@ -1,0 +1,177 @@
+{
+  "schema_version": "1.0",
+  "report_language": "vi",
+  "feature_id": "10-w2-career-goal-cas",
+  "feature_name": "W2-CAREER-GOAL-CAS — khóa lạc quan cho mục tiêu phát triển",
+  "branch": "codex/v2-qa-consolidation",
+  "overall_status": "PASS",
+  "implementation_sha": "08b0cd6c6cac1c91f2a9c284a4d00a1fdf8ae9ea",
+  "verified_tree_sha": "08b0cd6c6cac1c91f2a9c284a4d00a1fdf8ae9ea",
+  "base_head_sha": "458768fc4261303909d2dc2c90664cdd8d0f19ae",
+  "generated_at": "2026-09-14T12:09:08+07:00",
+  "scope": {
+    "included": [
+      "CareerGoal version mặc định 1 và migration head 0018_career_goal_version",
+      "PATCH và DELETE dùng CAS nguyên tử theo id, owner_user_id, company_id và expectedVersion",
+      "409 giữ draft hoặc xác nhận xóa, hiện thông báo tiếng Việt và refetch dữ liệu server",
+      "Snapshot id/version không bị đổi bởi React Query cache race",
+      "Validation category, status, dueDate, progress và PATCH rỗng",
+      "Regression owner scope trong cùng tenant và tenant khác",
+      "Test concurrent hai writer dành cho PostgreSQL"
+    ],
+    "excluded": [
+      "Các module ngoài Career Goal",
+      "Playwright, browser, persona, accessibility và performance",
+      "Các file v1 dirty từ trước"
+    ]
+  },
+  "observations": [
+    {
+      "id": "OBS-01",
+      "severity": "P1",
+      "status": "CLOSED",
+      "description": "Frontend trước đây biến payload 409 dạng object thành thông báo chung, không chờ refetch và giữ lỗi mutation cũ khi mở lại editor hoặc confirmation. Recovery nay await refetch; thao tác mở lại bị khóa lúc pending; refetch failure có thông báo riêng."
+    },
+    {
+      "id": "OBS-02",
+      "status": "VERIFIED_IN_BASE",
+      "description": "Model, migration và route CAS backend đã có từ consolidation f5d7fb0; candidate tăng test validation, scoping và concurrent writer."
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "status": "PASS",
+      "description": "Version bắt đầu từ 1; PATCH thắng tăng version và stale PATCH/DELETE trả 409 với currentVersion, không xóa dữ liệu."
+    },
+    {
+      "id": "AC-02",
+      "status": "PASS",
+      "description": "Query CAS scope đồng thời theo goal id, owner và company; người cùng tenant nhưng khác owner và người tenant khác đều nhận 404."
+    },
+    {
+      "id": "AC-03",
+      "status": "PASS",
+      "description": "Edit/delete giữ snapshot version khi cache đổi; 409 giữ draft/confirmation, refetch server và reopen dùng version mới."
+    },
+    {
+      "id": "AC-04",
+      "status": "PASS",
+      "description": "WORK/PERSONAL, trạng thái, ISO due date, progress 0..100 và PATCH có ít nhất một thay đổi được validate."
+    },
+    {
+      "id": "AC-05",
+      "status": "PASS",
+      "description": "Independent review FINAL APPROVE 0 P0/P1/P2; PostgreSQL focused và full non-browser gates đều đạt trên implementation SHA."
+    }
+  ],
+  "red_green_evidence": {
+    "red_command": "npm test -- --run src/features/career-ai/plan-panel.test.tsx",
+    "red_result": "1 file failed; 2 tests failed, 2 passed",
+    "red_reason": "Thông báo nhận được là 'Yêu cầu không thành công'; mutation không refetch/reset theo contract UX.",
+    "green_result": "1 file passed; 5 tests passed"
+  },
+  "checks": [
+    {
+      "id": "CHK-01",
+      "category": "backend-focused",
+      "status": "PASS",
+      "cwd": "v2/backend",
+      "command": "CAREERMATE_DEMO_LOGIN_ENABLED=false .venv/bin/pytest -q tests/test_career_goal_concurrency.py tests/test_migration_contract.py",
+      "summary": "PostgreSQL focused: 4 passed in 3.64s, gồm barrier concurrency hai writer."
+    },
+    {
+      "id": "CHK-02",
+      "category": "backend-ruff-focused",
+      "status": "PASS",
+      "command": ".venv/bin/ruff check app/career_ai/models.py app/career_ai/routes.py app/career_ai/schemas.py tests/test_career_goal_concurrency.py tests/test_migration_contract.py",
+      "summary": "All checks passed."
+    },
+    {
+      "id": "CHK-03",
+      "category": "frontend-focused",
+      "status": "PASS",
+      "cwd": "v2/frontend",
+      "command": "npm test -- --run src/features/career-ai/plan-panel.test.tsx",
+      "summary": "1 file, 5 tests passed sau RED 2 failures; deferred refetch và refetch failure đều được phủ."
+    },
+    {
+      "id": "CHK-04",
+      "category": "frontend-eslint-typecheck",
+      "status": "PASS",
+      "command": "npx eslint src/features/career-ai/plan-panel.tsx src/features/career-ai/plan-panel.test.tsx && npm run typecheck",
+      "summary": "ESLint và TypeScript exited 0."
+    },
+    {
+      "id": "CHK-05",
+      "category": "postgresql-concurrency",
+      "status": "PASS",
+      "verified_sha": "08b0cd6c6cac1c91f2a9c284a4d00a1fdf8ae9ea",
+      "summary": "PostgreSQL focused suite 4 passed in 3.64s; barrier xác nhận hai writer tới production UPDATE bằng hai DB transaction riêng."
+    },
+    {
+      "id": "CHK-06",
+      "category": "independent-review",
+      "status": "PASS",
+      "verified_sha": "08b0cd6c6cac1c91f2a9c284a4d00a1fdf8ae9ea",
+      "summary": "FINAL APPROVE, 0 P0/P1/P2; cả ba finding vòng đầu CLOSED."
+    },
+    {
+      "id": "CHK-07",
+      "category": "browser-persona",
+      "status": "NOT_RUN",
+      "summary": "Playwright/browser/persona tạm dừng theo chỉ đạo."
+    },
+    {
+      "id": "CHK-08",
+      "category": "backend-full-sqlite",
+      "status": "PASS",
+      "verified_sha": "08b0cd6c6cac1c91f2a9c284a4d00a1fdf8ae9ea",
+      "summary": "680 passed, 19 skipped in 82.42s."
+    },
+    {
+      "id": "CHK-09",
+      "category": "backend-mypy",
+      "status": "PASS",
+      "verified_sha": "08b0cd6c6cac1c91f2a9c284a4d00a1fdf8ae9ea",
+      "summary": "mypy app PASS trên 90 source files."
+    },
+    {
+      "id": "CHK-10",
+      "category": "frontend-full",
+      "status": "PASS",
+      "verified_sha": "08b0cd6c6cac1c91f2a9c284a4d00a1fdf8ae9ea",
+      "summary": "25 files, 177 tests passed; ESLint và TypeScript PASS."
+    },
+    {
+      "id": "CHK-11",
+      "category": "frontend-build",
+      "status": "PASS",
+      "verified_sha": "08b0cd6c6cac1c91f2a9c284a4d00a1fdf8ae9ea",
+      "summary": "Next.js production build PASS; static generation 17/17."
+    }
+  ],
+  "known_gaps": [
+    "Playwright/browser/persona/accessibility/performance NOT_RUN theo chỉ đạo."
+  ],
+  "review_findings": [
+    {
+      "id": "P1-1",
+      "status": "CLOSED",
+      "description": "Thông báo tải lại có thể xuất hiện trước refetch và reopen có thể chụp version cũ.",
+      "resolution": "Mutation onError await refetchQueries với throwOnError; nút thao tác bị khóa khi pending. Test dùng deferred GET chứng minh chưa hiện thông báo và chưa thể reopen trước khi refetch hoàn tất. Refetch failure có wording riêng, không claim dữ liệu mới."
+    },
+    {
+      "id": "P2-1",
+      "status": "CLOSED",
+      "description": "Hai assertion reset dùng queryByText exact nên có thể pass rỗng dù thông báo dài còn tồn tại.",
+      "resolution": "Đổi sang regex phủ toàn bộ tiền tố thông báo xung đột và assert absence sau cancel."
+    },
+    {
+      "id": "P2-2",
+      "status": "CLOSED",
+      "description": "Test asyncio.gather chưa có barrier nên hai request có thể chạy tuần tự.",
+      "resolution": "Dùng BarrierSession chặn ngay trước hai UPDATE career_goals, hai AsyncClient và hai DB session riêng; có timeout 3/10 giây và assert đủ hai writer tới barrier."
+    }
+  ]
+}

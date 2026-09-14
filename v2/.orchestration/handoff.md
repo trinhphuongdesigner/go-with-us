@@ -170,3 +170,31 @@
   completed PASS; W1 PASS và W2 IN_PROGRESS.
 - Browser/Playwright/persona NOT_RUN. Docs/ledger dành cho docs commit riêng; v1 vẫn ngoài phạm
   vi và không được stage.
+
+## Cập nhật 2026-09-14 11:25 ICT — W2-CAREER-GOAL-CAS: chờ review độc lập
+
+- Candidate chưa commit trên base `458768fc4261303909d2dc2c90664cdd8d0f19ae`; chỉ thay đổi
+  Career Goal trong `v2/`. Không chạy Playwright/browser và không đụng file v1 dirty từ trước.
+- Product fix frontend: nhận diện 409 `version_conflict`, giữ draft/confirmation, refetch goal
+  server, reset mutation khi cancel/reopen và dùng snapshot version mới.
+- Evidence: frontend RED 2 fail/2 pass, GREEN 4/4; backend + migration focused 4 pass/1
+  PostgreSQL-only skip; Ruff/ESLint/tsc/diff-check sạch.
+- Reviewer cần kiểm tra CAS atomic + owner/company scope, độ chính xác test 409/refetch/reset và
+  chạy test PostgreSQL hai writer cùng full non-browser gates trước khi chuyển PASS.
+
+### Remediation review 11:34 ICT
+
+- `P1-1`, `P2-1`, `P2-2` đã `FIXED_PENDING_REREVIEW`: await refetch thật và wording failure,
+  assertion reset bằng regex, DB barrier với hai session/client và timeout.
+- Fresh focused gates: frontend 5/5; backend 4 pass/1 PostgreSQL-only skip trong 1.02s;
+  Ruff/ESLint/TypeScript PASS. Candidate vẫn chưa commit/push; browser NOT_RUN.
+
+## Cập nhật 2026-09-14 12:09 ICT — W2-CAREER-GOAL-CAS: FINAL APPROVE, PASS
+
+- Implementation/test SHA `08b0cd6c6cac1c91f2a9c284a4d00a1fdf8ae9ea`; independent reviewer
+  **FINAL APPROVE, 0 P0/P1/P2** và đóng đủ ba finding.
+- PostgreSQL focused 4 passed/3.64s; backend SQLite full 680 passed/19 skipped/82.42s; Ruff và
+  mypy app 90 files PASS.
+- Frontend 25 file/177 test; ESLint, typecheck và Next build static generation 17/17 PASS.
+- Report chuẩn: `../reports/10-w2-career-goal-cas/qa-report.json`. Active assignment đã xóa,
+  completed slice chuyển PASS; W2 giữ IN_PROGRESS. Browser/Playwright/persona NOT_RUN.
