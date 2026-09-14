@@ -1,8 +1,9 @@
 """Database-backed home summaries, scoped to the authenticated viewer."""
 
 from datetime import UTC, datetime
+from typing import Annotated, Literal
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
@@ -14,21 +15,52 @@ from app.security.roles import is_employee_role
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
+DashboardView = Literal["personal", "management"]
+
 
 @router.get("")
-async def summary(db: DbSession, actor: CurrentUser):
-    personal = is_employee_role(actor.role)
-    if not personal:
+async def summary(
+    db: DbSession,
+    actor: CurrentUser,
+    view: Annotated[DashboardView | None, Query(description="Dashboard scope")] = None,
+):
+    personal_available = is_employee_role(actor.role)
+    management_available = actor.role in {
+        Role.SUPER_ADMIN,
+        Role.COMPANY_ADMIN,
+        Role.BOD,
+        Role.HR,
+    }
+    can_switch_view = personal_available and management_available
+
+    if view == "personal" and personal_available:
+        current_view: DashboardView = "personal"
+    elif view == "management" and management_available:
+        current_view = "management"
+    elif personal_available:
+        current_view = "personal"
+    else:
+        current_view = "management"
+
+    want_personal = current_view == "personal"
+
+    if not want_personal:
         users = select(func.count(User.id)).where(User.is_active.is_(True))
         companies = select(func.count(Company.id))
+        roadmaps_count = select(func.count(DevelopmentRoadmap.id))
         if actor.role != Role.SUPER_ADMIN:
             users = users.where(User.company_id == actor.company_id)
             companies = companies.where(Company.id == actor.company_id)
+            roadmaps_count = roadmaps_count.where(DevelopmentRoadmap.company_id == actor.company_id)
         return {
             "personal": False,
+            "canSwitchView": can_switch_view,
+            "currentView": current_view,
             "people": await db.scalar(users) or 0,
             "companies": await db.scalar(companies) or 0,
+            "activeRoadmaps": await db.scalar(roadmaps_count) or 0,
         }
+
     roadmaps = (
         await db.scalars(
             select(DevelopmentRoadmap)
@@ -62,6 +94,8 @@ async def summary(db: DbSession, actor: CurrentUser):
     ]
     return {
         "personal": True,
+        "canSwitchView": can_switch_view,
+        "currentView": current_view,
         "skillCount": len(skills),
         "projectCount": await db.scalar(
             select(func.count(Project.id)).where(
@@ -82,8 +116,10 @@ async def summary(db: DbSession, actor: CurrentUser):
                 "title": m.title,
                 "dueDate": m.due_date,
                 "roadmap": r.title,
+                "roadmapId": str(r.id),
+                "roadmapVersion": r.version,
                 "category": r.category,
-                "tasks": [{"id": str(t.id), "title": t.title} for t in m.tasks if not t.done],
+                "tasks": [{"id": str(t.id), "title": t.title, "done": t.done} for t in m.tasks],
             }
             for r in roadmaps
             for m in r.milestones

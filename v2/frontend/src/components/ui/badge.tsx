@@ -2,13 +2,14 @@ import type { HTMLAttributes } from "react";
 
 import { cn } from "@/lib/cn";
 
-type BadgeTone = "neutral" | "success" | "ai" | "warning";
+type BadgeTone = "neutral" | "success" | "ai" | "warning" | "danger";
 
 const tones: Record<BadgeTone, string> = {
   neutral: "bg-background text-muted",
   success: "bg-[#EFF6F0] text-sage-strong",
   ai: "bg-[#F1EEFF] text-violet-strong",
   warning: "bg-[#FFF7E8] text-[#8A5A12]",
+  danger: "bg-[#FEEBEB] text-[#B42318]",
 };
 
 export function Badge({ className, tone = "neutral", ...props }: HTMLAttributes<HTMLSpanElement> & { tone?: BadgeTone }) {
