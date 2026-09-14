@@ -23,6 +23,24 @@ function GoalMutationNotice({ saveError, deleteError, refreshFailed }: { saveErr
   return <ErrorNotice error={saveError ?? deleteError} />;
 }
 
+type PlanDraftSnapshot = {
+  content: string;
+  summary: string;
+  aiGenerated: boolean;
+  category: RoadmapCategory;
+  expectedVersion: number;
+};
+
+type PlanRecovery = "idle" | "refreshing" | "refreshed" | "failed";
+
+function PlanMutationNotice({ error, recovery }: { error: unknown; recovery: PlanRecovery }) {
+  if (recovery === "refreshing") return <p role="status" className="text-sm text-muted">Kế hoạch đã thay đổi ở phiên khác. Đang tải dữ liệu mới; bản nháp của bạn vẫn được giữ.</p>;
+  if (!isGoalVersionConflict(error)) return <ErrorNotice error={error} />;
+  if (recovery === "failed") return <p role="alert" className="text-sm text-danger">Kế hoạch đã thay đổi ở phiên khác. Không tải được lịch sử mới; bản nháp của bạn vẫn được giữ. Hãy thử tải lại trước khi lưu.</p>;
+  if (recovery === "refreshed") return <p role="alert" className="text-sm text-danger">Kế hoạch đã thay đổi ở phiên khác. Lịch sử mới đã được tải lại; bản nháp của bạn vẫn được giữ. Bỏ bản nháp rồi mở lại để lưu trên phiên bản mới.</p>;
+  return <p role="alert" className="text-sm text-danger">Kế hoạch đã thay đổi ở phiên khác; bản nháp của bạn vẫn được giữ.</p>;
+}
+
 function GoalEditor({ initial, pending, onSave, onCancel }: { initial: GoalDraft; pending: boolean; onSave: (value: GoalDraft) => void; onCancel: () => void }) {
   const [draft, setDraft] = useState<GoalDraft>(() => Object.fromEntries(Object.keys(emptyGoal(initial.category)).map((field) => [field, initial[field as keyof GoalDraft]])) as GoalDraft);
   return <form className={panelClass} onSubmit={(event) => { event.preventDefault(); onSave(draft); }}><fieldset disabled={pending} className="space-y-4"><legend className="text-lg font-bold">Chỉnh sửa mục tiêu</legend><label className="block text-sm font-semibold">Tên mục tiêu<input required maxLength={180} className={fieldClass} value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} /></label><label className="block text-sm font-semibold">Mô tả<textarea maxLength={5000} className={fieldClass} value={draft.description ?? ""} onChange={(e) => setDraft({ ...draft, description: e.target.value || null })} /></label><label className="block text-sm font-semibold">Tiêu chí đo lường<input maxLength={500} className={fieldClass} value={draft.metric ?? ""} onChange={(e) => setDraft({ ...draft, metric: e.target.value || null })} /></label><div className="grid gap-4 sm:grid-cols-2">{(["targetValue", "currentValue"] as const).map((key) => <label key={key} className="text-sm font-semibold">{key === "targetValue" ? "Giá trị mục tiêu" : "Giá trị hiện tại"}<input type="number" step="any" className={fieldClass} value={draft[key] ?? ""} onChange={(e) => setDraft({ ...draft, [key]: e.target.value === "" ? null : Number(e.target.value) })} /></label>)}<label className="text-sm font-semibold">Tiến độ %<input type="number" min={0} max={100} className={fieldClass} value={draft.progress} onChange={(e) => setDraft({ ...draft, progress: Number(e.target.value) })} /></label><label className="text-sm font-semibold">Hạn hoàn thành<input type="date" className={fieldClass} value={draft.dueDate ?? ""} onChange={(e) => setDraft({ ...draft, dueDate: e.target.value || null })} /></label><label className="text-sm font-semibold">Trạng thái<select className={fieldClass} value={draft.status} onChange={(e) => setDraft({ ...draft, status: e.target.value as GoalDraft["status"] })}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label></div><div className="flex gap-2"><Button disabled={!draft.title.trim()} type="submit">{pending ? "Đang lưu…" : "Lưu mục tiêu"}</Button><Button type="button" variant="secondary" onClick={onCancel}>Hủy</Button></div></fieldset></form>;
@@ -37,7 +55,8 @@ export function CareerPlanPanel({ session, category }: { session: Session; categ
   const [editing, setEditing] = useState<GoalDraft | Goal | null>(null);
   const [deleting, setDeleting] = useState<Goal | null>(null);
   const [goalRefreshFailed, setGoalRefreshFailed] = useState(false);
-  const [draft, setDraft] = useState<{ content: string; summary: string; aiGenerated: boolean } | null>(null);
+  const [draft, setDraft] = useState<PlanDraftSnapshot | null>(null);
+  const [planRecovery, setPlanRecovery] = useState<PlanRecovery>("idle");
   const [instruction, setInstruction] = useState("");
   const goalSave = useMutation({ mutationFn: (value: GoalDraft) => {
     const target = editing && "id" in editing ? editing : null;
@@ -49,16 +68,37 @@ export function CareerPlanPanel({ session, category }: { session: Session; categ
     );
   }, onSuccess: () => { setEditing(null); void client.invalidateQueries({ queryKey: key }); }, onError: async (error) => { if (isGoalVersionConflict(error)) { try { await client.refetchQueries({ queryKey: [...key, "goals"], type: "active" }, { throwOnError: true }); setGoalRefreshFailed(false); } catch { setGoalRefreshFailed(true); } } } });
   const goalDelete = useMutation({ mutationFn: (target: Goal) => careerRequest(token, `/development-plans/goals/${target.id}?expected_version=${target.version}`, "DELETE"), onSuccess: () => { setDeleting(null); void client.invalidateQueries({ queryKey: key }); }, onError: async (error) => { if (isGoalVersionConflict(error)) { try { await client.refetchQueries({ queryKey: [...key, "goals"], type: "active" }, { throwOnError: true }); setGoalRefreshFailed(false); } catch { setGoalRefreshFailed(true); } } } });
-  const generate = useMutation({ mutationFn: () => careerRequest<{ planMd: string; summary: string }>(token, "/development-plans/generate", "POST", { category, ...(instruction.trim() ? { instruction } : {}) }), onSuccess: (proposal) => setDraft({ content: proposal.planMd, summary: proposal.summary, aiGenerated: true }) });
-  const save = useMutation({ mutationFn: () => careerRequest<Plan>(token, "/development-plans/me", "PUT", { ...draft, category, expectedVersion: history.data?.[0]?.version ?? 0 }), onSuccess: () => { setDraft(null); void client.invalidateQueries({ queryKey: key }); } });
+  const latestPlanVersion = () => client.getQueryData<Plan[]>([...key, "history"])?.[0]?.version ?? 0;
+  const openPlanDraft = (value: Pick<PlanDraftSnapshot, "content" | "summary" | "aiGenerated">) => {
+    save.reset();
+    setPlanRecovery("idle");
+    setDraft({ ...value, category, expectedVersion: latestPlanVersion() });
+  };
+  const generate = useMutation({ mutationFn: () => careerRequest<{ planMd: string; summary: string }>(token, "/development-plans/generate", "POST", { category, ...(instruction.trim() ? { instruction } : {}) }), onSuccess: (proposal) => openPlanDraft({ content: proposal.planMd, summary: proposal.summary, aiGenerated: true }) });
+  const save = useMutation({
+    mutationFn: (snapshot: PlanDraftSnapshot) => careerRequest<Plan>(token, "/development-plans/me", "PUT", snapshot),
+    onMutate: () => setPlanRecovery("idle"),
+    onSuccess: () => { setDraft(null); setPlanRecovery("idle"); void client.invalidateQueries({ queryKey: key }); },
+    onError: async (error) => {
+      if (!isGoalVersionConflict(error)) return;
+      setPlanRecovery("refreshing");
+      try {
+        await client.refetchQueries({ queryKey: [...key, "history"], type: "active" }, { throwOnError: true });
+        setPlanRecovery("refreshed");
+      } catch {
+        setPlanRecovery("failed");
+      }
+    },
+  });
+  const planRecoveryPending = planRecovery === "refreshing";
   return <section className="space-y-5">
     <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-bold">Mục tiêu phát triển</h2><Button variant="secondary" disabled={Boolean(editing)} onClick={() => { goalSave.reset(); setGoalRefreshFailed(false); setEditing(emptyGoal(category)); }}>Thêm mục tiêu</Button></div>
     <ErrorNotice error={goals.error} /><GoalMutationNotice saveError={goalSave.error} deleteError={goalDelete.error} refreshFailed={goalRefreshFailed} />{editing && <GoalEditor key={"id" in editing ? `${editing.id}:${editing.version}` : "new"} initial={editing} pending={goalSave.isPending} onSave={(value) => goalSave.mutate(value)} onCancel={() => { goalSave.reset(); setGoalRefreshFailed(false); setEditing(null); }} />}
     {goals.isPending ? <p role="status">Đang tải mục tiêu…</p> : <div className="grid gap-4 md:grid-cols-2">{goals.data?.map((goal) => <article className={panelClass} key={goal.id}><div><h3 className="font-bold">{goal.title}</h3><p className="mt-1 text-sm text-muted">{statusLabels[goal.status]}{goal.roadmapId ? " · Liên kết lộ trình" : ""}</p></div><p className="whitespace-pre-wrap text-sm">{goal.description}</p><p className="text-sm text-muted">{goal.metric}{goal.targetValue !== null ? ` · ${goal.currentValue ?? 0}/${goal.targetValue}` : ""}{goal.dueDate ? ` · Hạn ${goal.dueDate}` : ""}</p><div><p className="text-sm">Tiến độ {goal.progress}%</p><progress value={goal.progress} max={100} className="w-full accent-primary" aria-label={`Tiến độ ${goal.title}`} /></div><div className="flex gap-2"><Button variant="secondary" disabled={goalSave.isPending || goalDelete.isPending} onClick={() => { goalSave.reset(); setGoalRefreshFailed(false); setEditing(goal); }}>Sửa</Button><Button variant="ghost" disabled={goalSave.isPending || goalDelete.isPending} onClick={() => { goalDelete.reset(); setGoalRefreshFailed(false); setDeleting(goal); }}>Xóa</Button></div>{deleting?.id === goal.id && <div role="alert"><p className="mb-2 text-sm">Xóa mục tiêu này? Lộ trình liên kết vẫn được giữ.</p><Button variant="danger" disabled={goalDelete.isPending} onClick={() => goalDelete.mutate(deleting)}>Xác nhận xóa</Button> <Button variant="secondary" disabled={goalDelete.isPending} onClick={() => { goalDelete.reset(); setGoalRefreshFailed(false); setDeleting(null); }}>Hủy</Button></div>}</article>)}</div>}
     {goals.data?.length === 0 && <p className="text-sm text-muted">Chưa có mục tiêu trong nhóm này. Khi lưu lộ trình, chặng cuối được liên kết thành mục tiêu.</p>}
-    <div className={panelClass}><h2 className="text-xl font-bold">Kế hoạch & lịch sử phiên bản</h2><p className="text-sm text-muted">AI chỉ tạo đề xuất. Nội dung chỉ được lưu sau khi bạn xem và chọn Lưu phiên bản.</p><label className="block text-sm font-semibold">Yêu cầu cho AI<textarea maxLength={6000} className={fieldClass} value={instruction} onChange={(event) => setInstruction(event.target.value)} placeholder="Ví dụ: ưu tiên kỹ năng giao tiếp trong 12 tuần" /></label><div className="flex flex-wrap gap-2"><Button disabled={generate.isPending || Boolean(draft)} onClick={() => generate.mutate()}>{generate.isPending ? "Đang tạo đề xuất…" : "Đề xuất kế hoạch bằng AI"}</Button><Button variant="secondary" disabled={Boolean(draft)} onClick={() => setDraft({ content: history.data?.[0]?.content ?? "", summary: history.data?.[0]?.summary ?? "", aiGenerated: false })}>Viết / chỉnh sửa kế hoạch</Button></div><ErrorNotice error={history.error ?? generate.error ?? save.error} />
-      {draft && <form className="space-y-4 border-t border-border pt-4" onSubmit={(event) => { event.preventDefault(); save.mutate(); }}><label className="block text-sm font-semibold">Tóm tắt<input maxLength={2000} className={fieldClass} value={draft.summary} onChange={(event) => setDraft({ ...draft, summary: event.target.value })} /></label><label className="block text-sm font-semibold">Nội dung Markdown — chưa lưu<textarea required maxLength={60000} className={`${fieldClass} min-h-72 font-mono text-sm`} value={draft.content} onChange={(event) => setDraft({ ...draft, content: event.target.value })} /></label><div className="flex gap-2"><Button disabled={save.isPending || !draft.content.trim()} type="submit">{save.isPending ? "Đang lưu…" : "Lưu phiên bản"}</Button><Button disabled={save.isPending} type="button" variant="secondary" onClick={() => setDraft(null)}>Bỏ bản nháp</Button></div></form>}
-      {history.data?.map((plan) => <details key={plan.id} className="rounded-xl border border-border p-4"><summary className="cursor-pointer font-semibold">Phiên bản {plan.version} · {new Date(plan.createdAt).toLocaleString("vi-VN")} {plan.aiGenerated ? "· AI hỗ trợ" : ""}</summary><p className="mt-3 text-sm text-muted">{plan.summary}</p><pre className="mt-3 whitespace-pre-wrap break-words font-sans text-sm leading-7">{plan.content}</pre><Button className="mt-3" variant="secondary" disabled={Boolean(draft)} onClick={() => setDraft({ content: plan.content, summary: plan.summary ?? "", aiGenerated: plan.aiGenerated })}>Dùng làm bản nháp mới</Button></details>)}
+    <div className={panelClass}><h2 className="text-xl font-bold">Kế hoạch & lịch sử phiên bản</h2><p className="text-sm text-muted">AI chỉ tạo đề xuất. Nội dung chỉ được lưu sau khi bạn xem và chọn Lưu phiên bản.</p><label className="block text-sm font-semibold">Yêu cầu cho AI<textarea maxLength={6000} className={fieldClass} value={instruction} onChange={(event) => setInstruction(event.target.value)} placeholder="Ví dụ: ưu tiên kỹ năng giao tiếp trong 12 tuần" /></label><div className="flex flex-wrap gap-2"><Button disabled={generate.isPending || Boolean(draft)} onClick={() => generate.mutate()}>{generate.isPending ? "Đang tạo đề xuất…" : "Đề xuất kế hoạch bằng AI"}</Button><Button variant="secondary" disabled={Boolean(draft)} onClick={() => openPlanDraft({ content: history.data?.[0]?.content ?? "", summary: history.data?.[0]?.summary ?? "", aiGenerated: false })}>Viết / chỉnh sửa kế hoạch</Button></div><ErrorNotice error={history.error ?? generate.error} /><PlanMutationNotice error={save.error} recovery={planRecovery} />
+      {draft && <form className="space-y-4 border-t border-border pt-4" onSubmit={(event) => { event.preventDefault(); save.mutate(draft); }}><label className="block text-sm font-semibold">Tóm tắt<input maxLength={2000} className={fieldClass} value={draft.summary} onChange={(event) => setDraft({ ...draft, summary: event.target.value })} /></label><label className="block text-sm font-semibold">Nội dung Markdown — chưa lưu<textarea required maxLength={60000} className={`${fieldClass} min-h-72 font-mono text-sm`} value={draft.content} onChange={(event) => setDraft({ ...draft, content: event.target.value })} /></label><div className="flex gap-2"><Button disabled={save.isPending || planRecoveryPending || !draft.content.trim()} type="submit">{save.isPending || planRecoveryPending ? "Đang lưu…" : "Lưu phiên bản"}</Button><Button disabled={save.isPending || planRecoveryPending} type="button" variant="secondary" onClick={() => { save.reset(); setPlanRecovery("idle"); setDraft(null); }}>Bỏ bản nháp</Button></div></form>}
+      {history.data?.map((plan) => <details key={plan.id} className="rounded-xl border border-border p-4"><summary className="cursor-pointer font-semibold">Phiên bản {plan.version} · {new Date(plan.createdAt).toLocaleString("vi-VN")} {plan.aiGenerated ? "· AI hỗ trợ" : ""}</summary><p className="mt-3 text-sm text-muted">{plan.summary}</p><pre className="mt-3 whitespace-pre-wrap break-words font-sans text-sm leading-7">{plan.content}</pre><Button className="mt-3" variant="secondary" disabled={Boolean(draft)} onClick={() => openPlanDraft({ content: plan.content, summary: plan.summary ?? "", aiGenerated: plan.aiGenerated })}>Dùng làm bản nháp mới</Button></details>)}
     </div>
   </section>;
 }
