@@ -627,18 +627,18 @@ async def test_resources_are_distinct_from_employment_and_aggregate_timeline_is_
 
 
 @pytest.mark.asyncio
-async def test_resource_crud_preserves_origin_and_uses_profile_version(
+async def test_award_crud_preserves_origin_and_uses_profile_version(
     client: AsyncClient, db_session: AsyncSession
 ) -> None:
-    company = await CompanyRepository(db_session).add(Company(name="Admin Company"))
+    company = await CompanyRepository(db_session).add(Company(name="Award Company"))
     await db_session.flush()
     employee = await create_user(
-        db_session, email="resource-owner@acme.dev", name="Resource Owner", company=company
+        db_session, email="award-owner@acme.dev", name="Award Owner", company=company
     )
     admin = await create_user(
         db_session,
-        email="resource-admin@acme.dev",
-        name="Resource Admin",
+        email="award-admin@acme.dev",
+        name="Award Admin",
         role=Role.COMPANY_ADMIN,
         company=company,
         admin_permissions=[
@@ -655,13 +655,22 @@ async def test_resource_crud_preserves_origin_and_uses_profile_version(
             "profileVersion": 1,
             "name": "Team Impact",
             "type": "WORK",
-            "issuer": "Admin Company",
+            "issuer": "Award Company",
+            "description": "Recognised for cross-team delivery",
+            "evidenceUrl": "https://example.invalid/team-impact",
             "awardedAt": "2026-01-01",
         },
     )
     assert created.status_code == 201, created.text
     assert created.json()["sourceType"] == "ADMIN"
     assert created.json()["createdBy"] == str(admin.id)
+    assert created.json()["updatedBy"] == str(admin.id)
+    assert created.json()["selfReported"] is False
+    assert created.json()["type"] == "WORK"
+    assert created.json()["issuer"] == "Award Company"
+    assert created.json()["description"] == "Recognised for cross-team delivery"
+    assert created.json()["evidenceUrl"] == "https://example.invalid/team-impact"
+    assert created.json()["awardedAt"] == "2026-01-01"
 
     read = await client.get(
         f"/api/v2/competency-profile/awards/{created.json()['id']}?userId={employee.id}",
@@ -669,6 +678,19 @@ async def test_resource_crud_preserves_origin_and_uses_profile_version(
     )
     assert read.status_code == 200
     assert read.json() == created.json()
+
+    stale_create = await client.post(
+        f"/api/v2/competency-profile/awards?userId={employee.id}",
+        headers=admin_headers,
+        json={
+            "profileVersion": 1,
+            "name": "Stale create",
+            "type": "PERSONAL",
+            "issuer": "Award Company",
+        },
+    )
+    assert stale_create.status_code == 409
+    assert stale_create.json()["currentProfileVersion"] == 2
 
     stale = await client.patch(
         f"/api/v2/competency-profile/awards/{created.json()['id']}?userId={employee.id}",
@@ -681,12 +703,36 @@ async def test_resource_crud_preserves_origin_and_uses_profile_version(
     updated = await client.patch(
         f"/api/v2/competency-profile/awards/{created.json()['id']}?userId={employee.id}",
         headers=admin_headers,
-        json={"profileVersion": 2, "name": "Company Impact"},
+        json={
+            "profileVersion": 2,
+            "name": "Community Impact",
+            "type": "PERSONAL",
+            "issuer": "Community Council",
+            "description": "Recognised for community mentoring",
+            "evidenceUrl": "https://example.invalid/community-impact",
+            "awardedAt": "2026-02-01",
+        },
     )
     assert updated.status_code == 200, updated.text
     assert updated.json()["sourceType"] == "ADMIN"
     assert updated.json()["createdBy"] == str(admin.id)
     assert updated.json()["updatedBy"] == str(admin.id)
+    assert updated.json()["selfReported"] is False
+    assert updated.json()["name"] == "Community Impact"
+    assert updated.json()["type"] == "PERSONAL"
+    assert updated.json()["issuer"] == "Community Council"
+    assert updated.json()["description"] == "Recognised for community mentoring"
+    assert updated.json()["evidenceUrl"] == "https://example.invalid/community-impact"
+    assert updated.json()["awardedAt"] == "2026-02-01"
+
+    stale_delete = await client.request(
+        "DELETE",
+        f"/api/v2/competency-profile/awards/{created.json()['id']}?userId={employee.id}",
+        headers=admin_headers,
+        json={"profileVersion": 2},
+    )
+    assert stale_delete.status_code == 409
+    assert stale_delete.json()["currentProfileVersion"] == 3
 
     removed = await client.request(
         "DELETE",
@@ -714,7 +760,7 @@ async def test_resource_crud_preserves_origin_and_uses_profile_version(
 
 
 @pytest.mark.asyncio
-async def test_owner_edit_reclassifies_admin_resource_as_self_reported(
+async def test_award_owner_edit_reclassifies_admin_resource_as_self_reported(
     client: AsyncClient, db_session: AsyncSession
 ) -> None:
     company = await CompanyRepository(db_session).add(Company(name="Provenance Company"))
@@ -760,6 +806,13 @@ async def test_owner_edit_reclassifies_admin_resource_as_self_reported(
     assert edited.json()["proposalItemId"] is None
     assert edited.json()["createdBy"] == str(admin.id)
     assert edited.json()["updatedBy"] == str(employee.id)
+    assert edited.json()["selfReported"] is True
+
+
+@pytest.mark.parametrize("field", ["name", "type", "issuer"])
+def test_award_patch_rejects_null_required_fields(field: str) -> None:
+    with pytest.raises(ValidationError):
+        AwardPatch.model_validate({"profileVersion": 1, field: None})
 
 
 @pytest.mark.asyncio
@@ -1827,3 +1880,232 @@ async def test_certification_update_and_delete_roll_back_when_audit_fails(
     persisted_resource = await db_session.get(Certification, resource_id)
     assert persisted_user is not None and persisted_user.version == 1
     assert persisted_resource is not None and persisted_resource.name == "Original Certification"
+
+
+@pytest.mark.asyncio
+async def test_award_tenant_scoping_denies_cross_company_access(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    own_company = await CompanyRepository(db_session).add(Company(name="Own Award Co"))
+    foreign_company = await CompanyRepository(db_session).add(Company(name="Foreign Award Co"))
+    await db_session.flush()
+    own_employee = await create_user(
+        db_session, email="own-award@acme.dev", name="Own Employee", company=own_company
+    )
+    foreign_employee = await create_user(
+        db_session,
+        email="foreign-award@other.dev",
+        name="Foreign Employee",
+        company=foreign_company,
+    )
+    admin = await create_user(
+        db_session,
+        email="tenant-award-admin@acme.dev",
+        name="Admin",
+        role=Role.COMPANY_ADMIN,
+        company=own_company,
+        admin_permissions=[
+            AdminPermission.EMPLOYEE_READ.value,
+            AdminPermission.EMPLOYEE_WRITE.value,
+        ],
+    )
+    reader = await create_user(
+        db_session,
+        email="tenant-award-reader@acme.dev",
+        name="Reader",
+        role=Role.COMPANY_ADMIN,
+        company=own_company,
+        admin_permissions=[AdminPermission.EMPLOYEE_READ.value],
+    )
+    admin_headers = await login(client, admin.email)
+    reader_headers = await login(client, reader.email)
+    await db_session.commit()
+
+    assert (
+        await client.get(
+            f"/api/v2/competency-profile/awards?userId={foreign_employee.id}",
+            headers=admin_headers,
+        )
+    ).status_code == 404
+    assert (
+        await client.post(
+            f"/api/v2/competency-profile/awards?userId={foreign_employee.id}",
+            headers=admin_headers,
+            json={
+                "profileVersion": 1,
+                "name": "Hidden",
+                "type": "WORK",
+                "issuer": "Ghost",
+            },
+        )
+    ).status_code == 404
+    assert (
+        await client.post(
+            f"/api/v2/competency-profile/awards?userId={own_employee.id}",
+            headers=reader_headers,
+            json={
+                "profileVersion": 1,
+                "name": "Denied",
+                "type": "WORK",
+                "issuer": "Own",
+            },
+        )
+    ).status_code == 403
+
+    for payload in (
+        {"profileVersion": 1, "type": "WORK", "issuer": "Own"},
+        {"profileVersion": 1, "name": "Missing type", "issuer": "Own"},
+        {"profileVersion": 1, "name": "Missing issuer", "type": "WORK"},
+    ):
+        missing_required_field = await client.post(
+            f"/api/v2/competency-profile/awards?userId={own_employee.id}",
+            headers=admin_headers,
+            json=payload,
+        )
+        assert missing_required_field.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_award_timeline_orders_same_awarded_at_deterministically_by_id_and_excludes_null(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    company = await CompanyRepository(db_session).add(Company(name="Award Tie Break Company"))
+    await db_session.flush()
+    employee = await create_user(
+        db_session,
+        email="award-tiebreak@acme.dev",
+        name="Award Tie Break Owner",
+        company=company,
+    )
+    await db_session.commit()
+    headers = await login(client, employee.email)
+
+    first = await client.post(
+        "/api/v2/competency-profile/awards",
+        headers=headers,
+        json={
+            "profileVersion": 1,
+            "name": "Alpha Award",
+            "type": "WORK",
+            "issuer": "Org A",
+            "description": "Work recognition",
+            "evidenceUrl": "https://example.invalid/alpha-award",
+            "awardedAt": "2025-06-01",
+        },
+    )
+    assert first.status_code == 201, first.text
+
+    second = await client.post(
+        "/api/v2/competency-profile/awards",
+        headers=headers,
+        json={
+            "profileVersion": 2,
+            "name": "Beta Award",
+            "type": "PERSONAL",
+            "issuer": "Org B",
+            "awardedAt": "2025-06-01",
+        },
+    )
+    assert second.status_code == 201, second.text
+
+    undated = await client.post(
+        "/api/v2/competency-profile/awards",
+        headers=headers,
+        json={
+            "profileVersion": 3,
+            "name": "Undated Award",
+            "type": "PERSONAL",
+            "issuer": "Org C",
+        },
+    )
+    assert undated.status_code == 201, undated.text
+
+    aggregate_first = await client.get("/api/v2/competency-profile", headers=headers)
+    aggregate_second = await client.get("/api/v2/competency-profile", headers=headers)
+    assert aggregate_first.status_code == 200
+    assert aggregate_second.status_code == 200
+    ids_first = [item["id"] for item in aggregate_first.json()["timeline"]]
+    ids_second = [item["id"] for item in aggregate_second.json()["timeline"]]
+    assert ids_first == ids_second
+    assert ids_first == sorted([first.json()["id"], second.json()["id"]])
+    assert undated.json()["id"] not in ids_first
+    assert len(aggregate_first.json()["awards"]) == 3
+
+    timeline_by_id = {item["id"]: item for item in aggregate_first.json()["timeline"]}
+    alpha_entry = timeline_by_id[first.json()["id"]]
+    assert alpha_entry == {
+        "id": first.json()["id"],
+        "kind": "AWARD",
+        "title": "Alpha Award",
+        "subtitle": "Org A",
+        "startDate": "2025-06-01",
+        "endDate": None,
+        "sourceType": "SELF",
+    }
+    beta_entry = timeline_by_id[second.json()["id"]]
+    assert beta_entry == {
+        "id": second.json()["id"],
+        "kind": "AWARD",
+        "title": "Beta Award",
+        "subtitle": "Org B",
+        "startDate": "2025-06-01",
+        "endDate": None,
+        "sourceType": "SELF",
+    }
+    assert first.json()["selfReported"] is True
+    assert second.json()["selfReported"] is True
+
+
+@pytest.mark.parametrize("operation", ["update", "delete"])
+@pytest.mark.asyncio
+async def test_award_update_and_delete_roll_back_when_audit_fails(
+    operation: str,
+    client: AsyncClient,
+    db_session: AsyncSession,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    employee = await create_user(
+        db_session, email=f"award-{operation}-rollback@acme.dev", name="Owner"
+    )
+    assert employee.company_id is not None
+    resource = Award(
+        user_id=employee.id,
+        company_id=employee.company_id,
+        name="Original Award",
+        type="WORK",
+        issuer="Original Issuer",
+        self_reported=True,
+        source_type=ProfileSourceType.SELF,
+        created_by=employee.id,
+        updated_by=employee.id,
+    )
+    db_session.add(resource)
+    await db_session.commit()
+    employee_id = employee.id
+    resource_id = resource.id
+    headers = await login(client, employee.email)
+
+    async def fail_audit(*args: object, **kwargs: object) -> ActivityLog:
+        raise RuntimeError(f"synthetic award {operation} audit failure")
+
+    monkeypatch.setattr(ActivityLogRepository, "log", fail_audit)
+    with pytest.raises(RuntimeError, match=f"synthetic award {operation} audit failure"):
+        if operation == "update":
+            await client.patch(
+                f"/api/v2/competency-profile/awards/{resource_id}",
+                headers=headers,
+                json={"profileVersion": 1, "name": "Changed"},
+            )
+        else:
+            await client.request(
+                "DELETE",
+                f"/api/v2/competency-profile/awards/{resource_id}",
+                headers=headers,
+                json={"profileVersion": 1},
+            )
+
+    db_session.expire_all()
+    persisted_user = await db_session.get(User, employee_id)
+    persisted_resource = await db_session.get(Award, resource_id)
+    assert persisted_user is not None and persisted_user.version == 1
+    assert persisted_resource is not None and persisted_resource.name == "Original Award"
