@@ -9026,9 +9026,10 @@
             "title": "Description",
             "type": "string"
           },
-          "expectedVersion": {
+          "expectedRowVersion": {
+            "description": "Optimistic-lock version of this template row, separate from content revision.",
             "minimum": 1.0,
-            "title": "Expectedversion",
+            "title": "Expectedrowversion",
             "type": "integer"
           },
           "groups": {
@@ -9048,7 +9049,7 @@
           }
         },
         "required": [
-          "expectedVersion",
+          "expectedRowVersion",
           "name",
           "groups"
         ],
@@ -9097,6 +9098,22 @@
           "groups"
         ],
         "title": "TemplateInput",
+        "type": "object"
+      },
+      "TemplateLifecycleInput": {
+        "additionalProperties": false,
+        "properties": {
+          "expectedRowVersion": {
+            "description": "Optimistic-lock version of this template row, separate from content revision.",
+            "minimum": 1.0,
+            "title": "Expectedrowversion",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expectedRowVersion"
+        ],
+        "title": "TemplateLifecycleInput",
         "type": "object"
       },
       "TemplateRead": {
@@ -9150,6 +9167,10 @@
             "title": "Name",
             "type": "string"
           },
+          "rowVersion": {
+            "title": "Rowversion",
+            "type": "integer"
+          },
           "status": {
             "enum": [
               "DRAFT",
@@ -9170,6 +9191,7 @@
           "id",
           "familyId",
           "version",
+          "rowVersion",
           "status",
           "createdAt"
         ],
@@ -10118,12 +10140,14 @@
             }
           },
           {
+            "description": "Optimistic-lock version of the template row, not its content revision.",
             "in": "query",
-            "name": "expectedVersion",
+            "name": "expectedRowVersion",
             "required": true,
             "schema": {
+              "description": "Optimistic-lock version of the template row, not its content revision.",
               "minimum": 1,
-              "title": "Expectedversion",
+              "title": "Expectedrowversion",
               "type": "integer"
             }
           }
@@ -10295,7 +10319,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/VersionInput"
+                "$ref": "#/components/schemas/TemplateLifecycleInput"
               }
             }
           },
@@ -10517,7 +10541,8 @@
             "schema": {
               "enum": [
                 "approve",
-                "reject"
+                "reject",
+                "request-revision"
               ],
               "title": "Action",
               "type": "string"
@@ -13615,6 +13640,30 @@
     "/api/v2/dashboard": {
       "get": {
         "operationId": "summary_api_v2_dashboard_get",
+        "parameters": [
+          {
+            "description": "Dashboard scope",
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "personal",
+                    "management"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Dashboard scope",
+              "title": "View"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -13623,6 +13672,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "security": [

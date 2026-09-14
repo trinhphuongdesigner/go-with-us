@@ -64,6 +64,13 @@ class TemplateInput(ApiModel):
         return self
 
 
+class TemplateLifecycleInput(ApiModel):
+    expected_row_version: int = Field(
+        ge=1,
+        description="Optimistic-lock version of this template row, separate from content revision.",
+    )
+
+
 def _legacy_snapshot_number(value: Any) -> Any:
     """Accept numeric JSON strings from legacy snapshots without weakening authoring APIs."""
     if isinstance(value, str):
@@ -127,14 +134,13 @@ class AssessmentScoringSnapshot(ApiModel):
         ) != len(self.groups):
             raise ValueError("Group and question identifiers must be unique")
         if not any(group.weight > 0 for group in self.groups) or any(
-            not any(question.weight > 0 for question in group.questions)
-            for group in self.groups
+            not any(question.weight > 0 for question in group.questions) for group in self.groups
         ):
             raise ValueError("Groups and questions need positive scoring weights")
         return self
 
 
-class TemplateEdit(TemplateInput, VersionInput):
+class TemplateEdit(TemplateInput, TemplateLifecycleInput):
     pass
 
 
@@ -142,6 +148,7 @@ class TemplateRead(TemplateInput):
     id: uuid.UUID
     family_id: uuid.UUID
     version: int
+    row_version: int
     status: Literal["DRAFT", "ACTIVE", "ARCHIVED"]
     created_at: datetime
 

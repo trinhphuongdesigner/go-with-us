@@ -38,6 +38,7 @@ const assessment: Assessment = {
     id: "template-1",
     familyId: "family-1",
     version: 1,
+    rowVersion: 1,
     companyId: "company-1",
     name: "Mẫu đánh giá",
     description: "",

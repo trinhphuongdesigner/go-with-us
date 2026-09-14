@@ -12,4 +12,4 @@ def test_revision_identifiers_fit_alembic_version_column() -> None:
 
     assert revisions
     assert all(len(revision.revision) <= 32 for revision in revisions)
-    assert ScriptDirectory.from_config(config).get_current_head() == "0018_career_goal_version"
+    assert ScriptDirectory.from_config(config).get_current_head() == "0019_template_row_version"

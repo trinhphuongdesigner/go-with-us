@@ -4752,8 +4752,11 @@ export interface components {
              * @default
              */
             description: string;
-            /** Expectedversion */
-            expectedVersion: number;
+            /**
+             * Expectedrowversion
+             * @description Optimistic-lock version of this template row, separate from content revision.
+             */
+            expectedRowVersion: number;
             /** Groups */
             groups: components["schemas"]["Group"][];
             /** Name */
@@ -4772,6 +4775,14 @@ export interface components {
             groups: components["schemas"]["Group"][];
             /** Name */
             name: string;
+        };
+        /** TemplateLifecycleInput */
+        TemplateLifecycleInput: {
+            /**
+             * Expectedrowversion
+             * @description Optimistic-lock version of this template row, separate from content revision.
+             */
+            expectedRowVersion: number;
         };
         /** TemplateRead */
         TemplateRead: {
@@ -4801,6 +4812,8 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+            /** Rowversion */
+            rowVersion: number;
             /**
              * Status
              * @enum {string}
@@ -5405,7 +5418,8 @@ export interface operations {
     delete_template_api_v2_assessments_templates__identifier__delete: {
         parameters: {
             query: {
-                expectedVersion: number;
+                /** @description Optimistic-lock version of the template row, not its content revision. */
+                expectedRowVersion: number;
             };
             header?: never;
             path: {
@@ -5447,7 +5461,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["VersionInput"];
+                "application/json": components["schemas"]["TemplateLifecycleInput"];
             };
         };
         responses: {
@@ -5578,7 +5592,7 @@ export interface operations {
             header?: never;
             path: {
                 identifier: string;
-                action: "approve" | "reject";
+                action: "approve" | "reject" | "request-revision";
             };
             cookie?: never;
         };
@@ -7497,7 +7511,10 @@ export interface operations {
     };
     summary_api_v2_dashboard_get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Dashboard scope */
+                view?: ("personal" | "management") | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -7511,6 +7528,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

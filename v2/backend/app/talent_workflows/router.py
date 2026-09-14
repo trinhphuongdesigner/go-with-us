@@ -47,6 +47,7 @@ from app.talent_workflows.schemas import (
     SummaryRequest,
     TemplateEdit,
     TemplateInput,
+    TemplateLifecycleInput,
     TemplateRead,
     VersionInput,
 )
@@ -93,19 +94,55 @@ async def delete_template(
     identifier: uuid.UUID,
     db: DbSession,
     actor: CurrentUser,
-    expected_version: int = Query(ge=1, alias="expectedVersion"),
+    expected_row_version: int = Query(
+        ge=1,
+        alias="expectedRowVersion",
+        description="Optimistic-lock version of the template row, not its content revision.",
+    ),
 ) -> Any:
-    row = await scoped_row(db, AssessmentTemplate, identifier, actor, True)
-    await manage(db, actor, row.company_id, "templates")
-    version_check(row, expected_version)
-    used = await db.scalar(
-        select(AssessmentCycle.id).where(AssessmentCycle.template_id == row.id).limit(1)
-    )
-    if used:
-        row.status = "ARCHIVED"
-    else:
-        await db.delete(row)
-    await commit(db)
+    try:
+        row = await scoped_row(db, AssessmentTemplate, identifier, actor, True)
+        await manage(db, actor, row.company_id, "templates")
+        lifecycle_version_check(row, expected_row_version, attribute="row_version")
+        used = await db.scalar(
+            select(AssessmentCycle.id).where(AssessmentCycle.template_id == row.id).limit(1)
+        )
+        changes: dict[str, Any] = {
+            "fromStatus": row.status,
+            "contentVersion": row.version,
+            "fromRowVersion": row.row_version,
+            "familyId": str(row.family_id),
+        }
+        if used:
+            if row.status == "ARCHIVED":
+                raise HTTPException(409, {"code": "invalid_state", "currentStatus": row.status})
+            row.status = "ARCHIVED"
+            from_row_version = row.row_version
+            row.row_version += 1
+            changes.update(
+                {
+                    "toStatus": row.status,
+                    "fromRowVersion": from_row_version,
+                    "toRowVersion": row.row_version,
+                    "trigger": "delete",
+                }
+            )
+            audit_action = "assessment.template.archived"
+        else:
+            await db.delete(row)
+            audit_action = "assessment.template.deleted"
+        await ActivityLogRepository(db).log(
+            actor_id=actor.id,
+            company_id=row.company_id,
+            action=audit_action,
+            entity_type="assessment_template",
+            entity_id=str(row.id),
+            changes=changes,
+        )
+        await commit(db)
+    except Exception:
+        await db.rollback()
+        raise
     return {"id": str(identifier), "archived": used is not None}
 
 
@@ -117,6 +154,12 @@ async def commit(db: DbSession) -> None:
         raise HTTPException(
             409, "Bản ghi đã tồn tại hoặc dữ liệu đã thay đổi. Tải lại để tiếp tục."
         ) from None
+
+
+def lifecycle_version_check(row: Any, expected: int, *, attribute: str = "version") -> None:
+    current = getattr(row, attribute)
+    if current != expected:
+        raise HTTPException(409, {"code": "version_conflict", "currentVersion": current})
 
 
 @router.get("/assessments/templates", response_model=list[TemplateRead])
@@ -155,25 +198,56 @@ async def create_template(payload: TemplateInput, db: DbSession, actor: CurrentU
 async def edit_template(
     identifier: uuid.UUID, payload: TemplateEdit, db: DbSession, actor: CurrentUser
 ) -> Any:
-    row = await scoped_row(db, AssessmentTemplate, identifier, actor, True)
-    await manage(db, actor, row.company_id, "templates")
-    version_check(row, payload.expected_version)
-    if row.status == "ARCHIVED":
-        raise HTTPException(409, "Phiên bản đã lưu trữ; mở phiên bản mới nhất để sửa")
-    if payload.company_id not in {None, row.company_id}:
-        raise HTTPException(404, "Không tìm thấy doanh nghiệp")
-    row.status = "ARCHIVED"
-    replacement = AssessmentTemplate(
-        company_id=row.company_id,
-        created_by_id=actor.id,
-        family_id=row.family_id,
-        version=row.version + 1,
-        name=payload.name,
-        description=payload.description,
-        groups=[g.model_dump(by_alias=True) for g in payload.groups],
-    )
-    db.add(replacement)
-    await commit(db)
+    try:
+        row = await scoped_row(db, AssessmentTemplate, identifier, actor, True)
+        await manage(db, actor, row.company_id, "templates")
+        lifecycle_version_check(row, payload.expected_row_version, attribute="row_version")
+        if row.status == "ARCHIVED":
+            raise HTTPException(409, {"code": "invalid_state", "currentStatus": row.status})
+        if payload.company_id not in {None, row.company_id}:
+            raise HTTPException(404, "Không tìm thấy doanh nghiệp")
+        latest_content_version = await db.scalar(
+            select(func.max(AssessmentTemplate.version)).where(
+                AssessmentTemplate.family_id == row.family_id
+            )
+        )
+        from_status = row.status
+        from_row_version = row.row_version
+        row.status = "ARCHIVED"
+        row.row_version += 1
+        replacement = AssessmentTemplate(
+            company_id=row.company_id,
+            created_by_id=actor.id,
+            family_id=row.family_id,
+            version=(latest_content_version or 0) + 1,
+            row_version=1,
+            name=payload.name,
+            description=payload.description,
+            groups=[g.model_dump(by_alias=True) for g in payload.groups],
+        )
+        db.add(replacement)
+        await db.flush()
+        await ActivityLogRepository(db).log(
+            actor_id=actor.id,
+            company_id=row.company_id,
+            action="assessment.template.revised",
+            entity_type="assessment_template",
+            entity_id=str(row.id),
+            changes={
+                "fromStatus": from_status,
+                "toStatus": row.status,
+                "fromContentVersion": row.version,
+                "toContentVersion": replacement.version,
+                "fromRowVersion": from_row_version,
+                "toRowVersion": row.row_version,
+                "replacementId": str(replacement.id),
+                "familyId": str(row.family_id),
+            },
+        )
+        await commit(db)
+    except Exception:
+        await db.rollback()
+        raise
     return replacement
 
 
@@ -181,17 +255,43 @@ async def edit_template(
 async def template_action(
     identifier: uuid.UUID,
     action: Literal["publish", "archive"],
-    payload: VersionInput,
+    payload: TemplateLifecycleInput,
     db: DbSession,
     actor: CurrentUser,
 ) -> Any:
-    row = await scoped_row(db, AssessmentTemplate, identifier, actor, True)
-    await manage(db, actor, row.company_id, "templates")
-    version_check(row, payload.expected_version)
-    if action == "publish" and row.status != "DRAFT":
-        raise HTTPException(409, "Chỉ phát hành mẫu đang ở trạng thái nháp")
-    row.status = "ACTIVE" if action == "publish" else "ARCHIVED"
-    await commit(db)
+    try:
+        row = await scoped_row(db, AssessmentTemplate, identifier, actor, True)
+        await manage(db, actor, row.company_id, "templates")
+        lifecycle_version_check(row, payload.expected_row_version, attribute="row_version")
+        valid_statuses = {"publish": {"DRAFT"}, "archive": {"DRAFT", "ACTIVE"}}
+        if row.status not in valid_statuses[action]:
+            raise HTTPException(409, {"code": "invalid_state", "currentStatus": row.status})
+        from_status = row.status
+        from_row_version = row.row_version
+        row.status = "ACTIVE" if action == "publish" else "ARCHIVED"
+        row.row_version += 1
+        await ActivityLogRepository(db).log(
+            actor_id=actor.id,
+            company_id=row.company_id,
+            action={
+                "publish": "assessment.template.published",
+                "archive": "assessment.template.archived",
+            }[action],
+            entity_type="assessment_template",
+            entity_id=str(row.id),
+            changes={
+                "fromStatus": from_status,
+                "toStatus": row.status,
+                "contentVersion": row.version,
+                "fromRowVersion": from_row_version,
+                "toRowVersion": row.row_version,
+                "familyId": str(row.family_id),
+            },
+        )
+        await commit(db)
+    except Exception:
+        await db.rollback()
+        raise
     return row
 
 
@@ -229,20 +329,33 @@ async def cycles(db: DbSession, actor: CurrentUser, company_id: CompanyIdQuery =
 
 @router.post("/assessments/cycles", response_model=CycleRead, status_code=201)
 async def create_cycle(payload: CycleInput, db: DbSession, actor: CurrentUser) -> Any:
-    scope = await company_scope(db, actor, payload.company_id)
-    await manage(db, actor, scope, "templates")
-    template = await scoped_row(db, AssessmentTemplate, payload.template_id, actor, True)
-    if template.company_id != scope or template.status != "ACTIVE":
-        raise HTTPException(422, "Chọn mẫu đã phát hành của doanh nghiệp")
-    row = AssessmentCycle(
-        company_id=scope,
-        template_id=template.id,
-        name=payload.name,
-        period=payload.period,
-        due_date=payload.due_date,
-    )
-    db.add(row)
-    await commit(db)
+    try:
+        scope = await company_scope(db, actor, payload.company_id)
+        await manage(db, actor, scope, "templates")
+        template = await scoped_row(db, AssessmentTemplate, payload.template_id, actor, True)
+        if template.company_id != scope or template.status != "ACTIVE":
+            raise HTTPException(422, "Chọn mẫu đã phát hành của doanh nghiệp")
+        row = AssessmentCycle(
+            company_id=scope,
+            template_id=template.id,
+            name=payload.name,
+            period=payload.period,
+            due_date=payload.due_date,
+        )
+        db.add(row)
+        await db.flush()
+        await ActivityLogRepository(db).log(
+            actor_id=actor.id,
+            company_id=row.company_id,
+            action="assessment.cycle.created",
+            entity_type="assessment_cycle",
+            entity_id=str(row.id),
+            changes={"templateId": str(row.template_id), "status": row.status, "version": 1},
+        )
+        await commit(db)
+    except Exception:
+        await db.rollback()
+        raise
     return await cycle_read(db, row)
 
 
@@ -250,11 +363,35 @@ async def create_cycle(payload: CycleInput, db: DbSession, actor: CurrentUser) -
 async def edit_cycle(
     identifier: uuid.UUID, payload: CyclePatch, db: DbSession, actor: CurrentUser
 ) -> Any:
-    row = await scoped_row(db, AssessmentCycle, identifier, actor, True)
-    await manage(db, actor, row.company_id, "templates")
-    version_check(row, payload.expected_version)
-    row.status, row.version = payload.status, row.version + 1
-    await commit(db)
+    try:
+        row = await scoped_row(db, AssessmentCycle, identifier, actor, True)
+        await manage(db, actor, row.company_id, "templates")
+        lifecycle_version_check(row, payload.expected_version)
+        if row.status == payload.status:
+            raise HTTPException(409, {"code": "invalid_state", "currentStatus": row.status})
+        from_status = row.status
+        from_version = row.version
+        row.status, row.version = payload.status, row.version + 1
+        await ActivityLogRepository(db).log(
+            actor_id=actor.id,
+            company_id=row.company_id,
+            action={"OPEN": "assessment.cycle.opened", "CLOSED": "assessment.cycle.closed"}[
+                row.status
+            ],
+            entity_type="assessment_cycle",
+            entity_id=str(row.id),
+            changes={
+                "fromStatus": from_status,
+                "toStatus": row.status,
+                "fromVersion": from_version,
+                "toVersion": row.version,
+                "templateId": str(row.template_id),
+            },
+        )
+        await commit(db)
+    except Exception:
+        await db.rollback()
+        raise
     return await cycle_read(db, row)
 
 
@@ -381,12 +518,8 @@ async def edit_assessment(
     row = await scoped_row(db, Assessment, identifier, actor, True)
     version_check(row, payload.expected_version)
     submitting = request.method == "POST"
-    if row.status in {"APPROVED", "REJECTED"} or (
-        submitting and row.status == "SUBMITTED"
-    ):
-        raise HTTPException(
-            409, {"code": "invalid_state", "currentStatus": row.status}
-        )
+    if row.status in {"APPROVED", "REJECTED"} or (submitting and row.status == "SUBMITTED"):
+        raise HTTPException(409, {"code": "invalid_state", "currentStatus": row.status})
     if row.status == "SUBMITTED":
         await manage(db, actor, row.company_id, "templates")
     elif actor.id != row.reviewer_id:
@@ -430,13 +563,9 @@ async def review_assessment(
         row = await scoped_row(db, Assessment, identifier, actor, True)
         await manage(db, actor, row.company_id, "approve")
         if row.version != payload.expected_version:
-            raise HTTPException(
-                409, {"code": "version_conflict", "currentVersion": row.version}
-            )
+            raise HTTPException(409, {"code": "version_conflict", "currentVersion": row.version})
         if row.status != "SUBMITTED":
-            raise HTTPException(
-                409, {"code": "invalid_state", "currentStatus": row.status}
-            )
+            raise HTTPException(409, {"code": "invalid_state", "currentStatus": row.status})
         if row.reviewee_id == actor.id:
             raise HTTPException(403, "Không tự phê duyệt đánh giá của mình")
         if action in {"reject", "request-revision"} and not payload.comment.strip():

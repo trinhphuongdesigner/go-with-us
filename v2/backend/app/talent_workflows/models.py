@@ -30,12 +30,14 @@ class AssessmentTemplate(TimestampMixin, Base):
         CheckConstraint(
             "status IN ('DRAFT','ACTIVE','ARCHIVED')", name="ck_talent_template_status"
         ),
+        CheckConstraint("row_version >= 1", name="ck_talent_template_row_version_positive"),
     )
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), index=True)
     created_by_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     family_id: Mapped[uuid.UUID] = mapped_column(Uuid, default=uuid.uuid4)
     version: Mapped[int] = mapped_column(Integer, default=1)
+    row_version: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     name: Mapped[str] = mapped_column(String(180))
     description: Mapped[str] = mapped_column(Text, default="")
     status: Mapped[str] = mapped_column(String(16), default="DRAFT")
