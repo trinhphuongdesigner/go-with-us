@@ -3,6 +3,7 @@ import math
 import re
 import uuid
 from datetime import UTC, datetime
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 from fastapi import HTTPException
@@ -17,7 +18,13 @@ from app.security.permissions import effective_permissions
 from app.security.roles import can_manage_role
 from app.services.competency_profile_service import normalize_skill_name
 from app.talent_workflows.models import Assessment, CareerSummary
-from app.talent_workflows.schemas import AssessmentRead, OffboardingProposal, SummaryRead
+from app.talent_workflows.schemas import (
+    Answer,
+    AssessmentRead,
+    AssessmentScoringSnapshot,
+    OffboardingProposal,
+    SummaryRead,
+)
 
 
 def permit(actor: User, permission: Permission) -> None:
@@ -139,45 +146,64 @@ async def summary_read(db: AsyncSession, row: CareerSummary) -> SummaryRead:
 def score(
     snapshot: dict[str, Any], answers: list[dict[str, Any]], complete: bool = False
 ) -> dict[str, float | None]:
-    questions = {q["id"]: q for group in snapshot["groups"] for q in group["questions"]}
+    try:
+        scoring_snapshot = AssessmentScoringSnapshot.model_validate(snapshot)
+        validated_answers = [Answer.model_validate(answer) for answer in answers]
+    except ValidationError:
+        raise HTTPException(422, "Ảnh chụp mẫu hoặc câu trả lời không hợp lệ") from None
+
+    questions = {
+        question.id: question
+        for group in scoring_snapshot.groups
+        for question in group.questions
+    }
     answered: dict[str, int] = {}
-    for answer in answers:
-        identifier = answer["questionId"]
-        value = answer["score"]
+    for answer in validated_answers:
+        identifier = answer.question_id
+        answer_score = answer.score
         if (
             identifier not in questions
             or identifier in answered
-            or isinstance(value, bool)
-            or not isinstance(value, int)
-            or not 1 <= value <= questions[identifier]["maxScore"]
+            or answer_score > questions[identifier].max_score
         ):
             raise HTTPException(
                 422, "Điểm phải nằm trong thang điểm và mỗi tiêu chí chỉ có một câu trả lời"
             )
-        answered[identifier] = value
-    groups = []
-    for group in snapshot["groups"]:
+        answered[identifier] = answer_score
+    groups: list[tuple[str, Decimal, Decimal]] = []
+    for group in scoring_snapshot.groups:
         if (
             complete
-            and group["weight"] > 0
-            and any(q["weight"] > 0 and q["id"] not in answered for q in group["questions"])
+            and group.weight > 0
+            and any(
+                question.weight > 0 and question.id not in answered
+                for question in group.questions
+            )
         ):
             raise HTTPException(422, "Hoàn thành các tiêu chí có trọng số trước khi gửi")
-        weight = sum(q["weight"] for q in group["questions"])
-        value = sum(
-            answered.get(q["id"], 0) / q["maxScore"] * 10 * q["weight"] for q in group["questions"]
+        weight = sum((Decimal(str(question.weight)) for question in group.questions), Decimal())
+        weighted_value = sum(
+            (
+                Decimal(answered.get(question.id, 0))
+                / Decimal(question.max_score)
+                * Decimal(10)
+                * Decimal(str(question.weight))
+                for question in group.questions
+            ),
+            Decimal(),
         )
-        if weight > 0 and group["weight"] > 0:
-            groups.append((group["scoreDimension"], group["weight"], value / weight))
+        if group.weight > 0:
+            groups.append(
+                (group.score_dimension, Decimal(str(group.weight)), weighted_value / weight)
+            )
 
     def average(dimension: str | None = None) -> float | None:
         selected = [g for g in groups if dimension is None or g[0] == dimension]
-        weight = sum(g[1] for g in selected)
-        return (
-            math.floor(sum(g[1] * g[2] for g in selected) / weight * 100 + 0.5) / 100
-            if weight
-            else None
-        )
+        weight = sum((group[1] for group in selected), Decimal())
+        if not weight:
+            return None
+        value = sum((group[1] * group[2] for group in selected), Decimal()) / weight
+        return float(value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
 
     if complete and average() is None:
         raise HTTPException(422, "Mẫu đánh giá chưa có trọng số hợp lệ")

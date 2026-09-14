@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 from typing import Annotated, Any, Literal
 
-from pydantic import Field, StringConstraints, model_validator
+from pydantic import ConfigDict, Field, StringConstraints, field_validator, model_validator
 
 from app.domain.schemas import ApiModel
 
@@ -17,15 +17,15 @@ class Question(ApiModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), min_length=1, max_length=80)
     text: Title
     guidance: str = Field(default="", max_length=2000)
-    weight: float = Field(default=1, ge=0, le=10000, allow_inf_nan=False)
-    max_score: int = Field(default=10, ge=1, le=100)
+    weight: float = Field(default=1, ge=0, le=10000, allow_inf_nan=False, strict=True)
+    max_score: int = Field(default=10, ge=1, le=100, strict=True)
 
 
 class Group(ApiModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), min_length=1, max_length=80)
     name: Title
     description: str = Field(default="", max_length=2000)
-    weight: float = Field(default=1, ge=0, le=10000, allow_inf_nan=False)
+    weight: float = Field(default=1, ge=0, le=10000, allow_inf_nan=False, strict=True)
     score_dimension: Literal["CONTRIBUTION", "ATTITUDE"] = "CONTRIBUTION"
     passport_dimension: (
         Literal[
@@ -40,6 +40,18 @@ class Group(ApiModel):
     questions: list[Question] = Field(min_length=1, max_length=100)
 
 
+def _validate_scoring_groups(groups: list[Group]) -> None:
+    identifiers = [question.id for group in groups for question in group.questions]
+    if len(identifiers) != len(set(identifiers)) or len({group.id for group in groups}) != len(
+        groups
+    ):
+        raise ValueError("Group and question identifiers must be unique")
+    if not any(group.weight > 0 for group in groups) or any(
+        not any(question.weight > 0 for question in group.questions) for group in groups
+    ):
+        raise ValueError("Groups and questions need positive scoring weights")
+
+
 class TemplateInput(ApiModel):
     company_id: uuid.UUID | None = None
     name: Title
@@ -48,13 +60,75 @@ class TemplateInput(ApiModel):
 
     @model_validator(mode="after")
     def valid_scale(self) -> "TemplateInput":
-        identifiers = [q.id for g in self.groups for q in g.questions]
-        if len(identifiers) != len(set(identifiers)) or len({g.id for g in self.groups}) != len(
-            self.groups
-        ):
+        _validate_scoring_groups(self.groups)
+        return self
+
+
+def _legacy_snapshot_number(value: Any) -> Any:
+    """Accept numeric JSON strings from legacy snapshots without weakening authoring APIs."""
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("Snapshot scoring values must be numeric")
+        try:
+            return float(stripped)
+        except ValueError:
+            raise ValueError("Snapshot scoring values must be numeric") from None
+    return value
+
+
+class AssessmentScoringQuestion(ApiModel):
+    # Only fields used by deterministic scoring belong in the persisted-snapshot reader.
+    model_config = ConfigDict(extra="ignore")
+
+    id: str = Field(min_length=1, max_length=80)
+    weight: float = Field(ge=0, le=10000, allow_inf_nan=False, strict=True)
+    max_score: int = Field(ge=1, le=100, strict=True)
+
+    @field_validator("weight", mode="before")
+    @classmethod
+    def legacy_weight(cls, value: Any) -> Any:
+        return _legacy_snapshot_number(value)
+
+    @field_validator("max_score", mode="before")
+    @classmethod
+    def legacy_max_score(cls, value: Any) -> Any:
+        value = _legacy_snapshot_number(value)
+        if isinstance(value, float) and value.is_integer():
+            return int(value)
+        return value
+
+
+class AssessmentScoringGroup(ApiModel):
+    model_config = ConfigDict(extra="ignore")
+
+    id: str = Field(min_length=1, max_length=80)
+    weight: float = Field(ge=0, le=10000, allow_inf_nan=False, strict=True)
+    score_dimension: Literal["CONTRIBUTION", "ATTITUDE"]
+    questions: list[AssessmentScoringQuestion] = Field(min_length=1, max_length=100)
+
+    @field_validator("weight", mode="before")
+    @classmethod
+    def legacy_weight(cls, value: Any) -> Any:
+        return _legacy_snapshot_number(value)
+
+
+class AssessmentScoringSnapshot(ApiModel):
+    # Persisted snapshots contain template metadata which is irrelevant to scoring.
+    model_config = ConfigDict(extra="ignore")
+
+    groups: list[AssessmentScoringGroup] = Field(min_length=1, max_length=30)
+
+    @model_validator(mode="after")
+    def valid_scale(self) -> "AssessmentScoringSnapshot":
+        identifiers = [question.id for group in self.groups for question in group.questions]
+        if len(identifiers) != len(set(identifiers)) or len(
+            {group.id for group in self.groups}
+        ) != len(self.groups):
             raise ValueError("Group and question identifiers must be unique")
-        if not any(g.weight > 0 for g in self.groups) or any(
-            not any(q.weight > 0 for q in g.questions) for g in self.groups
+        if not any(group.weight > 0 for group in self.groups) or any(
+            not any(question.weight > 0 for question in group.questions)
+            for group in self.groups
         ):
             raise ValueError("Groups and questions need positive scoring weights")
         return self
