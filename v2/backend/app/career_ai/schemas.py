@@ -1,10 +1,15 @@
 import uuid
 from datetime import date, datetime
-from typing import Literal
+from typing import Literal, Self
 
 from pydantic import Field, SecretStr, model_validator
 
-from app.domain.roadmap_schemas import RoadmapCategory, RoadmapMilestoneDraft, Title
+from app.domain.roadmap_schemas import (
+    RoadmapCategory,
+    RoadmapMilestoneDraft,
+    RoadmapTaskDraft,
+    Title,
+)
 from app.domain.schemas import ApiModel
 
 Provider = Literal["ANTHROPIC", "OPENAI", "GEMINI"]
@@ -109,6 +114,72 @@ class RoadmapProposal(ApiModel):
     milestones: list[RoadmapMilestoneDraft] = Field(min_length=1, max_length=30)
 
 
+class GroundedRoadmapTask(ApiModel):
+    title: Title
+    metric: str | None = Field(default=None, max_length=500)
+    evidence_refs: list[uuid.UUID] = Field(min_length=1, max_length=20)
+
+
+class GroundedRoadmapMilestone(ApiModel):
+    title: Title
+    description: str | None = Field(default=None, max_length=2000)
+    due_date: date | None = None
+    evidence_refs: list[uuid.UUID] = Field(min_length=1, max_length=20)
+    tasks: list[GroundedRoadmapTask] = Field(min_length=1, max_length=50)
+
+
+class GroundedRoadmapProposal(ApiModel):
+    """Provider proposal with server-allowlisted subjects, sources and citations."""
+
+    subject_id: uuid.UUID
+    source_entity_ids: list[uuid.UUID] = Field(min_length=1, max_length=40)
+    evidence_refs: list[uuid.UUID] = Field(min_length=1, max_length=40)
+    title: Title
+    category: RoadmapCategory
+    duration_weeks: int | None = Field(default=None, ge=1, le=520, strict=True)
+    hours_per_week: int | None = Field(default=None, ge=1, le=168, strict=True)
+    milestones: list[GroundedRoadmapMilestone] = Field(min_length=1, max_length=30)
+
+    @model_validator(mode="after")
+    def unique_references(self) -> Self:
+        reference_groups = [self.source_entity_ids, self.evidence_refs]
+        reference_groups.extend(step.evidence_refs for step in self.milestones)
+        reference_groups.extend(
+            task.evidence_refs for step in self.milestones for task in step.tasks
+        )
+        if any(len(references) != len(set(references)) for references in reference_groups):
+            raise ValueError("Roadmap source and evidence IDs must be unique within each claim")
+        return self
+
+    def all_evidence_refs(self) -> set[uuid.UUID]:
+        references = set(self.evidence_refs)
+        for step in self.milestones:
+            references.update(step.evidence_refs)
+            for task in step.tasks:
+                references.update(task.evidence_refs)
+        return references
+
+    def as_proposal(self) -> RoadmapProposal:
+        return RoadmapProposal(
+            title=self.title,
+            category=self.category,
+            duration_weeks=self.duration_weeks,
+            hours_per_week=self.hours_per_week,
+            milestones=[
+                RoadmapMilestoneDraft(
+                    title=step.title,
+                    description=step.description,
+                    due_date=step.due_date,
+                    tasks=[
+                        RoadmapTaskDraft(title=task.title, metric=task.metric)
+                        for task in step.tasks
+                    ],
+                )
+                for step in self.milestones
+            ],
+        )
+
+
 class AssistantQuery(ApiModel):
     question: str = Field(min_length=2, max_length=6000)
     conversation_id: uuid.UUID | None = None
@@ -129,6 +200,14 @@ class AssistantModelReply(ApiModel):
     referenced_user_ids: list[uuid.UUID] = Field(default_factory=list, max_length=80)
     roster_claims: list[AssistantRosterClaim] = Field(default_factory=list, max_length=80)
     proposal: dict[str, object] | None = None
+
+
+class AssistantRoadmapModelReply(ApiModel):
+    """Strict output contract for a transient, evidence-grounded roadmap proposal."""
+
+    answer: str = Field(min_length=1, max_length=60000)
+    referenced_user_ids: list[uuid.UUID] = Field(default_factory=list, max_length=1)
+    proposal: GroundedRoadmapProposal
 
 
 class ConversationPatch(ApiModel):
