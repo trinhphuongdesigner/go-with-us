@@ -1,0 +1,221 @@
+{
+  "schema_version": "1.0",
+  "report_language": "vi",
+  "feature_id": "09-w2-roadmap-editor-snapshot",
+  "feature_name": "W2-ROADMAP-EDITOR-SNAPSHOT — snapshot an toàn cho sửa/xóa lộ trình",
+  "branch": "codex/v2-qa-consolidation",
+  "overall_status": "PASS",
+  "implementation_sha": "f9f3e405c469d201859c85d1647eb4d6aa73c0ce",
+  "verified_tree_sha": "f9f3e405c469d201859c85d1647eb4d6aa73c0ce",
+  "base_head_sha": "12866da103e570c79978dd2c69f6103a52069492",
+  "generated_at": "2026-09-14T10:56:00+07:00",
+  "environment": {
+    "frontend": "Next.js + Vitest trên exact implementation commit",
+    "backend": "FastAPI + pytest trên exact implementation commit; product contract chỉ audit, không sửa backend",
+    "browser": "NOT_RUN theo chỉ đạo tạm dừng Playwright/browser/persona"
+  },
+  "scope": {
+    "included": [
+      "Delete dialog giữ snapshot id/version/title tại thời điểm mở",
+      "Editor giữ snapshot roadmap và gửi đúng id/version tại thời điểm mở",
+      "Editor remount theo id:version và giữ draft khi PUT trả 409",
+      "Task progress checkbox bị khóa trong lúc editor đang mở",
+      "Mutation error được reset khi cancel/reopen",
+      "Backend PUT/DELETE tenant scope, row lock và version conflict contract được audit tĩnh"
+    ],
+    "excluded": [
+      "Các module ngoài roadmap editor snapshot",
+      "Thay đổi backend",
+      "Các git operation ngoài test-only implementation commit và docs commit kế tiếp",
+      "Playwright/browser/accessibility/persona/performance",
+      "Mọi file v1 dirty từ trước"
+    ]
+  },
+  "commit_separation": {
+    "implementation_and_tests": "f9f3e405c469d201859c85d1647eb4d6aa73c0ce (test-only)",
+    "product_fix_origin": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
+    "documentation": "Report và ledger thuộc docs commit riêng ngay sau implementation.",
+    "v1_safety": "Các file v1 dirty từ trước nằm ngoài phạm vi và không được stage."
+  },
+  "observations": [
+    {
+      "id": "OBS-01",
+      "status": "VERIFIED_IN_BASE",
+      "description": "Hai bản sửa snapshot chính đã có trong base HEAD từ consolidation f5d7fb0; slice này tăng regression evidence cho dialog title/selection và 409 preservation/reset."
+    },
+    {
+      "id": "OBS-02",
+      "status": "NO_PRODUCT_CHANGE_REQUIRED",
+      "description": "Test mới không phát hiện regression trong logic sản phẩm hiện tại; candidate chỉ thay đổi test và tài liệu/ledger."
+    }
+  ],
+  "red_green_evidence": {
+    "pre_fix_sha": "c1148d6cda34981c7ae59dce5521e06363e744b6",
+    "test_source_sha": "f5d7fb093f0cd7f577131111222bcd2d8a43459c",
+    "isolated_worktree": "/private/tmp/careermate-roadmap-red-12866 (đã xóa sau kiểm tra)",
+    "red_result": "1 file failed, 2 tests failed",
+    "red_failures": [
+      "Delete race gọi /roadmaps/b?expected_version=7 thay vì snapshot /roadmaps/a?expected_version=3.",
+      "Edit cache race gửi expectedVersion=4 thay vì snapshot expectedVersion=3."
+    ],
+    "green_result": "Candidate hiện tại: 1 file, 3 tests passed; test thứ ba phủ 409 preservation/reset."
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "Mở xóa A v3 rồi chọn B v7 vẫn DELETE A v3 và không đổi selection B sau success.",
+      "status": "PASS",
+      "evidence": "Vitest giữ DELETE promise pending, xác nhận request A v3 và nút confirm disabled; chỉ sau khi resolve promise và confirmation UI biến mất mới assert selection/heading Roadmap B."
+    },
+    {
+      "id": "AC-02",
+      "description": "Editor A v3 không dùng version v4 vừa cập nhật trong React Query cache.",
+      "status": "PASS",
+      "evidence": "Vitest cập nhật cache lên v4 trong lúc draft mở nhưng PUT vẫn gửi roadmap A expectedVersion=3."
+    },
+    {
+      "id": "AC-03",
+      "description": "409 giữ editor/draft; task progress bị khóa; cancel/reopen reset lỗi và dùng snapshot mới.",
+      "status": "PASS",
+      "evidence": "Vitest xác nhận alert 409, draft còn nguyên, selector/checkbox disabled; reopen gửi expectedVersion=4."
+    },
+    {
+      "id": "AC-04",
+      "description": "Backend từ chối stale PUT/DELETE trước khi rebuild/xóa và luôn scope theo owner/company.",
+      "status": "PASS_STATIC_AUDIT",
+      "evidence": "development_plans.py dùng service._roadmaps() + with_for_update(), so version trước clear/delete; service scope owner_user_id và company_id."
+    },
+    {
+      "id": "AC-05",
+      "description": "Review độc lập và full non-browser suites.",
+      "status": "PASS",
+      "evidence": "Final independent APPROVE, 0 P0/P1/P2; sole P2 closed. Full exact-commit gates đều PASS."
+    }
+  ],
+  "checks": [
+    {
+      "id": "CHK-01",
+      "category": "frontend-test-focused",
+      "status": "PASS",
+      "cwd": "v2/frontend",
+      "command": "npm test -- --run src/features/roadmap/persisted-roadmap-view.test.tsx",
+      "summary": "RED pre-fix: 1 file/2 tests failed đúng hai race; GREEN candidate: 1 file/3 tests passed. Delete test dùng deferred response và chờ confirmation UI biến mất để chứng minh onSuccess đã chạy trước selection assertions."
+    },
+    {
+      "id": "CHK-02",
+      "category": "frontend-eslint-focused",
+      "status": "PASS",
+      "cwd": "v2/frontend",
+      "command": "npx eslint src/features/roadmap/persisted-roadmap-view.tsx src/features/roadmap/persisted-roadmap-view.test.tsx",
+      "summary": "ESLint exited 0."
+    },
+    {
+      "id": "CHK-03",
+      "category": "frontend-typecheck",
+      "status": "PASS",
+      "cwd": "v2/frontend",
+      "command": "npm run typecheck",
+      "summary": "TypeScript exited 0."
+    },
+    {
+      "id": "CHK-04",
+      "category": "backend-contract-audit",
+      "status": "PASS_STATIC_AUDIT",
+      "summary": "PUT/DELETE scope + lock + CAS order reviewed; no backend file changed."
+    },
+    {
+      "id": "CHK-05",
+      "category": "independent-review",
+      "status": "PASS",
+      "verified_sha": "f9f3e405c469d201859c85d1647eb4d6aa73c0ce",
+      "summary": "Final APPROVE, 0 P0/P1/P2; sole P2 closed."
+    },
+    {
+      "id": "CHK-06",
+      "category": "browser-persona",
+      "status": "NOT_RUN",
+      "summary": "Playwright/browser/persona tiếp tục tạm dừng theo chỉ đạo."
+    },
+    {
+      "id": "CHK-07",
+      "category": "backend-test-full",
+      "status": "PASS",
+      "cwd": "v2/backend",
+      "command": "CAREERMATE_DEMO_LOGIN_ENABLED=false .venv/bin/pytest -q",
+      "verified_sha": "f9f3e405c469d201859c85d1647eb4d6aa73c0ce",
+      "summary": "678 passed, 18 skipped in 61.40s."
+    },
+    {
+      "id": "CHK-08",
+      "category": "backend-ruff",
+      "status": "PASS",
+      "cwd": "v2/backend",
+      "command": ".venv/bin/ruff check .",
+      "verified_sha": "f9f3e405c469d201859c85d1647eb4d6aa73c0ce",
+      "summary": "All checks passed."
+    },
+    {
+      "id": "CHK-09",
+      "category": "backend-mypy",
+      "status": "PASS",
+      "cwd": "v2/backend",
+      "command": ".venv/bin/mypy app",
+      "verified_sha": "f9f3e405c469d201859c85d1647eb4d6aa73c0ce",
+      "summary": "90 source files passed."
+    },
+    {
+      "id": "CHK-10",
+      "category": "frontend-test-full",
+      "status": "PASS",
+      "cwd": "v2/frontend",
+      "command": "npm test",
+      "verified_sha": "f9f3e405c469d201859c85d1647eb4d6aa73c0ce",
+      "summary": "25 files, 174 tests passed."
+    },
+    {
+      "id": "CHK-11",
+      "category": "frontend-eslint",
+      "status": "PASS",
+      "cwd": "v2/frontend",
+      "command": "npm run lint",
+      "verified_sha": "f9f3e405c469d201859c85d1647eb4d6aa73c0ce",
+      "summary": "ESLint passed."
+    },
+    {
+      "id": "CHK-12",
+      "category": "frontend-typecheck-full",
+      "status": "PASS",
+      "cwd": "v2/frontend",
+      "command": "npm run typecheck",
+      "verified_sha": "f9f3e405c469d201859c85d1647eb4d6aa73c0ce",
+      "summary": "TypeScript passed."
+    },
+    {
+      "id": "CHK-13",
+      "category": "frontend-build",
+      "status": "PASS",
+      "cwd": "v2/frontend",
+      "command": "npm run build",
+      "verified_sha": "f9f3e405c469d201859c85d1647eb4d6aa73c0ce",
+      "summary": "Next.js production build passed; static generation 17/17."
+    },
+    {
+      "id": "CHK-14",
+      "category": "documentation-integrity",
+      "status": "PASS",
+      "command": "jq empty v2/reports/09-w2-roadmap-editor-snapshot/qa-report.json v2/.orchestration/tasks.json && git diff --check",
+      "summary": "JSON và diff check sạch sau cập nhật tài liệu."
+    }
+  ],
+  "known_gaps": [
+    "Playwright/browser/persona/accessibility/performance NOT_RUN theo chỉ đạo."
+  ],
+  "review_findings": [
+    {
+      "id": "P2-1",
+      "status": "CLOSED",
+      "description": "Delete race test assert selection ngay sau khi request được gọi, chưa đồng bộ với mutation onSuccess.",
+      "resolution": "Dùng deferred DELETE promise, assert trạng thái pending, resolve response và chờ confirmation button biến mất trước khi kiểm tra selection/heading B."
+    }
+  ]
+}

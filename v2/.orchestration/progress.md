@@ -231,3 +231,43 @@ Tại checkpoint 01:00 ICT chưa có feature nào PASS; trạng thái mới hơn
   ghi `implementation_source_clean=true` và `documentation_commit_pending=false`.
 - Playwright/browser/persona vẫn `NOT_RUN` theo chỉ đạo. Các file v1 dirty từ trước nằm ngoài
   phạm vi và không được stage.
+
+## 2026-09-14 10:46 ICT — W2-ROADMAP-EDITOR-SNAPSHOT: focused gates, chờ review
+
+- Base/current HEAD `12866da103e570c79978dd2c69f6103a52069492`, branch
+  `codex/v2-qa-consolidation`; candidate chỉ thay đổi file dưới `v2/`, chưa stage/commit/push.
+- Hai product fix snapshot chính đã có từ consolidation `f5d7fb0`: dialog xóa giữ
+  `{id, version, title}`; editor giữ `Roadmap` snapshot, remount theo `id:version`, khóa task
+  checkbox và reset mutation khi cancel/reopen.
+- RED đã chạy thật trong worktree tạm tại pre-fix SHA `c1148d6`, dùng đúng hai test từ commit
+  fix `f5d7fb0`: 2/2 fail đúng nguyên nhân. Delete gọi B v7 thay vì A v3; edit gửi version 4
+  từ cache thay vì snapshot version 3. Worktree tạm đã được xóa sau kiểm tra.
+- Bổ sung regression evidence cho title/selection của delete race và 409 preservation: draft
+  giữ nguyên, selector/task checkbox bị khóa, reopen bỏ lỗi cũ và dùng version mới từ cache.
+- P2 review về delete test đã sửa bằng deferred DELETE promise: assert request/nút pending trước,
+  resolve response, chờ confirmation UI biến mất để chứng minh `onSuccess` đã chạy, rồi mới
+  kiểm tra selection và heading B. Finding đang `FIXED_PENDING_REREVIEW`.
+- Focused gates: Vitest `1 file, 3 tests passed`; focused ESLint PASS; TypeScript PASS;
+  `git diff --check` sẽ được chạy lại sau cập nhật docs. Backend PUT/DELETE được audit tĩnh,
+  không sửa backend và không claim fresh backend runtime test.
+- `completed_slices` hiện chứng minh đủ W1 import/core/experience/project/certification/award/skill
+  đều PASS, nên ledger chuyển W1 → PASS và W2 → IN_PROGRESS. Slice hiện vẫn
+  `PENDING_REVIEW`, chưa chạy full non-browser suites hoặc review độc lập.
+- Playwright/browser/persona/accessibility/performance tiếp tục `NOT_RUN` theo chỉ đạo; file v1
+  dirty từ trước nằm ngoài phạm vi và không được stage.
+
+## 2026-09-14 10:56 ICT — W2-ROADMAP-EDITOR-SNAPSHOT: FINAL APPROVE, PASS
+
+- Regression test-only commit: `f9f3e405c469d201859c85d1647eb4d6aa73c0ce`. Product fix vẫn
+  kế thừa từ consolidation `f5d7fb093f0cd7f577131111222bcd2d8a43459c`; RED lineage tại
+  pre-fix `c1148d6cda34981c7ae59dce5521e06363e744b6` giữ nguyên làm evidence.
+- Reviewer độc lập final **APPROVE, 0 P0/P1/P2**. P2 duy nhất về test chưa chờ `onSuccess` đã
+  **CLOSED** bằng deferred DELETE response và confirmation-removed boundary.
+- Exact-commit backend gates: `CAREERMATE_DEMO_LOGIN_ENABLED=false .venv/bin/pytest -q` →
+  678 passed/18 skipped trong 61.40s; Ruff PASS; mypy PASS trên 90 source files.
+- Exact-commit frontend gates: `npm test` → 25 file/174 test; ESLint, TypeScript và production
+  build PASS; static generation 17/17.
+- Slice chuyển từ active sang completed PASS; W1 giữ PASS, W2 giữ IN_PROGRESS. Report chuẩn:
+  `../reports/09-w2-roadmap-editor-snapshot/qa-report.json`.
+- Browser/Playwright/persona vẫn `NOT_RUN`. Report/ledger thuộc docs commit riêng ngay sau test
+  commit; file v1 dirty từ trước nằm ngoài phạm vi và không được stage.

@@ -141,3 +141,32 @@
 - Playwright/browser/persona vẫn `NOT_RUN`. Khi manual tester kiểm tra lại SkillsEditor, cần nhớ
   catalog POST persist ngay; chỉ employee-skill association/rating/note là draft trước Save.
 - Các file v1 dirty từ trước ở root vẫn ngoài phạm vi và không được stage.
+
+## Cập nhật 2026-09-14 10:46 ICT — W2-ROADMAP-EDITOR-SNAPSHOT: PENDING_REVIEW
+
+- Active assignment: `W2-ROADMAP-EDITOR-SNAPSHOT`, base/current HEAD
+  `12866da103e570c79978dd2c69f6103a52069492`; chưa stage/commit/push.
+- Base đã chứa snapshot fix từ `f5d7fb0`; candidate bổ sung test 409 còn thiếu và tăng assert
+  cho delete race. Focused Vitest 3/3, ESLint và TypeScript PASS.
+- RED đã xác nhận trên pre-fix SHA `c1148d6`: đúng hai regression test gốc đều fail (delete
+  dùng B v7 thay A v3; edit dùng cache v4 thay snapshot v3). Worktree tạm đã xóa.
+- P2 duy nhất đã sửa: delete test dùng deferred response và chờ confirmation UI biến mất sau
+  resolve trước khi assert selection B. Trạng thái `FIXED_PENDING_REREVIEW`; chưa chuyển PASS.
+- Backend contract chỉ audit tĩnh: tenant/owner scope, row lock và version check diễn ra trước
+  rebuild/delete. Không có backend file thay đổi trong slice.
+- Report nháp: `../reports/09-w2-roadmap-editor-snapshot/qa-report.json`. Bắt buộc review độc lập
+  và full non-browser gates trước khi chuyển PASS hoặc làm git operation.
+- W1 đã chuyển PASS dựa trên bảy completed slice W1; W2 chuyển IN_PROGRESS. Browser/Playwright/
+  persona vẫn NOT_RUN; file v1 dirty từ trước không được stage.
+
+## Cập nhật 2026-09-14 10:56 ICT — W2-ROADMAP-EDITOR-SNAPSHOT: FINAL APPROVE, PASS
+
+- Implementation/test-only SHA: `f9f3e405c469d201859c85d1647eb4d6aa73c0ce`; product fix kế
+  thừa từ `f5d7fb0`, RED pre-fix `c1148d6` giữ làm lineage evidence.
+- Reviewer độc lập final APPROVE, 0 P0/P1/P2; P2 duy nhất đã CLOSED.
+- Exact-commit gates: backend 678 passed/18 skipped trong 61.40s, Ruff/mypy sạch; frontend
+  25 file/174 test, ESLint/tsc/build 17/17 sạch.
+- Report chuẩn: `../reports/09-w2-roadmap-editor-snapshot/qa-report.json`. Slice đã chuyển sang
+  completed PASS; W1 PASS và W2 IN_PROGRESS.
+- Browser/Playwright/persona NOT_RUN. Docs/ledger dành cho docs commit riêng; v1 vẫn ngoài phạm
+  vi và không được stage.
