@@ -14,6 +14,7 @@ from sqlalchemy.exc import IntegrityError
 from app.api.v2.dependencies import CurrentUser, DbSession
 from app.domain.enums import EmploymentStatus, Permission, Role
 from app.domain.models import Company, EmployeeSkill, Employment, Skill, User, utc_now
+from app.repositories.activity_repo import ActivityLogRepository
 from app.security.permissions import effective_permissions
 from app.services.competency_profile_service import normalize_skill_name
 from app.talent_workflows.models import (
@@ -380,8 +381,12 @@ async def edit_assessment(
     row = await scoped_row(db, Assessment, identifier, actor, True)
     version_check(row, payload.expected_version)
     submitting = request.method == "POST"
-    if row.status == "APPROVED" or (submitting and row.status == "SUBMITTED"):
-        raise HTTPException(409, "Đánh giá không còn ở trạng thái có thể sửa")
+    if row.status in {"APPROVED", "REJECTED"} or (
+        submitting and row.status == "SUBMITTED"
+    ):
+        raise HTTPException(
+            409, {"code": "invalid_state", "currentStatus": row.status}
+        )
     if row.status == "SUBMITTED":
         await manage(db, actor, row.company_id, "templates")
     elif actor.id != row.reviewer_id:
@@ -416,27 +421,83 @@ async def edit_assessment(
 @router.post("/assessments/{identifier}/{action}", response_model=AssessmentRead)
 async def review_assessment(
     identifier: uuid.UUID,
-    action: Literal["approve", "reject"],
+    action: Literal["approve", "reject", "request-revision"],
     payload: ReviewInput,
     db: DbSession,
     actor: CurrentUser,
 ) -> Any:
-    row = await scoped_row(db, Assessment, identifier, actor, True)
-    await manage(db, actor, row.company_id, "approve")
-    version_check(row, payload.expected_version)
-    if row.status != "SUBMITTED":
-        raise HTTPException(409, "Chỉ xét duyệt đánh giá đã gửi")
-    if row.reviewee_id == actor.id:
-        raise HTTPException(403, "Không tự phê duyệt đánh giá của mình")
-    if action == "reject" and not payload.comment.strip():
-        raise HTTPException(422, "Nhập lý do yêu cầu chỉnh sửa")
-    if action == "approve":
-        for name, value in score(row.template_snapshot, row.answers, True).items():
-            setattr(row, name, value)
-    row.status = "APPROVED" if action == "approve" else "REJECTED"
-    row.approved_by_id, row.approved_at, row.review_comment = actor.id, utc_now(), payload.comment
-    row.version += 1
-    await commit(db)
+    try:
+        row = await scoped_row(db, Assessment, identifier, actor, True)
+        await manage(db, actor, row.company_id, "approve")
+        if row.version != payload.expected_version:
+            raise HTTPException(
+                409, {"code": "version_conflict", "currentVersion": row.version}
+            )
+        if row.status != "SUBMITTED":
+            raise HTTPException(
+                409, {"code": "invalid_state", "currentStatus": row.status}
+            )
+        if row.reviewee_id == actor.id:
+            raise HTTPException(403, "Không tự phê duyệt đánh giá của mình")
+        if action in {"reject", "request-revision"} and not payload.comment.strip():
+            raise HTTPException(422, "Nhập lý do từ chối hoặc yêu cầu chỉnh sửa")
+
+        scores: dict[str, float | None] | None = None
+        if action == "approve":
+            scores = score(row.template_snapshot, row.answers, True)
+            for name, value in scores.items():
+                setattr(row, name, value)
+        elif action == "request-revision":
+            row.total_score = row.contribution_score = row.attitude_score = None
+
+        target_status = {
+            "approve": "APPROVED",
+            "reject": "REJECTED",
+            "request-revision": "DRAFT",
+        }[action]
+        from_version = row.version
+        row.status = target_status
+        if action == "approve":
+            row.approved_by_id = actor.id
+            row.approved_at = utc_now()
+        else:
+            row.approved_by_id = None
+            row.approved_at = None
+        row.review_comment = payload.comment
+        row.version += 1
+        changes: dict[str, Any] = {
+            "fromStatus": "SUBMITTED",
+            "toStatus": target_status,
+            "fromVersion": from_version,
+            "toVersion": row.version,
+            "cycleId": str(row.cycle_id),
+            "revieweeId": str(row.reviewee_id),
+            "reviewerId": str(row.reviewer_id),
+        }
+        if scores is not None:
+            changes["scores"] = {
+                "totalScore": scores["total_score"],
+                "contributionScore": scores["contribution_score"],
+                "attitudeScore": scores["attitude_score"],
+            }
+        else:
+            changes["reasonProvided"] = True
+        await ActivityLogRepository(db).log(
+            actor_id=actor.id,
+            company_id=row.company_id,
+            action={
+                "approve": "assessment.approved",
+                "reject": "assessment.rejected",
+                "request-revision": "assessment.revision_requested",
+            }[action],
+            entity_type="assessment",
+            entity_id=str(row.id),
+            changes=changes,
+        )
+        await commit(db)
+    except Exception:
+        await db.rollback()
+        raise
     return await assessment_read(db, row)
 
 
