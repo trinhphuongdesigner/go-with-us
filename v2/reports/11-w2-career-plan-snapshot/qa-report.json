@@ -1,0 +1,106 @@
+{
+  "schema_version": "1.0",
+  "report_language": "vi",
+  "feature_id": "11-w2-career-plan-snapshot",
+  "feature_name": "W2-CAREER-PLAN-SNAPSHOT — snapshot và phục hồi xung đột cho kế hoạch nghề nghiệp",
+  "branch": "codex/v2-qa-consolidation",
+  "overall_status": "PASS",
+  "implementation_sha": "528900a9a773d9d0f3533674b8f6cd75eb29b204",
+  "verified_tree_sha": "528900a9a773d9d0f3533674b8f6cd75eb29b204",
+  "base_head_sha": "450478b2ce59c3f8bd8ed64a2f4e9488b419f2c4",
+  "generated_at": "2026-09-14T12:42:19+07:00",
+  "scope": {
+    "included": [
+      "Snapshot content, summary, aiGenerated, category và expectedVersion khi mở bản nháp hoặc nhận đề xuất AI",
+      "PUT dùng snapshot của bản nháp thay vì đọc phiên bản mới từ React Query cache lúc submit",
+      "409 giữ bản nháp, chờ refetch active history với throwOnError và phân biệt refresh thành công/thất bại",
+      "Khóa Lưu và Bỏ bản nháp trong lúc phục hồi; mở lại sau khi bỏ draft dùng version mới",
+      "Backend stale-write, category isolation và PostgreSQL two-writer regression"
+    ],
+    "excluded": [
+      "Các module ngoài CareerPlanPanel và route lưu/lịch sử kế hoạch hiện có",
+      "Browser, Playwright, persona, accessibility và performance",
+      "Các file v1 dirty từ trước"
+    ]
+  },
+  "acceptance_criteria": [
+    {"id": "AC-01", "status": "PASS", "description": "Bản nháp giữ nguyên nội dung và expectedVersion đã chụp dù history cache đổi trước submit."},
+    {"id": "AC-02", "status": "PASS", "description": "Đề xuất AI chụp category và version mới nhất tại thời điểm proposal được nhận."},
+    {"id": "AC-03", "status": "PASS", "description": "PUT 409 giữ draft, await refetch, khóa hai hành động lúc recovery và reopen dùng version mới."},
+    {"id": "AC-04", "status": "PASS", "description": "Hai writer cùng owner/category trên PostgreSQL chỉ có một winner; loser nhận 409 structured và history không bị ghi đè."},
+    {"id": "AC-05", "status": "PASS", "description": "Independent FINAL APPROVE 0 P0/P1/P2; full non-browser gates đạt trên exact implementation SHA."}
+  ],
+  "checks": [
+    {
+      "id": "CHK-01",
+      "category": "postgresql-focused",
+      "status": "PASS",
+      "verified_sha": "528900a9a773d9d0f3533674b8f6cd75eb29b204",
+      "command": "CAREERMATE_TEST_DATABASE_URL=postgresql+asyncpg://[REDACTED]/careermate_v2_test .venv/bin/pytest -q tests/test_career_plan_concurrency.py",
+      "summary": "3 passed in 2.00s; barrier test dùng hai HTTP client và hai DB session đi qua production SELECT FOR UPDATE."
+    },
+    {
+      "id": "CHK-02",
+      "category": "backend-full-sqlite",
+      "status": "PASS",
+      "verified_sha": "528900a9a773d9d0f3533674b8f6cd75eb29b204",
+      "command": "CAREERMATE_DEMO_LOGIN_ENABLED=false .venv/bin/pytest -q",
+      "summary": "682 passed, 20 skipped in 83.97s."
+    },
+    {
+      "id": "CHK-03",
+      "category": "backend-static",
+      "status": "PASS",
+      "verified_sha": "528900a9a773d9d0f3533674b8f6cd75eb29b204",
+      "command": ".venv/bin/ruff check . && .venv/bin/mypy app",
+      "summary": "Ruff PASS; mypy PASS trên 90 source files."
+    },
+    {
+      "id": "CHK-04",
+      "category": "frontend-full",
+      "status": "PASS",
+      "verified_sha": "528900a9a773d9d0f3533674b8f6cd75eb29b204",
+      "command": "npm test && npm run lint && npm run typecheck",
+      "summary": "Vitest 25 files/181 tests PASS; ESLint và TypeScript PASS."
+    },
+    {
+      "id": "CHK-05",
+      "category": "frontend-build",
+      "status": "PASS",
+      "verified_sha": "528900a9a773d9d0f3533674b8f6cd75eb29b204",
+      "command": "npm run build",
+      "summary": "Next.js production build PASS; static generation 17/17."
+    },
+    {
+      "id": "CHK-06",
+      "category": "independent-review",
+      "status": "PASS",
+      "verified_sha": "528900a9a773d9d0f3533674b8f6cd75eb29b204",
+      "summary": "FINAL APPROVE, 0 P0/P1/P2; cả 3 finding P2 vòng đầu đã CLOSED."
+    },
+    {"id": "CHK-07", "category": "browser-persona", "status": "NOT_RUN", "summary": "Playwright/browser/persona tạm dừng theo chỉ đạo."}
+  ],
+  "known_gaps": [
+    "Playwright/browser/persona/accessibility/performance NOT_RUN theo chỉ đạo."
+  ],
+  "review_findings": [
+    {
+      "id": "P2-1",
+      "status": "CLOSED",
+      "description": "PlanMutationNotice kiểm tra save.error trước nên nhánh refreshing không hiển thị trong lúc onError đang await.",
+      "resolution": "Ưu tiên render recovery=refreshing trước error guard; deferred test chứng minh status xuất hiện trước khi resolve history GET."
+    },
+    {
+      "id": "P2-2",
+      "status": "CLOSED",
+      "description": "Thiếu bằng chứng hai request đồng thời trên PostgreSQL đi qua production row lock.",
+      "resolution": "Barrier test hai AsyncClient/hai AsyncSession PASS trên PostgreSQL: một winner v1, một 409 currentVersion=1 và một history row."
+    },
+    {
+      "id": "P2-3",
+      "status": "CLOSED",
+      "description": "Task từng xuất hiện đồng thời trong active_assignments và completed_slices; thiếu checkpoint progress/handoff.",
+      "resolution": "Trong thời gian review task chỉ nằm ở active; sau FINAL APPROVE chuyển nguyên tử sang completed và đồng bộ hai ledger."
+    }
+  ]
+}

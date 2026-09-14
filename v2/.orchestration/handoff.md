@@ -198,3 +198,30 @@
 - Frontend 25 file/177 test; ESLint, typecheck và Next build static generation 17/17 PASS.
 - Report chuẩn: `../reports/10-w2-career-goal-cas/qa-report.json`. Active assignment đã xóa,
   completed slice chuyển PASS; W2 giữ IN_PROGRESS. Browser/Playwright/persona NOT_RUN.
+
+## Cập nhật 2026-09-14 12:38 ICT — W2-CAREER-PLAN-SNAPSHOT: PENDING_REVIEW
+
+- Base/current HEAD `450478b2ce59c3f8bd8ed64a2f4e9488b419f2c4`; candidate chỉ thay đổi trong
+  `v2/`, chưa stage/commit/push và chưa chạy browser/Playwright.
+- Draft kế hoạch snapshot content/summary/aiGenerated/category/expectedVersion tại lúc mở draft
+  hoặc nhận AI proposal. PUT không đọc history cache lúc submit. 409 giữ draft, await active
+  history refetch, khóa Lưu/Bỏ draft trong recovery và reopen dùng version mới.
+- Reviewer vòng đầu nêu 3 P2, 0 P0/P1; cả ba ở `FIXED_PENDING_REREVIEW`. Focused frontend 9/9;
+  backend SQLite 2 pass/1 PostgreSQL-only skip; Ruff/ESLint/tsc PASS.
+- PostgreSQL barrier test dùng hai client/session, chặn trước production `SELECT FOR UPDATE`, yêu
+  cầu một winner v1, một structured 409 currentVersion=1 và đúng một history row. Local PostgreSQL
+  cô lập hiện không hoạt động nên chưa có runtime PASS cho test này.
+- Report nháp: `../reports/11-w2-career-plan-snapshot/qa-report.json`. Task chỉ ở
+  `active_assignments`; chờ independent re-review rồi mới chạy full non-browser gates.
+
+## Cập nhật 2026-09-14 12:42 ICT — W2-CAREER-PLAN-SNAPSHOT: FINAL APPROVE, PASS
+
+- Implementation/test SHA `528900a9a773d9d0f3533674b8f6cd75eb29b204`; independent reviewer
+  FINAL APPROVE, 0 P0/P1/P2 và xác nhận cả 3 P2 đã CLOSED.
+- PostgreSQL focused 3 passed/2.00s; backend SQLite full 682 passed/20 skipped/83.97s; Ruff
+  và mypy app 90 source files PASS.
+- Frontend 25 file/181 test; ESLint, typecheck và Next build static generation 17/17 PASS.
+- Report chuẩn gồm `../reports/11-w2-career-plan-snapshot/qa-report.json`, `README.md` và
+  `report.html`. Active assignment đã xóa, completed slice chuyển PASS; W2 giữ IN_PROGRESS.
+- Browser/Playwright/persona vẫn NOT_RUN. Docs/ledger chờ docs commit riêng; không có code/test
+  nào thay đổi sau implementation SHA và file v1 dirty từ trước vẫn ngoài phạm vi.

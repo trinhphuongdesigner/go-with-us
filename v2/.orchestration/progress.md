@@ -306,3 +306,29 @@ Tại checkpoint 01:00 ICT chưa có feature nào PASS; trạng thái mới hơn
   generation 17/17.
 - Slice chuyển từ active sang completed PASS; W2 tiếp tục IN_PROGRESS. Browser/Playwright/
   persona/accessibility/performance vẫn NOT_RUN theo chỉ đạo. Docs/ledger chờ docs commit riêng.
+
+## 2026-09-14 12:38 ICT — W2-CAREER-PLAN-SNAPSHOT: PENDING_REVIEW
+
+- Candidate chưa commit trên base `450478b2ce59c3f8bd8ed64a2f4e9488b419f2c4`; task chỉ nằm
+  trong `active_assignments`, không nằm trong `completed_slices`.
+- Reviewer vòng đầu REQUEST_CHANGES với 0 P0/P1 và 3 P2. Cả ba đã sửa: trạng thái refreshing
+  hiển thị ngay khi đang await history refetch; thêm PostgreSQL-only barrier test đi qua production
+  `SELECT FOR UPDATE`; ledger/report/handoff được đồng bộ.
+- Focused gates sau sửa: frontend 1 file/9 test PASS; backend SQLite 2 pass/1 PostgreSQL-only skip;
+  Ruff, ESLint và TypeScript PASS. PostgreSQL local cô lập hiện không chạy nên chưa claim test
+  concurrent PASS.
+- Chờ independent re-review và full non-browser gates. Browser/Playwright/persona vẫn NOT_RUN;
+  file v1 dirty từ trước ngoài phạm vi và không được stage.
+
+## 2026-09-14 12:42 ICT — W2-CAREER-PLAN-SNAPSHOT: FINAL APPROVE, PASS
+
+- Implementation/test commit `528900a9a773d9d0f3533674b8f6cd75eb29b204`; reviewer độc lập
+  FINAL APPROVE, 0 P0/P1/P2; cả ba finding P2 vòng đầu đã CLOSED.
+- PostgreSQL focused 3 passed trong 2.00s. Backend SQLite full đạt 682 passed/20 skipped
+  trong 83.97s; Ruff PASS và mypy app PASS trên 90 source files.
+- Frontend full đạt 25 file/181 test; ESLint, TypeScript và Next production build PASS;
+  static generation 17/17.
+- Slice chuyển khỏi active sang completed PASS; W2 tiếp tục IN_PROGRESS. Report chuẩn:
+  `../reports/11-w2-career-plan-snapshot/qa-report.json` và `report.html`.
+- Browser/Playwright/persona/accessibility/performance vẫn NOT_RUN theo chỉ đạo. Docs/ledger
+  chờ commit tài liệu riêng; file v1 dirty từ trước ngoài phạm vi.
