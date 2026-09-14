@@ -110,3 +110,34 @@
   ledger được lưu bằng commit tài liệu riêng ngay sau implementation; report ghim SHA đã chạy test.
 - Playwright/browser/persona vẫn NOT_RUN. Chỉ thay đổi của slice nằm trong `v2/`; các file v1
   dirty từ trước ở root vẫn ngoài phạm vi và không được stage.
+
+## Cập nhật 2026-09-14 10:25 ICT — W1-SKILL-PROFILE: PENDING_REVIEW
+
+- Active assignment: `W1-SKILL-PROFILE`, candidate chưa commit trên base/current HEAD
+  `abc89cf9e1be012598a7068db30b2d6b1187b38d`. Không stage/commit/push.
+- Reviewer vòng đầu có 4 P2; cả 4 đang ở `FIXED_PENDING_REREVIEW`. Coverage SUPER_ADMIN nay
+  không rỗng: platform admin ghi skill association vào foreign tenant và test xác nhận scope,
+  provenance cùng actor. SQLite sequential stale replace xác nhận 409 và
+  `currentProfileVersion` mà không cần PostgreSQL.
+- Catalog POST persist ngay vào danh mục dùng chung. Chỉ add/remove association, rating và note
+  trong SkillsEditor còn ở draft cho tới **Lưu toàn bộ kỹ năng**.
+- Focused evidence: backend 9 passed/6 skipped/34 deselected; frontend 6/6; Ruff/ESLint/tsc,
+  JSON và `git diff --check` PASS. PostgreSQL concurrency/snapshot tests vẫn skip trong focused
+  SQLite; full suites chờ sau re-review.
+- Report nháp: `../reports/08-w1-skill-profile/qa-report.json`. Playwright/browser/persona vẫn
+  `NOT_RUN`. Các file v1 dirty từ trước ngoài phạm vi và chưa stage.
+
+## Cập nhật 2026-09-14 10:35 ICT — W1-SKILL-PROFILE: FINAL APPROVE, PASS
+
+- Implementation/test commit: `ac4b1a88b5f18d82ea21e60e4d9cc66d101bed5b`. Reviewer độc lập
+  final APPROVE, 0 P0/P1/P2; bốn finding P2 đều CLOSED.
+- Exact-commit gates: từ `v2/backend`, `CAREERMATE_DEMO_LOGIN_ENABLED=false .venv/bin/pytest -q`
+  đạt 678 passed/18 skipped trong 64.48s, `.venv/bin/ruff check .` PASS và `.venv/bin/mypy app`
+  PASS trên 90 source files. Từ `v2/frontend`, `npm test` đạt 25 files/173 tests; `npm run lint`,
+  `npm run typecheck`, `npm run build` đều PASS; static generation 17/17.
+- Report chuẩn: `../reports/08-w1-skill-profile/qa-report.json`; README đồng bộ. Report và ledger
+  thuộc commit tài liệu riêng ngay sau implementation/test commit; coordination state phản ánh
+  trạng thái sạch sau docs commit (`documentation_commit_pending=false`).
+- Playwright/browser/persona vẫn `NOT_RUN`. Khi manual tester kiểm tra lại SkillsEditor, cần nhớ
+  catalog POST persist ngay; chỉ employee-skill association/rating/note là draft trước Save.
+- Các file v1 dirty từ trước ở root vẫn ngoài phạm vi và không được stage.

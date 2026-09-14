@@ -198,3 +198,36 @@ Tại checkpoint 01:00 ICT chưa có feature nào PASS; trạng thái mới hơn
   tài liệu riêng ngay sau implementation; report ghim SHA đã chạy test.
 - Các thay đổi thuộc slice W1-AWARD chỉ nằm trong `v2/`; file v1 ở root đã dirty từ trước vẫn
   ngoài phạm vi và không được stage.
+
+## 2026-09-14 10:25 ICT — W1-SKILL-PROFILE: 4 P2 fixed, chờ re-review
+
+- Candidate chưa commit trên base/current HEAD `abc89cf9e1be012598a7068db30b2d6b1187b38d`, branch
+  `codex/v2-qa-consolidation`; chỉ file trong `v2/` thuộc slice này thay đổi. Các file v1 dirty
+  từ trước vẫn ngoài phạm vi, không stage và không sửa.
+- Reviewer vòng đầu nêu 4 P2. P2-1 được sửa bằng SUPER_ADMIN full-replace thật trên foreign
+  tenant và assert persisted `company_id`, `ADMIN`, `selfAssessed=false`, actor. P2-2 được sửa
+  bằng sequential stale replace chạy trên SQLite, assert 409 + `currentProfileVersion=2` và row
+  đã commit không đổi.
+- P2-3 đã chuyển task từ `completed_slices` sang `active_assignments`; coordination state ghi
+  rõ candidate uncommitted, `implementation_source_clean=false`, docs pending. P2-4 đã sửa
+  report: catalog POST persist ngay; chỉ association/rating/note ở hồ sơ là draft tới Save.
+- Focused checkpoint hiện tại: backend 9 passed/6 PostgreSQL-only skipped/34 deselected;
+  frontend 6/6; Ruff check, focused ESLint, TypeScript, JSON và diff-check sạch.
+- Trạng thái vẫn `PENDING_REVIEW`: chưa chạy re-review hoặc full non-browser suites. Playwright,
+  browser và persona `NOT_RUN` theo chỉ đạo.
+
+## 2026-09-14 10:35 ICT — W1-SKILL-PROFILE: FINAL APPROVE, PASS
+
+- Implementation và test đã commit tại `ac4b1a88b5f18d82ea21e60e4d9cc66d101bed5b`
+  (`fix(v2/profile): reset stale skill edits after reload`). Reviewer độc lập ra verdict cuối
+  **APPROVE, 0 P0/P1/P2**; cả bốn P2 vòng đầu đã CLOSED.
+- Exact-commit backend gates, chạy từ `v2/backend`: `CAREERMATE_DEMO_LOGIN_ENABLED=false
+  .venv/bin/pytest -q` → 678 passed/18 skipped trong 64.48s; `.venv/bin/ruff check .` → PASS;
+  `.venv/bin/mypy app` → PASS trên 90 source files.
+- Exact-commit frontend gates, chạy từ `v2/frontend`: `npm test` → 25 files/173 tests; `npm run
+  lint`, `npm run typecheck` và `npm run build` đều PASS; Next static generation 17/17.
+- Report `../reports/08-w1-skill-profile/qa-report.json`, README và ba ledger được chuẩn bị trong
+  commit tài liệu riêng ngay sau implementation/test commit. Coordination state sau docs commit
+  ghi `implementation_source_clean=true` và `documentation_commit_pending=false`.
+- Playwright/browser/persona vẫn `NOT_RUN` theo chỉ đạo. Các file v1 dirty từ trước nằm ngoài
+  phạm vi và không được stage.

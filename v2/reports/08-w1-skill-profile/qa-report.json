@@ -1,0 +1,202 @@
+{
+  "schema_version": "1.0",
+  "report_language": "vi",
+  "feature_id": "08-w1-skill-profile",
+  "feature_name": "W1-SKILL-PROFILE — Skill catalog và kỹ năng trong Hồ sơ 360°",
+  "branch": "codex/v2-qa-consolidation",
+  "overall_status": "PASS",
+  "implementation_sha": "ac4b1a88b5f18d82ea21e60e4d9cc66d101bed5b",
+  "verified_tree_sha": "ac4b1a88b5f18d82ea21e60e4d9cc66d101bed5b",
+  "base_head_sha": "abc89cf9e1be012598a7068db30b2d6b1187b38d",
+  "generated_at": "2026-09-14T10:35:00+07:00",
+  "environment": {
+    "backend": "FastAPI + pytest trên exact implementation commit",
+    "frontend": "Next.js + Vitest trên exact implementation commit",
+    "browser": "NOT_RUN theo chỉ đạo tạm dừng Playwright/browser/persona"
+  },
+  "scope": {
+    "included": [
+      "Skill catalog normalization, casefold uniqueness, category và pagination",
+      "Tenant/role permission cho skill detail, aggregate và full replace",
+      "profileVersion CAS 409/currentProfileVersion và concurrent replace contract",
+      "Rating nguyên 1..5, duplicate/unknown ID và giới hạn 200",
+      "SELF/ADMIN provenance, selfAssessed, actor và note mapping",
+      "Activity-log rollback cho full replace",
+      "Catalog create persist ngay; association/rating/note draft tới Save; validation, error, pagination và stale reload"
+    ],
+    "excluded": [
+      "Các module ngoài skill profile",
+      "Playwright/browser/accessibility/persona/performance theo chỉ đạo tạm dừng",
+      "Mọi file v1 dirty từ trước"
+    ]
+  },
+  "commit_separation": {
+    "implementation_and_tests": "ac4b1a88b5f18d82ea21e60e4d9cc66d101bed5b",
+    "documentation": "Báo cáo và ledger được chuẩn bị trong một commit tài liệu riêng ngay sau implementation.",
+    "v1_safety": "Các file v1 dirty từ trước nằm ngoài phạm vi và không được stage."
+  },
+  "real_bugs": [
+    {
+      "id": "SKILL-UI-STALE-ERROR",
+      "severity": "P2",
+      "status": "CLOSED",
+      "description": "Sau reload thành công từ 409, replaceSkills.isError vẫn giữ lỗi cũ nên UI tiếp tục hiện cảnh báo lưu thất bại.",
+      "fix": "Reset mutation kỹ năng sau khi refetch hồ sơ mới thành công.",
+      "regression_test": "locks a stale draft on 409 and reload remounts skills from the fresh profile version"
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "Catalog normalize/casefold unique, category và pagination ổn định.",
+      "status": "PASS",
+      "evidence": "Backend suite đầy đủ tại exact implementation SHA."
+    },
+    {
+      "id": "AC-02",
+      "description": "Tenant/role và aggregate/detail không lộ dữ liệu khác company.",
+      "status": "PASS",
+      "evidence": "SUPER_ADMIN full replace trên foreign tenant cùng tenant/role regression tests."
+    },
+    {
+      "id": "AC-03",
+      "description": "Full replace atomic, CAS 409/currentProfileVersion, concurrent writer contract.",
+      "status": "PASS",
+      "evidence": "Rollback, sequential stale 409 trên SQLite và PostgreSQL-only concurrency contracts đều nằm trong backend suite; suite ghi nhận 678 passed, 18 skipped."
+    },
+    {
+      "id": "AC-04",
+      "description": "Rating nguyên 1..5, duplicate/unknown ID, đúng 200 và từ chối 201.",
+      "status": "PASS",
+      "evidence": "Backend validation/capacity regressions tại exact implementation SHA."
+    },
+    {
+      "id": "AC-05",
+      "description": "SELF/ADMIN provenance, selfAssessed, sourceType, note và actor mapping.",
+      "status": "PASS",
+      "evidence": "Admin replace và owner re-confirm regression tests."
+    },
+    {
+      "id": "AC-06",
+      "description": "Catalog POST persist ngay; employee-skill association/rating/note giữ draft tới Save; xử lý lỗi, stale reload và pagination >200.",
+      "status": "PASS",
+      "evidence": "Frontend suite đầy đủ 25 file/173 test tại exact implementation SHA."
+    },
+    {
+      "id": "AC-07",
+      "description": "Review độc lập và full non-browser gates.",
+      "status": "PASS",
+      "evidence": "Final independent APPROVE, 0 P0/P1/P2; bốn P2 vòng đầu đã CLOSED; toàn bộ gate non-browser xanh."
+    }
+  ],
+  "checks": [
+    {
+      "id": "CHK-01",
+      "category": "backend-test-full",
+      "status": "PASS",
+      "cwd": "v2/backend",
+      "command": "CAREERMATE_DEMO_LOGIN_ENABLED=false .venv/bin/pytest -q",
+      "verified_sha": "ac4b1a88b5f18d82ea21e60e4d9cc66d101bed5b",
+      "summary": "678 passed, 18 skipped in 64.48s."
+    },
+    {
+      "id": "CHK-02",
+      "category": "backend-ruff",
+      "status": "PASS",
+      "cwd": "v2/backend",
+      "command": ".venv/bin/ruff check .",
+      "verified_sha": "ac4b1a88b5f18d82ea21e60e4d9cc66d101bed5b",
+      "summary": "All checks passed."
+    },
+    {
+      "id": "CHK-03",
+      "category": "backend-mypy",
+      "status": "PASS",
+      "cwd": "v2/backend",
+      "command": ".venv/bin/mypy app",
+      "verified_sha": "ac4b1a88b5f18d82ea21e60e4d9cc66d101bed5b",
+      "summary": "90 source files passed."
+    },
+    {
+      "id": "CHK-04",
+      "category": "frontend-test-full",
+      "status": "PASS",
+      "cwd": "v2/frontend",
+      "command": "npm test",
+      "verified_sha": "ac4b1a88b5f18d82ea21e60e4d9cc66d101bed5b",
+      "summary": "25 files, 173 tests passed."
+    },
+    {
+      "id": "CHK-05",
+      "category": "frontend-eslint",
+      "status": "PASS",
+      "cwd": "v2/frontend",
+      "command": "npm run lint",
+      "verified_sha": "ac4b1a88b5f18d82ea21e60e4d9cc66d101bed5b",
+      "summary": "ESLint passed."
+    },
+    {
+      "id": "CHK-06",
+      "category": "frontend-typecheck",
+      "status": "PASS",
+      "cwd": "v2/frontend",
+      "command": "npm run typecheck",
+      "verified_sha": "ac4b1a88b5f18d82ea21e60e4d9cc66d101bed5b",
+      "summary": "TypeScript passed."
+    },
+    {
+      "id": "CHK-07",
+      "category": "frontend-build",
+      "status": "PASS",
+      "cwd": "v2/frontend",
+      "command": "npm run build",
+      "verified_sha": "ac4b1a88b5f18d82ea21e60e4d9cc66d101bed5b",
+      "summary": "Next.js build passed; static generation 17/17."
+    },
+    {
+      "id": "CHK-08",
+      "category": "independent-review",
+      "status": "PASS",
+      "verified_sha": "ac4b1a88b5f18d82ea21e60e4d9cc66d101bed5b",
+      "summary": "Final APPROVE, 0 P0/P1/P2; bốn P2 đã CLOSED."
+    },
+    {
+      "id": "CHK-09",
+      "category": "documentation-integrity",
+      "status": "PASS",
+      "command": "jq empty v2/reports/08-w1-skill-profile/qa-report.json v2/.orchestration/tasks.json && git diff --check",
+      "summary": "JSON và diff check sạch sau cập nhật tài liệu."
+    },
+    {
+      "id": "CHK-10",
+      "category": "browser-persona",
+      "status": "NOT_RUN",
+      "summary": "Playwright/browser/persona vẫn tạm dừng theo chỉ đạo."
+    }
+  ],
+  "known_gaps": [
+    "Playwright/browser/persona/accessibility/performance NOT_RUN theo chỉ đạo."
+  ],
+  "review_findings": [
+    {
+      "id": "P2-1",
+      "status": "CLOSED",
+      "resolution": "SUPER_ADMIN thực hiện full replace cho foreign tenant; test assert response, persisted company_id, ADMIN provenance, selfAssessed=false và actor IDs."
+    },
+    {
+      "id": "P2-2",
+      "status": "CLOSED",
+      "resolution": "Bổ sung sequential stale replace chạy trên SQLite, assert 409/currentProfileVersion và không đổi row đã commit."
+    },
+    {
+      "id": "P2-3",
+      "status": "CLOSED",
+      "resolution": "Ledger phản ánh đúng vòng đời: active khi chờ review, completed PASS sau exact-commit gates và final approval."
+    },
+    {
+      "id": "P2-4",
+      "status": "CLOSED",
+      "resolution": "Wording phân biệt catalog POST persist ngay với association/rating/note chỉ persist khi Save."
+    }
+  ]
+}

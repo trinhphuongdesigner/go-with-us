@@ -118,14 +118,24 @@
       "implementation_sha": "4c994e02192e104ccf1aeffddb740237e81dfa39",
       "report": "../reports/07-w1-award-timeline/qa-report.json",
       "note": "Independent reviewer final APPROVE, 0 P0/P1/P2. Ba P2 đã CLOSED; exact implementation commit chạy backend 673 passed/18 skipped, Ruff/mypy sạch, frontend 167 tests/24 file, ESLint/tsc/Next build sạch. Browser/Playwright/persona NOT_RUN theo chỉ đạo."
+    },
+    {
+      "id": "W1-SKILL-PROFILE",
+      "name": "Skill catalog và full-replace kỹ năng trong Hồ sơ 360°",
+      "status": "PASS",
+      "implementation_sha": "ac4b1a88b5f18d82ea21e60e4d9cc66d101bed5b",
+      "report": "../reports/08-w1-skill-profile/qa-report.json",
+      "note": "Independent reviewer final APPROVE, 0 P0/P1/P2. Bốn P2 đã CLOSED; exact implementation commit chạy backend 678 passed/18 skipped trong 64.48s, Ruff/mypy app 90 files sạch, frontend 173 tests/25 files, ESLint/tsc/Next build static generation 17 sạch. Browser/Playwright/persona NOT_RUN theo chỉ đạo."
     }
   ],
   "coordination_state": {
-    "updated_at": "2026-09-14T10:00:00+07:00",
+    "updated_at": "2026-09-14T10:35:00+07:00",
     "mode": "MANUAL_QA_READY",
     "writer": null,
     "canonical_worktree": ".claude/worktrees/v2-qa",
-    "candidate_head": "4c994e02192e104ccf1aeffddb740237e81dfa39",
+    "candidate_head": "ac4b1a88b5f18d82ea21e60e4d9cc66d101bed5b",
+    "candidate_base_head": "abc89cf9e1be012598a7068db30b2d6b1187b38d",
+    "candidate_tree": "POST_DOCS_COMMIT_CLEAN",
     "implementation_source_clean": true,
     "documentation_commit_pending": false,
     "remediation_review": {
@@ -145,11 +155,17 @@
     "resume_rule": "Manual tester validates the pushed candidate. Run Playwright only after explicit user re-enable.",
     "published_head": "0ef9f94575592b37d20d8226c3a46dfbb22938bf",
     "current_task_runtime": {
-      "task": "W1-AWARD-TIMELINE",
-      "state": "Implementation/test commit tại 4c994e02192e104ccf1aeffddb740237e81dfa39; report/ledger PASS được lưu trong commit tài liệu riêng theo sau.",
+      "task": "W1-SKILL-PROFILE",
+      "state": "Implementation/test commit ac4b1a88b5f18d82ea21e60e4d9cc66d101bed5b đã final APPROVE; report và ledger được lưu trong commit tài liệu riêng ngay sau implementation. Các file v1 dirty nằm ngoài phạm vi và không được stage.",
       "status": "PASS",
-      "backend_sqlite": "673 passed, 18 skipped in 89.29s",
-      "frontend_vitest": "167 passed, 24 files",
+      "backend_sqlite": "678 passed, 18 skipped in 64.48s",
+      "backend_ruff": "PASS",
+      "backend_mypy": "PASS, 90 source files",
+      "frontend_vitest": "25 files, 173 tests passed",
+      "frontend_eslint": "PASS",
+      "frontend_typecheck": "PASS",
+      "frontend_build": "PASS, static generation 17/17",
+      "independent_review": "FINAL APPROVE, 0 P0/P1/P2; 4 P2 CLOSED",
       "playwright": "NOT_RUN"
     }
   }
