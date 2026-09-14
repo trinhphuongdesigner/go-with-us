@@ -1,0 +1,99 @@
+{
+  "schema_version": "1.0",
+  "report_language": "vi",
+  "feature_id": "12-w2-ai-roadmap-grounding",
+  "feature_name": "W2-AI-ROADMAP-GROUNDING — đề xuất lộ trình có bằng chứng và chỉ lưu khi xác nhận",
+  "branch": "codex/v2-qa-consolidation",
+  "overall_status": "PASS",
+  "implementation_sha": "546d5786be900ce003e768ed4602a4015701bb90",
+  "verified_tree_sha": "c0a1fee65fcc66f3e1e4241252b5b1a7cd4645c4",
+  "base_head_sha": "3dacef69062425ded6c556c156770b997839f036",
+  "generated_at": "2026-09-14T15:52:54+07:00",
+  "scope": {
+    "included": [
+      "Contract Pydantic chặt cho roadmap, milestone, task, subject, source và evidence UUID",
+      "Allowlist subject/source/evidence lấy từ profile snapshot mà actor được phép đọc",
+      "Fail closed trước persistence cho JSON/schema sai, ID bịa, thiếu evidence, timeout và empty response",
+      "Cô lập profile record dưới nhãn UNTRUSTED_DATA thay vì nối vào system prompt",
+      "Không lưu proposal hoặc nội dung tự do của provider trong lịch sử; trả proposal tạm cho editor và chỉ lưu qua thao tác xác nhận riêng",
+      "Khóa tạo/chuyển hội thoại khi proposal chưa lưu và reset trạng thái save trước proposal mới"
+    ],
+    "excluded": [
+      "Đánh giá semantic claim-evidence bằng evaluator độc lập",
+      "Lưu lineage theo SourceDocument/SourceBlock lâu dài cho roadmap",
+      "Provider live, browser, Playwright, persona, accessibility và performance",
+      "Toàn bộ v1"
+    ]
+  },
+  "acceptance_criteria": [
+    {"id": "AC-01", "status": "PASS", "description": "Roadmap output bắt buộc đúng schema và có evidence ở proposal, từng milestone và từng task."},
+    {"id": "AC-02", "status": "PASS", "description": "Subject, source và evidence ID ngoài allowlist bị từ chối toàn bộ trước khi tạo conversation/message/domain row."},
+    {"id": "AC-03", "status": "PASS", "description": "Không có evidence trả 422 trước provider; timeout 504, invalid/empty 502 và không có deterministic fixture âm thầm."},
+    {"id": "AC-04", "status": "PASS", "description": "Profile content được gửi dưới UNTRUSTED_DATA và không xuất hiện trong system prompt."},
+    {"id": "AC-05", "status": "PASS", "description": "Proposal chỉ có trong response tạm; history lưu proposalData=null, frontend khóa query/chuyển hội thoại đến khi lưu hoặc bỏ và chỉ save sau xác nhận."},
+    {"id": "AC-06", "status": "PASS", "description": "Independent final review APPROVE 0 P0/P1/P2; full non-browser gates đạt trên integrated verification SHA."}
+  ],
+  "checks": [
+    {
+      "id": "CHK-01",
+      "category": "backend-full-sqlite",
+      "status": "PASS",
+      "verified_sha": "c0a1fee65fcc66f3e1e4241252b5b1a7cd4645c4",
+      "command": "CAREERMATE_DEMO_LOGIN_ENABLED=false .venv/bin/pytest -q",
+      "summary": "694 passed, 20 skipped trong 71.47s."
+    },
+    {
+      "id": "CHK-02",
+      "category": "backend-static",
+      "status": "PASS",
+      "verified_sha": "c0a1fee65fcc66f3e1e4241252b5b1a7cd4645c4",
+      "command": ".venv/bin/ruff check . && .venv/bin/mypy app",
+      "summary": "Ruff PASS; mypy PASS trên 90 source files."
+    },
+    {
+      "id": "CHK-03",
+      "category": "frontend-full",
+      "status": "PASS",
+      "verified_sha": "c0a1fee65fcc66f3e1e4241252b5b1a7cd4645c4",
+      "command": "npm test && npm run lint && npm run typecheck",
+      "summary": "Vitest 27 files/190 tests PASS trong 10.43s; ESLint và TypeScript PASS."
+    },
+    {
+      "id": "CHK-04",
+      "category": "frontend-build",
+      "status": "PASS",
+      "verified_sha": "c0a1fee65fcc66f3e1e4241252b5b1a7cd4645c4",
+      "command": "npm run build",
+      "summary": "Next.js production build PASS trong 12.45s; 17/17 routes."
+    },
+    {
+      "id": "CHK-05",
+      "category": "independent-review",
+      "status": "PASS",
+      "verified_sha": "546d5786be900ce003e768ed4602a4015701bb90",
+      "summary": "FINAL APPROVE, 0 P0/P1/P2; P1-1 và P2-1 CLOSED."
+    },
+    {"id": "CHK-06", "category": "browser-persona", "status": "NOT_RUN", "summary": "Browser/Playwright/persona/accessibility/performance không chạy theo chỉ đạo."},
+    {"id": "CHK-07", "category": "provider-live", "status": "NOT_RUN", "summary": "Không gọi provider live trong slice; behavior được kiểm tra bằng provider stub xác định."}
+  ],
+  "known_gaps": [
+    "Evidence token hiện là UUID ổn định theo request/profile snapshot và sourceEntityId ở mức profile owner; chưa phải SourceBlock citation được lưu lâu dài.",
+    "Allowlist chứng minh ID tồn tại trong context nhưng chưa tự động chứng minh mức tương đồng ngữ nghĩa giữa từng claim và evidence text.",
+    "Provider live chưa được xác minh.",
+    "Browser/Playwright/persona/accessibility/performance NOT_RUN theo chỉ đạo."
+  ],
+  "review_findings": [
+    {
+      "id": "P1-1",
+      "status": "CLOSED",
+      "description": "Proposal mới có thể thay proposal chưa lưu và kế thừa save success/error từ proposal trước.",
+      "resolution": "Khóa textarea, submit, tạo mới và chuyển conversation khi proposal tồn tại; gọi save.reset() trước khi cài proposal/key mới; key editor theo proposalKey và reset khi discard."
+    },
+    {
+      "id": "P2-1",
+      "status": "CLOSED",
+      "description": "Test frontend chưa chứng minh explicit-save boundary hoặc chuỗi proposal A sang B.",
+      "resolution": "Mock editor expose confirm; assert query gọi save 0 lần, confirm gọi đúng 1 lần, unsaved proposal khóa replacement và proposal B không hiển thị success của A."
+    }
+  ]
+}

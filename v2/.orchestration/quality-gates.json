@@ -51,7 +51,7 @@
       "evidence": "qa-report.json bound to implementation SHA and tree"
     }
   ],
-  "latest_completed_slice": "W1-CORE",
+  "latest_completed_slice": "W2-AI-ROADMAP-GROUNDING",
   "wave1_import": {
     "status": "PASS",
     "implementation_sha": "de246d8c74ec8425cec0172613012fc600811719",
@@ -110,5 +110,14 @@
       "status": "PASS",
       "evidence": "Remote branch contains implementation f5d7fb093f0cd7f577131111222bcd2d8a43459c and report/handoff at 0ef9f94575592b37d20d8226c3a46dfbb22938bf; manual tester validation may begin while automated Playwright remains paused."
     }
-  ]
+  ],
+  "wave2_ai_roadmap_grounding": {
+    "status": "PASS",
+    "implementation_sha": "546d5786be900ce003e768ed4602a4015701bb90",
+    "verified_tree_sha": "c0a1fee65fcc66f3e1e4241252b5b1a7cd4645c4",
+    "evidence": "Independent FINAL APPROVE 0 P0/P1/P2; backend 694 passed/20 skipped, Ruff/mypy PASS; frontend 27 files/190 tests, lint/typecheck/build 17/17 PASS.",
+    "browser_playwright_persona": "NOT_RUN",
+    "provider_live": "NOT_RUN",
+    "known_limitations": "Evidence token chưa phải SourceBlock citation bền vững; allowlist chưa tự đánh giá semantic claim-evidence."
+  }
 }

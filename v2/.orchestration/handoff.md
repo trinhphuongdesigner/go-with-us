@@ -225,3 +225,39 @@
   `report.html`. Active assignment đã xóa, completed slice chuyển PASS; W2 giữ IN_PROGRESS.
 - Browser/Playwright/persona vẫn NOT_RUN. Docs/ledger chờ docs commit riêng; không có code/test
   nào thay đổi sau implementation SHA và file v1 dirty từ trước vẫn ngoài phạm vi.
+
+## Cập nhật 2026-09-14 15:06 ICT — W2-AI-ROADMAP-GROUNDING: PENDING_REVIEW
+
+- Base/current HEAD `3dacef69062425ded6c556c156770b997839f036`; candidate chưa stage/commit/push.
+- Entry point `POST /api/v2/assistant/query` với focus `ROADMAP` nay dùng schema grounding riêng,
+  allowlist actor/source/evidence và fail closed trước khi tạo conversation/message/domain row.
+- Proposal hợp lệ chỉ có trong response tạm; DB assistant message giữ `proposal_data=NULL`.
+  Frontend lấy proposal từ response để mở editor; save roadmap vẫn là hành động xác nhận riêng.
+- Backend focused 18 passed, Ruff/mypy PASS; frontend focused 1 test và ESLint PASS. Full
+  TypeScript bị chặn bởi dirty dashboard test ngoài phạm vi tại `tests/live-dashboard.test.tsx:96`.
+- Reviewer cần xem semantic claim-evidence gap và việc evidence token hiện ở mức profile snapshot,
+  sau đó chạy full non-browser gates. Browser/Playwright/persona NOT_RUN theo chỉ đạo.
+- Report: `../reports/12-w2-ai-roadmap-grounding/qa-report.json`. Task chỉ nằm trong
+  `active_assignments` với trạng thái `PENDING_REVIEW`; chưa thêm vào `completed_slices`.
+
+### Remediation review 2026-09-14 15:19 ICT
+
+- `P1-1` và `P2-1` đều `FIXED_PENDING_REREVIEW`; không có P0.
+- Unsaved proposal không thể bị thay bởi query/navigation mới; lưu hoặc bỏ là boundary rõ ràng.
+  Mỗi proposal mới reset save mutation trước khi cài và editor có key theo save intent.
+- Frontend focused 2/2 PASS, ESLint PASS. Full TypeScript blocker vẫn là dirty dashboard test
+  bị cấm sửa; backend không đổi sau evidence 18/18 + Ruff/mypy PASS.
+- Candidate chưa commit/push, task vẫn chỉ ở `active_assignments` PENDING_REVIEW. Chờ re-review.
+
+## Cập nhật 2026-09-14 15:52 ICT — W2-AI-ROADMAP-GROUNDING: FINAL APPROVE, PASS
+
+- Implementation `546d5786be900ce003e768ed4602a4015701bb90`; integrated verification
+  `c0a1fee65fcc66f3e1e4241252b5b1a7cd4645c4` chứa AI implementation không đổi và dashboard
+  commit đã được duyệt riêng.
+- Independent final review APPROVE, 0 P0/P1/P2; `P1-1` và `P2-1` CLOSED.
+- Full non-browser gates trên verification SHA: backend 694 passed/20 skipped/71.47s,
+  Ruff/mypy PASS; frontend 27 files/190 tests/10.43s, lint/typecheck/build 17/17 PASS.
+- Active assignment đã xóa, completed slice chuyển PASS; W2 giữ IN_PROGRESS. Docs/ledger chờ
+  commit riêng. Browser/Playwright/persona và provider live NOT_RUN.
+- Hạn chế còn lại: evidence token chưa phải SourceBlock citation lâu dài; allowlist chưa tự kiểm
+  tra mức phù hợp ngữ nghĩa giữa claim và evidence.

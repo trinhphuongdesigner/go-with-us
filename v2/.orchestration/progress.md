@@ -332,3 +332,44 @@ Tại checkpoint 01:00 ICT chưa có feature nào PASS; trạng thái mới hơn
   `../reports/11-w2-career-plan-snapshot/qa-report.json` và `report.html`.
 - Browser/Playwright/persona/accessibility/performance vẫn NOT_RUN theo chỉ đạo. Docs/ledger
   chờ commit tài liệu riêng; file v1 dirty từ trước ngoài phạm vi.
+
+## 2026-09-14 15:06 ICT — W2-AI-ROADMAP-GROUNDING: PENDING_REVIEW
+
+- Candidate chưa commit trên base `3dacef69062425ded6c556c156770b997839f036`; chỉ thay đổi file
+  thuộc slice AI roadmap dưới `v2/`. Bốn dirty dashboard file ngoài phạm vi không bị sửa.
+- Backend buộc roadmap output đúng schema, có subject/source/evidence UUID trong allowlist và
+  evidence ở proposal, từng milestone, từng task. JSON/schema sai, ID bịa, thiếu evidence,
+  timeout hoặc empty response đều fail trước persistence.
+- Profile context được đóng gói `UNTRUSTED_DATA` và tách khỏi system prompt. Provider prose và
+  proposal không được lưu trong assistant history; response tạm được frontend mở trực tiếp trong
+  editor và chỉ endpoint save riêng mới persist sau xác nhận.
+- Focused gates: backend 18/18 PASS trong 1.55s; Ruff PASS; mypy app 90 files PASS; frontend
+  1/1 PASS và focused ESLint PASS. Full `npm run typecheck` bị chặn bởi dirty file ngoài phạm vi
+  `tests/live-dashboard.test.tsx:96` dùng `DEPT_LEAD`; task bị cấm sửa file đó.
+- Independent review và full non-browser suites chưa chạy. Browser/Playwright/persona vẫn
+  `NOT_RUN` theo chỉ đạo. Report nháp: `../reports/12-w2-ai-roadmap-grounding/qa-report.json`.
+
+### Remediation review 2026-09-14 15:19 ICT
+
+- Reviewer trả `REQUEST_CHANGES`: 0 P0, 1 P1, 1 P2. Cả hai finding đã
+  `FIXED_PENDING_REREVIEW`; task vẫn `PENDING_REVIEW`.
+- P1: proposal đang mở nay khóa textarea, submit, tạo mới và chuyển conversation cho đến khi
+  lưu hoặc bỏ. Response proposal mới gọi `save.reset()` trước khi cài proposal/key; editor remount
+  theo key mới và discard cũng reset mutation state.
+- P2: mock editor expose explicit confirm. Test chứng minh query gọi `saveRoadmap` 0 lần, confirm
+  gọi đúng 1 lần; chuỗi A → save A → generate B không mang save-success cũ sang B.
+- Focused frontend sau sửa: 2/2 PASS; focused ESLint PASS. Full typecheck vẫn chỉ lỗi dirty
+  dashboard test ngoài phạm vi tại `tests/live-dashboard.test.tsx:96`; browser NOT_RUN.
+
+## 2026-09-14 15:52 ICT — W2-AI-ROADMAP-GROUNDING: FINAL APPROVE, PASS
+
+- Implementation SHA `546d5786be900ce003e768ed4602a4015701bb90`; phần AI implementation được
+  xác minh không đổi trong integrated verification SHA `c0a1fee65fcc66f3e1e4241252b5b1a7cd4645c4`.
+- Reviewer độc lập final **APPROVE, 0 P0/P1/P2**; `P1-1` và `P2-1` CLOSED.
+- Exact verification SHA: backend full 694 passed/20 skipped trong 71.47s; Ruff PASS; mypy app
+  90 source files PASS. Frontend full 27 files/190 tests trong 10.43s; lint/typecheck PASS;
+  production build PASS trong 12.45s với 17/17 routes.
+- Slice chuyển khỏi active sang completed PASS; W2 tiếp tục IN_PROGRESS. Report chuẩn:
+  `../reports/12-w2-ai-roadmap-grounding/qa-report.json`.
+- Browser/Playwright/persona và provider live vẫn NOT_RUN theo chỉ đạo. Evidence token hiện chưa
+  phải SourceBlock citation bền vững và allowlist chưa tự đánh giá semantic claim-evidence.
