@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PersistedRoadmapView } from "./persisted-roadmap-view";
 import { careerRequest } from "@/features/career-ai/api";
 import { getRoadmapSettings, listRoadmaps, type Roadmap } from "./roadmap-api";
+import { ApiError } from "@/lib/api";
 import type { Session } from "@/lib/types";
 
 vi.mock("@/features/career-ai/plan-panel", () => ({ CareerPlanPanel: () => null }));
@@ -22,7 +23,7 @@ vi.mock("./roadmap-api", async (importOriginal) => ({
 vi.mock("./tree-editor", async () => {
   const { useState } = await import("react");
   return {
-  RoadmapTreeEditor: ({ initial, onSave }: {
+  RoadmapTreeEditor: ({ initial, onSave, onCancel }: {
     initial: {
       title: string;
       category: "WORK" | "PERSONAL";
@@ -36,6 +37,7 @@ vi.mock("./tree-editor", async () => {
       }>;
     };
     onSave: (draft: typeof initial) => void;
+    onCancel: () => void;
   }) => {
     const [title, setTitle] = useState(initial.title);
     return (
@@ -51,6 +53,7 @@ vi.mock("./tree-editor", async () => {
           <input value={title} onChange={(event) => setTitle(event.target.value)} />
         </label>
         <button type="submit">Lưu chỉnh sửa lộ trình</button>
+        <button type="button" onClick={onCancel}>Hủy chỉnh sửa giả lập</button>
       </form>
     );
   },
@@ -136,11 +139,18 @@ describe("persisted roadmap concurrent actions", () => {
   });
 
   it("deletes the roadmap snapshot selected when confirmation opened", async () => {
+    let resolveDelete!: (value: unknown) => void;
+    const pendingDelete = new Promise<unknown>((resolve) => {
+      resolveDelete = resolve;
+    });
+    vi.mocked(careerRequest).mockReturnValueOnce(pendingDelete);
     renderView();
     const selector = await screen.findByLabelText(/Lộ trình đã lưu/);
     await userEvent.setup().click(screen.getByRole("button", { name: "Xóa lộ trình" }));
     await userEvent.setup().selectOptions(selector, "b");
-    await userEvent.setup().click(screen.getByRole("button", { name: "Xác nhận xóa" }));
+    expect(screen.getByText(/Xóa lộ trình “Roadmap A”/)).toBeInTheDocument();
+    const confirmDelete = screen.getByRole("button", { name: "Xác nhận xóa" });
+    await userEvent.setup().click(confirmDelete);
 
     await waitFor(() =>
       expect(careerRequest).toHaveBeenCalledWith(
@@ -149,6 +159,17 @@ describe("persisted roadmap concurrent actions", () => {
         "DELETE",
       ),
     );
+    expect(confirmDelete).toBeDisabled();
+
+    await act(async () => {
+      resolveDelete({});
+      await pendingDelete;
+    });
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: "Xác nhận xóa" })).not.toBeInTheDocument(),
+    );
+    expect(selector).toHaveValue("b");
+    expect(screen.getByRole("heading", { name: "Roadmap B" })).toBeInTheDocument();
   });
 
   it("saves an editor draft against the version captured when editing opened", async () => {
@@ -176,5 +197,64 @@ describe("persisted roadmap concurrent actions", () => {
       expect(request?.[1]).toBe("/development-plans/me/roadmaps/a");
       expect(request?.[3]).toEqual(expect.objectContaining({ expectedVersion: 3, title: "A draft" }));
     });
+  });
+
+  it("keeps the captured editor and draft after a version conflict", async () => {
+    vi.mocked(careerRequest).mockRejectedValueOnce(
+      new ApiError("Phiên bản lộ trình không khớp", 409, {
+        code: "version_conflict",
+        currentVersion: 4,
+      }),
+    );
+    const client = renderView();
+    await screen.findByLabelText(/Lộ trình đã lưu/);
+    await userEvent.setup().click(
+      screen.getByRole("button", { name: "Chỉnh sửa chặng & công việc" }),
+    );
+    const title = screen.getByLabelText("Tên lộ trình");
+    await userEvent.setup().clear(title);
+    await userEvent.setup().type(title, "Bản nháp cần giữ");
+
+    act(() => {
+      client.setQueryData<Roadmap[]>(
+        ["roadmaps", "company-1:employee-1", "WORK"],
+        [roadmap("a", 4), roadmap("b", 7)],
+      );
+    });
+    await userEvent.setup().click(
+      screen.getByRole("button", { name: "Lưu chỉnh sửa lộ trình" }),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Dữ liệu đã đổi ở nơi khác",
+    );
+    expect(screen.getByLabelText("Tên lộ trình")).toHaveValue("Bản nháp cần giữ");
+    expect(screen.getByLabelText(/Lộ trình đã lưu/)).toBeDisabled();
+    expect(screen.getByRole("checkbox", { name: /Task/ })).toBeDisabled();
+    expect(careerRequest).toHaveBeenCalledWith(
+      "roadmap-token",
+      "/development-plans/me/roadmaps/a",
+      "PUT",
+      expect.objectContaining({ expectedVersion: 3, title: "Bản nháp cần giữ" }),
+    );
+
+    await userEvent.setup().click(
+      screen.getByRole("button", { name: "Hủy chỉnh sửa giả lập" }),
+    );
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    await userEvent.setup().click(
+      screen.getByRole("button", { name: "Chỉnh sửa chặng & công việc" }),
+    );
+    await userEvent.setup().click(
+      screen.getByRole("button", { name: "Lưu chỉnh sửa lộ trình" }),
+    );
+    await waitFor(() =>
+      expect(careerRequest).toHaveBeenLastCalledWith(
+        "roadmap-token",
+        "/development-plans/me/roadmaps/a",
+        "PUT",
+        expect.objectContaining({ expectedVersion: 4, title: "Roadmap A" }),
+      ),
+    );
   });
 });
