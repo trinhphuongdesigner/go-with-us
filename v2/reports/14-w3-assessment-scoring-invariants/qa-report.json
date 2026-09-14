@@ -1,0 +1,202 @@
+{
+  "schema_version": "1.0",
+  "report_language": "vi",
+  "feature_id": "14-w3-assessment-scoring-invariants",
+  "feature_name": "W3-ASSESSMENT-SCORING-INVARIANTS — tính điểm đánh giá xác định và fail-closed",
+  "branch": "codex/v2-qa-consolidation",
+  "overall_status": "PASS",
+  "implementation_sha": "f465af6bac2c6a30059fc791895db46a08d5952c",
+  "verified_tree_sha": "f465af6bac2c6a30059fc791895db46a08d5952c",
+  "generated_at": "2026-09-14T16:31:38+07:00",
+  "scope": {
+    "included": [
+      "Công thức chuẩn hóa điểm câu hỏi về thang 10",
+      "Trọng số câu hỏi trong nhóm, trọng số nhóm trong dimension và toàn bài",
+      "Làm tròn ROUND_HALF_UP đến hai chữ số thập phân",
+      "Validation fail-closed cho snapshot, answer, ID, thang điểm và trọng số",
+      "Approve tính lại từ immutable template_snapshot và answers đã lưu",
+      "Tương thích snapshot cũ có numeric string hợp lệ mà không làm yếu API authoring"
+    ],
+    "excluded": [
+      "Các luồng template, cycle, assignment, submit, reject và audit trail khác của Wave 3",
+      "Ánh xạ passportDimension hoặc thay đổi tính điểm Career Passport",
+      "AI tính điểm, AI xếp hạng hoặc AI sửa điểm",
+      "Browser, Playwright, visual regression, axe và persona review",
+      "Thay đổi database schema hoặc migration"
+    ]
+  },
+  "formulas": [
+    {
+      "name": "Điểm câu hỏi chuẩn hóa",
+      "formula": "q_i = answer_i / maxScore_i * 10",
+      "meaning": "Mọi câu hỏi được đưa về thang 10 trước khi áp trọng số."
+    },
+    {
+      "name": "Điểm nhóm",
+      "formula": "G = sum(q_i * questionWeight_i) / sum(questionWeight_i)",
+      "meaning": "Câu hỏi có trọng số lớn hơn đóng góp nhiều hơn trong cùng nhóm."
+    },
+    {
+      "name": "Điểm dimension",
+      "formula": "D = sum(G_j * groupWeight_j) / sum(groupWeight_j) trong dimension D",
+      "meaning": "Chỉ nhóm thuộc CONTRIBUTION hoặc ATTITUDE tương ứng được tính; dimension không có nhóm trả null."
+    },
+    {
+      "name": "Tổng điểm",
+      "formula": "Total = sum(G_j * groupWeight_j) / sum(groupWeight_j) trên mọi nhóm có trọng số dương",
+      "meaning": "Tổng điểm là weighted average của tất cả nhóm, không phải trung bình của hai dimension."
+    },
+    {
+      "name": "Làm tròn",
+      "formula": "Decimal(value).quantize(0.01, ROUND_HALF_UP)",
+      "meaning": "Ví dụ 8.125 thành 8.13; tránh phụ thuộc banker's rounding của float."
+    }
+  ],
+  "validation_contract": [
+    "Group ID và question ID phải duy nhất; question ID được kiểm tra trên toàn snapshot.",
+    "Answer phải trỏ đến question có thật, mỗi question tối đa một answer, score là integer không phải boolean và nằm trong 1..maxScore.",
+    "Khi hoàn thành/approve, mọi question có trọng số dương trong group có trọng số dương phải có answer.",
+    "Phải có ít nhất một group có trọng số dương và mỗi group phải có ít nhất một question có trọng số dương.",
+    "Snapshot bắt buộc khai báo group.weight, group.scoreDimension, question.weight và question.maxScore; không tự điền default authoring.",
+    "Snapshot legacy có numeric string hợp lệ, hữu hạn và không phải boolean được đọc an toàn; chuỗi sai, NaN, infinity, maxScore không nguyên hoặc ngoài range trả 422.",
+    "Dimension không tồn tại trả null; hệ thống không dựng giá trị trung tính 5."
+  ],
+  "immutable_snapshot": {
+    "status": "PASS",
+    "behavior": "Luồng approve khóa assessment và tính lại từ row.template_snapshot cùng row.answers đã persist; thay đổi template sống sau submit không đổi kết quả.",
+    "evidence": "Integration test sửa live template sau khi tạo assessment, đặt cached score sai, rồi approve vẫn trả total/contribution 8.0 từ snapshot và attitude null."
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "status": "PASS",
+      "description": "Chuẩn hóa, question weight, group weight, dimension weight và total weight đúng công thức xác định."
+    },
+    {
+      "id": "AC-02",
+      "status": "PASS",
+      "description": "Điểm được làm tròn half-up hai chữ số; midpoint 8.125 thành 8.13."
+    },
+    {
+      "id": "AC-03",
+      "status": "PASS",
+      "description": "Unknown/duplicate ID, boolean, non-integer, out-of-range, missing weighted answer và cấu hình trọng số sai đều fail closed bằng 422."
+    },
+    {
+      "id": "AC-04",
+      "status": "PASS",
+      "description": "Snapshot thiếu trường scoring bắt buộc không nhận default; numeric string legacy hợp lệ vẫn cho cùng kết quả."
+    },
+    {
+      "id": "AC-05",
+      "status": "PASS",
+      "description": "Approve dùng immutable snapshot và persisted answers; thay đổi live template không ảnh hưởng recompute."
+    },
+    {
+      "id": "AC-06",
+      "status": "PASS",
+      "description": "Dimension vắng mặt giữ null; không thêm passportDimension mapping và không dùng AI tính điểm."
+    },
+    {
+      "id": "AC-07",
+      "status": "PASS",
+      "description": "Independent final review APPROVE, 0 P0/P1/P2 và các gate non-browser đạt trên đúng implementation SHA."
+    }
+  ],
+  "checks": [
+    {
+      "id": "CHK-RED",
+      "category": "fail-first",
+      "status": "FAIL",
+      "verified_sha": "pre-fix working tree",
+      "command": "CAREERMATE_DEMO_LOGIN_ENABLED=false .venv/bin/pytest -q tests/test_talent_workflow_scoring.py",
+      "summary": "3 failures/27: negative question weight được nhận; string weight rơi ra TypeError; duplicate question ID bị ghi đè. Đây là RED evidence trước fix."
+    },
+    {
+      "id": "CHK-FOCUSED",
+      "category": "backend-focused",
+      "status": "PASS",
+      "verified_sha": "f465af6bac2c6a30059fc791895db46a08d5952c",
+      "command": "CAREERMATE_DEMO_LOGIN_ENABLED=false .venv/bin/pytest -q tests/test_talent_workflow_scoring.py",
+      "summary": "33 scoring tests PASS."
+    },
+    {
+      "id": "CHK-ADJACENT",
+      "category": "backend-adjacent",
+      "status": "PASS",
+      "verified_sha": "f465af6bac2c6a30059fc791895db46a08d5952c",
+      "command": "CAREERMATE_DEMO_LOGIN_ENABLED=false .venv/bin/pytest -q tests/test_talent_workflow_scoring.py tests/test_offboarding_summary_safety.py",
+      "summary": "38 scoring và offboarding tests PASS."
+    },
+    {
+      "id": "CHK-BACKEND",
+      "category": "backend-full",
+      "status": "PASS",
+      "verified_sha": "f465af6bac2c6a30059fc791895db46a08d5952c",
+      "command": "CAREERMATE_DEMO_LOGIN_ENABLED=false .venv/bin/pytest -q",
+      "summary": "719 passed, 20 skipped trong 68.48s."
+    },
+    {
+      "id": "CHK-STATIC",
+      "category": "backend-static",
+      "status": "PASS",
+      "verified_sha": "f465af6bac2c6a30059fc791895db46a08d5952c",
+      "command": ".venv/bin/ruff check . && .venv/bin/mypy app",
+      "summary": "Ruff PASS; mypy app PASS trên 90 source files."
+    },
+    {
+      "id": "CHK-FRONTEND",
+      "category": "frontend-full",
+      "status": "PASS",
+      "verified_sha": "f465af6bac2c6a30059fc791895db46a08d5952c",
+      "command": "npm test && npm run lint && npm run typecheck",
+      "summary": "Vitest 27 files/190 tests PASS trong 14.74s; ESLint và TypeScript PASS."
+    },
+    {
+      "id": "CHK-BUILD",
+      "category": "frontend-build",
+      "status": "PASS",
+      "verified_sha": "f465af6bac2c6a30059fc791895db46a08d5952c",
+      "command": "npm run build",
+      "summary": "Next.js production build PASS trong 12.66s; 17/17 routes."
+    },
+    {
+      "id": "CHK-REVIEW",
+      "category": "independent-review",
+      "status": "PASS",
+      "verified_sha": "f465af6bac2c6a30059fc791895db46a08d5952c",
+      "summary": "Independent final review APPROVE, 0 P0/P1/P2; một P1 và hai P2 của vòng đầu đã CLOSED."
+    },
+    {
+      "id": "CHK-BROWSER",
+      "category": "browser-playwright-persona",
+      "status": "NOT_RUN",
+      "summary": "Browser, Playwright, visual regression, axe và persona review không chạy theo chỉ đạo."
+    }
+  ],
+  "review_findings": [
+    {
+      "id": "P1-1",
+      "status": "CLOSED",
+      "description": "Snapshot reader dùng default authoring nên snapshot thiếu scoring field vẫn có thể tạo điểm.",
+      "resolution": "Tách DTO snapshot nội bộ và bắt buộc bốn trường scoring; thêm bốn test thiếu-field trả 422."
+    },
+    {
+      "id": "P2-1",
+      "status": "CLOSED",
+      "description": "Strict authoring schema có thể làm snapshot legacy dùng numeric string không còn đọc được.",
+      "resolution": "Chỉ snapshot DTO có before-validator chuyển numeric string hợp lệ; malformed/non-finite/non-integer vẫn fail closed."
+    },
+    {
+      "id": "P2-2",
+      "status": "CLOSED",
+      "description": "Thiếu test chứng minh duplicate group ID bị từ chối khi question ID khác nhau.",
+      "resolution": "Thêm regression riêng cho duplicate group ID với distinct question IDs."
+    }
+  ],
+  "known_gaps": [
+    "Snapshot legacy sai cấu trúc hoặc chứa numeric string không hợp lệ sẽ trả 422; cần audit và repair dữ liệu đó trước migration/cutover nếu có.",
+    "Browser/Playwright/persona/axe/visual regression NOT_RUN.",
+    "Đây chỉ là scoring-invariants slice; các luồng Cross Assessment còn lại giữ W3 ở IN_PROGRESS."
+  ]
+}

@@ -280,3 +280,22 @@
   persona/axe/visual regression NOT_RUN theo chỉ đạo. Chỉ slice dashboard W5 PASS; toàn W5 vẫn
   IN_PROGRESS vì Smart People Search, staffing và các phần khác còn mở. Không commit/push trong
   lượt docs-only này.
+
+## Cập nhật 2026-09-14 16:31 ICT — W3-ASSESSMENT-SCORING-INVARIANTS: FINAL APPROVE, PASS
+
+- Implementation/verification SHA `f465af6bac2c6a30059fc791895db46a08d5952c`; independent
+  final review **APPROVE, 0 P0/P1/P2**. P1 missing scoring fields và hai P2 numeric-string
+  compatibility/duplicate group coverage đều CLOSED.
+- Deterministic contract: `answer/maxScore*10`; weighted question → group; weighted group →
+  dimension/total; Decimal `ROUND_HALF_UP` 2 decimals. Dimension không có dữ liệu trả `null`.
+- Approve recompute từ immutable `template_snapshot` + persisted `answers`. Snapshot thiếu field,
+  answer/ID/range/weight sai hoặc malformed legacy value đều fail closed 422; numeric string
+  legacy hợp lệ tiếp tục cho cùng kết quả.
+- Exact-SHA evidence: focused scoring 33 PASS; scoring+offboarding 38 PASS; backend full 719
+  passed/20 skipped/68.48s; Ruff PASS; mypy app 90 files PASS; frontend 27 files/190 tests/
+  14.74s, ESLint/typecheck PASS; build 17/17 routes/12.66s.
+- Report: `../reports/14-w3-assessment-scoring-invariants/qa-report.json`. Browser/Playwright/
+  persona/axe/visual regression NOT_RUN. Slice không thêm hoặc thay đổi `passportDimension`
+  mapping và không dùng AI scoring.
+  W3 giữ IN_PROGRESS vì các assessment flows còn lại chưa hoàn tất. Legacy row sai cần audit/
+  repair trước migration nếu tồn tại. Lượt này docs-only, không commit/push.

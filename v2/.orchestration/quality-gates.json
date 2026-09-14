@@ -51,7 +51,7 @@
       "evidence": "qa-report.json bound to implementation SHA and tree"
     }
   ],
-  "latest_completed_slice": "W5-DASHBOARD-ROLE-AWARE-PROGRESS",
+  "latest_completed_slice": "W3-ASSESSMENT-SCORING-INVARIANTS",
   "wave1_import": {
     "status": "PASS",
     "implementation_sha": "de246d8c74ec8425cec0172613012fc600811719",
@@ -130,5 +130,15 @@
     "quick_checkin": "roadmap:self required; all-task mutation lock; awaited refetch; typed 409 recovery.",
     "browser_playwright_persona": "NOT_RUN",
     "known_limitations": "Không có browser/axe/visual/persona evidence; activeRoadmaps là tên contract cũ cho phép đếm tổng; W5 còn staffing và các phần khác."
+  },
+  "wave3_assessment_scoring_invariants": {
+    "status": "PASS",
+    "implementation_sha": "f465af6bac2c6a30059fc791895db46a08d5952c",
+    "verified_tree_sha": "f465af6bac2c6a30059fc791895db46a08d5952c",
+    "evidence": "Independent FINAL APPROVE 0 P0/P1/P2; focused scoring 33 passed, scoring+offboarding 38 passed; backend 719 passed/20 skipped/68.48s; Ruff/mypy app 90 files PASS; frontend 27 files/190 tests/14.74s, ESLint/typecheck/build 17/17 PASS.",
+    "scoring_contract": "question=answer/maxScore*10; group weighted by question.weight; dimension and total weighted by group.weight; Decimal ROUND_HALF_UP 2 decimals; absent dimension is null.",
+    "snapshot_contract": "Approve recomputes from immutable template_snapshot + persisted answers; missing scoring fields and malformed legacy values fail closed 422; valid numeric strings remain compatible.",
+    "browser_playwright_persona": "NOT_RUN",
+    "known_limitations": "Malformed legacy snapshot rows require audit/repair before migration if present; slice does not add or change passportDimension mapping and does not use AI scoring; W3 remains IN_PROGRESS."
   }
 }

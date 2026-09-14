@@ -393,3 +393,24 @@ Tại checkpoint 01:00 ICT chưa có feature nào PASS; trạng thái mới hơn
 - Report chuẩn: `../reports/13-dashboard-role-aware-progress/qa-report.json`. Browser/Playwright/
   persona/axe/visual regression **NOT_RUN** theo chỉ đạo. Slice dashboard PASS; W5 chuyển
   **IN_PROGRESS**, chưa hoàn tất Smart People Search, staffing và các phần còn lại.
+
+## 2026-09-14 16:31 ICT — W3-ASSESSMENT-SCORING-INVARIANTS: FINAL APPROVE, PASS
+
+- Implementation và exact verification SHA `f465af6bac2c6a30059fc791895db46a08d5952c`.
+  Independent final review **APPROVE, 0 P0/P1/P2** sau khi đóng P1 snapshot thiếu scoring
+  fields và hai P2 về numeric-string compatibility cùng duplicate group coverage.
+- Công thức xác định: question `answer/maxScore*10`; group weighted theo `question.weight`;
+  dimension và total weighted theo `group.weight`; dùng Decimal `ROUND_HALF_UP` hai chữ số.
+  Dimension vắng mặt giữ `null`, không dựng điểm 5.
+- Submit/approve từ chối unknown/duplicate IDs, bool/non-integer/out-of-range, thiếu weighted
+  answers và cấu hình trọng số sai. Snapshot bắt buộc đủ scoring fields; numeric string legacy
+  hợp lệ được đọc riêng, dữ liệu sai fail closed 422.
+- Approve tính lại từ immutable `template_snapshot` + persisted `answers`, không đọc live
+  template. Không thêm `passportDimension` mapping và không dùng AI scoring.
+- RED trước fix: 3 failures/27. Focused scoring 33 PASS; scoring+offboarding 38 PASS. Exact-SHA
+  gates: backend 719 passed/20 skipped/68.48s; Ruff/mypy app 90 files PASS; frontend 27 files/
+  190 tests/14.74s; ESLint/typecheck/build 17/17 PASS trong 12.66s.
+- Report chuẩn: `../reports/14-w3-assessment-scoring-invariants/qa-report.json`. Browser/
+  Playwright/persona/axe/visual regression **NOT_RUN**. Slice PASS; W3 giữ **IN_PROGRESS** vì
+  template, cycle, assignment, submit/reject và audit trail còn mở. Snapshot legacy sai cần
+  audit/repair trước migration nếu tồn tại.
