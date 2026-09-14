@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Session } from "@/lib/types";
+import { ApiError } from "@/lib/api";
 import { careerRequest } from "./api";
 import { CareerPlanPanel } from "./plan-panel";
 
@@ -105,5 +106,128 @@ describe("career goal concurrent editing", () => {
         .mock.calls.find((call) => call[2] === "DELETE");
       expect(request?.[1]).toBe("/development-plans/goals/goal-1?expected_version=3");
     });
+  });
+
+  it("keeps the edit draft, refreshes server data, and resets the conflict before reopening", async () => {
+    let serverGoal = goal;
+    let rejectPatch = true;
+    let goalReads = 0;
+    let resolveRefresh!: (value: typeof goal[]) => void;
+    const refresh = new Promise<typeof goal[]>((resolve) => { resolveRefresh = resolve; });
+    vi.mocked(careerRequest).mockImplementation(async (_token, path, method) => {
+      if (path.includes("/goals?")) {
+        goalReads += 1;
+        return goalReads === 1 ? [serverGoal] : refresh;
+      }
+      if (path.includes("/history?")) return [];
+      if (method === "PATCH" && rejectPatch) {
+        rejectPatch = false;
+        serverGoal = { ...goal, title: "Server title", version: 4 };
+        throw new ApiError("Yêu cầu không thành công", 409, {
+          detail: { code: "version_conflict", currentVersion: 4 },
+        });
+      }
+      return { ...serverGoal, version: 5 };
+    });
+    renderPanel();
+    await screen.findByText(goal.title);
+    await userEvent.setup().click(screen.getByRole("button", { name: "Sửa" }));
+    const title = screen.getByRole("textbox", { name: "Tên mục tiêu" });
+    await userEvent.setup().clear(title);
+    await userEvent.setup().type(title, "My local draft");
+
+    await userEvent.setup().click(screen.getByRole("button", { name: "Lưu mục tiêu" }));
+
+    await waitFor(() => expect(goalReads).toBe(2));
+    expect(screen.getByRole("button", { name: "Hủy" })).toBeDisabled();
+    expect(screen.queryByText(/Dữ liệu mới đã được tải lại/)).not.toBeInTheDocument();
+    act(() => resolveRefresh([serverGoal]));
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Mục tiêu đã thay đổi ở phiên khác. Dữ liệu mới đã được tải lại; bản nháp của bạn vẫn được giữ.",
+    );
+    expect(title).toHaveValue("My local draft");
+    await screen.findByText("Server title");
+
+    await userEvent.setup().click(screen.getByRole("button", { name: "Hủy" }));
+    expect(screen.queryByText(/Mục tiêu đã thay đổi ở phiên khác/)).not.toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole("button", { name: "Sửa" }));
+    await userEvent.setup().click(screen.getByRole("button", { name: "Lưu mục tiêu" }));
+
+    await waitFor(() => {
+      const patches = vi.mocked(careerRequest).mock.calls.filter((call) => call[2] === "PATCH");
+      expect(patches).toHaveLength(2);
+      expect(patches[1]?.[3]).toEqual(expect.objectContaining({ expectedVersion: 4 }));
+    });
+  });
+
+  it("keeps stale delete confirmation, refreshes server data, and uses the new version after reopening", async () => {
+    let serverGoal = goal;
+    let rejectDelete = true;
+    vi.mocked(careerRequest).mockImplementation(async (_token, path, method) => {
+      if (path.includes("/goals?")) return [serverGoal];
+      if (path.includes("/history?")) return [];
+      if (method === "DELETE" && rejectDelete) {
+        rejectDelete = false;
+        serverGoal = { ...goal, title: "Server title", version: 4 };
+        throw new ApiError("Yêu cầu không thành công", 409, {
+          detail: { code: "version_conflict", currentVersion: 4 },
+        });
+      }
+      return undefined;
+    });
+    renderPanel();
+    await screen.findByText(goal.title);
+    await userEvent.setup().click(screen.getByRole("button", { name: "Xóa" }));
+
+    await userEvent.setup().click(screen.getByRole("button", { name: "Xác nhận xóa" }));
+
+    expect(await screen.findByText("Xóa mục tiêu này? Lộ trình liên kết vẫn được giữ.")).toBeInTheDocument();
+    expect(screen.getByText(
+      "Mục tiêu đã thay đổi ở phiên khác. Dữ liệu mới đã được tải lại; yêu cầu xóa chưa được thực hiện.",
+    )).toBeInTheDocument();
+    await screen.findByText("Server title");
+
+    await userEvent.setup().click(screen.getByRole("button", { name: "Hủy" }));
+    expect(screen.queryByText(/Mục tiêu đã thay đổi ở phiên khác/)).not.toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole("button", { name: "Xóa" }));
+    await userEvent.setup().click(screen.getByRole("button", { name: "Xác nhận xóa" }));
+
+    await waitFor(() => {
+      const deletes = vi.mocked(careerRequest).mock.calls.filter((call) => call[2] === "DELETE");
+      expect(deletes).toHaveLength(2);
+      expect(deletes[1]?.[1]).toBe("/development-plans/goals/goal-1?expected_version=4");
+    });
+  });
+
+  it("keeps the draft and does not claim fresh data when conflict recovery fails", async () => {
+    let goalReads = 0;
+    vi.mocked(careerRequest).mockImplementation(async (_token, path, method) => {
+      if (path.includes("/goals?")) {
+        goalReads += 1;
+        if (goalReads === 1) return [goal];
+        throw new ApiError("Không thể tải mục tiêu", 503);
+      }
+      if (path.includes("/history?")) return [];
+      if (method === "PATCH") {
+        throw new ApiError("Yêu cầu không thành công", 409, {
+          detail: { code: "version_conflict", currentVersion: 4 },
+        });
+      }
+      return undefined;
+    });
+    renderPanel();
+    await screen.findByText(goal.title);
+    await userEvent.setup().click(screen.getByRole("button", { name: "Sửa" }));
+    const title = screen.getByRole("textbox", { name: "Tên mục tiêu" });
+    await userEvent.setup().clear(title);
+    await userEvent.setup().type(title, "My retained draft");
+
+    await userEvent.setup().click(screen.getByRole("button", { name: "Lưu mục tiêu" }));
+
+    expect(await screen.findByText(
+      "Mục tiêu đã thay đổi ở phiên khác. Không tải được dữ liệu mới; bản nháp của bạn vẫn được giữ. Hãy thử tải lại trước khi lưu.",
+    )).toBeInTheDocument();
+    expect(title).toHaveValue("My retained draft");
+    expect(screen.queryByText(/Dữ liệu mới đã được tải lại/)).not.toBeInTheDocument();
   });
 });
