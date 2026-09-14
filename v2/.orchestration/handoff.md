@@ -261,3 +261,22 @@
   commit riêng. Browser/Playwright/persona và provider live NOT_RUN.
 - Hạn chế còn lại: evidence token chưa phải SourceBlock citation lâu dài; allowlist chưa tự kiểm
   tra mức phù hợp ngữ nghĩa giữa claim và evidence.
+
+## Cập nhật 2026-09-14 15:57 ICT — W5-DASHBOARD-ROLE-AWARE-PROGRESS: FINAL APPROVE, PASS
+
+- Dashboard implementation và verification cùng tại SHA
+  `c0a1fee65fcc66f3e1e4241252b5b1a7cd4645c4`; docs được tạo trên base
+  `84cbf51e012cb5370fdaaea3a4989d10fc43195a`. Independent review FINAL APPROVE,
+  0 P0/P1/P2.
+- Role/view authoritative từ backend: BOD/HR có personal + management; EMPLOYEE chỉ personal;
+  COMPANY_ADMIN/SUPER_ADMIN chỉ management. Quick check-in không được cấp ngầm và chỉ xuất hiện
+  khi có `roadmap:self`.
+- CAS quick check-in khóa toàn bộ task trong dialog, chặn click đồng thời, await refetch trước unlock và phục
+  hồi typed 409 bằng dữ liệu mới. Skill dialog chỉ còn rating đã lưu; segmented switcher có
+  `aria-pressed` và `min-h-11`; nhãn roadmap là **Tổng lộ trình**.
+- Exact-SHA gates: backend 694 passed/20 skipped/71.47s, Ruff/mypy 90 files PASS; frontend
+  27 files/190 tests/10.43s, ESLint/typecheck/build 17/17 PASS.
+- Report: `../reports/13-dashboard-role-aware-progress/qa-report.json`. Browser/Playwright/
+  persona/axe/visual regression NOT_RUN theo chỉ đạo. Chỉ slice dashboard W5 PASS; toàn W5 vẫn
+  IN_PROGRESS vì Smart People Search, staffing và các phần khác còn mở. Không commit/push trong
+  lượt docs-only này.

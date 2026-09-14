@@ -51,7 +51,7 @@
       "evidence": "qa-report.json bound to implementation SHA and tree"
     }
   ],
-  "latest_completed_slice": "W2-AI-ROADMAP-GROUNDING",
+  "latest_completed_slice": "W5-DASHBOARD-ROLE-AWARE-PROGRESS",
   "wave1_import": {
     "status": "PASS",
     "implementation_sha": "de246d8c74ec8425cec0172613012fc600811719",
@@ -119,5 +119,16 @@
     "browser_playwright_persona": "NOT_RUN",
     "provider_live": "NOT_RUN",
     "known_limitations": "Evidence token chưa phải SourceBlock citation bền vững; allowlist chưa tự đánh giá semantic claim-evidence."
+  },
+  "wave5_dashboard_role_aware_progress": {
+    "status": "PASS",
+    "implementation_sha": "c0a1fee65fcc66f3e1e4241252b5b1a7cd4645c4",
+    "verified_tree_sha": "c0a1fee65fcc66f3e1e4241252b5b1a7cd4645c4",
+    "documentation_base_sha": "84cbf51e012cb5370fdaaea3a4989d10fc43195a",
+    "evidence": "Independent FINAL APPROVE 0 P0/P1/P2; backend 694 passed/20 skipped/71.47s, Ruff/mypy app 90 files PASS; frontend 27 files/190 tests/10.43s, ESLint/typecheck/build 17/17 PASS.",
+    "role_view": "Backend-authoritative personal|management; BOD/HR switch; employee personal; company/super admin management.",
+    "quick_checkin": "roadmap:self required; all-task mutation lock; awaited refetch; typed 409 recovery.",
+    "browser_playwright_persona": "NOT_RUN",
+    "known_limitations": "Không có browser/axe/visual/persona evidence; activeRoadmaps là tên contract cũ cho phép đếm tổng; W5 còn staffing và các phần khác."
   }
 }

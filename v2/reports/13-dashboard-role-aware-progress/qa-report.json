@@ -1,0 +1,157 @@
+{
+  "schema_version": "1.0",
+  "report_language": "vi",
+  "feature_id": "13-dashboard-role-aware-progress",
+  "feature_name": "W5-DASHBOARD-ROLE-AWARE-PROGRESS — dashboard theo vai trò và check-in lộ trình an toàn",
+  "branch": "codex/v2-qa-consolidation",
+  "overall_status": "PASS",
+  "implementation_sha": "c0a1fee65fcc66f3e1e4241252b5b1a7cd4645c4",
+  "verified_tree_sha": "c0a1fee65fcc66f3e1e4241252b5b1a7cd4645c4",
+  "documentation_base_sha": "84cbf51e012cb5370fdaaea3a4989d10fc43195a",
+  "generated_at": "2026-09-14T15:57:23+07:00",
+  "scope": {
+    "included": [
+      "Dashboard cá nhân và quản lý do backend quyết định qua currentView/canSwitchView",
+      "Ma trận role/view cho SUPER_ADMIN, COMPANY_ADMIN, BOD, HR và EMPLOYEE",
+      "Quick check-in dùng expectedVersion, khóa toàn bộ task trong mutation và refetch trước khi mở khóa",
+      "Xử lý ApiError 409 bằng refetch và thông báo dữ liệu cũ rõ ràng",
+      "Chỉ hiển thị quick check-in khi người dùng có quyền roadmap:self",
+      "Dialog kỹ năng chỉ hiển thị rating đã lưu, không suy diễn Senior, level 4, benchmark hoặc skill gap",
+      "Segmented switcher dùng aria-pressed và vùng chạm tối thiểu min-h-11",
+      "Nhãn activeRoadmaps hiển thị là Tổng lộ trình vì chưa có bộ lọc trạng thái"
+    ],
+    "excluded": [
+      "Staffing, Smart People Search và các phần còn lại của Wave 5",
+      "Browser, Playwright, visual regression, axe accessibility và persona review",
+      "Thay đổi v1, deploy, commit hoặc push tài liệu"
+    ]
+  },
+  "role_view_matrix": [
+    {
+      "role": "SUPER_ADMIN",
+      "default_view": "management",
+      "allowed_views": ["management"],
+      "can_switch_view": false,
+      "quick_checkin": "Không có góc nhìn cá nhân; không cấp quyền ngầm"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "default_view": "management",
+      "allowed_views": ["management"],
+      "can_switch_view": false,
+      "quick_checkin": "Không có góc nhìn cá nhân; không cấp quyền ngầm"
+    },
+    {
+      "role": "BOD",
+      "default_view": "personal",
+      "allowed_views": ["personal", "management"],
+      "can_switch_view": true,
+      "quick_checkin": "Chỉ hiển thị khi có roadmap:self"
+    },
+    {
+      "role": "HR",
+      "default_view": "personal",
+      "allowed_views": ["personal", "management"],
+      "can_switch_view": true,
+      "quick_checkin": "Chỉ hiển thị khi có roadmap:self"
+    },
+    {
+      "role": "EMPLOYEE",
+      "default_view": "personal",
+      "allowed_views": ["personal"],
+      "can_switch_view": false,
+      "quick_checkin": "Chỉ hiển thị khi có roadmap:self"
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "status": "PASS",
+      "description": "Backend chỉ nhận personal|management, từ chối giá trị khác bằng validation và trả currentView/canSwitchView có thẩm quyền."
+    },
+    {
+      "id": "AC-02",
+      "status": "PASS",
+      "description": "Frontend dùng payload backend để chọn renderer; payload personal không thể bị render thành dashboard quản lý do suy đoán role phía client."
+    },
+    {
+      "id": "AC-03",
+      "status": "PASS",
+      "description": "Quick check-in khóa mọi task, chặn rapid click, chờ refetch sau mutation và phục hồi 409 bằng dữ liệu mới nhất."
+    },
+    {
+      "id": "AC-04",
+      "status": "PASS",
+      "description": "BOD/HR không được cấp quick check-in nếu thiếu roadmap:self."
+    },
+    {
+      "id": "AC-05",
+      "status": "PASS",
+      "description": "UI kỹ năng chỉ trình bày rating quan sát được và lời giải thích trung tính, không dựng chuẩn Senior hoặc khoảng cách năng lực."
+    },
+    {
+      "id": "AC-06",
+      "status": "PASS",
+      "description": "Switcher có aria-pressed và min-h-11; chỉ số roadmap dùng nhãn Tổng lộ trình đúng với phép đếm hiện có."
+    },
+    {
+      "id": "AC-07",
+      "status": "PASS",
+      "description": "Independent dashboard review FINAL APPROVE 0 P0/P1/P2 và toàn bộ non-browser gates đạt trên đúng implementation SHA."
+    }
+  ],
+  "checks": [
+    {
+      "id": "CHK-01",
+      "category": "backend-full",
+      "status": "PASS",
+      "verified_sha": "c0a1fee65fcc66f3e1e4241252b5b1a7cd4645c4",
+      "command": "CAREERMATE_DEMO_LOGIN_ENABLED=false .venv/bin/pytest -q",
+      "summary": "694 passed, 20 skipped trong 71.47s."
+    },
+    {
+      "id": "CHK-02",
+      "category": "backend-static",
+      "status": "PASS",
+      "verified_sha": "c0a1fee65fcc66f3e1e4241252b5b1a7cd4645c4",
+      "command": ".venv/bin/ruff check . && .venv/bin/mypy app",
+      "summary": "Ruff PASS; mypy PASS trên 90 source files."
+    },
+    {
+      "id": "CHK-03",
+      "category": "frontend-full",
+      "status": "PASS",
+      "verified_sha": "c0a1fee65fcc66f3e1e4241252b5b1a7cd4645c4",
+      "command": "npm test && npm run lint && npm run typecheck",
+      "summary": "Vitest 27 files/190 tests PASS trong 10.43s; ESLint và TypeScript PASS."
+    },
+    {
+      "id": "CHK-04",
+      "category": "frontend-build",
+      "status": "PASS",
+      "verified_sha": "c0a1fee65fcc66f3e1e4241252b5b1a7cd4645c4",
+      "command": "npm run build",
+      "summary": "Next.js production build PASS trong 12.45s; 17/17 routes."
+    },
+    {
+      "id": "CHK-05",
+      "category": "independent-review",
+      "status": "PASS",
+      "verified_sha": "c0a1fee65fcc66f3e1e4241252b5b1a7cd4645c4",
+      "summary": "Independent dashboard review FINAL APPROVE, 0 P0/P1/P2."
+    },
+    {
+      "id": "CHK-06",
+      "category": "browser-playwright-persona",
+      "status": "NOT_RUN",
+      "summary": "Browser, Playwright, visual regression, axe và persona review không chạy theo chỉ đạo của người dùng."
+    }
+  ],
+  "review_findings": [],
+  "known_gaps": [
+    "Chưa có browser/Playwright evidence cho interaction, responsive layout, focus thực tế hoặc thông báo 409 trên trình duyệt.",
+    "Chưa có axe accessibility, visual regression hoặc persona review cho dashboard mới.",
+    "Tên field API activeRoadmaps được giữ để tương thích nhưng hiện đếm tổng roadmap; UI đã sửa nhãn thành Tổng lộ trình.",
+    "Wave 5 còn Smart People Search, staffing và các dashboard/phần tổng hợp khác nên toàn wave vẫn IN_PROGRESS."
+  ]
+}

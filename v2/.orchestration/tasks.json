@@ -47,10 +47,11 @@
     {
       "id": "W5",
       "name": "Staffing and dashboards",
-      "status": "PENDING",
+      "status": "IN_PROGRESS",
       "depends_on": [
         "W1"
-      ]
+      ],
+      "completion_evidence": "Slice W5-DASHBOARD-ROLE-AWARE-PROGRESS PASS; Smart People Search, staffing và các phần W5 còn lại chưa hoàn tất."
     },
     {
       "id": "W6",
@@ -160,15 +161,24 @@
       "verified_tree_sha": "c0a1fee65fcc66f3e1e4241252b5b1a7cd4645c4",
       "report": "../reports/12-w2-ai-roadmap-grounding/qa-report.json",
       "note": "Independent FINAL APPROVE 0 P0/P1/P2; P1-1/P2-1 CLOSED. Verification SHA: backend 694 passed/20 skipped, Ruff/mypy PASS; frontend 27 files/190 tests, lint/typecheck/build 17/17 PASS. Browser và provider live NOT_RUN."
+    },
+    {
+      "id": "W5-DASHBOARD-ROLE-AWARE-PROGRESS",
+      "name": "Dashboard theo vai trò, rating trung tính và quick check-in lộ trình dùng CAS",
+      "status": "PASS",
+      "implementation_sha": "c0a1fee65fcc66f3e1e4241252b5b1a7cd4645c4",
+      "verified_tree_sha": "c0a1fee65fcc66f3e1e4241252b5b1a7cd4645c4",
+      "report": "../reports/13-dashboard-role-aware-progress/qa-report.json",
+      "note": "Independent dashboard review FINAL APPROVE 0 P0/P1/P2. Exact SHA: backend 694 passed/20 skipped/71.47s, Ruff/mypy app 90 files PASS; frontend 27 files/190 tests/10.43s, ESLint/typecheck/build 17/17 PASS. Browser/Playwright/persona NOT_RUN. W5 vẫn IN_PROGRESS vì staffing và các phần khác còn mở."
     }
   ],
   "coordination_state": {
-    "updated_at": "2026-09-14T15:52:54+07:00",
+    "updated_at": "2026-09-14T15:57:23+07:00",
     "mode": "MANUAL_QA_READY",
     "writer": null,
     "canonical_worktree": ".claude/worktrees/v2-qa",
     "candidate_head": "c0a1fee65fcc66f3e1e4241252b5b1a7cd4645c4",
-    "candidate_base_head": "546d5786be900ce003e768ed4602a4015701bb90",
+    "candidate_base_head": "c0a1fee65fcc66f3e1e4241252b5b1a7cd4645c4",
     "candidate_tree": "IMPLEMENTATION_COMMITTED_DOCS_PENDING",
     "implementation_source_clean": true,
     "documentation_commit_pending": true,
@@ -189,19 +199,20 @@
     "resume_rule": "Manual tester validates the pushed candidate. Run Playwright only after explicit user re-enable.",
     "published_head": "0ef9f94575592b37d20d8226c3a46dfbb22938bf",
     "current_task_runtime": {
-      "task": "W2-AI-ROADMAP-GROUNDING",
-      "state": "Implementation 546d578 FINAL APPROVE; verified unchanged inside integrated SHA c0a1fee; docs/ledger pending separate commit.",
+      "task": "W5-DASHBOARD-ROLE-AWARE-PROGRESS",
+      "state": "Implementation/review/gates PASS tại exact SHA; docs/ledger đang chờ commit riêng.",
       "status": "PASS",
-      "backend_sqlite": "694 passed, 20 skipped in 71.47s",
+      "backend": "694 passed, 20 skipped in 71.47s",
       "backend_ruff": "PASS",
       "backend_mypy": "PASS, 90 source files",
       "frontend_vitest": "27 files, 190 tests passed in 10.43s",
       "frontend_eslint": "PASS",
       "frontend_typecheck": "PASS",
       "frontend_build": "PASS, 17/17 routes in 12.45s",
-      "independent_review": "FINAL APPROVE, 0 P0/P1/P2; P1-1 and P2-1 CLOSED",
-      "provider_live": "NOT_RUN",
-      "playwright": "NOT_RUN"
-    }
+      "independent_review": "FINAL APPROVE, 0 P0/P1/P2",
+      "playwright_browser_persona": "NOT_RUN",
+      "wave5": "IN_PROGRESS; chỉ dashboard slice đã PASS"
+    },
+    "documentation_base_head": "84cbf51e012cb5370fdaaea3a4989d10fc43195a"
   }
 }

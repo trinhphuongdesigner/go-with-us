@@ -373,3 +373,23 @@ Tại checkpoint 01:00 ICT chưa có feature nào PASS; trạng thái mới hơn
   `../reports/12-w2-ai-roadmap-grounding/qa-report.json`.
 - Browser/Playwright/persona và provider live vẫn NOT_RUN theo chỉ đạo. Evidence token hiện chưa
   phải SourceBlock citation bền vững và allowlist chưa tự đánh giá semantic claim-evidence.
+
+## 2026-09-14 15:57 ICT — W5-DASHBOARD-ROLE-AWARE-PROGRESS: FINAL APPROVE, PASS
+
+- Implementation và exact verification SHA `c0a1fee65fcc66f3e1e4241252b5b1a7cd4645c4`.
+  Independent dashboard review **FINAL APPROVE, 0 P0/P1/P2**.
+- Backend quyết định `personal|management` và trả `currentView`/`canSwitchView`: BOD/HR chuyển
+  được hai góc nhìn; EMPLOYEE chỉ cá nhân; COMPANY_ADMIN/SUPER_ADMIN chỉ quản lý. Frontend không
+  còn suy đoán từ role hoặc render management từ personal payload.
+- Quick check-in yêu cầu `roadmap:self`, khóa toàn bộ task trong mutation, chặn rapid click, gửi
+  `expectedVersion`, đợi refetch trước khi mở khóa và xử lý `ApiError` 409 bằng refetch cùng thông
+  báo stale-data rõ ràng.
+- Dialog kỹ năng chỉ còn rating đã lưu và giải thích trung tính; bỏ Senior/level-4/benchmark/gap/
+  AI claims không có dữ liệu. Switcher dùng `aria-pressed`, `min-h-11`; metric roadmap ghi nhãn
+  **Tổng lộ trình**.
+- Full non-browser gates trên exact SHA: backend 694 passed/20 skipped/71.47s; Ruff PASS; mypy app
+  90 files PASS; frontend 27 files/190 tests/10.43s; ESLint/typecheck PASS; build 17/17 routes
+  PASS trong 12.45s.
+- Report chuẩn: `../reports/13-dashboard-role-aware-progress/qa-report.json`. Browser/Playwright/
+  persona/axe/visual regression **NOT_RUN** theo chỉ đạo. Slice dashboard PASS; W5 chuyển
+  **IN_PROGRESS**, chưa hoàn tất Smart People Search, staffing và các phần còn lại.
