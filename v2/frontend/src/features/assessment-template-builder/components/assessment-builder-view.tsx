@@ -210,9 +210,19 @@ export function AssessmentBuilderView({ initialTemplate, onSave }: { initialTemp
       const restoreFocus = () => {
         document.getElementById("load-sample-button")?.focus();
       };
+      const restoreFocusIfUnclaimed = () => {
+        const activeElement = document.activeElement;
+        if (
+          !activeElement ||
+          activeElement === document.body ||
+          !activeElement.isConnected
+        ) {
+          restoreFocus();
+        }
+      };
       restoreFocus();
-      requestAnimationFrame(restoreFocus);
-      setTimeout(restoreFocus, 50);
+      requestAnimationFrame(restoreFocusIfUnclaimed);
+      setTimeout(restoreFocusIfUnclaimed, 50);
     } else if (pendingDelete.type === "load-sample") {
       setTemplate(structuredClone(SAMPLE_ASSESSMENT_TEMPLATE));
       setErrors([]);
